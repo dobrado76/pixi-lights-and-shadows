@@ -355,7 +355,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           );
           
           // Apply scale and convert to UV coordinates
-          vec2 maskUV = (rotatedPos / (scale * 100.0)) + 0.5; // Scale to reasonable world units
+          vec2 maskUV = (rotatedPos / (scale * 100.0)) + 0.5;
           
           // Sample mask (clamp to avoid edge artifacts)
           if (maskUV.x < 0.0 || maskUV.x > 1.0 || maskUV.y < 0.0 || maskUV.y > 1.0) {
@@ -412,12 +412,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             // Apply mask if present
             if (uPoint0HasMask) {
               float maskValue = sampleMask(uPoint0Mask, worldPos.xy, uPoint0Position.xy, uPoint0MaskOffset, uPoint0MaskRotation, uPoint0MaskScale);
-              // Debug: Make mask very obvious by turning affected areas red
-              if (maskValue > 0.1) {
-                finalColor = vec3(1.0, 0.0, 0.0); // Bright red where mask is active
-              } else {
-                intensity *= 0.1; // Dim areas without mask
-              }
+              intensity *= maskValue; // Multiply light intensity by mask
             }
             
             finalColor += diffuseColor.rgb * uPoint0Color * intensity;
@@ -724,6 +719,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uDir0Enabled = false; uniforms.uDir1Enabled = false;
       uniforms.uSpot0Enabled = false; uniforms.uSpot1Enabled = false; uniforms.uSpot2Enabled = false; uniforms.uSpot3Enabled = false;
       
+      // Initialize all masks as disabled
+      uniforms.uPoint0HasMask = false; uniforms.uPoint1HasMask = false;
+      uniforms.uSpot0HasMask = false; uniforms.uSpot1HasMask = false; uniforms.uSpot2HasMask = false; uniforms.uSpot3HasMask = false;
+      
       // Point Lights (up to 2)
       pointLights.slice(0, 2).forEach((light, i) => {
         const prefix = `uPoint${i}`;
@@ -736,6 +735,17 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
         uniforms[`${prefix}Intensity`] = light.intensity;
         uniforms[`${prefix}Radius`] = light.radius || 200;
+        
+        // Handle mask
+        if (light.mask) {
+          uniforms[`${prefix}HasMask`] = true;
+          uniforms[`${prefix}Mask`] = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
+          uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
+          uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
+          uniforms[`${prefix}MaskScale`] = light.mask.scale;
+        } else {
+          uniforms[`${prefix}HasMask`] = false;
+        }
       });
       
       // Directional Lights (up to 2)
@@ -762,6 +772,17 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniforms[`${prefix}Radius`] = light.radius || 150;
         uniforms[`${prefix}ConeAngle`] = light.coneAngle || 30;
         uniforms[`${prefix}Softness`] = light.softness || 0.5;
+        
+        // Handle mask
+        if (light.mask) {
+          uniforms[`${prefix}HasMask`] = true;
+          uniforms[`${prefix}Mask`] = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
+          uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
+          uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
+          uniforms[`${prefix}MaskScale`] = light.mask.scale;
+        } else {
+          uniforms[`${prefix}HasMask`] = false;
+        }
       });
 
       // Add other dynamic uniforms

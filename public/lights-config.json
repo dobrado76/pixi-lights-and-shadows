@@ -4,7 +4,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.2,
+      "brightness": 0.04,
       "color": "0xffffff"
     },
     {
@@ -78,7 +78,7 @@
           "x": 40,
           "y": -40
         },
-        "rotation": 160,
+        "rotation": 360,
         "scale": 1.4
       }
     }
