@@ -46,7 +46,7 @@
       "softness": 0.4
     },
     {
-      "id": "spotlight_1758527030900",
+      "id": "spotlight",
       "type": "spotlight",
       "enabled": true,
       "brightness": 1.1,
