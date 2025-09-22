@@ -105,6 +105,6 @@
     "enabled": true,
     "strength": 0.5,
     "maxLength": 120,
-    "height": 19
+    "height": 1
   }
 }
