@@ -205,15 +205,15 @@ const PixiDemo = (props: PixiDemoProps) => {
           
           vec3 lightDir3D = lightPos3D - worldPos3D;
           float lightDistance = length(lightDir3D);
-          
-          // Fix Y-axis for screen coordinate system (Y increases downward)
-          lightDir3D.y = -lightDir3D.y;
           vec3 lightDir = normalize(lightDir3D);
+          
+          // Use full 3D normal for proper lighting (normal.z points up)
+          normal.z = sqrt(1.0 - dot(normal.xy, normal.xy)); // Reconstruct Z component
           
           float attenuation = 1.0 - clamp(lightDistance / uLightRadius, 0.0, 1.0);
           attenuation = attenuation * attenuation;
           
-          float normalDot = max(dot(normal.xy, lightDir.xy), 0.0);
+          float normalDot = max(dot(normal, lightDir), 0.0);
           float lightIntensity = normalDot * uLightIntensity * attenuation;
           
           vec3 ambientContribution = diffuseColor.rgb * uAmbientLight;
