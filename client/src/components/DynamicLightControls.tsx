@@ -446,36 +446,66 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
                         <label className="text-xs text-muted-foreground">Mouse</label>
                       </div>
                     </div>
+                    {/* Row 4: Shadow Casting */}
+                    <div className="flex items-center space-x-1">
+                      <input
+                        type="checkbox"
+                        checked={light.castsShadows !== false}
+                        onChange={(e) => updateLight(light.id, { castsShadows: e.target.checked })}
+                        className="w-3 h-3"
+                        data-testid={`checkbox-${light.id}-casts-shadows`}
+                      />
+                      <label className="text-xs text-muted-foreground">Cast Shadows</label>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        Z: {light.position.z} {light.position.z < -25 ? '(No shadows)' : light.position.z <= 25 ? '(Soft)' : '(Sharp)'}
+                      </span>
+                    </div>
                   </>
                 )}
 
                 {/* Directional Light Controls - SINGLE ANGLE */}
                 {light.type === 'directional' && (
-                  <div className="flex items-center space-x-2">
-                    <label className="text-xs text-muted-foreground min-w-[50px]">
-                      Angle: {directionAngle.toFixed(0)}°
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="360"
-                      step="5"
-                      value={directionAngle}
-                      onChange={(e) => {
-                        const angle = parseFloat(e.target.value);
-                        const radians = (angle - 180) * Math.PI / 180;
-                        updateLight(light.id, { 
-                          direction: { 
-                            x: Math.cos(radians), 
-                            y: Math.sin(radians), 
-                            z: -1 
-                          }
-                        });
-                      }}
-                      className="flex-1"
-                      data-testid={`slider-${light.id}-angle`}
-                    />
-                  </div>
+                  <>
+                    <div className="flex items-center space-x-2">
+                      <label className="text-xs text-muted-foreground min-w-[50px]">
+                        Angle: {directionAngle.toFixed(0)}°
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="360"
+                        step="5"
+                        value={directionAngle}
+                        onChange={(e) => {
+                          const angle = parseFloat(e.target.value);
+                          const radians = (angle - 180) * Math.PI / 180;
+                          updateLight(light.id, { 
+                            direction: { 
+                              x: Math.cos(radians), 
+                              y: Math.sin(radians), 
+                              z: -1 
+                            }
+                          });
+                        }}
+                        className="flex-1"
+                        data-testid={`slider-${light.id}-angle`}
+                      />
+                    </div>
+                    {/* Shadow Casting */}
+                    <div className="flex items-center space-x-1">
+                      <input
+                        type="checkbox"
+                        checked={light.castsShadows !== false}
+                        onChange={(e) => updateLight(light.id, { castsShadows: e.target.checked })}
+                        className="w-3 h-3"
+                        data-testid={`checkbox-${light.id}-casts-shadows`}
+                      />
+                      <label className="text-xs text-muted-foreground">Cast Shadows</label>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        Dir Z: {light.direction.z.toFixed(1)} {light.direction.z <= 0 ? '(No shadows)' : '(Soft shadows)'}
+                      </span>
+                    </div>
+                  </>
                 )}
 
                 {/* Spotlight Controls */}
@@ -582,6 +612,20 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
                           </div>
                         );
                       })}
+                    </div>
+                    {/* Shadow Casting */}
+                    <div className="flex items-center space-x-1">
+                      <input
+                        type="checkbox"
+                        checked={light.castsShadows !== false}
+                        onChange={(e) => updateLight(light.id, { castsShadows: e.target.checked })}
+                        className="w-3 h-3"
+                        data-testid={`checkbox-${light.id}-casts-shadows`}
+                      />
+                      <label className="text-xs text-muted-foreground">Cast Shadows</label>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        Z: {light.position.z} {light.position.z < -25 ? '(No shadows)' : light.position.z <= 25 ? '(Soft)' : '(Sharp)'}
+                      </span>
                     </div>
                   </>
                 )}
