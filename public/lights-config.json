@@ -4,8 +4,8 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.3,
-      "color": "0x666666"
+      "brightness": 0.2,
+      "color": "0xffffff"
     },
     {
       "id": "mouse_light",
@@ -22,7 +22,7 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.8,
       "color": "0xffffff",
       "directionX": 1,
@@ -32,7 +32,7 @@
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 2.8,
       "color": "0xffffff",
       "x": 80,
@@ -48,7 +48,7 @@
     {
       "id": "spotlight",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 1.1,
       "color": "0xffffff",
       "x": 290,
@@ -64,8 +64,8 @@
     {
       "id": "point_copy_1758529441818",
       "type": "point",
-      "enabled": true,
-      "brightness": 4.7,
+      "enabled": false,
+      "brightness": 5.3,
       "color": "0xffffff",
       "x": 160,
       "y": 220,

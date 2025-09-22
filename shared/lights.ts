@@ -202,20 +202,15 @@ export const loadLightsConfig = async (configPath: string = '/api/load-lights-co
     
     const config = await response.json();
     
-    // Check if the config is already in the new Light format (has position/direction objects)
-    if (config.lights && config.lights.length > 0 && config.lights[0].position) {
-      // New format - return directly (filter out ambient lights)
-      return config.lights.filter((light: Light) => light.type !== 'ambient');
-    } else {
-      // Old format - convert using the legacy converter
-      const lights: Light[] = [];
-      for (const lightConfig of config.lights) {
-        if (lightConfig.type !== 'ambient') {
-          lights.push(convertConfigToLight(lightConfig));
-        }
+    // Always use the legacy converter since the API returns old format
+    const lights: Light[] = [];
+    for (const lightConfig of config.lights) {
+      if (lightConfig.type !== 'ambient') { // Skip ambient for now since it's handled separately
+        lights.push(convertConfigToLight(lightConfig));
       }
-      return lights;
     }
+    
+    return lights;
   } catch (error) {
     console.error('Error loading lights configuration:', error);
     // Return fallback lights
@@ -234,7 +229,7 @@ export const loadAmbientLight = async (configPath: string = '/api/load-lights-co
     if (!response.ok) return { intensity: 0.3, color: { r: 0.4, g: 0.4, b: 0.4 } };
     
     const config = await response.json();
-    const ambientLight = config.lights.find((light: LightConfig) => light.type === 'ambient');
+    const ambientLight = config.lights.find((light: any) => light.type === 'ambient');
     
     if (ambientLight) {
       const color = typeof ambientLight.color === 'string' 
