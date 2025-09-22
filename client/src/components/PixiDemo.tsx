@@ -725,6 +725,14 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uAmbientColor = [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b];
       uniforms.uCanvasSize = [shaderParams.canvasWidth, shaderParams.canvasHeight];
       
+      // Debug: Log ambient light uniforms
+      console.log(`🌅 AMBIENT LIGHT VALUES:`, {
+        intensity: ambientLight.intensity,
+        color: ambientLight.color,
+        uniformIntensity: uniforms.uAmbientLight,
+        uniformColor: uniforms.uAmbientColor
+      });
+      
       return uniforms;
     };
 
