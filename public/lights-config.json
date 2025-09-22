@@ -17,7 +17,8 @@
       "y": 150,
       "z": 20,
       "followMouse": true,
-      "radius": 200
+      "radius": 200,
+      "mask": "00019-1224130474.png"
     },
     {
       "id": "directional_light",
