@@ -187,8 +187,10 @@ const PixiDemo = (props: PixiDemoProps) => {
           uniforms.uSpot0HasMask = false; uniforms.uSpot1HasMask = false; uniforms.uSpot2HasMask = false; uniforms.uSpot3HasMask = false;
           
           // Point Lights (up to 4)
+          console.log(`🔍 PROCESSING ${pointLights.length} POINT LIGHTS:`, pointLights.map(l => l.id));
           pointLights.slice(0, 4).forEach((light, i) => {
             const prefix = `uPoint${i}`;
+            console.log(`   Setting ${prefix}Enabled = true for light: ${light.id}`);
             uniforms[`${prefix}Enabled`] = true;
             uniforms[`${prefix}Position`] = [
               light.followMouse ? mousePos.x : light.position.x,
@@ -526,6 +528,15 @@ const PixiDemo = (props: PixiDemoProps) => {
     };
 
     const updatedUniforms = createLightUniforms();
+
+    // DEBUG: Log point light uniform details
+    const pointUniforms = Object.keys(updatedUniforms).filter(key => key.includes('Point'));
+    console.log('🔧 POINT LIGHT UNIFORMS:', pointUniforms.length);
+    pointUniforms.forEach(key => {
+      if (key.includes('Enabled')) {
+        console.log(`   ${key}: ${updatedUniforms[key]}`);
+      }
+    });
 
     // Apply all uniform updates to all shaders
     shadersRef.current.forEach(shader => {
