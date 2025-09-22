@@ -81,6 +81,18 @@
         "rotation": 0,
         "scale": 1.4
       }
+    },
+    {
+      "id": "point_1758536509084",
+      "type": "point",
+      "enabled": true,
+      "brightness": 2.6,
+      "color": "0xe12323",
+      "x": 150,
+      "y": 110,
+      "z": 200,
+      "followMouse": false,
+      "radius": 200
     }
   ]
 }
