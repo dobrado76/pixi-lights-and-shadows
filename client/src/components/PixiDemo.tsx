@@ -28,31 +28,61 @@ const PixiDemo = (props: PixiDemoProps) => {
 
     console.log('Initializing PIXI Application...');
     
-    const app = new PIXI.Application({
-      width: 400,
-      height: 300,
-      backgroundColor: 0x1a1a1a,
-      antialias: true,
-      resolution: window.devicePixelRatio || 1,
-      autoDensity: true,
-    });
+    try {
+      const app = new PIXI.Application({
+        width: 400,
+        height: 300,
+        backgroundColor: 0x1a1a1a,
+        antialias: true,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
+        // Explicit renderer preferences for better compatibility
+        preference: 'webgl2',
+        powerPreference: 'default',
+        // Fallback options for headless/testing environments
+        forceCanvas: false,
+        preserveDrawingBuffer: false,
+        clearBeforeRender: true,
+        hello: false, // Disable PIXI greeting in console
+      });
 
-    // Append canvas to container
-    canvasRef.current.appendChild(app.view as HTMLCanvasElement);
-    setPixiApp(app);
-
-    console.log('PIXI App initialized successfully');
+      // Use the canvas property for modern PIXI.js or fallback to view
+      const canvas = (app as any).canvas || (app as any).view;
+      
+      if (canvas && canvasRef.current) {
+        canvasRef.current.appendChild(canvas);
+        setPixiApp(app);
+        console.log('PIXI App initialized successfully');
+      } else {
+        throw new Error('Canvas element not found');
+      }
+    } catch (error) {
+      console.error('PIXI Application initialization failed:', error);
+    }
 
     // Cleanup
     return () => {
-      if (canvasRef.current && app.view) {
+      if (pixiApp) {
+        const canvas = (pixiApp as any).canvas || (pixiApp as any).view;
+        if (canvas && canvasRef.current) {
+          try {
+            canvasRef.current.removeChild(canvas);
+          } catch (e) {
+            // Ignore if already removed
+          }
+        }
+        
+        // Safe destroy to prevent hot reload errors
         try {
-          canvasRef.current.removeChild(app.view as HTMLCanvasElement);
+          pixiApp.destroy(true, {
+            children: true,
+            texture: false,
+            baseTexture: false
+          });
         } catch (e) {
-          // Ignore if already removed
+          console.warn('PIXI destroy error (safe to ignore during hot reload):', e);
         }
       }
-      app.destroy(true);
     };
   }, []);
 

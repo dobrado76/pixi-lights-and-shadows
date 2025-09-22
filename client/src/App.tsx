@@ -17,6 +17,27 @@ export interface ShaderParams {
   lightColorG: number;
   lightColorB: number;
   ambientLight: number;
+  // Material properties
+  normalMapIntensity: number;
+  specularPower: number;
+  specularIntensity: number;
+  metallic: number;
+  roughness: number;
+  // Animation controls
+  timeMultiplier: number;
+  animationEnabled: boolean;
+  // Post-processing effects
+  contrast: number;
+  saturation: number;
+  brightness: number;
+  // Texture controls
+  uvScaleX: number;
+  uvScaleY: number;
+  uvOffsetX: number;
+  uvOffsetY: number;
+  // Advanced lighting
+  rimLightIntensity: number;
+  rimLightPower: number;
 }
 
 function App() {
