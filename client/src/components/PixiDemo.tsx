@@ -232,10 +232,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       bgMesh.x = 0;
       bgMesh.y = 0;
 
-      // Create normalized sprite geometries (0,0 to 1,1)
-      const createSpriteGeometry = (width: number, height: number) => {
+      // Create sprite geometries positioned in world space
+      const createSpriteGeometry = (x: number, y: number, width: number, height: number) => {
         const geometry = new PIXI.Geometry();
-        const vertices = [0, 0, width, 0, width, height, 0, height];
+        const vertices = [x, y, x + width, y, x + width, y + height, x, y + height];
         const uvs = [0, 0, 1, 0, 1, 1, 0, 1];
         const indices = [0, 1, 2, 0, 2, 3];
         
@@ -251,15 +251,16 @@ const PixiDemo = (props: PixiDemoProps) => {
         new Promise(resolve => blockDiffuse.baseTexture.valid ? resolve(null) : blockDiffuse.baseTexture.once('loaded', resolve))
       ]);
 
-      // Use actual texture dimensions for proper sprite sizes
-      const ballGeometry = createSpriteGeometry(ballDiffuse.width, ballDiffuse.height);
-      const blockGeometry = createSpriteGeometry(blockDiffuse.width, blockDiffuse.height);
+      // Create geometries positioned at correct world coordinates
+      const ballPos = { x: 120, y: 80 };
+      const blockPos = { x: 280, y: 120 };
+      const ballGeometry = createSpriteGeometry(ballPos.x, ballPos.y, ballDiffuse.width, ballDiffuse.height);
+      const blockGeometry = createSpriteGeometry(blockPos.x, blockPos.y, blockDiffuse.width, blockDiffuse.height);
       
       console.log('Ball actual dimensions:', ballDiffuse.width, ballDiffuse.height);
       console.log('Block actual dimensions:', blockDiffuse.width, blockDiffuse.height);
 
       // Ball shader and mesh
-      const ballPos = { x: 120, y: 80 };
       const ballShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, {
         uDiffuse: ballDiffuse,
         uNormal: ballNormal,
@@ -274,11 +275,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
 
       const ballMesh = new PIXI.Mesh(ballGeometry, ballShader as any);
-      ballMesh.x = ballPos.x;
-      ballMesh.y = ballPos.y;
+      ballMesh.x = 0;
+      ballMesh.y = 0;
 
       // Block shader and mesh
-      const blockPos = { x: 280, y: 120 };
       const blockShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, {
         uDiffuse: blockDiffuse,
         uNormal: blockNormal,
@@ -293,8 +293,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
 
       const blockMesh = new PIXI.Mesh(blockGeometry, blockShader as any);
-      blockMesh.x = blockPos.x;
-      blockMesh.y = blockPos.y;
+      blockMesh.x = 0;
+      blockMesh.y = 0;
 
       // Store references
       meshesRef.current = [bgMesh, ballMesh, blockMesh];
