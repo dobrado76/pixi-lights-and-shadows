@@ -141,9 +141,11 @@ const PixiDemo = (props: PixiDemoProps) => {
         const createLightUniforms = () => {
           const uniforms: any = {};
           
-          // Light 0 (Point Light - mouse following)
-          const pointLight = lightsConfig.find(light => light.type === 'point');
-          if (pointLight && pointLight.enabled) {
+          // Light 0 (Point Light - with mouse following support)
+          const pointLights = lightsConfig.filter(light => light.type === 'point' && light.enabled);
+          // Prioritize lights with followMouse enabled
+          const pointLight = pointLights.find(light => light.followMouse) || pointLights[0];
+          if (pointLight) {
             uniforms.uLight0Enabled = true;
             uniforms.uLight0Position = [
               pointLight.followMouse ? mousePos.x : pointLight.position.x, 
@@ -175,11 +177,17 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms.uLight1Intensity = 0;
           }
           
-          // Light 2 (Spotlight)
-          const spotlight = lightsConfig.find(light => light.type === 'spotlight');
-          if (spotlight && spotlight.enabled) {
+          // Light 2 (Spotlight - with mouse following support)
+          const spotlights = lightsConfig.filter(light => light.type === 'spotlight' && light.enabled);
+          // Prioritize lights with followMouse enabled
+          const spotlight = spotlights.find(light => light.followMouse) || spotlights[0];
+          if (spotlight) {
             uniforms.uLight2Enabled = true;
-            uniforms.uLight2Position = [spotlight.position.x, spotlight.position.y, spotlight.position.z];
+            uniforms.uLight2Position = [
+              spotlight.followMouse ? mousePos.x : spotlight.position.x,
+              spotlight.followMouse ? mousePos.y : spotlight.position.y,
+              spotlight.position.z
+            ];
             uniforms.uLight2Direction = [spotlight.direction.x, spotlight.direction.y, spotlight.direction.z];
             uniforms.uLight2Color = [spotlight.color.r, spotlight.color.g, spotlight.color.b];
             uniforms.uLight2Intensity = spotlight.intensity;
