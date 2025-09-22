@@ -378,12 +378,27 @@ const PixiDemo = (props: PixiDemoProps) => {
           uniforms.uPoint0HasMask = false; uniforms.uPoint1HasMask = false; uniforms.uPoint2HasMask = false; uniforms.uPoint3HasMask = false;
           uniforms.uSpot0HasMask = false; uniforms.uSpot1HasMask = false; uniforms.uSpot2HasMask = false; uniforms.uSpot3HasMask = false;
           
-          // Point Lights (up to 4)
+          // Point Lights (up to 4) - use stable slot assignment
           console.log(`🔍 PROCESSING ${pointLights.length} POINT LIGHTS:`, pointLights.map(l => l.id));
-          pointLights.slice(0, 4).forEach((light, i) => {
-            const prefix = `uPoint${i}`;
-            console.log(`   Setting ${prefix}Enabled = true for light: ${light.id}`);
-            uniforms[`${prefix}Enabled`] = true;
+          
+          // Create a mapping of light IDs to stable uniform slots
+          const lightIdToSlot = new Map<string, number>();
+          let slotIndex = 0;
+          
+          // First, assign slots to all lights in the original config order (for stability)
+          lightsConfig.filter(light => light.type === 'point').forEach(light => {
+            if (slotIndex < 4) {
+              lightIdToSlot.set(light.id, slotIndex);
+              slotIndex++;
+            }
+          });
+          
+          pointLights.slice(0, 4).forEach((light) => {
+            const slotIdx = lightIdToSlot.get(light.id);
+            if (slotIdx !== undefined) {
+              const prefix = `uPoint${slotIdx}`;
+              console.log(`   Setting ${prefix}Enabled = true for light: ${light.id} (stable slot ${slotIdx})`);
+              uniforms[`${prefix}Enabled`] = true;
             uniforms[`${prefix}Position`] = [
               light.followMouse ? mousePos.x : light.position.x,
               light.followMouse ? mousePos.y : light.position.y,
@@ -423,6 +438,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               });
             } else {
               uniforms[`${prefix}HasMask`] = false;
+            }
             }
           });
           
