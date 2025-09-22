@@ -4,6 +4,7 @@ import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import { vertexShaderSource } from '../shaders/vertexShader';
 import { fragmentShaderSource } from '../shaders/fragmentShader';
 import { ShaderParams } from '../App';
+import { appendErrors } from 'react-hook-form';
 
 interface PixiDemoProps {
   shaderParams: ShaderParams;
@@ -161,7 +162,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uDiffuse: bgDiffuse,
         uNormal: bgNormal,
         uTime: 0,
-        uResolution: [400, 300],
+        uResolution: [pixiApp.screen.width, pixiApp.screen.height],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uLightPos: [mousePos.x, mousePos.y],
         // Enhanced lighting uniforms
@@ -191,7 +192,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uDiffuse: ballDiffuse,
         uNormal: ballNormal,
         uLightPos: [mousePos.x, mousePos.y],
-        uResolution: [400, 300],
+        uResolution: [pixiApp.screen.width, pixiApp.screen.height],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uTime: 0,
         // Enhanced lighting uniforms
