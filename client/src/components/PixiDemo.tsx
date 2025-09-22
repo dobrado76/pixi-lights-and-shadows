@@ -290,6 +290,9 @@ const PixiDemo = (props: PixiDemoProps) => {
             }
           });
 
+          console.log('DEBUG: All lights config:', lightsConfig.map(l => ({id: l.id, type: l.type, enabled: l.enabled})));
+          console.log('DEBUG: Enabled lights:', enabledLights.map(l => ({id: l.id, type: l.type})));
+          console.log('DEBUG: Point lights found:', pointLights.map(l => ({id: l.id, enabled: l.enabled})));
           console.log('Expanded Lights:', { 
             pointLights: pointLights.length, 
             directionalLights: directionalLights.length, 
