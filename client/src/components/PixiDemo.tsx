@@ -137,14 +137,17 @@ const PixiDemo = (props: PixiDemoProps) => {
 
     console.log('Setting up PIXI demo with real textures...');
 
-    try {
-      // Load textures
-      const bgDiffuse = PIXI.Texture.from('/BGTextureTest.jpg');
-      const bgNormal = PIXI.Texture.from('/BGTextureNORM.jpg');
-      const ballDiffuse = PIXI.Texture.from('/ball.png');
-      const ballNormal = PIXI.Texture.from('/ballN.png');
-      const blockDiffuse = PIXI.Texture.from('/block.png');
-      const blockNormal = PIXI.Texture.from('/blockNormalMap.jpg');
+    const setupDemo = () => {
+      try {
+        // Load textures 
+        const bgDiffuse = PIXI.Texture.from('/BGTextureTest.jpg');
+        const bgNormal = PIXI.Texture.from('/BGTextureNORM.jpg');
+        const ballDiffuse = PIXI.Texture.from('/ball.png');
+        const ballNormal = PIXI.Texture.from('/ballN.png');
+        const blockDiffuse = PIXI.Texture.from('/block.png');
+        const blockNormal = PIXI.Texture.from('/blockNormalMap.jpg');
+        
+        console.log('Textures loaded, creating geometries...');
 
       // Update status
       onGeometryUpdate?.('Geometry created: 4 vertices with real texture mapping');
@@ -306,17 +309,13 @@ const PixiDemo = (props: PixiDemoProps) => {
       pixiApp.stage.addChild(blockMesh);
 
       console.log('PIXI demo setup completed successfully');
-      
-      // Add a simple colored rectangle as a visual confirmation
-      const confirmationRect = new PIXI.Graphics();
-      confirmationRect.beginFill(0x00ff00);
-      confirmationRect.drawRect(10, 10, 50, 30);
-      confirmationRect.endFill();
-      pixiApp.stage.addChild(confirmationRect);
 
-    } catch (error) {
-      console.error('Error setting up PIXI demo:', error);
-    }
+      } catch (error) {
+        console.error('Error setting up PIXI demo:', error);
+      }
+    };
+
+    setupDemo();
 
     // Cleanup function
     return () => {
