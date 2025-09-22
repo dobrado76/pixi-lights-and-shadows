@@ -227,6 +227,11 @@ const PixiDemo = (props: PixiDemoProps) => {
             // Use full 3D normal for proper lighting (normal.z points up)
             normal.z = sqrt(max(0.0, 1.0 - dot(normal.xy, normal.xy))); // Prevent negative sqrt
             
+            // Fix Y-axis for screen coordinate system for above-surface lighting too
+            vec3 lightDir3D_above = lightPos3D - worldPos3D;
+            lightDir3D_above.y = -lightDir3D_above.y;
+            vec3 lightDir_above = normalize(lightDir3D_above);
+            
             // Calculate 2D distance on surface for area-based attenuation
             vec2 surfaceDistance = worldPos.xy - uLightPos.xy;
             float surface2DDistance = length(surfaceDistance);
@@ -237,7 +242,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             attenuation = 1.0 - clamp(surface2DDistance / effectiveRadius, 0.0, 1.0);
             attenuation = attenuation * attenuation;
             
-            normalDot = max(dot(normal, lightDir), 0.0);
+            normalDot = max(dot(normal, lightDir_above), 0.0);
           }
           float lightIntensity = normalDot * uLightIntensity * attenuation;
           
