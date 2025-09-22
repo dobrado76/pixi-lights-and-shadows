@@ -167,37 +167,137 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         console.log('Textures loaded, creating geometries...');
 
-        // 🚀 DYNAMIC LIGHTING - NO TYPE RESTRICTIONS!
+        // Helper function to convert external lights config to shader uniforms
         const createLightUniforms = () => {
           const uniforms: any = {};
           
-          // Get all enabled lights
+          // Get all enabled lights by type
           const enabledLights = lightsConfig.filter(light => light.enabled);
+          const pointLights = enabledLights.filter(light => light.type === 'point');
+          const directionalLights = enabledLights.filter(light => light.type === 'directional');
+          const spotlights = enabledLights.filter(light => light.type === 'spotlight');
           
-          // Set light count
-          uniforms.uLightCount = enabledLights.length;
+          // Initialize all lights as disabled
+          uniforms.uPoint0Enabled = false; uniforms.uPoint1Enabled = false; uniforms.uPoint2Enabled = false; uniforms.uPoint3Enabled = false;
+          uniforms.uDir0Enabled = false; uniforms.uDir1Enabled = false;
+          uniforms.uSpot0Enabled = false; uniforms.uSpot1Enabled = false; uniforms.uSpot2Enabled = false; uniforms.uSpot3Enabled = false;
           
-          // Type conversion: point=0, directional=1, spotlight=2
-          const typeMap = { 'point': 0, 'directional': 1, 'spotlight': 2 };
+          // Initialize all masks as disabled
+          uniforms.uPoint0HasMask = false; uniforms.uPoint1HasMask = false; uniforms.uPoint2HasMask = false; uniforms.uPoint3HasMask = false;
+          uniforms.uSpot0HasMask = false; uniforms.uSpot1HasMask = false; uniforms.uSpot2HasMask = false; uniforms.uSpot3HasMask = false;
           
-          // Populate individual uniforms for up to 4 lights (expandable)
-          enabledLights.slice(0, 4).forEach((light, index) => {
-            uniforms[`uLight${index}Pos`] = [light.position.x, light.position.y, light.position.z];
-            uniforms[`uLight${index}Type`] = typeMap[light.type as keyof typeof typeMap] || 0;
-            uniforms[`uLight${index}Color`] = [light.color.r, light.color.g, light.color.b];
-            uniforms[`uLight${index}Intensity`] = light.intensity;
+          // Point Lights (up to 4)
+          pointLights.slice(0, 4).forEach((light, i) => {
+            const prefix = `uPoint${i}`;
+            uniforms[`${prefix}Enabled`] = true;
+            uniforms[`${prefix}Position`] = [
+              light.followMouse ? mousePos.x : light.position.x,
+              light.followMouse ? mousePos.y : light.position.y,
+              light.position.z
+            ];
+            uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
+            uniforms[`${prefix}Intensity`] = light.intensity;
+            uniforms[`${prefix}Radius`] = light.radius || 200;
+            
+            // Handle mask
+            if (light.mask) {
+              console.log(`Loading mask for ${prefix}:`, light.mask);
+              const maskPath = `/light_masks/${light.mask.image}`;
+              console.log(`Mask texture path: ${maskPath}`);
+              
+              const maskTexture = PIXI.Texture.from(maskPath);
+              uniforms[`${prefix}HasMask`] = true;
+              uniforms[`${prefix}Mask`] = maskTexture;
+              uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
+              uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
+              uniforms[`${prefix}MaskScale`] = light.mask.scale; // Use scale directly (1.0 = 100%)
+              uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
+              
+              console.log(`Mask uniforms for ${prefix}:`, {
+                hasMask: true,
+                offset: [light.mask.offset.x, light.mask.offset.y],
+                rotation: light.mask.rotation,
+                scale: light.mask.scale
+              });
+              
+              // Validate texture loading
+              maskTexture.baseTexture.on('loaded', () => {
+                console.log(`Mask texture loaded successfully: ${maskPath} (${maskTexture.width}x${maskTexture.height})`);
+              });
+              maskTexture.baseTexture.on('error', () => {
+                console.error(`Failed to load mask texture: ${maskPath}`);
+              });
+            } else {
+              uniforms[`${prefix}HasMask`] = false;
+            }
           });
           
-          // Initialize unused light uniforms to zero
-          for (let i = enabledLights.length; i < 4; i++) {
-            uniforms[`uLight${i}Pos`] = [0, 0, 0];
-            uniforms[`uLight${i}Type`] = 0;
-            uniforms[`uLight${i}Color`] = [0, 0, 0];
-            uniforms[`uLight${i}Intensity`] = 0;
-          }
+          // Directional Lights (up to 2)
+          directionalLights.slice(0, 2).forEach((light, i) => {
+            const prefix = `uDir${i}`;
+            uniforms[`${prefix}Enabled`] = true;
+            uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
+            uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
+            uniforms[`${prefix}Intensity`] = light.intensity;
+          });
           
-          console.log(`🚀 DYNAMIC LIGHTING: Processing ${enabledLights.length} lights with NO type restrictions!`);
-          console.log('🔍 Light types found:', enabledLights.map(l => l.type));
+          // Spotlights (up to 4)
+          spotlights.slice(0, 4).forEach((light, i) => {
+            const prefix = `uSpot${i}`;
+            uniforms[`${prefix}Enabled`] = true;
+            uniforms[`${prefix}Position`] = [
+              light.followMouse ? mousePos.x : light.position.x,
+              light.followMouse ? mousePos.y : light.position.y,
+              light.position.z
+            ];
+            uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
+            uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
+            uniforms[`${prefix}Intensity`] = light.intensity;
+            uniforms[`${prefix}Radius`] = light.radius || 150;
+            uniforms[`${prefix}ConeAngle`] = light.coneAngle || 30;
+            uniforms[`${prefix}Softness`] = light.softness || 0.5;
+            
+            // Handle mask
+            if (light.mask) {
+              console.log(`Loading mask for ${prefix}:`, light.mask);
+              const maskPath = `/light_masks/${light.mask.image}`;
+              console.log(`Mask texture path: ${maskPath}`);
+              
+              const maskTexture = PIXI.Texture.from(maskPath);
+              uniforms[`${prefix}HasMask`] = true;
+              uniforms[`${prefix}Mask`] = maskTexture;
+              uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
+              uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
+              uniforms[`${prefix}MaskScale`] = light.mask.scale; // Use scale directly (1.0 = 100%)
+              uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
+              
+              console.log(`Mask uniforms for ${prefix}:`, {
+                hasMask: true,
+                offset: [light.mask.offset.x, light.mask.offset.y],
+                rotation: light.mask.rotation,
+                scale: light.mask.scale
+              });
+              
+              // Validate texture loading
+              maskTexture.baseTexture.on('loaded', () => {
+                console.log(`Mask texture loaded successfully: ${maskPath} (${maskTexture.width}x${maskTexture.height})`);
+              });
+              maskTexture.baseTexture.on('error', () => {
+                console.error(`Failed to load mask texture: ${maskPath}`);
+              });
+            } else {
+              uniforms[`${prefix}HasMask`] = false;
+            }
+          });
+
+          console.log('DEBUG: All lights config:', lightsConfig.map(l => ({id: l.id, type: l.type, enabled: l.enabled})));
+          console.log('DEBUG: Enabled lights:', enabledLights.map(l => ({id: l.id, type: l.type})));
+          console.log('DEBUG: Point lights found:', pointLights.map(l => ({id: l.id, enabled: l.enabled})));
+          console.log('Expanded Lights:', { 
+            pointLights: pointLights.length, 
+            directionalLights: directionalLights.length, 
+            spotlights: spotlights.length 
+          });
 
           return uniforms;
         };
@@ -216,7 +316,7 @@ const PixiDemo = (props: PixiDemoProps) => {
        
       // Background shader and mesh (using unified sprite shader)
       const lightUniforms = createLightUniforms();
-      const bgShaderUniforms = {
+      const bgShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, {
         uDiffuse: bgDiffuse,
         uNormal: bgNormal,
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
@@ -226,36 +326,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uAmbientLight: ambientLight.intensity,
         uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
         ...lightUniforms
-      };
-      
-      console.log('🔧 SHADER UNIFORMS CHECK:', {
-        totalUniforms: Object.keys(bgShaderUniforms).length,
-        lightCount: bgShaderUniforms.uLightCount,
-        hasLightTypes: 'uLightTypes' in bgShaderUniforms,
-        hasLightPositions: 'uLightPositions' in bgShaderUniforms
       });
-      
-      const bgShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, bgShaderUniforms);
-      
-      // Check if shader compiled successfully
-      if (!bgShader.program.valid) {
-        console.error('❌ SHADER COMPILATION FAILED!');
-        console.error('Shader errors:', bgShader.program.errors);
-      } else {
-        console.log('✅ SHADER COMPILED SUCCESSFULLY');
-      }
-      
-      // Check specific uniforms in the compiled shader
-      try {
-        console.log('🔍 SHADER UNIFORM STATUS:', {
-          programValid: bgShader.program.valid,
-          uniformCount: Object.keys(bgShader.uniforms).length,
-          hasLightCount: 'uLightCount' in bgShader.uniforms,
-          uniformNames: Object.keys(bgShader.uniforms).filter(name => name.startsWith('uLight')).slice(0, 10)
-        });
-      } catch (e) {
-        console.error('❌ Error checking shader uniforms:', e);
-      }
 
       const bgMesh = new PIXI.Mesh(geometry, bgShader as any);
       bgMesh.x = 0;
