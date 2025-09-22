@@ -355,6 +355,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         shader.uniforms.uLightRadius = Math.max(shaderParams.lightRadius, 1.0); // Prevent division by zero
         shader.uniforms.uLightColor = [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB];
         shader.uniforms.uAmbientLight = shaderParams.ambientLight;
+        shader.uniforms.uLightZ = shaderParams.lightZ;
       }
     });
   }, [shaderParams, mousePos]);
