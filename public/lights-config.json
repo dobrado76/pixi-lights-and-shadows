@@ -4,8 +4,8 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.2,
-      "color": "0xffffff"
+      "brightness": 0.18,
+      "color": "0xfafafa"
     },
     {
       "id": "mouse_light",
@@ -23,7 +23,7 @@
       "id": "directional_light",
       "type": "directional",
       "enabled": false,
-      "brightness": 0.8,
+      "brightness": 0.5,
       "color": "0xffffff",
       "directionX": 1,
       "directionY": 1,
