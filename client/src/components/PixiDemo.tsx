@@ -310,6 +310,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniform sampler2D uNormal;
         uniform vec2 uSpritePos;
         uniform vec2 uSpriteSize;
+        uniform vec2 uCanvasSize;
         uniform vec3 uColor;
         uniform float uAmbientLight;
         uniform vec3 uAmbientColor;
@@ -355,8 +356,8 @@ const PixiDemo = (props: PixiDemoProps) => {
           );
           
           // Apply scale and convert to UV coordinates - PIXEL PERFECT
-          // Scale 1.0 = mask covers entire 800x600 canvas exactly
-          vec2 maskUV = (rotatedPos / (scale * 800.0)) + 0.5;
+          // Scale 1.0 = mask covers entire canvas width exactly
+          vec2 maskUV = (rotatedPos / (scale * uCanvasSize.x)) + 0.5;
           
           // Sample mask (clamp to avoid edge artifacts)
           if (maskUV.x < 0.0 || maskUV.x > 1.0 || maskUV.y < 0.0 || maskUV.y > 1.0) {
@@ -599,6 +600,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uSpritePos: [0, 0], // Background covers entire canvas starting at (0,0)
         uSpriteSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Full canvas size
+        uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Canvas dimensions for pixel-perfect scaling
         uAmbientLight: ambientLight.intensity,
         uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
         ...lightUniforms
@@ -643,6 +645,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uSpritePos:  [ballPos.x, ballPos.y],
         uSpriteSize: [ballDiffuse.width, ballDiffuse.height],
+        uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Canvas dimensions for pixel-perfect scaling
         uAmbientLight: ambientLight.intensity,
         uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
         ...lightUniforms
@@ -659,6 +662,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uSpritePos: [blockPos.x, blockPos.y],
         uSpriteSize: [blockDiffuse.width, blockDiffuse.height],
+        uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Canvas dimensions for pixel-perfect scaling
         uAmbientLight: ambientLight.intensity,
         uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
         ...lightUniforms
@@ -790,6 +794,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uColor = [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB];
       uniforms.uAmbientLight = ambientLight.intensity;
       uniforms.uAmbientColor = [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b];
+      uniforms.uCanvasSize = [shaderParams.canvasWidth, shaderParams.canvasHeight];
       
       return uniforms;
     };
