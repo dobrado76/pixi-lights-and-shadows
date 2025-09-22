@@ -167,137 +167,87 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         console.log('Textures loaded, creating geometries...');
 
-        // Helper function to convert external lights config to shader uniforms
+        // 🔥 UNLIMITED DYNAMIC LIGHTING SYSTEM - NO HARDCODED LIMITS 🔥
         const createLightUniforms = () => {
           const uniforms: any = {};
           
-          // Get all enabled lights by type
+          // Get all enabled lights - UNLIMITED
           const enabledLights = lightsConfig.filter(light => light.enabled);
-          const pointLights = enabledLights.filter(light => light.type === 'point');
-          const directionalLights = enabledLights.filter(light => light.type === 'directional');
-          const spotlights = enabledLights.filter(light => light.type === 'spotlight');
+          const lightCount = enabledLights.length;
           
-          // Initialize all lights as disabled
-          uniforms.uPoint0Enabled = false; uniforms.uPoint1Enabled = false; uniforms.uPoint2Enabled = false; uniforms.uPoint3Enabled = false;
-          uniforms.uDir0Enabled = false; uniforms.uDir1Enabled = false;
-          uniforms.uSpot0Enabled = false; uniforms.uSpot1Enabled = false; uniforms.uSpot2Enabled = false; uniforms.uSpot3Enabled = false;
+          console.log(`🔥 UNLIMITED LIGHTING: Processing ${lightCount} lights (NO LIMITS!)`);
+          console.log('Active lights:', enabledLights.map(l => `${l.id}(${l.type})`).join(', '));
           
-          // Initialize all masks as disabled
-          uniforms.uPoint0HasMask = false; uniforms.uPoint1HasMask = false; uniforms.uPoint2HasMask = false; uniforms.uPoint3HasMask = false;
-          uniforms.uSpot0HasMask = false; uniforms.uSpot1HasMask = false; uniforms.uSpot2HasMask = false; uniforms.uSpot3HasMask = false;
+          // Initialize dynamic arrays - sized exactly to what we need
+          uniforms.uLightCount = lightCount;
+          uniforms.uLightTypes = [];
+          uniforms.uLightPositions = [];
+          uniforms.uLightDirections = [];
+          uniforms.uLightColors = [];
+          uniforms.uLightIntensities = [];
+          uniforms.uLightRadii = [];
+          uniforms.uLightConeAngles = [];
+          uniforms.uLightSoftness = [];
+          uniforms.uLightHasMask = [];
+          uniforms.uLightMasks = [];
+          uniforms.uLightMaskOffsets = [];
+          uniforms.uLightMaskRotations = [];
+          uniforms.uLightMaskScales = [];
+          uniforms.uLightMaskSizes = [];
           
-          // Point Lights (up to 4)
-          pointLights.slice(0, 4).forEach((light, i) => {
-            const prefix = `uPoint${i}`;
-            uniforms[`${prefix}Enabled`] = true;
-            uniforms[`${prefix}Position`] = [
-              light.followMouse ? mousePos.x : light.position.x,
-              light.followMouse ? mousePos.y : light.position.y,
-              light.position.z
-            ];
-            uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
-            uniforms[`${prefix}Intensity`] = light.intensity;
-            uniforms[`${prefix}Radius`] = light.radius || 200;
+          // Process ALL lights dynamically - NO LIMITS
+          enabledLights.forEach((light, i) => {
+            // Light type mapping: 0=point, 1=directional, 2=spotlight
+            let lightType = 0;
+            if (light.type === 'directional') lightType = 1;
+            else if (light.type === 'spotlight') lightType = 2;
             
-            // Handle mask
-            if (light.mask) {
-              console.log(`Loading mask for ${prefix}:`, light.mask);
-              const maskPath = `/light_masks/${light.mask.image}`;
-              console.log(`Mask texture path: ${maskPath}`);
-              
-              const maskTexture = PIXI.Texture.from(maskPath);
-              uniforms[`${prefix}HasMask`] = true;
-              uniforms[`${prefix}Mask`] = maskTexture;
-              uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
-              uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
-              uniforms[`${prefix}MaskScale`] = light.mask.scale; // Use scale directly (1.0 = 100%)
-              uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
-              
-              console.log(`Mask uniforms for ${prefix}:`, {
-                hasMask: true,
-                offset: [light.mask.offset.x, light.mask.offset.y],
-                rotation: light.mask.rotation,
-                scale: light.mask.scale
-              });
-              
-              // Validate texture loading
-              maskTexture.baseTexture.on('loaded', () => {
-                console.log(`Mask texture loaded successfully: ${maskPath} (${maskTexture.width}x${maskTexture.height})`);
-              });
-              maskTexture.baseTexture.on('error', () => {
-                console.error(`Failed to load mask texture: ${maskPath}`);
-              });
+            uniforms.uLightTypes[i] = lightType;
+            
+            // Position (for point and spotlights)
+            if (light.type === 'point') {
+              uniforms.uLightPositions[i] = [
+                light.followMouse ? mousePos.x : light.position.x,
+                light.followMouse ? mousePos.y : light.position.y,
+                light.position.z
+              ];
             } else {
-              uniforms[`${prefix}HasMask`] = false;
+              uniforms.uLightPositions[i] = [light.position.x, light.position.y, light.position.z];
             }
-          });
-          
-          // Directional Lights (up to 2)
-          directionalLights.slice(0, 2).forEach((light, i) => {
-            const prefix = `uDir${i}`;
-            uniforms[`${prefix}Enabled`] = true;
-            uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
-            uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
-            uniforms[`${prefix}Intensity`] = light.intensity;
-          });
-          
-          // Spotlights (up to 4)
-          spotlights.slice(0, 4).forEach((light, i) => {
-            const prefix = `uSpot${i}`;
-            uniforms[`${prefix}Enabled`] = true;
-            uniforms[`${prefix}Position`] = [
-              light.followMouse ? mousePos.x : light.position.x,
-              light.followMouse ? mousePos.y : light.position.y,
-              light.position.z
-            ];
-            uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
-            uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
-            uniforms[`${prefix}Intensity`] = light.intensity;
-            uniforms[`${prefix}Radius`] = light.radius || 150;
-            uniforms[`${prefix}ConeAngle`] = light.coneAngle || 30;
-            uniforms[`${prefix}Softness`] = light.softness || 0.5;
             
-            // Handle mask
+            // Direction (for directional and spotlights)
+            uniforms.uLightDirections[i] = [light.direction?.x || 0, light.direction?.y || 0, light.direction?.z || 0];
+            
+            // Common properties
+            uniforms.uLightColors[i] = [light.color.r, light.color.g, light.color.b];
+            uniforms.uLightIntensities[i] = light.intensity;
+            uniforms.uLightRadii[i] = light.radius || 200;
+            uniforms.uLightConeAngles[i] = light.coneAngle || 30;
+            uniforms.uLightSoftness[i] = light.softness || 0.5;
+            
+            // Handle masks - UNLIMITED mask support
             if (light.mask) {
-              console.log(`Loading mask for ${prefix}:`, light.mask);
               const maskPath = `/light_masks/${light.mask.image}`;
-              console.log(`Mask texture path: ${maskPath}`);
-              
               const maskTexture = PIXI.Texture.from(maskPath);
-              uniforms[`${prefix}HasMask`] = true;
-              uniforms[`${prefix}Mask`] = maskTexture;
-              uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
-              uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
-              uniforms[`${prefix}MaskScale`] = light.mask.scale; // Use scale directly (1.0 = 100%)
-              uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
               
-              console.log(`Mask uniforms for ${prefix}:`, {
-                hasMask: true,
-                offset: [light.mask.offset.x, light.mask.offset.y],
-                rotation: light.mask.rotation,
-                scale: light.mask.scale
-              });
+              uniforms.uLightHasMask[i] = true;
+              uniforms.uLightMasks[i] = maskTexture;
+              uniforms.uLightMaskOffsets[i] = [light.mask.offset.x, light.mask.offset.y];
+              uniforms.uLightMaskRotations[i] = light.mask.rotation;
+              uniforms.uLightMaskScales[i] = light.mask.scale;
+              uniforms.uLightMaskSizes[i] = [maskTexture.width, maskTexture.height];
               
-              // Validate texture loading
-              maskTexture.baseTexture.on('loaded', () => {
-                console.log(`Mask texture loaded successfully: ${maskPath} (${maskTexture.width}x${maskTexture.height})`);
-              });
-              maskTexture.baseTexture.on('error', () => {
-                console.error(`Failed to load mask texture: ${maskPath}`);
-              });
+              console.log(`🎭 Mask loaded for light ${i}: ${light.mask.image}`);
             } else {
-              uniforms[`${prefix}HasMask`] = false;
+              uniforms.uLightHasMask[i] = false;
+              uniforms.uLightMasks[i] = null;
+              uniforms.uLightMaskOffsets[i] = [0, 0];
+              uniforms.uLightMaskRotations[i] = 0;
+              uniforms.uLightMaskScales[i] = 1;
+              uniforms.uLightMaskSizes[i] = [1, 1];
             }
           });
 
-          console.log('DEBUG: All lights config:', lightsConfig.map(l => ({id: l.id, type: l.type, enabled: l.enabled})));
-          console.log('DEBUG: Enabled lights:', enabledLights.map(l => ({id: l.id, type: l.type})));
-          console.log('DEBUG: Point lights found:', pointLights.map(l => ({id: l.id, enabled: l.enabled})));
-          console.log('Expanded Lights:', { 
-            pointLights: pointLights.length, 
-            directionalLights: directionalLights.length, 
-            spotlights: spotlights.length 
-          });
 
           return uniforms;
         };

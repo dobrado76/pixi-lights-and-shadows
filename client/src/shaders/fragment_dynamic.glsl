@@ -9,26 +9,28 @@ uniform vec3 uColor;
 uniform float uAmbientLight;
 uniform vec3 uAmbientColor;
 
-// Unlimited Dynamic Light System 
-// No hardcoded limits - arrays sized dynamically by JavaScript
+// Dynamic Light System - unlimited lights using arrays
+#define MAX_LIGHTS 64
 
+// Light types: 0=point, 1=directional, 2=spotlight
 uniform int uLightCount;
-uniform int uLightTypes[256];        // Compilation limit only, actual usage unlimited
-uniform vec3 uLightPositions[256];
-uniform vec3 uLightDirections[256];
-uniform vec3 uLightColors[256];
-uniform float uLightIntensities[256];
-uniform float uLightRadii[256];
-uniform float uLightConeAngles[256];
-uniform float uLightSoftness[256];
+uniform int uLightTypes[MAX_LIGHTS];
+uniform bool uLightEnabled[MAX_LIGHTS];
+uniform vec3 uLightPositions[MAX_LIGHTS];
+uniform vec3 uLightDirections[MAX_LIGHTS];
+uniform vec3 uLightColors[MAX_LIGHTS];
+uniform float uLightIntensities[MAX_LIGHTS];
+uniform float uLightRadii[MAX_LIGHTS];
+uniform float uLightConeAngles[MAX_LIGHTS];
+uniform float uLightSoftness[MAX_LIGHTS];
 
-// Mask system - unlimited
-uniform bool uLightHasMask[256];
-uniform sampler2D uLightMasks[256];
-uniform vec2 uLightMaskOffsets[256];
-uniform float uLightMaskRotations[256];
-uniform float uLightMaskScales[256];
-uniform vec2 uLightMaskSizes[256];
+// Mask system
+uniform bool uLightHasMask[MAX_LIGHTS];
+uniform sampler2D uLightMasks[MAX_LIGHTS];
+uniform vec2 uLightMaskOffsets[MAX_LIGHTS];
+uniform float uLightMaskRotations[MAX_LIGHTS];
+uniform float uLightMaskScales[MAX_LIGHTS];
+uniform vec2 uLightMaskSizes[MAX_LIGHTS];
 
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
@@ -69,9 +71,10 @@ void main(void) {
   // Start with ambient lighting
   vec3 finalColor = diffuseColor.rgb * uAmbientLight * uAmbientColor;
   
-  // Dynamic light processing loop - handles unlimited lights
-  for (int i = 0; i < 256; i++) {
+  // Dynamic light processing loop
+  for (int i = 0; i < MAX_LIGHTS; i++) {
     if (i >= uLightCount) break;
+    if (!uLightEnabled[i]) continue;
     
     vec3 lightContribution = vec3(0.0);
     
