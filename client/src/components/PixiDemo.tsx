@@ -199,7 +199,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           // Calculate world position
           vec2 worldPos = uSpritePos + uv * uSpriteSize;
           
-          // Add Z component to light position (light hovering above surface)
+          // Add Z component to light position (low slider = close, high slider = far)
           vec3 lightPos3D = vec3(uLightPos.x, uLightPos.y, uLightZ);
           vec3 worldPos3D = vec3(worldPos.x, worldPos.y, 0.0);
           
