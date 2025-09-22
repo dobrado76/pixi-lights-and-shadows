@@ -4,13 +4,13 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 1,
+      "brightness": 0.25,
       "color": "0xfafafa"
     },
     {
       "id": "mouse_light",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 2.2,
       "color": "0xffffff",
       "x": 270,
@@ -23,7 +23,7 @@
       "id": "directional_light",
       "type": "directional",
       "enabled": true,
-      "brightness": 1.1,
+      "brightness": 1.7,
       "color": "0x1c4027",
       "directionX": 1,
       "directionY": 1,
@@ -85,7 +85,7 @@
     {
       "id": "point_1758536509084",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 2.6,
       "color": "0xe12323",
       "x": 370,
