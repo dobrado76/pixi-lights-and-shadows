@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Light } from '@shared/lights';
+import { Light, MaskConfig } from '@shared/lights';
 import { Plus, Trash2, Copy, Edit3, ImageIcon } from 'lucide-react';
 
 interface DynamicLightControlsProps {
@@ -122,7 +122,13 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
 
   // Helper to add mask to a light
   const addMask = (lightId: string) => {
-    updateLight(lightId, { mask: availableMasks[0] || '' });
+    const defaultMask: MaskConfig = {
+      image: availableMasks[0] || '',
+      offset: { x: 0, y: 0 },
+      rotation: 0,
+      scale: 1
+    };
+    updateLight(lightId, { mask: defaultMask });
   };
 
   // Helper to remove mask from a light
@@ -132,7 +138,23 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
 
   // Helper to change mask for a light
   const changeMask = (lightId: string, maskFile: string) => {
-    updateLight(lightId, { mask: maskFile });
+    const currentMask = localLights.find(l => l.id === lightId)?.mask;
+    const newMask: MaskConfig = {
+      image: maskFile,
+      offset: currentMask?.offset || { x: 0, y: 0 },
+      rotation: currentMask?.rotation || 0,
+      scale: currentMask?.scale || 1
+    };
+    updateLight(lightId, { mask: newMask });
+  };
+
+  // Helper to update mask properties
+  const updateMaskProperty = (lightId: string, property: keyof MaskConfig, value: any) => {
+    const currentMask = localLights.find(l => l.id === lightId)?.mask;
+    if (currentMask) {
+      const newMask = { ...currentMask, [property]: value };
+      updateLight(lightId, { mask: newMask });
+    }
   };
 
   // Helper to add a new light
@@ -308,7 +330,7 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
                 )}
               </div>
               <div className="flex items-center space-x-1">
-                {!light.mask && (
+                {!light.mask && (light.type === 'point' || light.type === 'spotlight') && (
                   <button
                     onClick={() => addMask(light.id)}
                     className="bg-purple-600 hover:bg-purple-700 text-white p-1 rounded text-xs flex items-center"
@@ -566,15 +588,15 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
               </div>
             )}
 
-            {/* Mask Controls - Show at bottom when mask is present */}
-            {light.mask && (
+            {/* Mask Controls - Show at bottom when mask is present for point/spotlight only */}
+            {light.mask && (light.type === 'point' || light.type === 'spotlight') && (
               <div className="mt-2 pt-2 border-t border-border/50">
                 <div className="flex items-center justify-between space-x-2">
                   <label className="text-xs text-muted-foreground min-w-[40px]">
                     Mask:
                   </label>
                   <select
-                    value={light.mask}
+                    value={light.mask?.image || ''}
                     onChange={(e) => changeMask(light.id, e.target.value)}
                     className="flex-1 bg-input border border-border rounded px-2 py-1 text-xs text-foreground"
                     data-testid={`dropdown-mask-${light.id}`}
@@ -593,6 +615,79 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
                   >
                     <Trash2 size={10} />
                   </button>
+                </div>
+                
+                {/* Mask Properties Controls */}
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {/* Offset X/Y */}
+                  <div className="flex items-center space-x-1">
+                    <label className="text-xs text-muted-foreground min-w-[30px]">
+                      OX: {light.mask?.offset.x || 0}
+                    </label>
+                    <input
+                      type="range"
+                      min="-200"
+                      max="200"
+                      step="5"
+                      value={light.mask?.offset.x || 0}
+                      onChange={(e) => updateMaskProperty(light.id, 'offset', { 
+                        ...light.mask?.offset, 
+                        x: parseFloat(e.target.value) 
+                      })}
+                      className="flex-1"
+                      data-testid={`slider-${light.id}-mask-offset-x`}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <label className="text-xs text-muted-foreground min-w-[30px]">
+                      OY: {light.mask?.offset.y || 0}
+                    </label>
+                    <input
+                      type="range"
+                      min="-200"
+                      max="200"
+                      step="5"
+                      value={light.mask?.offset.y || 0}
+                      onChange={(e) => updateMaskProperty(light.id, 'offset', { 
+                        ...light.mask?.offset, 
+                        y: parseFloat(e.target.value) 
+                      })}
+                      className="flex-1"
+                      data-testid={`slider-${light.id}-mask-offset-y`}
+                    />
+                  </div>
+                  
+                  {/* Rotation and Scale */}
+                  <div className="flex items-center space-x-1">
+                    <label className="text-xs text-muted-foreground min-w-[30px]">
+                      R: {light.mask?.rotation || 0}°
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="360"
+                      step="5"
+                      value={light.mask?.rotation || 0}
+                      onChange={(e) => updateMaskProperty(light.id, 'rotation', parseFloat(e.target.value))}
+                      className="flex-1"
+                      data-testid={`slider-${light.id}-mask-rotation`}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <label className="text-xs text-muted-foreground min-w-[30px]">
+                      S: {light.mask?.scale.toFixed(1) || 1.0}
+                    </label>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="3"
+                      step="0.1"
+                      value={light.mask?.scale || 1}
+                      onChange={(e) => updateMaskProperty(light.id, 'scale', parseFloat(e.target.value))}
+                      className="flex-1"
+                      data-testid={`slider-${light.id}-mask-scale`}
+                    />
+                  </div>
                 </div>
               </div>
             )}

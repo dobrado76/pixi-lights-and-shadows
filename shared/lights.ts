@@ -1,5 +1,13 @@
 export type LightType = 'ambient' | 'point' | 'directional' | 'spotlight';
 
+// Mask configuration interface
+export interface MaskConfig {
+  image: string;
+  offset: { x: number; y: number };
+  rotation: number; // degrees
+  scale: number;
+}
+
 // JSON format from external config file
 export interface LightConfig {
   id: string;
@@ -26,7 +34,7 @@ export interface LightConfig {
   coneAngle?: number;
   softness?: number;
   followMouse?: boolean;
-  mask?: string; // filename of the mask texture
+  mask?: MaskConfig; // mask configuration object
 }
 
 // Internal runtime format
@@ -66,7 +74,7 @@ export interface Light {
   softness?: number;
   
   // Mask properties
-  mask?: string; // filename of the mask texture
+  mask?: MaskConfig; // mask configuration object
 }
 
 export const createDefaultLight = (type: LightType, id?: string): Light => {
@@ -167,7 +175,19 @@ export const convertConfigToLight = (config: LightConfig): Light => {
   if (config.radius !== undefined) light.radius = config.radius;
   if (config.coneAngle !== undefined) light.coneAngle = config.coneAngle;
   if (config.softness !== undefined) light.softness = config.softness;
-  if (config.mask !== undefined) light.mask = config.mask;
+  if (config.mask !== undefined) {
+    if (typeof config.mask === 'string') {
+      // Handle legacy string format
+      light.mask = {
+        image: config.mask,
+        offset: { x: 0, y: 0 },
+        rotation: 0,
+        scale: 1
+      };
+    } else {
+      light.mask = config.mask;
+    }
+  }
 
   return light;
 };
