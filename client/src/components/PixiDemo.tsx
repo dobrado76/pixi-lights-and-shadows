@@ -751,9 +751,14 @@ const PixiDemo = (props: PixiDemoProps) => {
         renderMultiPass(lightsConfig);
       } else {
         console.log(`⚡ SINGLE-PASS: Rendering ${lightCount} lights directly to screen (≤8 lights)`);
-        // Single-pass: Set all meshes to NORMAL and render directly to screen
+        // Single-pass: Ensure meshes are on main stage and render directly
         meshesRef.current.forEach(mesh => {
           mesh.blendMode = PIXI.BLEND_MODES.NORMAL;
+          // Make sure mesh is on the main stage for single-pass rendering
+          if (mesh.parent !== pixiApp.stage) {
+            if (mesh.parent) mesh.parent.removeChild(mesh);
+            pixiApp.stage.addChild(mesh);
+          }
         });
         shadersRef.current.forEach(shader => {
           if (shader.uniforms) {

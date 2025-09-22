@@ -201,16 +201,21 @@ export const loadLightsConfig = async (configPath: string = '/api/load-lights-co
     }
     
     const config = await response.json();
-    const lights: Light[] = [];
     
-    // Convert each light config to internal format
-    for (const lightConfig of config.lights) {
-      if (lightConfig.type !== 'ambient') { // Skip ambient for now since it's handled separately
-        lights.push(convertConfigToLight(lightConfig));
+    // Check if the config is already in the new Light format (has position/direction objects)
+    if (config.lights && config.lights.length > 0 && config.lights[0].position) {
+      // New format - return directly (filter out ambient lights)
+      return config.lights.filter((light: Light) => light.type !== 'ambient');
+    } else {
+      // Old format - convert using the legacy converter
+      const lights: Light[] = [];
+      for (const lightConfig of config.lights) {
+        if (lightConfig.type !== 'ambient') {
+          lights.push(convertConfigToLight(lightConfig));
+        }
       }
+      return lights;
     }
-    
-    return lights;
   } catch (error) {
     console.error('Error loading lights configuration:', error);
     // Return fallback lights
