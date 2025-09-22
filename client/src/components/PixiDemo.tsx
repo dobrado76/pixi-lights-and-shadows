@@ -658,14 +658,6 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniforms[`${prefix}Intensity`] = light.intensity;
         uniforms[`${prefix}Radius`] = light.radius || 200;
         
-        // Debug: Log exact uniform values being set
-        console.log(`🔦 ${prefix} UNIFORM VALUES:`, {
-          position: uniforms[`${prefix}Position`],
-          color: uniforms[`${prefix}Color`],
-          intensity: uniforms[`${prefix}Intensity`],
-          radius: uniforms[`${prefix}Radius`]
-        });
-        
         // Handle mask
         if (light.mask) {
           const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
