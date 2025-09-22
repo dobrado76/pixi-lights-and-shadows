@@ -4,7 +4,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.5,
+      "brightness": 0.02,
       "color": "0xffffff"
     },
     {
@@ -22,7 +22,7 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.8,
       "color": "0xffffff",
       "directionX": 1,
@@ -32,7 +32,7 @@
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 2.8,
       "color": "0xffffff",
       "x": 80,
@@ -48,7 +48,7 @@
     {
       "id": "spotlight",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 1.1,
       "color": "0xffffff",
       "x": 290,
@@ -65,10 +65,10 @@
       "id": "point_copy_1758529441818",
       "type": "point",
       "enabled": true,
-      "brightness": 1.9,
+      "brightness": 2.5,
       "color": "0xffffff",
       "x": 140,
-      "y": 220,
+      "y": 260,
       "z": 170,
       "followMouse": false,
       "radius": 210,
