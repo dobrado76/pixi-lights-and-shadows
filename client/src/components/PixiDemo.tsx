@@ -262,12 +262,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         return geometry;
       };
       
-      // Create geometries with proper dimensions (fallback to 64x64 if texture not loaded)
-      const ballGeometry = createSpriteGeometry(ballDiffuse.width || 64, ballDiffuse.height || 64);
-      const blockGeometry = createSpriteGeometry(blockDiffuse.width || 64, blockDiffuse.height || 64);
-      
-      console.log('Ball dimensions:', ballDiffuse.width, ballDiffuse.height);
-      console.log('Block dimensions:', blockDiffuse.width, blockDiffuse.height);
+      // Use fixed sprite sizes for reliability
+      const ballGeometry = createSpriteGeometry(64, 64);
+      const blockGeometry = createSpriteGeometry(64, 64);
 
       // Ball shader and mesh
       const ballPos = { x: 120, y: 80 };
@@ -320,7 +317,9 @@ const PixiDemo = (props: PixiDemoProps) => {
 
       } catch (error) {
         console.error('Error setting up PIXI demo:', error);
-        console.error('Error details:', error.message, error.stack);
+        if (error instanceof Error) {
+          console.error('Error details:', error.message, error.stack);
+        }
       }
     };
 
