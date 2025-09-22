@@ -390,6 +390,33 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
                         />
                       </div>
                     </div>
+                    {/* Direction Controls */}
+                    <div className="grid grid-cols-3 gap-1 mt-2">
+                      {['x', 'y', 'z'].map((axis, idx) => {
+                        const value = axis === 'x' ? light.direction.x : axis === 'y' ? light.direction.y : light.direction.z;
+                        const max = 1;
+                        const min = -1;
+                        return (
+                          <div key={`dir-${axis}`} className="flex items-center space-x-1">
+                            <label className="text-xs text-muted-foreground min-w-[25px]">
+                              D{axis.toUpperCase()}: {value.toFixed(1)}
+                            </label>
+                            <input
+                              type="range"
+                              min={min}
+                              max={max}
+                              step="0.1"
+                              value={value}
+                              onChange={(e) => updateLight(light.id, { 
+                                direction: { ...light.direction, [axis]: parseFloat(e.target.value) }
+                              })}
+                              className="flex-1"
+                              data-testid={`slider-${light.id}-direction-${axis}`}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
                   </>
                 )}
               </div>
