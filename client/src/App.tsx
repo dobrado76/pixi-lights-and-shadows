@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PixiDemo from './components/PixiDemo';
 import ControlPanel from './components/ControlPanel';
 import StatusPanel from './components/StatusPanel';
@@ -44,48 +44,66 @@ export interface ShaderParams {
 }
 
 function App() {
-  const [shaderParams, setShaderParams] = useState<ShaderParams>({
-    colorR: 1,
-    colorG: 1,
-    colorB: 1,
-    waveAmplitude: 0.02,
-    waveFrequency: 8,
-    // Enhanced lighting defaults
-    lightIntensity: 1.0,
-    lightRadius: 200,
-    lightColorR: 1.0,
-    lightColorG: 0.9,
-    lightColorB: 0.8,
-    ambientLight: 0.3,
-    // Material properties
-    normalMapIntensity: 1.0,
-    specularPower: 32.0,
-    specularIntensity: 0.5,
-    metallic: 0.0,
-    roughness: 0.5,
-    // Animation controls
-    timeMultiplier: 1.0,
-    animationEnabled: true,
-    // Post-processing effects
-    contrast: 1.0,
-    saturation: 1.0,
-    brightness: 1.0,
-    // Texture controls
-    uvScaleX: 1.0,
-    uvScaleY: 1.0,
-    uvOffsetX: 0.0,
-    uvOffsetY: 0.0,
-    // Advanced lighting
-    rimLightIntensity: 0.0,
-    rimLightPower: 4.0,
-    // Resolution controls
-    canvasWidth: 400,
-    canvasHeight: 300
-  });
+  // Load saved settings from localStorage or use defaults
+  const getInitialParams = (): ShaderParams => {
+    const saved = localStorage.getItem('pixiShaderParams');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.warn('Failed to load saved shader params:', e);
+      }
+    }
+    return {
+      colorR: 1,
+      colorG: 1,
+      colorB: 1,
+      waveAmplitude: 0.02,
+      waveFrequency: 8,
+      // Enhanced lighting defaults
+      lightIntensity: 1.0,
+      lightRadius: 200,
+      lightColorR: 1.0,
+      lightColorG: 0.9,
+      lightColorB: 0.8,
+      ambientLight: 0.3,
+      // Material properties
+      normalMapIntensity: 1.0,
+      specularPower: 32.0,
+      specularIntensity: 0.5,
+      metallic: 0.0,
+      roughness: 0.5,
+      // Animation controls
+      timeMultiplier: 1.0,
+      animationEnabled: true,
+      // Post-processing effects
+      contrast: 1.0,
+      saturation: 1.0,
+      brightness: 1.0,
+      // Texture controls
+      uvScaleX: 1.0,
+      uvScaleY: 1.0,
+      uvOffsetX: 0.0,
+      uvOffsetY: 0.0,
+      // Advanced lighting
+      rimLightIntensity: 0.0,
+      rimLightPower: 4.0,
+      // Resolution controls
+      canvasWidth: 800,
+      canvasHeight: 600
+    };
+  };
+
+  const [shaderParams, setShaderParams] = useState<ShaderParams>(getInitialParams());
 
   const [geometryStatus, setGeometryStatus] = useState('Initializing...');
   const [shaderStatus, setShaderStatus] = useState('Initializing...');
   const [meshStatus, setMeshStatus] = useState('Initializing...');
+
+  // Auto-save shader params to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('pixiShaderParams', JSON.stringify(shaderParams));
+  }, [shaderParams]);
 
   return (
     <div className="min-h-screen bg-background">

@@ -39,10 +39,9 @@ const PixiDemo = (props: PixiDemoProps) => {
           antialias: true,
           resolution: window.devicePixelRatio || 1,
           autoDensity: true,
-          preference: 'webgl',
           powerPreference: 'default',
           hello: false,
-        });
+        } as any);
       } catch (webglError) {
         console.warn('WebGL failed, falling back to Canvas renderer:', webglError);
         app = new PIXI.Application({
@@ -362,7 +361,11 @@ const PixiDemo = (props: PixiDemoProps) => {
   return (
     <div 
       ref={canvasRef} 
-      style={{ width: 400, height: 300, border: '1px solid #333' }}
+      style={{ 
+        width: shaderParams.canvasWidth, 
+        height: shaderParams.canvasHeight, 
+        border: '1px solid #333' 
+      }}
       data-testid="pixi-stage"
     />
   );
