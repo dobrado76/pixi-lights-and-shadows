@@ -139,11 +139,6 @@ function App() {
                 <h2 className="text-lg font-semibold text-card-foreground" data-testid="demo-title">
                   Live Demo
                 </h2>
-                <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                  <span data-testid="canvas-dimensions">400×300</span>
-                  <div className="w-1 h-1 rounded-full bg-accent"></div>
-                  <span data-testid="canvas-fps">60 FPS</span>
-                </div>
               </div>
 
               <div className="pixi-canvas rounded-lg overflow-hidden glow" data-testid="pixi-container">

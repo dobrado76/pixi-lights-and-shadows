@@ -154,8 +154,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       onShaderUpdate?.('Normal-mapped lighting shader created for real textures');
       onMeshUpdate?.('PIXI.Mesh created with real textures and normal mapping');
 
-      // Enhanced lighting shader with sprite-local lighting support
-      const lightingFragmentShader = `
+      // Simple background shader
+      const backgroundFragmentShader = `
         precision mediump float;
         varying vec2 vTextureCoord;
         uniform sampler2D uDiffuse;
@@ -163,54 +163,69 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniform vec2 uLightPos;
         uniform vec2 uResolution;
         uniform vec3 uColor;
-        uniform float uTime;
-        // Enhanced lighting uniforms
         uniform float uLightIntensity;
         uniform float uLightRadius;
         uniform vec3 uLightColor;
         uniform float uAmbientLight;
-        // Sprite position uniforms (optional - for sprites only)
-        uniform vec2 uSpritePos;
-        uniform vec2 uSpriteSize;
 
         void main(void) {
           vec2 uv = vTextureCoord;
-          
-          // Sample textures
           vec4 diffuseColor = texture2D(uDiffuse, uv);
           vec3 normal = texture2D(uNormal, uv).rgb * 2.0 - 1.0;
           
-          // Calculate lighting - check if we have sprite uniforms
-          vec2 lightDir;
-          float lightDistance;
-          
-          if (uSpriteSize.x > 0.0 && uSpriteSize.y > 0.0) {
-            // Sprite mode: calculate world position of current pixel
-            vec2 worldPos = uSpritePos + uv * uSpriteSize;
-            lightDir = uLightPos - worldPos;
-            lightDistance = length(lightDir);
-          } else {
-            // Background mode: use UV-based lighting
-            vec2 lightPos = uLightPos / uResolution;
-            lightDir = lightPos - uv;
-            lightDistance = length(lightDir * uResolution);
-          }
-          
+          vec2 lightPos = uLightPos / uResolution;
+          vec2 lightDir = lightPos - uv;
+          float lightDistance = length(lightDir * uResolution);
           lightDir = normalize(lightDir);
           
-          // Enhanced lighting calculation with falloff
           float attenuation = 1.0 - clamp(lightDistance / uLightRadius, 0.0, 1.0);
-          attenuation = attenuation * attenuation; // Quadratic falloff
+          attenuation = attenuation * attenuation;
           
-          // Normal mapping calculation
           float normalDot = max(dot(normal.xy, lightDir), 0.0);
           float lightIntensity = normalDot * uLightIntensity * attenuation;
           
-          // Combine ambient and direct lighting
           vec3 ambientContribution = diffuseColor.rgb * uAmbientLight;
           vec3 lightContribution = diffuseColor.rgb * uLightColor * lightIntensity;
+          vec3 finalColor = (ambientContribution + lightContribution) * uColor;
           
-          // Apply color tinting to final result
+          gl_FragColor = vec4(finalColor, diffuseColor.a);
+        }
+      `;
+
+      // Simple sprite shader  
+      const spriteFragmentShader = `
+        precision mediump float;
+        varying vec2 vTextureCoord;
+        uniform sampler2D uDiffuse;
+        uniform sampler2D uNormal;
+        uniform vec2 uLightPos;
+        uniform vec2 uSpritePos;
+        uniform vec2 uSpriteSize;
+        uniform vec3 uColor;
+        uniform float uLightIntensity;
+        uniform float uLightRadius;
+        uniform vec3 uLightColor;
+        uniform float uAmbientLight;
+
+        void main(void) {
+          vec2 uv = vTextureCoord;
+          vec4 diffuseColor = texture2D(uDiffuse, uv);
+          vec3 normal = texture2D(uNormal, uv).rgb * 2.0 - 1.0;
+          
+          // Calculate world position
+          vec2 worldPos = uSpritePos + uv * uSpriteSize;
+          vec2 lightDir = uLightPos - worldPos;
+          float lightDistance = length(lightDir);
+          lightDir = normalize(lightDir);
+          
+          float attenuation = 1.0 - clamp(lightDistance / uLightRadius, 0.0, 1.0);
+          attenuation = attenuation * attenuation;
+          
+          float normalDot = max(dot(normal.xy, lightDir), 0.0);
+          float lightIntensity = normalDot * uLightIntensity * attenuation;
+          
+          vec3 ambientContribution = diffuseColor.rgb * uAmbientLight;
+          vec3 lightContribution = diffuseColor.rgb * uLightColor * lightIntensity;
           vec3 finalColor = (ambientContribution + lightContribution) * uColor;
           
           gl_FragColor = vec4(finalColor, diffuseColor.a);
@@ -218,18 +233,14 @@ const PixiDemo = (props: PixiDemoProps) => {
       `;
 
       // Background shader and mesh
-      const bgShader = PIXI.Shader.from(vertexShaderSource, lightingFragmentShader, {
+      const bgShader = PIXI.Shader.from(vertexShaderSource, backgroundFragmentShader, {
         uDiffuse: bgDiffuse,
         uNormal: bgNormal,
-        uTime: 0,
         uResolution: [shaderParams.canvasWidth, shaderParams.canvasHeight],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uLightPos: [mousePos.x, mousePos.y],
-        uSpritePos: [0, 0], // Background mode
-        uSpriteSize: [0, 0], // Background mode
-        // Enhanced lighting uniforms
         uLightIntensity: shaderParams.lightIntensity,
-        uLightRadius: Math.max(shaderParams.lightRadius, 1.0), // Prevent division by zero
+        uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
         uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
         uAmbientLight: shaderParams.ambientLight
       });
@@ -251,24 +262,24 @@ const PixiDemo = (props: PixiDemoProps) => {
         return geometry;
       };
       
-      // Create geometries with proper dimensions
-      const ballGeometry = createSpriteGeometry(ballDiffuse.width, ballDiffuse.height);
-      const blockGeometry = createSpriteGeometry(blockDiffuse.width, blockDiffuse.height);
+      // Create geometries with proper dimensions (fallback to 64x64 if texture not loaded)
+      const ballGeometry = createSpriteGeometry(ballDiffuse.width || 64, ballDiffuse.height || 64);
+      const blockGeometry = createSpriteGeometry(blockDiffuse.width || 64, blockDiffuse.height || 64);
+      
+      console.log('Ball dimensions:', ballDiffuse.width, ballDiffuse.height);
+      console.log('Block dimensions:', blockDiffuse.width, blockDiffuse.height);
 
       // Ball shader and mesh
       const ballPos = { x: 120, y: 80 };
-      const ballShader = PIXI.Shader.from(vertexShaderSource, lightingFragmentShader, {
+      const ballShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, {
         uDiffuse: ballDiffuse,
         uNormal: ballNormal,
         uLightPos: [mousePos.x, mousePos.y],
-        uResolution: [shaderParams.canvasWidth, shaderParams.canvasHeight],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
-        uTime: 0,
         uSpritePos: [ballPos.x, ballPos.y],
         uSpriteSize: [ballDiffuse.width, ballDiffuse.height],
-        // Enhanced lighting uniforms
         uLightIntensity: shaderParams.lightIntensity,
-        uLightRadius: Math.max(shaderParams.lightRadius, 1.0), // Prevent division by zero
+        uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
         uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
         uAmbientLight: shaderParams.ambientLight
       });
@@ -279,18 +290,15 @@ const PixiDemo = (props: PixiDemoProps) => {
 
       // Block shader and mesh
       const blockPos = { x: 280, y: 120 };
-      const blockShader = PIXI.Shader.from(vertexShaderSource, lightingFragmentShader, {
+      const blockShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, {
         uDiffuse: blockDiffuse,
         uNormal: blockNormal,
         uLightPos: [mousePos.x, mousePos.y],
-        uResolution: [shaderParams.canvasWidth, shaderParams.canvasHeight],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
-        uTime: 0,
         uSpritePos: [blockPos.x, blockPos.y],
         uSpriteSize: [blockDiffuse.width, blockDiffuse.height],
-        // Enhanced lighting uniforms
         uLightIntensity: shaderParams.lightIntensity,
-        uLightRadius: Math.max(shaderParams.lightRadius, 1.0), // Prevent division by zero
+        uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
         uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
         uAmbientLight: shaderParams.ambientLight
       });
@@ -312,6 +320,7 @@ const PixiDemo = (props: PixiDemoProps) => {
 
       } catch (error) {
         console.error('Error setting up PIXI demo:', error);
+        console.error('Error details:', error.message, error.stack);
       }
     };
 
