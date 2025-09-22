@@ -10,6 +10,13 @@ export interface ShaderParams {
   colorB: number;
   waveAmplitude: number;
   waveFrequency: number;
+  // Enhanced lighting controls
+  lightIntensity: number;
+  lightRadius: number;
+  lightColorR: number;
+  lightColorG: number;
+  lightColorB: number;
+  ambientLight: number;
 }
 
 function App() {
@@ -18,7 +25,14 @@ function App() {
     colorG: 1,
     colorB: 1,
     waveAmplitude: 0.02,
-    waveFrequency: 8
+    waveFrequency: 8,
+    // Enhanced lighting defaults
+    lightIntensity: 1.0,
+    lightRadius: 200,
+    lightColorR: 1.0,
+    lightColorG: 0.9,
+    lightColorB: 0.8,
+    ambientLight: 0.3
   });
 
   const [geometryStatus, setGeometryStatus] = useState('Initializing...');

@@ -78,7 +78,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       onShaderUpdate?.('Normal-mapped lighting shader created for real textures');
       onMeshUpdate?.('PIXI.Mesh created with real textures and normal mapping');
 
-      // Create lighting shader
+      // Enhanced lighting shader with new parameters
       const lightingFragmentShader = `
         precision mediump float;
         varying vec2 vTextureCoord;
@@ -88,6 +88,11 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniform vec2 uResolution;
         uniform vec3 uColor;
         uniform float uTime;
+        // Enhanced lighting uniforms
+        uniform float uLightIntensity;
+        uniform float uLightRadius;
+        uniform vec3 uLightColor;
+        uniform float uAmbientLight;
 
         void main(void) {
           vec2 uv = vTextureCoord;
@@ -96,16 +101,26 @@ const PixiDemo = (props: PixiDemoProps) => {
           vec4 diffuseColor = texture2D(uDiffuse, uv);
           vec3 normal = texture2D(uNormal, uv).rgb * 2.0 - 1.0;
           
-          // Calculate light direction
+          // Calculate light position in UV space
           vec2 lightPos = uLightPos / uResolution;
-          vec2 lightDir = normalize(lightPos - uv);
+          vec2 lightDir = lightPos - uv;
+          float lightDistance = length(lightDir * uResolution);
+          lightDir = normalize(lightDir);
           
-          // Simple normal mapping calculation
-          float lightIntensity = max(dot(normal.xy, lightDir), 0.0) + 0.3;
-          lightIntensity = mix(0.4, 1.0, lightIntensity);
+          // Enhanced lighting calculation with falloff
+          float attenuation = 1.0 - clamp(lightDistance / uLightRadius, 0.0, 1.0);
+          attenuation = attenuation * attenuation; // Quadratic falloff
           
-          // Apply lighting and color tinting
-          vec3 finalColor = diffuseColor.rgb * uColor * lightIntensity;
+          // Normal mapping calculation
+          float normalDot = max(dot(normal.xy, lightDir), 0.0);
+          float lightIntensity = normalDot * uLightIntensity * attenuation;
+          
+          // Combine ambient and direct lighting
+          vec3 ambientContribution = diffuseColor.rgb * uAmbientLight;
+          vec3 lightContribution = diffuseColor.rgb * uLightColor * lightIntensity;
+          
+          // Apply color tinting to final result
+          vec3 finalColor = (ambientContribution + lightContribution) * uColor;
           
           gl_FragColor = vec4(finalColor, diffuseColor.a);
         }
@@ -118,7 +133,12 @@ const PixiDemo = (props: PixiDemoProps) => {
         uTime: 0,
         uResolution: [400, 300],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
-        uLightPos: [mousePos.x, mousePos.y]
+        uLightPos: [mousePos.x, mousePos.y],
+        // Enhanced lighting uniforms
+        uLightIntensity: shaderParams.lightIntensity,
+        uLightRadius: Math.max(shaderParams.lightRadius, 1.0), // Prevent division by zero
+        uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
+        uAmbientLight: shaderParams.ambientLight
       });
 
       const bgMesh = new PIXI.Mesh(geometry, bgShader as any);
@@ -143,7 +163,12 @@ const PixiDemo = (props: PixiDemoProps) => {
         uLightPos: [mousePos.x, mousePos.y],
         uResolution: [400, 300],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
-        uTime: 0
+        uTime: 0,
+        // Enhanced lighting uniforms
+        uLightIntensity: shaderParams.lightIntensity,
+        uLightRadius: Math.max(shaderParams.lightRadius, 1.0), // Prevent division by zero
+        uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
+        uAmbientLight: shaderParams.ambientLight
       });
 
       const ballMesh = new PIXI.Mesh(spriteGeometry, ballShader as any);
@@ -157,7 +182,12 @@ const PixiDemo = (props: PixiDemoProps) => {
         uLightPos: [mousePos.x, mousePos.y],
         uResolution: [400, 300],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
-        uTime: 0
+        uTime: 0,
+        // Enhanced lighting uniforms
+        uLightIntensity: shaderParams.lightIntensity,
+        uLightRadius: Math.max(shaderParams.lightRadius, 1.0), // Prevent division by zero
+        uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
+        uAmbientLight: shaderParams.ambientLight
       });
 
       const blockMesh = new PIXI.Mesh(spriteGeometry, blockShader as any);
@@ -197,15 +227,21 @@ const PixiDemo = (props: PixiDemoProps) => {
 
     shadersRef.current.forEach(shader => {
       if (shader.uniforms) {
+        // Basic color and position
         shader.uniforms.uColor = [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB];
         shader.uniforms.uLightPos = [mousePos.x, mousePos.y];
+        // Enhanced lighting parameters
+        shader.uniforms.uLightIntensity = shaderParams.lightIntensity;
+        shader.uniforms.uLightRadius = Math.max(shaderParams.lightRadius, 1.0); // Prevent division by zero
+        shader.uniforms.uLightColor = [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB];
+        shader.uniforms.uAmbientLight = shaderParams.ambientLight;
       }
     });
   }, [shaderParams, mousePos]);
 
   // Animation loop
   useEffect(() => {
-    if (!pixiApp) return;
+    if (!pixiApp || !pixiApp.ticker) return;
 
     const ticker = () => {
       if (shadersRef.current.length > 0 && shadersRef.current[0].uniforms) {

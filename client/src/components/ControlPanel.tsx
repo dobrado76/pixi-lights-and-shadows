@@ -100,11 +100,122 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
             data-testid="slider-wave-frequency"
           />
         </div>
+
+        {/* Enhanced Lighting Controls */}
+        <div className="border-t border-border pt-4">
+          <h4 className="text-md font-medium text-card-foreground mb-3">
+            Mouse Lighting Effects
+          </h4>
+          
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Light Intensity: <span data-testid="value-light-intensity">{shaderParams.lightIntensity.toFixed(1)}</span>
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="3"
+              step="0.1"
+              value={shaderParams.lightIntensity}
+              onChange={(e) => setShaderParams(prev => ({...prev, lightIntensity: parseFloat(e.target.value)}))}
+              className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer"
+              data-testid="slider-light-intensity"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Light Radius: <span data-testid="value-light-radius">{shaderParams.lightRadius.toFixed(0)}</span>
+            </label>
+            <input
+              type="range"
+              min="50"
+              max="400"
+              step="10"
+              value={shaderParams.lightRadius}
+              onChange={(e) => setShaderParams(prev => ({...prev, lightRadius: parseFloat(e.target.value)}))}
+              className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer"
+              data-testid="slider-light-radius"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Ambient Light: <span data-testid="value-ambient-light">{shaderParams.ambientLight.toFixed(2)}</span>
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={shaderParams.ambientLight}
+              onChange={(e) => setShaderParams(prev => ({...prev, ambientLight: parseFloat(e.target.value)}))}
+              className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer"
+              data-testid="slider-ambient-light"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Light Color (RGB)
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value={shaderParams.lightColorR}
+                  onChange={(e) => setShaderParams(prev => ({...prev, lightColorR: parseFloat(e.target.value)}))}
+                  className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer"
+                  data-testid="slider-light-color-r"
+                />
+                <span className="text-xs text-muted-foreground" data-testid="value-light-color-r">
+                  R: {shaderParams.lightColorR.toFixed(1)}
+                </span>
+              </div>
+              <div>
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value={shaderParams.lightColorG}
+                  onChange={(e) => setShaderParams(prev => ({...prev, lightColorG: parseFloat(e.target.value)}))}
+                  className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer"
+                  data-testid="slider-light-color-g"
+                />
+                <span className="text-xs text-muted-foreground" data-testid="value-light-color-g">
+                  G: {shaderParams.lightColorG.toFixed(1)}
+                </span>
+              </div>
+              <div>
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value={shaderParams.lightColorB}
+                  onChange={(e) => setShaderParams(prev => ({...prev, lightColorB: parseFloat(e.target.value)}))}
+                  className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer"
+                  data-testid="slider-light-color-b"
+                />
+                <span className="text-xs text-muted-foreground" data-testid="value-light-color-b">
+                  B: {shaderParams.lightColorB.toFixed(1)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
         
         <button
           onClick={() => setShaderParams({
             colorR: 1, colorG: 1, colorB: 1,
-            waveAmplitude: 0.02, waveFrequency: 8
+            waveAmplitude: 0.02, waveFrequency: 8,
+            lightIntensity: 1.0, lightRadius: 200,
+            lightColorR: 1.0, lightColorG: 0.9, lightColorB: 0.8,
+            ambientLight: 0.3
           })}
           className="w-full px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
           data-testid="button-reset-defaults"
