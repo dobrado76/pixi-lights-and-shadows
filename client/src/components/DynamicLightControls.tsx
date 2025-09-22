@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Light, MaskConfig } from '@shared/lights';
-import { Plus, Trash2, Copy, Edit3, ImageIcon } from 'lucide-react';
+import { Light, MaskConfig, ShadowConfig } from '@shared/lights';
+import { Plus, Trash2, Copy, Edit3, ImageIcon, Eye, EyeOff, Moon } from 'lucide-react';
 
 interface DynamicLightControlsProps {
   lights: Light[];
   ambientLight: {intensity: number, color: {r: number, g: number, b: number}};
+  shadowConfig: ShadowConfig;
   onLightsChange: (lights: Light[]) => void;
   onAmbientChange: (ambient: {intensity: number, color: {r: number, g: number, b: number}}) => void;
+  onShadowConfigChange: (shadowConfig: ShadowConfig) => void;
 }
 
-const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientChange }: DynamicLightControlsProps) => {
+const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChange, onAmbientChange, onShadowConfigChange }: DynamicLightControlsProps) => {
   const [localLights, setLocalLights] = useState<Light[]>(lights);
   const [localAmbient, setLocalAmbient] = useState(ambientLight);
+  const [localShadowConfig, setLocalShadowConfig] = useState<ShadowConfig>(shadowConfig);
   const [newLightType, setNewLightType] = useState<'point' | 'directional' | 'spotlight'>('point');
   const [editingLightId, setEditingLightId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
@@ -49,6 +52,10 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
   useEffect(() => {
     setLocalAmbient(ambientLight);
   }, [ambientLight]);
+
+  useEffect(() => {
+    setLocalShadowConfig(shadowConfig);
+  }, [shadowConfig]);
 
   // Helper to update a specific light
   const updateLight = (lightId: string, updates: Partial<Light>) => {
@@ -272,6 +279,96 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
             data-testid="color-ambient-light"
           />
         </div>
+      </div>
+
+      {/* Shadow Configuration Panel */}
+      <div className="border-b border-border pb-2">
+        <div className="flex items-center space-x-2 mb-2">
+          <Moon size={14} className="text-muted-foreground" />
+          <h4 className="text-xs font-medium text-foreground">Shadow Configuration</h4>
+          <button
+            onClick={() => {
+              const newConfig = { ...localShadowConfig, enabled: !localShadowConfig.enabled };
+              setLocalShadowConfig(newConfig);
+              onShadowConfigChange(newConfig);
+            }}
+            className={`ml-auto p-1 rounded text-xs ${
+              localShadowConfig.enabled 
+                ? 'bg-accent text-accent-foreground' 
+                : 'bg-muted text-muted-foreground'
+            }`}
+            data-testid="button-toggle-shadows"
+          >
+            {localShadowConfig.enabled ? <Eye size={12} /> : <EyeOff size={12} />}
+          </button>
+        </div>
+        
+        {localShadowConfig.enabled && (
+          <>
+            <div className="flex items-center space-x-2 mb-1">
+              <label className="text-xs text-muted-foreground min-w-[80px]">
+                Strength: {localShadowConfig.strength.toFixed(2)}
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={localShadowConfig.strength}
+                onChange={(e) => {
+                  const newStrength = parseFloat(e.target.value);
+                  const newConfig = { ...localShadowConfig, strength: newStrength };
+                  setLocalShadowConfig(newConfig);
+                  onShadowConfigChange(newConfig);
+                }}
+                className="flex-1"
+                data-testid="slider-shadow-strength"
+              />
+            </div>
+            
+            <div className="flex items-center space-x-2 mb-1">
+              <label className="text-xs text-muted-foreground min-w-[80px]">
+                Max Length: {localShadowConfig.maxLength}
+              </label>
+              <input
+                type="range"
+                min="50"
+                max="500"
+                step="10"
+                value={localShadowConfig.maxLength}
+                onChange={(e) => {
+                  const newLength = parseFloat(e.target.value);
+                  const newConfig = { ...localShadowConfig, maxLength: newLength };
+                  setLocalShadowConfig(newConfig);
+                  onShadowConfigChange(newConfig);
+                }}
+                className="flex-1"
+                data-testid="slider-shadow-max-length"
+              />
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <label className="text-xs text-muted-foreground min-w-[80px]">
+                Height: {localShadowConfig.height}
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="50"
+                step="1"
+                value={localShadowConfig.height}
+                onChange={(e) => {
+                  const newHeight = parseFloat(e.target.value);
+                  const newConfig = { ...localShadowConfig, height: newHeight };
+                  setLocalShadowConfig(newConfig);
+                  onShadowConfigChange(newConfig);
+                }}
+                className="flex-1"
+                data-testid="slider-shadow-height"
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Compact Light Controls */}

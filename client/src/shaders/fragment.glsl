@@ -52,6 +52,10 @@ uniform bool uSpriteReceivesShadows;
 uniform float uShadowHeight; // Height of the sprite for shadow calculation
 uniform float uShadowMaxLength; // Maximum shadow length to prevent very long shadows
 
+// Global Shadow Configuration
+uniform bool uShadowsEnabled; // Global shadow enable/disable
+uniform float uShadowStrength; // Global shadow strength/opacity (0.0 - 1.0)
+
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
   vec2 relativePos = worldPos - lightPos;
@@ -134,6 +138,11 @@ float computeShadowSoftnessFromDirection(vec3 lightDirection) {
 }
 
 float applyShadow(vec2 shadowVector, vec2 currentUV, float softness) {
+  // Global shadow disable check
+  if (!uShadowsEnabled) {
+    return 1.0; // Shadows globally disabled
+  }
+  
   // Add minimum bias to prevent self-shadowing artifacts
   float shadowLength = length(shadowVector);
   float minBias = 0.02; // Minimum offset to prevent self-shadowing
@@ -153,9 +162,12 @@ float applyShadow(vec2 shadowVector, vec2 currentUV, float softness) {
   float occluderAlpha = texture2D(uDiffuse, shadowUV).a;
   
   // Apply softness to the shadow edge
-  float shadowAmount = occluderAlpha * (1.0 - softness * 0.5);
+  float rawShadowAmount = occluderAlpha * (1.0 - softness * 0.5);
   
-  return 1.0 - shadowAmount; // Return light multiplier (1.0 = no shadow, 0.0 = full shadow)
+  // Apply global shadow strength
+  float finalShadowAmount = rawShadowAmount * uShadowStrength;
+  
+  return 1.0 - finalShadowAmount; // Return light multiplier (1.0 = no shadow, 0.0 = full shadow)
 }
 
 void main(void) {

@@ -4,7 +4,7 @@ import ControlPanel from './components/ControlPanel';
 import StatusPanel from './components/StatusPanel';
 import CodeDisplay from './components/CodeDisplay';
 import DynamicLightControls from './components/DynamicLightControls';
-import { Light, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@shared/lights';
+import { Light, ShadowConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@shared/lights';
 
 export interface ShaderParams {
   colorR: number;
@@ -45,6 +45,14 @@ function App() {
     color: { r: 0.4, g: 0.4, b: 0.4 }
   });
   const [lightsLoaded, setLightsLoaded] = useState<boolean>(false);
+  
+  // Shadow configuration state
+  const [shadowConfig, setShadowConfig] = useState<ShadowConfig>({
+    enabled: true,
+    strength: 0.7,        // 70% shadow opacity
+    maxLength: 200,       // Maximum shadow length in pixels
+    height: 10            // Shadow casting height
+  });
   
 
   // Debounced save function to prevent excessive saves
@@ -157,6 +165,12 @@ function App() {
     debouncedSave(lightsConfig, newAmbient);
   }, [lightsConfig, debouncedSave]);
 
+  // Handler for shadow configuration changes
+  const handleShadowConfigChange = useCallback((newShadowConfig: ShadowConfig) => {
+    setShadowConfig(newShadowConfig);
+    // TODO: Add shadow config to save function when implementing persistence
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -199,6 +213,7 @@ function App() {
                     shaderParams={shaderParams}
                     lightsConfig={lightsConfig}
                     ambientLight={ambientLight}
+                    shadowConfig={shadowConfig}
                     onGeometryUpdate={setGeometryStatus}
                     onShaderUpdate={setShaderStatus}
                     onMeshUpdate={setMeshStatus}
@@ -219,8 +234,10 @@ function App() {
               <DynamicLightControls
                 lights={lightsConfig}
                 ambientLight={ambientLight}
+                shadowConfig={shadowConfig}
                 onLightsChange={handleLightsChange}
                 onAmbientChange={handleAmbientChange}
+                onShadowConfigChange={handleShadowConfigChange}
               />
             )}
 

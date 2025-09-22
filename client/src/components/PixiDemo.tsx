@@ -4,19 +4,20 @@ import { useCustomGeometry } from '../hooks/useCustomGeometry';
 // Vertex shader will be loaded dynamically from .glsl file
 // Fragment shader will be loaded dynamically from .glsl file
 import { ShaderParams } from '../App';
-import { Light } from '@shared/lights';
+import { Light, ShadowConfig } from '@shared/lights';
 
 interface PixiDemoProps {
   shaderParams: ShaderParams;
   lightsConfig: Light[];
   ambientLight: {intensity: number, color: {r: number, g: number, b: number}};
+  shadowConfig: ShadowConfig;
   onGeometryUpdate: (status: string) => void;
   onShaderUpdate: (status: string) => void;
   onMeshUpdate: (status: string) => void;
 }
 
 const PixiDemo = (props: PixiDemoProps) => {
-  const { shaderParams, lightsConfig, ambientLight, onGeometryUpdate, onShaderUpdate, onMeshUpdate } = props;
+  const { shaderParams, lightsConfig, ambientLight, shadowConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
   const [mousePos, setMousePos] = useState({ x: 200, y: 150 });
@@ -774,8 +775,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uCanvasSize = [shaderParams.canvasWidth, shaderParams.canvasHeight];
       
       // Global shadow properties
-      uniforms.uShadowHeight = 10.0; // Height of sprites above ground plane for shadow projection
-      uniforms.uShadowMaxLength = 200.0; // Maximum shadow length to prevent extremely long shadows
+      uniforms.uShadowHeight = shadowConfig.height; // Height of sprites above ground plane for shadow projection
+      uniforms.uShadowMaxLength = shadowConfig.maxLength; // Maximum shadow length to prevent extremely long shadows
+      uniforms.uShadowsEnabled = shadowConfig.enabled; // Global shadow enable/disable
+      uniforms.uShadowStrength = shadowConfig.strength; // Global shadow strength/opacity
       
       // Debug: Log ambient light uniforms
       console.log(`🌅 AMBIENT LIGHT VALUES:`, {
