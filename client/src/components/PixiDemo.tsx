@@ -210,7 +210,14 @@ const PixiDemo = (props: PixiDemoProps) => {
           // Use full 3D normal for proper lighting (normal.z points up)
           normal.z = sqrt(1.0 - dot(normal.xy, normal.xy)); // Reconstruct Z component
           
-          float attenuation = 1.0 - clamp(lightDistance / uLightRadius, 0.0, 1.0);
+          // Calculate 2D distance on surface for area-based attenuation
+          vec2 surfaceDistance = worldPos.xy - uLightPos.xy;
+          float surface2DDistance = length(surfaceDistance);
+          
+          // Light area increases with Z height - farther light = larger coverage area
+          float effectiveRadius = uLightRadius + (uLightZ * 2.0);
+          
+          float attenuation = 1.0 - clamp(surface2DDistance / effectiveRadius, 0.0, 1.0);
           attenuation = attenuation * attenuation;
           
           float normalDot = max(dot(normal, lightDir), 0.0);
