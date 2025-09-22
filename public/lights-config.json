@@ -1,0 +1,69 @@
+{
+  "lights": [
+    {
+      "id": "mouse_light",
+      "type": "point",
+      "enabled": true,
+      "position": { "x": 270, "y": 70, "z": 20 },
+      "direction": { "x": 0, "y": 0, "z": 0 },
+      "color": { "r": 1, "g": 1, "b": 1 },
+      "intensity": 2.2,
+      "followMouse": false,
+      "radius": 200
+    },
+    {
+      "id": "directional_light",
+      "type": "directional",
+      "enabled": true,
+      "position": { "x": 0, "y": 0, "z": 0 },
+      "direction": { "x": 1, "y": 1, "z": -1 },
+      "color": { "r": 1, "g": 1, "b": 1 },
+      "intensity": 0.8
+    },
+    {
+      "id": "spotlight_1",
+      "type": "spotlight",
+      "enabled": true,
+      "position": { "x": 80, "y": 290, "z": 80 },
+      "direction": { "x": 0, "y": 1, "z": -1 },
+      "color": { "r": 1, "g": 1, "b": 1 },
+      "intensity": 2.8,
+      "radius": 250,
+      "coneAngle": 50,
+      "softness": 0.4
+    },
+    {
+      "id": "spotlight",
+      "type": "spotlight",
+      "enabled": true,
+      "position": { "x": 290, "y": 320, "z": 50 },
+      "direction": { "x": 0, "y": 1, "z": -0.5 },
+      "color": { "r": 1, "g": 1, "b": 1 },
+      "intensity": 1.1,
+      "radius": 400,
+      "coneAngle": 43,
+      "softness": 0.5
+    },
+    {
+      "id": "point_copy_1758529441818",
+      "type": "point",
+      "enabled": true,
+      "position": { "x": 160, "y": 220, "z": 50 },
+      "direction": { "x": 0, "y": 0, "z": 0 },
+      "color": { "r": 1, "g": 1, "b": 1 },
+      "intensity": 4.7,
+      "followMouse": false,
+      "radius": 200,
+      "mask": {
+        "image": "00035-3934797537.png",
+        "offset": { "x": 15, "y": 5 },
+        "rotation": 0,
+        "scale": 1.4
+      }
+    }
+  ],
+  "ambientLight": {
+    "intensity": 0.3,
+    "color": { "r": 0.4, "g": 0.4, "b": 0.4 }
+  }
+}
