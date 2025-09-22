@@ -22,8 +22,8 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": false,
-      "brightness": 0.8,
+      "enabled": true,
+      "brightness": 1.5,
       "color": "0xffffff",
       "directionX": 1,
       "directionY": 1,
@@ -32,8 +32,8 @@
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": false,
-      "brightness": 2.8,
+      "enabled": true,
+      "brightness": 2.6,
       "color": "0xffffff",
       "x": 80,
       "y": 290,
@@ -48,12 +48,12 @@
     {
       "id": "spotlight",
       "type": "spotlight",
-      "enabled": false,
-      "brightness": 1.1,
+      "enabled": true,
+      "brightness": 2.2,
       "color": "0xffffff",
       "x": 290,
       "y": 320,
-      "z": 50,
+      "z": 80,
       "directionX": 0,
       "directionY": 1,
       "directionZ": -0.5,
@@ -64,7 +64,7 @@
     {
       "id": "point_copy_1758529441818",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 5.3,
       "color": "0xffffff",
       "x": 160,
@@ -90,7 +90,7 @@
       "color": "0xe12323",
       "x": 150,
       "y": 110,
-      "z": 200,
+      "z": 80,
       "followMouse": false,
       "radius": 200
     }
