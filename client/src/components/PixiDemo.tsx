@@ -152,6 +152,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniform vec3 uLightColor;
         uniform float uAmbientLight;
         uniform float uLightZ;
+        uniform float uDirectionalIntensity;
+        uniform vec2 uDirectionalDir;
 
         void main(void) {
           vec2 uv = vTextureCoord;
@@ -206,11 +208,17 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             normalDot = max(dot(normal, lightDir_above), 0.0);
           }
-          float lightIntensity = normalDot * uLightIntensity * attenuation;
+          float pointLightIntensity = normalDot * uLightIntensity * attenuation;
+          
+          // Add directional light (always shows normal mapping)
+          vec3 directionalDir = normalize(vec3(uDirectionalDir.x, uDirectionalDir.y, 0.5));
+          float directionalDot = max(dot(normal, directionalDir), 0.0);
+          float directionalLightIntensity = directionalDot * uDirectionalIntensity;
           
           vec3 ambientContribution = diffuseColor.rgb * uAmbientLight;
-          vec3 lightContribution = diffuseColor.rgb * uLightColor * lightIntensity;
-          vec3 finalColor = (ambientContribution + lightContribution) * uColor;
+          vec3 pointLightContribution = diffuseColor.rgb * uLightColor * pointLightIntensity;
+          vec3 directionalLightContribution = diffuseColor.rgb * vec3(1.0, 1.0, 0.9) * directionalLightIntensity;
+          vec3 finalColor = (ambientContribution + pointLightContribution + directionalLightContribution) * uColor;
           
           gl_FragColor = vec4(finalColor, diffuseColor.a);
         }
@@ -228,7 +236,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
         uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
         uAmbientLight: shaderParams.ambientLight,
-        uLightZ: shaderParams.lightZ
+        uLightZ: shaderParams.lightZ,
+        uDirectionalIntensity: shaderParams.directionalIntensity || 0.5,
+        uDirectionalDir: [shaderParams.directionalDirX || 1.0, shaderParams.directionalDirY || -1.0]
       });
 
       const bgMesh = new PIXI.Mesh(geometry, bgShader as any);
@@ -275,7 +285,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
         uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
         uAmbientLight: shaderParams.ambientLight,
-        uLightZ: shaderParams.lightZ
+        uLightZ: shaderParams.lightZ,
+        uDirectionalIntensity: shaderParams.directionalIntensity || 0.5,
+        uDirectionalDir: [shaderParams.directionalDirX || 1.0, shaderParams.directionalDirY || -1.0]
       });
 
       const ballMesh = new PIXI.Mesh(ballGeometry, ballShader as any);
@@ -294,7 +306,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
         uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
         uAmbientLight: shaderParams.ambientLight,
-        uLightZ: shaderParams.lightZ
+        uLightZ: shaderParams.lightZ,
+        uDirectionalIntensity: shaderParams.directionalIntensity || 0.5,
+        uDirectionalDir: [shaderParams.directionalDirX || 1.0, shaderParams.directionalDirY || -1.0]
       });
 
       const blockMesh = new PIXI.Mesh(blockGeometry, blockShader as any);
@@ -349,6 +363,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         shader.uniforms.uLightColor = [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB];
         shader.uniforms.uAmbientLight = shaderParams.ambientLight;
         shader.uniforms.uLightZ = shaderParams.lightZ;
+        shader.uniforms.uDirectionalIntensity = shaderParams.directionalIntensity || 0.5;
+        shader.uniforms.uDirectionalDir = [shaderParams.directionalDirX || 1.0, shaderParams.directionalDirY || -1.0];
       }
     });
   }, [shaderParams, mousePos]);

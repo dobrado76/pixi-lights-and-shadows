@@ -335,9 +335,9 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
           </label>
           <input
             type="range"
-            min="-25"
-            max="25"
-            step="1"
+            min="-100"
+            max="100"
+            step="5"
             value={shaderParams.lightZ || 0}
             onChange={(e) => setShaderParams(prev => ({...prev, lightZ: parseFloat(e.target.value)}))}
             style={{
@@ -357,6 +357,89 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
             Z: {(shaderParams.lightZ || 0).toFixed(0)} units
           </span>
         </div>
+
+        {/* Directional Light Controls */}
+        <div className="space-y-4 pt-4 border-t border-border">
+          <h3 className="text-sm font-medium text-foreground">Directional Light (Shows Normal Maps)</h3>
+          
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground" htmlFor="directional-intensity">
+              Directional Intensity: {(shaderParams.directionalIntensity || 0.5).toFixed(2)}
+            </label>
+            <input
+              id="directional-intensity"
+              type="range"
+              min="0"
+              max="2"
+              step="0.1"
+              value={shaderParams.directionalIntensity || 0.5}
+              onChange={(e) => setShaderParams(prev => ({...prev, directionalIntensity: parseFloat(e.target.value)}))}
+              style={{
+                width: '100%',
+                height: '6px',
+                borderRadius: '5px',
+                background: 'linear-gradient(to right, #333, #fff)',
+                outline: 'none',
+                cursor: 'pointer',
+                WebkitAppearance: 'none',
+                appearance: 'none'
+              }}
+              data-testid="slider-directional-intensity"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground" htmlFor="directional-dir-x">
+              Direction X: {(shaderParams.directionalDirX || 1.0).toFixed(1)}
+            </label>
+            <input
+              id="directional-dir-x"
+              type="range"
+              min="-1"
+              max="1"
+              step="0.1"
+              value={shaderParams.directionalDirX || 1.0}
+              onChange={(e) => setShaderParams(prev => ({...prev, directionalDirX: parseFloat(e.target.value)}))}
+              style={{
+                width: '100%',
+                height: '6px',
+                borderRadius: '5px',
+                background: 'linear-gradient(to right, #f00, #0f0, #00f)',
+                outline: 'none',
+                cursor: 'pointer',
+                WebkitAppearance: 'none',
+                appearance: 'none'
+              }}
+              data-testid="slider-directional-dir-x"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground" htmlFor="directional-dir-y">
+              Direction Y: {(shaderParams.directionalDirY || -1.0).toFixed(1)}
+            </label>
+            <input
+              id="directional-dir-y"
+              type="range"
+              min="-1"
+              max="1"
+              step="0.1"
+              value={shaderParams.directionalDirY || -1.0}
+              onChange={(e) => setShaderParams(prev => ({...prev, directionalDirY: parseFloat(e.target.value)}))}
+              style={{
+                width: '100%',
+                height: '6px',
+                borderRadius: '5px',
+                background: 'linear-gradient(to right, #f00, #0f0, #00f)',
+                outline: 'none',
+                cursor: 'pointer',
+                WebkitAppearance: 'none',
+                appearance: 'none'
+              }}
+              data-testid="slider-directional-dir-y"
+            />
+          </div>
+        </div>
         
         <button
           onClick={() => setShaderParams({
@@ -370,7 +453,8 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
             contrast: 1.0, saturation: 1.0, brightness: 1.0,
             uvScaleX: 1.0, uvScaleY: 1.0, uvOffsetX: 0.0, uvOffsetY: 0.0,
             rimLightIntensity: 0.0, rimLightPower: 4.0,
-            lightZ: 50.0,
+            lightZ: 0.0,
+            directionalIntensity: 0.5, directionalDirX: 1.0, directionalDirY: -1.0,
             canvasWidth: 400, canvasHeight: 300
           })}
           className="w-full px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
