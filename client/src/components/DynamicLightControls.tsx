@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Light } from '@shared/lights';
+import { Plus, Trash2 } from 'lucide-react';
 
 interface DynamicLightControlsProps {
   lights: Light[];
@@ -11,6 +12,7 @@ interface DynamicLightControlsProps {
 const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientChange }: DynamicLightControlsProps) => {
   const [localLights, setLocalLights] = useState<Light[]>(lights);
   const [localAmbient, setLocalAmbient] = useState(ambientLight);
+  const [newLightType, setNewLightType] = useState<'point' | 'directional' | 'spotlight'>('point');
 
   // Update local state when props change
   useEffect(() => {
@@ -26,6 +28,41 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
     const updatedLights = localLights.map(light => 
       light.id === lightId ? { ...light, ...updates } : light
     );
+    setLocalLights(updatedLights);
+    onLightsChange(updatedLights);
+  };
+
+  // Helper to delete a light
+  const deleteLight = (lightId: string) => {
+    const updatedLights = localLights.filter(light => light.id !== lightId);
+    setLocalLights(updatedLights);
+    onLightsChange(updatedLights);
+  };
+
+  // Helper to add a new light
+  const addNewLight = () => {
+    const newId = `${newLightType}_${Date.now()}`;
+    const baseLight: Light = {
+      id: newId,
+      type: newLightType,
+      enabled: true,
+      position: { x: 400, y: 300, z: 50 },
+      direction: { x: 0, y: 0, z: -1 },
+      color: { r: 1, g: 1, b: 1 },
+      intensity: 1.0,
+    };
+
+    // Add type-specific properties
+    if (newLightType === 'point') {
+      baseLight.radius = 200;
+      baseLight.followMouse = false;
+    } else if (newLightType === 'spotlight') {
+      baseLight.radius = 150;
+      baseLight.coneAngle = 30;
+      baseLight.softness = 0.5;
+    }
+
+    const updatedLights = [...localLights, baseLight];
     setLocalLights(updatedLights);
     onLightsChange(updatedLights);
   };
@@ -55,6 +92,33 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
         </h3>
       </div>
 
+      {/* Add New Light Section */}
+      <div className="border border-border rounded-lg p-4 bg-muted/20">
+        <div className="flex items-center space-x-2 mb-3">
+          <h4 className="text-sm font-medium text-foreground">Add New Light</h4>
+        </div>
+        <div className="flex items-center space-x-2">
+          <select
+            value={newLightType}
+            onChange={(e) => setNewLightType(e.target.value as 'point' | 'directional' | 'spotlight')}
+            className="flex-1 bg-input border border-border rounded px-3 py-2 text-sm text-foreground"
+            data-testid="dropdown-light-type"
+          >
+            <option value="point">Point Light</option>
+            <option value="directional">Directional Light</option>
+            <option value="spotlight">Spotlight</option>
+          </select>
+          <button
+            onClick={addNewLight}
+            className="flex items-center space-x-1 bg-primary text-primary-foreground px-3 py-2 rounded text-sm hover:bg-primary/90 transition-colors"
+            data-testid="button-add-light"
+          >
+            <Plus size={16} />
+            <span>Add</span>
+          </button>
+        </div>
+      </div>
+
       {/* Ambient Light Control */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-muted-foreground">
@@ -78,18 +142,31 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
 
       {/* Dynamic Light Controls */}
       {localLights.map((light) => (
-        <div key={light.id} className="border-t border-border pt-4">
+        <div key={light.id} className="border border-border rounded-lg p-4 bg-muted/10">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-medium text-foreground">
-              {light.id} ({light.type})
-            </h4>
-            <input
-              type="checkbox"
-              checked={light.enabled}
-              onChange={(e) => updateLight(light.id, { enabled: e.target.checked })}
-              className="w-4 h-4"
-              data-testid={`checkbox-${light.id}-enabled`}
-            />
+            <div className="flex items-center space-x-2">
+              <h4 className="text-sm font-medium text-foreground">
+                {light.id} ({light.type})
+              </h4>
+              <input
+                type="checkbox"
+                checked={light.enabled}
+                onChange={(e) => updateLight(light.id, { enabled: e.target.checked })}
+                className="w-4 h-4"
+                data-testid={`checkbox-${light.id}-enabled`}
+              />
+              <span className="text-xs text-muted-foreground">
+                {light.enabled ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+            <button
+              onClick={() => deleteLight(light.id)}
+              className="flex items-center space-x-1 bg-destructive text-destructive-foreground px-2 py-1 rounded text-xs hover:bg-destructive/90 transition-colors"
+              data-testid={`button-delete-${light.id}`}
+            >
+              <Trash2 size={12} />
+              <span>Delete</span>
+            </button>
           </div>
 
           {light.enabled && (
@@ -304,6 +381,13 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
           )}
         </div>
       ))}
+
+      {localLights.length === 0 && (
+        <div className="text-center py-6 text-muted-foreground">
+          <p className="text-sm">No lights configured</p>
+          <p className="text-xs">Use the "Add New Light" section above to create lights</p>
+        </div>
+      )}
     </div>
   );
 };

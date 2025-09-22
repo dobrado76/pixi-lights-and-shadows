@@ -82,7 +82,33 @@ body {
   background: hsl(var(--accent));
 }
 
-/* Remove duplicate/conflicting slider styles */
+/* Enhanced range input styling for better visibility */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent))) !important;
+  height: 20px !important;
+  width: 20px !important;
+  border-radius: 50% !important;
+  border: 2px solid hsl(var(--card)) !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  margin-top: -6px !important;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--primary))) !important;
+  transform: scale(1.1) !important;
+}
+
+input[type="range"]::-moz-range-thumb {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent))) !important;
+  height: 20px !important;
+  width: 20px !important;
+  border-radius: 50% !important;
+  border: 2px solid hsl(var(--card)) !important;
+  cursor: pointer !important;
+}
 
 /* Enhanced range input styling for better visibility */
 input[type="range"] {
