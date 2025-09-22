@@ -197,17 +197,22 @@ const PixiDemo = (props: PixiDemoProps) => {
           
           // Calculate world position
           vec2 worldPos = uSpritePos + uv * uSpriteSize;
-          vec2 lightDir = uLightPos - worldPos;
-          float lightDistance = length(lightDir);
+          
+          // Add Z component to light position (light hovering above surface)
+          vec3 lightPos3D = vec3(uLightPos.x, uLightPos.y, 50.0);
+          vec3 worldPos3D = vec3(worldPos.x, worldPos.y, 0.0);
+          
+          vec3 lightDir3D = lightPos3D - worldPos3D;
+          float lightDistance = length(lightDir3D);
           
           // Fix Y-axis for screen coordinate system (Y increases downward)
-          lightDir.y = -lightDir.y;
-          lightDir = normalize(lightDir);
+          lightDir3D.y = -lightDir3D.y;
+          vec3 lightDir = normalize(lightDir3D);
           
           float attenuation = 1.0 - clamp(lightDistance / uLightRadius, 0.0, 1.0);
           attenuation = attenuation * attenuation;
           
-          float normalDot = max(dot(normal.xy, lightDir), 0.0);
+          float normalDot = max(dot(normal.xy, lightDir.xy), 0.0);
           float lightIntensity = normalDot * uLightIntensity * attenuation;
           
           vec3 ambientContribution = diffuseColor.rgb * uAmbientLight;
