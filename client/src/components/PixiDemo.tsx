@@ -232,7 +232,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       bgMesh.x = 0;
       bgMesh.y = 0;
 
-      // Create proper sprite geometries based on texture dimensions
+      // Create normalized sprite geometries (0,0 to 1,1)
       const createSpriteGeometry = (width: number, height: number) => {
         const geometry = new PIXI.Geometry();
         const vertices = [0, 0, width, 0, width, height, 0, height];
@@ -265,7 +265,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uNormal: ballNormal,
         uLightPos: [mousePos.x, mousePos.y],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
-        uSpritePos: [ballPos.x, ballPos.y],
+        uSpritePos: [0, 0],
         uSpriteSize: [ballDiffuse.width, ballDiffuse.height],
         uLightIntensity: shaderParams.lightIntensity,
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
@@ -274,8 +274,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
 
       const ballMesh = new PIXI.Mesh(ballGeometry, ballShader as any);
-      ballMesh.x = 0;
-      ballMesh.y = 0;
+      ballMesh.x = ballPos.x;
+      ballMesh.y = ballPos.y;
 
       // Block shader and mesh
       const blockPos = { x: 280, y: 120 };
@@ -293,8 +293,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
 
       const blockMesh = new PIXI.Mesh(blockGeometry, blockShader as any);
-      blockMesh.x = 0;
-      blockMesh.y = 0;
+      blockMesh.x = blockPos.x;
+      blockMesh.y = blockPos.y;
 
       // Store references
       meshesRef.current = [bgMesh, ballMesh, blockMesh];
