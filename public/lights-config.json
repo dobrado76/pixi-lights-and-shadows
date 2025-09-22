@@ -65,21 +65,21 @@
       "id": "point_copy_1758529441818",
       "type": "point",
       "enabled": true,
-      "brightness": 4,
+      "brightness": 9,
       "color": "0xffffff",
       "x": 100,
       "y": 100,
       "z": 170,
-      "followMouse": true,
+      "followMouse": false,
       "radius": 400,
       "mask": {
-        "image": "00019-1224130474.png",
+        "image": "00003-1224130458.png",
         "offset": {
-          "x": 170,
-          "y": 200
+          "x": 15,
+          "y": 5
         },
-        "rotation": 345,
-        "scale": 1
+        "rotation": 0,
+        "scale": 0.3
       }
     }
   ]
