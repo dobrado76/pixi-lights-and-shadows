@@ -3,18 +3,17 @@ import PixiDemo from './components/PixiDemo';
 import ControlPanel from './components/ControlPanel';
 import StatusPanel from './components/StatusPanel';
 import CodeDisplay from './components/CodeDisplay';
+import { Light, createDefaultLight } from '@shared/lights';
 
 export interface ShaderParams {
   colorR: number;
   colorG: number;
   colorB: number;
-  // Enhanced lighting controls
-  lightIntensity: number;
-  lightRadius: number;
-  lightColorR: number;
-  lightColorG: number;
-  lightColorB: number;
+  
+  // Generic light system
+  lights: Light[];
   ambientLight: number;
+  
   // Material properties
   normalMapIntensity: number;
   specularPower: number;
@@ -36,24 +35,6 @@ export interface ShaderParams {
   // Advanced lighting
   rimLightIntensity: number;
   rimLightPower: number;
-  // Light positioning
-  lightZ: number;
-  // Directional light
-  directionalIntensity: number;
-  directionalAngle: number;
-  // Spotlight
-  spotlightEnabled: boolean;
-  spotlightX: number;
-  spotlightY: number;
-  spotlightZ: number;
-  spotlightDirX: number;
-  spotlightDirY: number;
-  spotlightDirZ: number;
-  spotlightIntensity: number;
-  spotlightInnerRadius: number;
-  spotlightOuterRadius: number;
-  spotlightConeAngle: number;
-  spotlightSoftness: number;
   // Resolution controls
   canvasWidth: number;
   canvasHeight: number;
@@ -74,13 +55,15 @@ function App() {
       colorR: 1,
       colorG: 1,
       colorB: 1,
-      // Enhanced lighting defaults
-      lightIntensity: 1.0,
-      lightRadius: 200,
-      lightColorR: 1.0,
-      lightColorG: 0.9,
-      lightColorB: 0.8,
+      
+      // Create default lights to match previous behavior
+      lights: [
+        createDefaultLight('point', 'mouse_light'), // Mouse-following point light
+        createDefaultLight('directional', 'directional_light'), // Directional light for normal maps
+        createDefaultLight('spotlight', 'spotlight_1'), // Optional spotlight
+      ],
       ambientLight: 0.3,
+      
       // Material properties
       normalMapIntensity: 1.0,
       specularPower: 32.0,
@@ -102,24 +85,6 @@ function App() {
       // Advanced lighting
       rimLightIntensity: 0.0,
       rimLightPower: 4.0,
-      // Light positioning
-      lightZ: 0.0,
-      // Directional light
-      directionalIntensity: 0.5,
-      directionalAngle: 315,
-      // Spotlight
-      spotlightEnabled: false,
-      spotlightX: 200,
-      spotlightY: 150,
-      spotlightZ: 100,
-      spotlightDirX: 0.0,
-      spotlightDirY: 0.0,
-      spotlightDirZ: -1.0,
-      spotlightIntensity: 2.0,
-      spotlightInnerRadius: 50,
-      spotlightOuterRadius: 150,
-      spotlightConeAngle: 30,
-      spotlightSoftness: 0.5,
       // Resolution controls
       canvasWidth: 800,
       canvasHeight: 600
