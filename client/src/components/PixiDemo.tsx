@@ -84,7 +84,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
     } catch (error) {
       console.error('PIXI Application initialization failed:', error);
-      console.error('Error details:', error.message);
+      console.error('Error details:', (error as Error).message);
       
       // Fallback display for environments without graphics support
       if (canvasRef.current) {

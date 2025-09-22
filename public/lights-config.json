@@ -4,7 +4,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.04,
+      "brightness": 0.32,
       "color": "0xffffff"
     },
     {
@@ -16,13 +16,13 @@
       "x": 200,
       "y": 150,
       "z": 20,
-      "followMouse": true,
+      "followMouse": false,
       "radius": 200
     },
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.8,
       "color": "0xffffff",
       "directionX": 1,
@@ -32,7 +32,7 @@
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": false,
+      "enabled": true,
       "brightness": 2.8,
       "color": "0xffffff",
       "x": 80,
@@ -48,7 +48,7 @@
     {
       "id": "spotlight",
       "type": "spotlight",
-      "enabled": false,
+      "enabled": true,
       "brightness": 1.1,
       "color": "0xffffff",
       "x": 290,
@@ -65,13 +65,13 @@
       "id": "point_copy_1758529441818",
       "type": "point",
       "enabled": true,
-      "brightness": 10,
+      "brightness": 4.7,
       "color": "0xffffff",
-      "x": 100,
-      "y": 100,
-      "z": 170,
+      "x": 160,
+      "y": 220,
+      "z": 50,
       "followMouse": false,
-      "radius": 360,
+      "radius": 230,
       "mask": {
         "image": "00035-3934797537.png",
         "offset": {
@@ -79,7 +79,7 @@
           "y": 5
         },
         "rotation": 0,
-        "scale": 0.3
+        "scale": 1.4
       }
     }
   ]
