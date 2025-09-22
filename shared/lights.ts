@@ -168,7 +168,7 @@ export const convertConfigToLight = (config: LightConfig): Light => {
 };
 
 // Load lights configuration from JSON
-export const loadLightsConfig = async (configPath: string = '/lights-config.json'): Promise<Light[]> => {
+export const loadLightsConfig = async (configPath: string = '/api/load-lights-config'): Promise<Light[]> => {
   try {
     const response = await fetch(configPath);
     if (!response.ok) {
@@ -198,16 +198,24 @@ export const loadLightsConfig = async (configPath: string = '/lights-config.json
 };
 
 // Get ambient light setting from config
-export const loadAmbientLight = async (configPath: string = '/lights-config.json'): Promise<number> => {
+export const loadAmbientLight = async (configPath: string = '/api/load-lights-config'): Promise<{intensity: number, color: {r: number, g: number, b: number}}> => {
   try {
     const response = await fetch(configPath);
-    if (!response.ok) return 0.3;
+    if (!response.ok) return { intensity: 0.3, color: { r: 0.4, g: 0.4, b: 0.4 } };
     
     const config = await response.json();
     const ambientLight = config.lights.find((light: LightConfig) => light.type === 'ambient');
-    return ambientLight ? ambientLight.brightness : 0.3;
+    
+    if (ambientLight) {
+      return {
+        intensity: ambientLight.brightness || 0.3,
+        color: ambientLight.color || { r: 0.4, g: 0.4, b: 0.4 }
+      };
+    }
+    
+    return { intensity: 0.3, color: { r: 0.4, g: 0.4, b: 0.4 } };
   } catch (error) {
-    return 0.3;
+    return { intensity: 0.3, color: { r: 0.4, g: 0.4, b: 0.4 } };
   }
 };
 
@@ -251,18 +259,18 @@ export const convertLightToConfig = (light: Light): LightConfig => {
 };
 
 // Save lights configuration to server
-export const saveLightsConfig = async (lights: Light[], ambientLight: number): Promise<boolean> => {
+export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity: number, color: {r: number, g: number, b: number}}): Promise<boolean> => {
   try {
     // Convert lights back to config format
     const lightConfigs = lights.map(convertLightToConfig);
     
-    // Add ambient light
+    // Add ambient light with proper color conversion
     const ambientConfig: LightConfig = {
       id: 'ambient_light',
       type: 'ambient',
       enabled: true,
-      brightness: ambientLight,
-      color: '0x666666'
+      brightness: ambientLight.intensity,
+      color: ambientLight.color
     };
     
     const config = {

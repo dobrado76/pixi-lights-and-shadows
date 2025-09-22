@@ -56,7 +56,7 @@ function App() {
     
     const timeout = setTimeout(async () => {
       try {
-        const success = await saveLightsConfig(lights, ambient.intensity);
+        const success = await saveLightsConfig(lights, ambient);
         if (success) {
           console.log('Configuration auto-saved successfully');
         } else {
@@ -122,16 +122,12 @@ function App() {
   useEffect(() => {
     const loadLights = async () => {
       try {
-        const [lights, ambientIntensity] = await Promise.all([
+        const [lights, ambientLightData] = await Promise.all([
           loadLightsConfig(),
           loadAmbientLight()
         ]);
         setLightsConfig(lights);
-        // Convert single number to object with default color
-        setAmbientLight({
-          intensity: ambientIntensity,
-          color: { r: 0.4, g: 0.4, b: 0.4 }
-        });
+        setAmbientLight(ambientLightData);
         setLightsLoaded(true);
         console.log('Loaded lights configuration:', lights);
       } catch (error) {

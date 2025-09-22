@@ -29,26 +29,47 @@ const PixiDemo = (props: PixiDemoProps) => {
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    console.log('Initializing PIXI Application...');
-    
     try {
-      // Force WebGL renderer with canvas fallback for maximum compatibility
-      PIXI.settings.PREFER_ENV = PIXI.ENV.WEBGL2;
+      console.log('Initializing PIXI Application...');
+      
+      // Reset PIXI settings for maximum compatibility
+      PIXI.settings.PREFER_ENV = PIXI.ENV.WEBGL;
       PIXI.settings.FAIL_IF_MAJOR_PERFORMANCE_CAVEAT = false;
       
-      const app = new PIXI.Application({
-        width: shaderParams.canvasWidth,
-        height: shaderParams.canvasHeight,
-        backgroundColor: 0x1a1a1a,
-        antialias: true,
-        hello: false,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
-        forceCanvas: false, // Try WebGL first
-        powerPreference: 'default',
-        preserveDrawingBuffer: false,
-        clearBeforeRender: true,
-      });
+      let app: PIXI.Application;
+      
+      try {
+        // First try WebGL
+        app = new PIXI.Application({
+          width: shaderParams.canvasWidth,
+          height: shaderParams.canvasHeight,
+          backgroundColor: 0x1a1a1a,
+          antialias: true,
+          hello: false,
+          resolution: 1, // Use fixed resolution for compatibility
+          autoDensity: false,
+          forceCanvas: false,
+          powerPreference: 'default',
+          preserveDrawingBuffer: false,
+          clearBeforeRender: true,
+        });
+      } catch (webglError) {
+        console.warn('WebGL failed, trying Canvas fallback:', webglError);
+        // Fallback to Canvas renderer
+        app = new PIXI.Application({
+          width: shaderParams.canvasWidth,
+          height: shaderParams.canvasHeight,
+          backgroundColor: 0x1a1a1a,
+          antialias: false, // Disable for canvas
+          hello: false,
+          resolution: 1,
+          autoDensity: false,
+          forceCanvas: true, // Force Canvas renderer
+          powerPreference: 'default',
+          preserveDrawingBuffer: false,
+          clearBeforeRender: true,
+        });
+      }
 
       // Access canvas using proper PIXI.js property
       const canvas = app.view as HTMLCanvasElement;
@@ -230,6 +251,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniform vec2 uSpriteSize;
         uniform vec3 uColor;
         uniform float uAmbientLight;
+        uniform vec3 uAmbientColor;
         
         // Point Light (index 0 - mouse following)
         uniform bool uLight0Enabled;
@@ -264,7 +286,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           vec3 worldPos3D = vec3(worldPos.x, worldPos.y, 0.0);
           
           // Start with ambient lighting
-          vec3 finalColor = diffuseColor.rgb * uAmbientLight;
+          vec3 finalColor = diffuseColor.rgb * uAmbientLight * uAmbientColor;
           
           // Point Light (Light 0)
           if (uLight0Enabled) {
