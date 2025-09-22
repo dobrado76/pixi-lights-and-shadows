@@ -38,6 +38,8 @@ export interface ShaderParams {
   // Advanced lighting
   rimLightIntensity: number;
   rimLightPower: number;
+  // Light positioning
+  lightZ: number;
   // Resolution controls
   canvasWidth: number;
   canvasHeight: number;
@@ -88,6 +90,8 @@ function App() {
       // Advanced lighting
       rimLightIntensity: 0.0,
       rimLightPower: 4.0,
+      // Light positioning
+      lightZ: 50.0,
       // Resolution controls
       canvasWidth: 800,
       canvasHeight: 600

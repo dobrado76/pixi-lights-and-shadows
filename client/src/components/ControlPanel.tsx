@@ -329,6 +329,35 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
           </div>
         </div>
         
+        <div>
+          <label className="block text-sm font-medium text-muted-foreground mb-2">
+            Light Z Position
+          </label>
+          <input
+            type="range"
+            min="10"
+            max="200"
+            step="5"
+            value={shaderParams.lightZ || 50}
+            onChange={(e) => setShaderParams(prev => ({...prev, lightZ: parseFloat(e.target.value)}))}
+            style={{
+              width: '100%',
+              height: '6px',
+              background: '#374151',
+              borderRadius: '4px',
+              border: '1px solid #4B5563',
+              outline: 'none',
+              cursor: 'pointer',
+              WebkitAppearance: 'none',
+              appearance: 'none'
+            }}
+            data-testid="slider-light-z"
+          />
+          <span className="text-xs text-muted-foreground" data-testid="value-light-z">
+            Z: {(shaderParams.lightZ || 50).toFixed(0)} units
+          </span>
+        </div>
+        
         <button
           onClick={() => setShaderParams({
             colorR: 1, colorG: 1, colorB: 1,
@@ -341,6 +370,7 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
             contrast: 1.0, saturation: 1.0, brightness: 1.0,
             uvScaleX: 1.0, uvScaleY: 1.0, uvOffsetX: 0.0, uvOffsetY: 0.0,
             rimLightIntensity: 0.0, rimLightPower: 4.0,
+            lightZ: 50.0,
             canvasWidth: 400, canvasHeight: 300
           })}
           className="w-full px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"

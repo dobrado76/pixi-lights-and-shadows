@@ -189,6 +189,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniform float uLightRadius;
         uniform vec3 uLightColor;
         uniform float uAmbientLight;
+        uniform float uLightZ;
 
         void main(void) {
           vec2 uv = vTextureCoord;
@@ -199,7 +200,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           vec2 worldPos = uSpritePos + uv * uSpriteSize;
           
           // Add Z component to light position (light hovering above surface)
-          vec3 lightPos3D = vec3(uLightPos.x, uLightPos.y, 50.0);
+          vec3 lightPos3D = vec3(uLightPos.x, uLightPos.y, uLightZ);
           vec3 worldPos3D = vec3(worldPos.x, worldPos.y, 0.0);
           
           vec3 lightDir3D = lightPos3D - worldPos3D;
@@ -233,7 +234,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uLightIntensity: shaderParams.lightIntensity,
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
         uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
-        uAmbientLight: shaderParams.ambientLight
+        uAmbientLight: shaderParams.ambientLight,
+        uLightZ: shaderParams.lightZ
       });
 
       const bgMesh = new PIXI.Mesh(geometry, bgShader as any);
@@ -279,7 +281,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uLightIntensity: shaderParams.lightIntensity,
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
         uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
-        uAmbientLight: shaderParams.ambientLight
+        uAmbientLight: shaderParams.ambientLight,
+        uLightZ: shaderParams.lightZ
       });
 
       const ballMesh = new PIXI.Mesh(ballGeometry, ballShader as any);
@@ -297,7 +300,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uLightIntensity: shaderParams.lightIntensity,
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
         uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
-        uAmbientLight: shaderParams.ambientLight
+        uAmbientLight: shaderParams.ambientLight,
+        uLightZ: shaderParams.lightZ
       });
 
       const blockMesh = new PIXI.Mesh(blockGeometry, blockShader as any);
