@@ -29,7 +29,17 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
                 step="0.1"
                 value={shaderParams.colorR}
                 onChange={(e) => setShaderParams(prev => ({...prev, colorR: parseFloat(e.target.value)}))}
-                className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer"
+                style={{
+                  width: '100%',
+                  height: '6px',
+                  background: '#374151',
+                  borderRadius: '4px',
+                  border: '1px solid #4B5563',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  WebkitAppearance: 'none',
+                  appearance: 'none'
+                }}
                 data-testid="slider-color-r"
               />
               <span className="text-xs text-muted-foreground" data-testid="value-color-r">
@@ -44,7 +54,17 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
                 step="0.1"
                 value={shaderParams.colorG}
                 onChange={(e) => setShaderParams(prev => ({...prev, colorG: parseFloat(e.target.value)}))}
-                className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer"
+                style={{
+                  width: '100%',
+                  height: '6px',
+                  background: '#374151',
+                  borderRadius: '4px',
+                  border: '1px solid #4B5563',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  WebkitAppearance: 'none',
+                  appearance: 'none'
+                }}
                 data-testid="slider-color-g"
               />
               <span className="text-xs text-muted-foreground" data-testid="value-color-g">
@@ -59,7 +79,17 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
                 step="0.1"
                 value={shaderParams.colorB}
                 onChange={(e) => setShaderParams(prev => ({...prev, colorB: parseFloat(e.target.value)}))}
-                className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer"
+                style={{
+                  width: '100%',
+                  height: '6px',
+                  background: '#374151',
+                  borderRadius: '4px',
+                  border: '1px solid #4B5563',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  WebkitAppearance: 'none',
+                  appearance: 'none'
+                }}
                 data-testid="slider-color-b"
               />
               <span className="text-xs text-muted-foreground" data-testid="value-color-b">
@@ -99,6 +129,66 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
             className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer"
             data-testid="slider-wave-frequency"
           />
+        </div>
+
+        {/* Canvas Resolution Controls */}
+        <div className="border-t border-border pt-4">
+          <h4 className="text-md font-medium text-card-foreground mb-3">
+            Canvas Resolution
+          </h4>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
+                Width: <span data-testid="value-canvas-width">{shaderParams.canvasWidth}</span>
+              </label>
+              <input
+                type="range"
+                min="200"
+                max="800"
+                step="50"
+                value={shaderParams.canvasWidth}
+                onChange={(e) => setShaderParams(prev => ({...prev, canvasWidth: parseFloat(e.target.value)}))}
+                style={{
+                  width: '100%',
+                  height: '6px',
+                  background: '#374151',
+                  borderRadius: '4px',
+                  border: '1px solid #4B5563',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  WebkitAppearance: 'none',
+                  appearance: 'none'
+                }}
+                data-testid="slider-canvas-width"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
+                Height: <span data-testid="value-canvas-height">{shaderParams.canvasHeight}</span>
+              </label>
+              <input
+                type="range"
+                min="200"
+                max="600"
+                step="50"
+                value={shaderParams.canvasHeight}
+                onChange={(e) => setShaderParams(prev => ({...prev, canvasHeight: parseFloat(e.target.value)}))}
+                style={{
+                  width: '100%',
+                  height: '6px',
+                  background: '#374151',
+                  borderRadius: '4px',
+                  border: '1px solid #4B5563',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  WebkitAppearance: 'none',
+                  appearance: 'none'
+                }}
+                data-testid="slider-canvas-height"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Enhanced Lighting Controls */}
@@ -168,7 +258,17 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
                   step="0.1"
                   value={shaderParams.lightColorR}
                   onChange={(e) => setShaderParams(prev => ({...prev, lightColorR: parseFloat(e.target.value)}))}
-                  className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer"
+                  style={{
+                  width: '100%',
+                  height: '6px',
+                  background: '#374151',
+                  borderRadius: '4px',
+                  border: '1px solid #4B5563',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  WebkitAppearance: 'none',
+                  appearance: 'none'
+                }}
                   data-testid="slider-light-color-r"
                 />
                 <span className="text-xs text-muted-foreground" data-testid="value-light-color-r">
@@ -183,7 +283,17 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
                   step="0.1"
                   value={shaderParams.lightColorG}
                   onChange={(e) => setShaderParams(prev => ({...prev, lightColorG: parseFloat(e.target.value)}))}
-                  className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer"
+                  style={{
+                  width: '100%',
+                  height: '6px',
+                  background: '#374151',
+                  borderRadius: '4px',
+                  border: '1px solid #4B5563',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  WebkitAppearance: 'none',
+                  appearance: 'none'
+                }}
                   data-testid="slider-light-color-g"
                 />
                 <span className="text-xs text-muted-foreground" data-testid="value-light-color-g">
@@ -198,7 +308,17 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
                   step="0.1"
                   value={shaderParams.lightColorB}
                   onChange={(e) => setShaderParams(prev => ({...prev, lightColorB: parseFloat(e.target.value)}))}
-                  className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer"
+                  style={{
+                  width: '100%',
+                  height: '6px',
+                  background: '#374151',
+                  borderRadius: '4px',
+                  border: '1px solid #4B5563',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  WebkitAppearance: 'none',
+                  appearance: 'none'
+                }}
                   data-testid="slider-light-color-b"
                 />
                 <span className="text-xs text-muted-foreground" data-testid="value-light-color-b">
@@ -215,7 +335,13 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
             waveAmplitude: 0.02, waveFrequency: 8,
             lightIntensity: 1.0, lightRadius: 200,
             lightColorR: 1.0, lightColorG: 0.9, lightColorB: 0.8,
-            ambientLight: 0.3
+            ambientLight: 0.3,
+            normalMapIntensity: 1.0, specularPower: 32.0, specularIntensity: 0.5,
+            metallic: 0.0, roughness: 0.5, timeMultiplier: 1.0, animationEnabled: true,
+            contrast: 1.0, saturation: 1.0, brightness: 1.0,
+            uvScaleX: 1.0, uvScaleY: 1.0, uvOffsetX: 0.0, uvOffsetY: 0.0,
+            rimLightIntensity: 0.0, rimLightPower: 4.0,
+            canvasWidth: 400, canvasHeight: 300
           })}
           className="w-full px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
           data-testid="button-reset-defaults"

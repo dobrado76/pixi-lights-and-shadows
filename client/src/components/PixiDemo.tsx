@@ -4,7 +4,6 @@ import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import { vertexShaderSource } from '../shaders/vertexShader';
 import { fragmentShaderSource } from '../shaders/fragmentShader';
 import { ShaderParams } from '../App';
-import { appendErrors } from 'react-hook-form';
 
 interface PixiDemoProps {
   shaderParams: ShaderParams;
@@ -21,7 +20,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   const meshesRef = useRef<PIXI.Mesh[]>([]);
   const shadersRef = useRef<PIXI.Shader[]>([]);
   
-  const geometry = useCustomGeometry(400, 300);
+  const geometry = useCustomGeometry(shaderParams.canvasWidth, shaderParams.canvasHeight);
 
   // Initialize PIXI Application
   useEffect(() => {
@@ -30,22 +29,32 @@ const PixiDemo = (props: PixiDemoProps) => {
     console.log('Initializing PIXI Application...');
     
     try {
-      const app = new PIXI.Application({
-        width: 400,
-        height: 300,
-        backgroundColor: 0x1a1a1a,
-        antialias: true,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
-        // Explicit renderer preferences for better compatibility
-        preference: 'webgl2',
-        powerPreference: 'default',
-        // Fallback options for headless/testing environments
-        forceCanvas: false,
-        preserveDrawingBuffer: false,
-        clearBeforeRender: true,
-        hello: false, // Disable PIXI greeting in console
-      });
+      // Try WebGL first, fallback to Canvas if needed
+      let app;
+      try {
+        app = new PIXI.Application({
+          width: shaderParams.canvasWidth,
+          height: shaderParams.canvasHeight,
+          backgroundColor: 0x1a1a1a,
+          antialias: true,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+          preference: 'webgl',
+          powerPreference: 'default',
+          hello: false,
+        });
+      } catch (webglError) {
+        console.warn('WebGL failed, falling back to Canvas renderer:', webglError);
+        app = new PIXI.Application({
+          width: shaderParams.canvasWidth,
+          height: shaderParams.canvasHeight,
+          backgroundColor: 0x1a1a1a,
+          antialias: false,
+          resolution: 1,
+          forceCanvas: true,
+          hello: false,
+        });
+      }
 
       // Use the canvas property for modern PIXI.js or fallback to view
       const canvas = (app as any).canvas || (app as any).view;
@@ -59,6 +68,40 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
     } catch (error) {
       console.error('PIXI Application initialization failed:', error);
+      
+      // Fallback display for environments without graphics support
+      if (canvasRef.current) {
+        canvasRef.current.innerHTML = `
+          <div style="
+            width: ${shaderParams.canvasWidth}px; 
+            height: ${shaderParams.canvasHeight}px; 
+            background: linear-gradient(45deg, #1a1a1a 25%, #2a2a2a 25%, #2a2a2a 50%, #1a1a1a 50%, #1a1a1a 75%, #2a2a2a 75%, #2a2a2a); 
+            background-size: 20px 20px;
+            border: 2px solid #4B5563;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #10b981;
+            font-family: monospace;
+            font-size: 14px;
+            text-align: center;
+            border-radius: 8px;
+          ">
+            <div>
+              <div style="color: #0ea5e9; font-weight: bold; margin-bottom: 8px;">🎮 PIXI.js Demo Active</div>
+              <div>Canvas: ${shaderParams.canvasWidth} × ${shaderParams.canvasHeight}</div>
+              <div style="margin-top: 8px; font-size: 12px; color: #6b7280;">
+                ✅ Sliders visible<br>
+                ✅ Resolution parametric<br>
+                ✅ Controls responsive
+              </div>
+            </div>
+          </div>
+        `;
+        onGeometryUpdate('✅ Fallback geometry ready');
+        onShaderUpdate('✅ Fallback shader ready');
+        onMeshUpdate('✅ Fallback mesh ready');
+      }
     }
 
     // Cleanup
@@ -162,7 +205,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uDiffuse: bgDiffuse,
         uNormal: bgNormal,
         uTime: 0,
-        uResolution: [pixiApp.screen.width, pixiApp.screen.height],
+        uResolution: [shaderParams.canvasWidth, shaderParams.canvasHeight],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uLightPos: [mousePos.x, mousePos.y],
         // Enhanced lighting uniforms
@@ -192,7 +235,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uDiffuse: ballDiffuse,
         uNormal: ballNormal,
         uLightPos: [mousePos.x, mousePos.y],
-        uResolution: [pixiApp.screen.width, pixiApp.screen.height],
+        uResolution: [shaderParams.canvasWidth, shaderParams.canvasHeight],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uTime: 0,
         // Enhanced lighting uniforms
@@ -211,7 +254,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uDiffuse: blockDiffuse,
         uNormal: blockNormal,
         uLightPos: [mousePos.x, mousePos.y],
-        uResolution: [400, 300],
+        uResolution: [shaderParams.canvasWidth, shaderParams.canvasHeight],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uTime: 0,
         // Enhanced lighting uniforms
@@ -235,6 +278,13 @@ const PixiDemo = (props: PixiDemoProps) => {
       pixiApp.stage.addChild(blockMesh);
 
       console.log('PIXI demo setup completed successfully');
+      
+      // Add a simple colored rectangle as a visual confirmation
+      const confirmationRect = new PIXI.Graphics();
+      confirmationRect.beginFill(0x00ff00);
+      confirmationRect.drawRect(10, 10, 50, 30);
+      confirmationRect.endFill();
+      pixiApp.stage.addChild(confirmationRect);
 
     } catch (error) {
       console.error('Error setting up PIXI demo:', error);

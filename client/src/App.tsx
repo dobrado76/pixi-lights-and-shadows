@@ -38,6 +38,9 @@ export interface ShaderParams {
   // Advanced lighting
   rimLightIntensity: number;
   rimLightPower: number;
+  // Resolution controls
+  canvasWidth: number;
+  canvasHeight: number;
 }
 
 function App() {
@@ -53,7 +56,31 @@ function App() {
     lightColorR: 1.0,
     lightColorG: 0.9,
     lightColorB: 0.8,
-    ambientLight: 0.3
+    ambientLight: 0.3,
+    // Material properties
+    normalMapIntensity: 1.0,
+    specularPower: 32.0,
+    specularIntensity: 0.5,
+    metallic: 0.0,
+    roughness: 0.5,
+    // Animation controls
+    timeMultiplier: 1.0,
+    animationEnabled: true,
+    // Post-processing effects
+    contrast: 1.0,
+    saturation: 1.0,
+    brightness: 1.0,
+    // Texture controls
+    uvScaleX: 1.0,
+    uvScaleY: 1.0,
+    uvOffsetX: 0.0,
+    uvOffsetY: 0.0,
+    // Advanced lighting
+    rimLightIntensity: 0.0,
+    rimLightPower: 4.0,
+    // Resolution controls
+    canvasWidth: 400,
+    canvasHeight: 300
   });
 
   const [geometryStatus, setGeometryStatus] = useState('Initializing...');
