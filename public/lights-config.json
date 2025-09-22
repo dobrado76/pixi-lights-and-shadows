@@ -16,7 +16,7 @@
       "x": 200,
       "y": 150,
       "z": 20,
-      "followMouse": false,
+      "followMouse": true,
       "radius": 200
     },
     {
