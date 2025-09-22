@@ -167,108 +167,23 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         console.log('Textures loaded, creating geometries...');
 
-        // 🔥 UNLIMITED DYNAMIC LIGHTING SYSTEM - NO HARDCODED LIMITS 🔥
+        // 🔥 MINIMAL TEST - MATCHING SIMPLIFIED SHADER
         const createLightUniforms = () => {
           const uniforms: any = {};
           
           // Get all enabled lights
           const enabledLights = lightsConfig.filter(light => light.enabled);
-          const lightCount = Math.min(enabledLights.length, 32); // Clamp to shader limit
           
-          console.log(`🔥 DYNAMIC LIGHTING: Processing ${lightCount} lights (of ${enabledLights.length} total)`);
-          if (enabledLights.length > 32) {
-            console.warn(`⚠️ Too many lights! Using first 32 of ${enabledLights.length}. Consider optimizing.`);
-          }
+          // Only pass what the shader expects - just the count!
+          uniforms.uLightCount = enabledLights.length;
           
-          // Initialize arrays
-          uniforms.uLightCount = lightCount;
-          uniforms.uLightTypes = new Array(32).fill(0);
-          uniforms.uLightPositions = new Array(32).fill([0, 0, 0]);
-          uniforms.uLightDirections = new Array(32).fill([0, 0, 0]);
-          uniforms.uLightColors = new Array(32).fill([0, 0, 0]);
-          uniforms.uLightIntensities = new Array(32).fill(0);
-          uniforms.uLightRadii = new Array(32).fill(0);
-          uniforms.uLightConeAngles = new Array(32).fill(0);
-          uniforms.uLightSoftness = new Array(32).fill(0);
-          uniforms.uLightHasMask = new Array(32).fill(false);
-          uniforms.uLightMaskOffsets = new Array(32).fill([0, 0]);
-          uniforms.uLightMaskRotations = new Array(32).fill(0);
-          uniforms.uLightMaskScales = new Array(32).fill(1);
-          uniforms.uLightMaskSizes = new Array(32).fill([1, 1]);
-          uniforms.uLightMaskTextureIndex = new Array(32).fill(-1);
-          
-          // Initialize mask texture array
-          uniforms.uLightMasks = new Array(8).fill(null);
-          
-          // Track mask texture allocation
-          let nextMaskIndex = 0;
-          const maskTextureMap = new Map();
-          
-          // Process lights
-          for (let i = 0; i < lightCount; i++) {
-            const light = enabledLights[i];
-            // Light type mapping: 0=point, 1=directional, 2=spotlight
-            let lightType = 0;
-            if (light.type === 'directional') lightType = 1;
-            else if (light.type === 'spotlight') lightType = 2;
-            
-            uniforms.uLightTypes[i] = lightType;
-            
-            // Position (for point and spotlights)
-            if (light.type === 'point') {
-              uniforms.uLightPositions[i] = [
-                light.followMouse ? mousePos.x : light.position.x,
-                light.followMouse ? mousePos.y : light.position.y,
-                light.position.z
-              ];
-            } else {
-              uniforms.uLightPositions[i] = [light.position.x, light.position.y, light.position.z];
-            }
-            
-            // Direction (for directional and spotlights)
-            uniforms.uLightDirections[i] = [light.direction?.x || 0, light.direction?.y || 0, light.direction?.z || 0];
-            
-            // Common properties
-            uniforms.uLightColors[i] = [light.color.r, light.color.g, light.color.b];
-            uniforms.uLightIntensities[i] = light.intensity;
-            uniforms.uLightRadii[i] = light.radius || 200;
-            uniforms.uLightConeAngles[i] = light.coneAngle || 30;
-            uniforms.uLightSoftness[i] = light.softness || 0.5;
-            
-            // Handle masks efficiently - share texture slots
-            if (light.mask && nextMaskIndex < 8) {
-              const maskPath = `/light_masks/${light.mask.image}`;
-              
-              // Check if we already loaded this mask texture
-              if (!maskTextureMap.has(maskPath)) {
-                const maskTexture = PIXI.Texture.from(maskPath);
-                uniforms.uLightMasks[nextMaskIndex] = maskTexture;
-                maskTextureMap.set(maskPath, nextMaskIndex);
-                nextMaskIndex++;
-                
-                console.log(`🎭 Mask texture loaded: ${light.mask.image} (slot ${nextMaskIndex - 1})`);
-              }
-              
-              const textureIndex = maskTextureMap.get(maskPath);
-              uniforms.uLightHasMask[i] = true;
-              uniforms.uLightMaskTextureIndex[i] = textureIndex;
-              uniforms.uLightMaskOffsets[i] = [light.mask.offset.x, light.mask.offset.y];
-              uniforms.uLightMaskRotations[i] = light.mask.rotation;
-              uniforms.uLightMaskScales[i] = light.mask.scale;
-              
-              // Get texture dimensions when available
-              const maskTexture = uniforms.uLightMasks[textureIndex];
-              if (maskTexture.baseTexture.valid) {
-                uniforms.uLightMaskSizes[i] = [maskTexture.width, maskTexture.height];
-              } else {
-                maskTexture.baseTexture.on('loaded', () => {
-                  uniforms.uLightMaskSizes[i] = [maskTexture.width, maskTexture.height];
-                });
-                uniforms.uLightMaskSizes[i] = [64, 64]; // Default size
-              }
-            }
-          }
+          console.log(`🔥 MINIMAL TEST: Found ${enabledLights.length} lights - only passing count to shader`);
 
+          // DEBUG: Log the actual uniform values being sent to shader
+          console.log('🔍 DEBUG UNIFORMS:', {
+            lightCount: uniforms.uLightCount,
+            message: "Only passing light count to simplified shader"
+          });
 
           return uniforms;
         };
@@ -287,7 +202,7 @@ const PixiDemo = (props: PixiDemoProps) => {
        
       // Background shader and mesh (using unified sprite shader)
       const lightUniforms = createLightUniforms();
-      const bgShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, {
+      const bgShaderUniforms = {
         uDiffuse: bgDiffuse,
         uNormal: bgNormal,
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
@@ -297,7 +212,36 @@ const PixiDemo = (props: PixiDemoProps) => {
         uAmbientLight: ambientLight.intensity,
         uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
         ...lightUniforms
+      };
+      
+      console.log('🔧 SHADER UNIFORMS CHECK:', {
+        totalUniforms: Object.keys(bgShaderUniforms).length,
+        lightCount: bgShaderUniforms.uLightCount,
+        hasLightTypes: 'uLightTypes' in bgShaderUniforms,
+        hasLightPositions: 'uLightPositions' in bgShaderUniforms
       });
+      
+      const bgShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, bgShaderUniforms);
+      
+      // Check if shader compiled successfully
+      if (!bgShader.program.valid) {
+        console.error('❌ SHADER COMPILATION FAILED!');
+        console.error('Shader errors:', bgShader.program.errors);
+      } else {
+        console.log('✅ SHADER COMPILED SUCCESSFULLY');
+      }
+      
+      // Check specific uniforms in the compiled shader
+      try {
+        console.log('🔍 SHADER UNIFORM STATUS:', {
+          programValid: bgShader.program.valid,
+          uniformCount: Object.keys(bgShader.uniforms).length,
+          hasLightCount: 'uLightCount' in bgShader.uniforms,
+          uniformNames: Object.keys(bgShader.uniforms).filter(name => name.startsWith('uLight')).slice(0, 10)
+        });
+      } catch (e) {
+        console.error('❌ Error checking shader uniforms:', e);
+      }
 
       const bgMesh = new PIXI.Mesh(geometry, bgShader as any);
       bgMesh.x = 0;
