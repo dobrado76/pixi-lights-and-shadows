@@ -167,23 +167,37 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         console.log('Textures loaded, creating geometries...');
 
-        // 🔥 MINIMAL TEST - MATCHING SIMPLIFIED SHADER
+        // 🚀 DYNAMIC LIGHTING - NO TYPE RESTRICTIONS!
         const createLightUniforms = () => {
           const uniforms: any = {};
           
           // Get all enabled lights
           const enabledLights = lightsConfig.filter(light => light.enabled);
           
-          // Only pass what the shader expects - just the count!
+          // Set light count
           uniforms.uLightCount = enabledLights.length;
           
-          console.log(`🔥 MINIMAL TEST: Found ${enabledLights.length} lights - only passing count to shader`);
-
-          // DEBUG: Log the actual uniform values being sent to shader
-          console.log('🔍 DEBUG UNIFORMS:', {
-            lightCount: uniforms.uLightCount,
-            message: "Only passing light count to simplified shader"
+          // Type conversion: point=0, directional=1, spotlight=2
+          const typeMap = { 'point': 0, 'directional': 1, 'spotlight': 2 };
+          
+          // Populate individual uniforms for up to 4 lights (expandable)
+          enabledLights.slice(0, 4).forEach((light, index) => {
+            uniforms[`uLight${index}Pos`] = [light.position.x, light.position.y, light.position.z];
+            uniforms[`uLight${index}Type`] = typeMap[light.type as keyof typeof typeMap] || 0;
+            uniforms[`uLight${index}Color`] = [light.color.r, light.color.g, light.color.b];
+            uniforms[`uLight${index}Intensity`] = light.intensity;
           });
+          
+          // Initialize unused light uniforms to zero
+          for (let i = enabledLights.length; i < 4; i++) {
+            uniforms[`uLight${i}Pos`] = [0, 0, 0];
+            uniforms[`uLight${i}Type`] = 0;
+            uniforms[`uLight${i}Color`] = [0, 0, 0];
+            uniforms[`uLight${i}Intensity`] = 0;
+          }
+          
+          console.log(`🚀 DYNAMIC LIGHTING: Processing ${enabledLights.length} lights with NO type restrictions!`);
+          console.log('🔍 Light types found:', enabledLights.map(l => l.type));
 
           return uniforms;
         };
