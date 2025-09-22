@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PixiDemo from './components/PixiDemo';
 import ControlPanel from './components/ControlPanel';
 import StatusPanel from './components/StatusPanel';
 import CodeDisplay from './components/CodeDisplay';
-import { Light, loadLightsConfig, loadAmbientLight } from '@shared/lights';
+import DynamicLightControls from './components/DynamicLightControls';
+import { Light, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@shared/lights';
 
 export interface ShaderParams {
   colorR: number;
@@ -41,6 +42,30 @@ function App() {
   const [lightsConfig, setLightsConfig] = useState<Light[]>([]);
   const [ambientLight, setAmbientLight] = useState<number>(0.3);
   const [lightsLoaded, setLightsLoaded] = useState<boolean>(false);
+
+  // Debounced save function to prevent excessive saves
+  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  const debouncedSave = useCallback((lights: Light[], ambient: number) => {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+    
+    const timeout = setTimeout(async () => {
+      try {
+        const success = await saveLightsConfig(lights, ambient);
+        if (success) {
+          console.log('Configuration auto-saved successfully');
+        } else {
+          console.warn('Failed to auto-save configuration');
+        }
+      } catch (error) {
+        console.error('Error auto-saving configuration:', error);
+      }
+    }, 500); // 500ms debounce
+    
+    setSaveTimeout(timeout);
+  }, [saveTimeout]);
 
   // Load saved settings from localStorage or use defaults
   const getInitialParams = (): ShaderParams => {
@@ -116,6 +141,18 @@ function App() {
     localStorage.setItem('pixiShaderParams', JSON.stringify(shaderParams));
   }, [shaderParams]);
 
+  // Handler for lights configuration changes
+  const handleLightsChange = useCallback((newLights: Light[]) => {
+    setLightsConfig(newLights);
+    debouncedSave(newLights, ambientLight);
+  }, [ambientLight, debouncedSave]);
+
+  // Handler for ambient light changes
+  const handleAmbientChange = useCallback((newAmbient: number) => {
+    setAmbientLight(newAmbient);
+    debouncedSave(lightsConfig, newAmbient);
+  }, [lightsConfig, debouncedSave]);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -179,29 +216,15 @@ function App() {
 
           {/* Right Column - Controls and Code */}
           <div className="space-y-6">
-            {/* Temporarily showing JSON config info instead of old controls */}
-            <div className="bg-card rounded-lg border border-border p-6 space-y-6">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded-full bg-accent status-active"></div>
-                <h3 className="text-lg font-semibold text-card-foreground">
-                  External JSON Lighting System
-                </h3>
-              </div>
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Lights are now configured via external JSON file at <code>/lights-config.json</code>
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  ✅ Scalable to any number of lights<br/>
-                  ✅ No more individual sliders per light<br/>
-                  ✅ Generic lighting system<br/>
-                  ✅ Easy to modify by editing JSON
-                </p>
-                <div className="text-xs text-muted-foreground">
-                  Current configuration loaded successfully with {lightsLoaded ? lightsConfig.length : 0} lights
-                </div>
-              </div>
-            </div>
+            {/* Dynamic Light Controls */}
+            {lightsLoaded && (
+              <DynamicLightControls
+                lights={lightsConfig}
+                ambientLight={ambientLight}
+                onLightsChange={handleLightsChange}
+                onAmbientChange={handleAmbientChange}
+              />
+            )}
 
             <CodeDisplay />
 

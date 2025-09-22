@@ -210,3 +210,76 @@ export const loadAmbientLight = async (configPath: string = '/lights-config.json
     return 0.3;
   }
 };
+
+// Convert RGB values to hex color string
+export const rgbToHex = (r: number, g: number, b: number): string => {
+  const toHex = (val: number) => Math.round(val * 255).toString(16).padStart(2, '0');
+  return `0x${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
+
+// Convert internal Light format back to LightConfig for JSON
+export const convertLightToConfig = (light: Light): LightConfig => {
+  const config: LightConfig = {
+    id: light.id,
+    type: light.type,
+    enabled: light.enabled,
+    brightness: light.intensity,
+    color: rgbToHex(light.color.r, light.color.g, light.color.b),
+  };
+
+  // Add position properties if relevant
+  if (light.type === 'point' || light.type === 'spotlight') {
+    config.x = light.position.x;
+    config.y = light.position.y;
+    config.z = light.position.z;
+  }
+
+  // Add direction properties if relevant  
+  if (light.type === 'directional' || light.type === 'spotlight') {
+    config.directionX = light.direction.x;
+    config.directionY = light.direction.y;
+    config.directionZ = light.direction.z;
+  }
+
+  // Add type-specific properties
+  if (light.followMouse !== undefined) config.followMouse = light.followMouse;
+  if (light.radius !== undefined) config.radius = light.radius;
+  if (light.coneAngle !== undefined) config.coneAngle = light.coneAngle;
+  if (light.softness !== undefined) config.softness = light.softness;
+
+  return config;
+};
+
+// Save lights configuration to server
+export const saveLightsConfig = async (lights: Light[], ambientLight: number): Promise<boolean> => {
+  try {
+    // Convert lights back to config format
+    const lightConfigs = lights.map(convertLightToConfig);
+    
+    // Add ambient light
+    const ambientConfig: LightConfig = {
+      id: 'ambient_light',
+      type: 'ambient',
+      enabled: true,
+      brightness: ambientLight,
+      color: '0x666666'
+    };
+    
+    const config = {
+      lights: [ambientConfig, ...lightConfigs]
+    };
+
+    const response = await fetch('/api/save-lights-config', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(config),
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error('Error saving lights configuration:', error);
+    return false;
+  }
+};
