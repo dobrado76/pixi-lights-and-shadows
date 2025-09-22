@@ -201,6 +201,11 @@ const PixiDemo = (props: PixiDemoProps) => {
           float lightDistance = length(lightDir);
           lightDir = normalize(lightDir);
           
+          // Fix Y-axis direction for ball normal map (flip Y component)
+          if (uSpriteSize.x == 75.0 && uSpriteSize.y == 75.0) {
+            normal.y = -normal.y;
+          }
+          
           float attenuation = 1.0 - clamp(lightDistance / uLightRadius, 0.0, 1.0);
           attenuation = attenuation * attenuation;
           
