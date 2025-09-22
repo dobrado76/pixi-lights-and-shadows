@@ -29,17 +29,19 @@ const PixiDemo = (props: PixiDemoProps) => {
     console.log('Initializing PIXI Application...');
     
     try {
-      // Simple, reliable PIXI initialization
+      // Simple, reliable PIXI initialization with fallback renderers
       const app = new PIXI.Application({
         width: shaderParams.canvasWidth,
         height: shaderParams.canvasHeight,
         backgroundColor: 0x1a1a1a,
         antialias: true,
         hello: false,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
       });
 
-      // Use the canvas property for modern PIXI.js or fallback to view
-      const canvas = (app as any).canvas || (app as any).view;
+      // Access canvas using proper PIXI.js property
+      const canvas = app.view as HTMLCanvasElement;
       
       if (canvas && canvasRef.current) {
         canvasRef.current.appendChild(canvas);
@@ -89,7 +91,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     // Cleanup
     return () => {
       if (pixiApp) {
-        const canvas = (pixiApp as any).canvas || (pixiApp as any).view;
+        const canvas = pixiApp.view as HTMLCanvasElement;
         if (canvas && canvasRef.current) {
           try {
             canvasRef.current.removeChild(canvas);
@@ -153,7 +155,15 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniform float uAmbientLight;
         uniform float uLightZ;
         uniform float uDirectionalIntensity;
-        uniform vec2 uDirectionalDir;
+        uniform float uDirectionalAngle;
+        uniform bool uSpotlightEnabled;
+        uniform vec3 uSpotlightPos;
+        uniform vec3 uSpotlightDir;
+        uniform float uSpotlightIntensity;
+        uniform float uSpotlightInnerRadius;
+        uniform float uSpotlightOuterRadius;
+        uniform float uSpotlightConeAngle;
+        uniform float uSpotlightSoftness;
 
         void main(void) {
           vec2 uv = vTextureCoord;
@@ -210,15 +220,43 @@ const PixiDemo = (props: PixiDemoProps) => {
           }
           float pointLightIntensity = normalDot * uLightIntensity * attenuation;
           
-          // Add directional light (always shows normal mapping)
-          vec3 directionalDir = normalize(vec3(uDirectionalDir.x, uDirectionalDir.y, 0.5));
+          // Add directional light (always shows normal mapping) - using angle (no jumping!)
+          float angleRad = radians(uDirectionalAngle);
+          vec2 dirXY = vec2(cos(angleRad), sin(angleRad));
+          vec3 directionalDir = normalize(vec3(dirXY.x, dirXY.y, -0.3));
           float directionalDot = max(dot(normal, directionalDir), 0.0);
           float directionalLightIntensity = directionalDot * uDirectionalIntensity;
+          
+          // Add spotlight (if enabled)
+          float spotlightLightIntensity = 0.0;
+          if (uSpotlightEnabled) {
+            vec3 spotlightDir3D = uSpotlightPos - worldPos3D;
+            float spotlightDistance = length(spotlightDir3D);
+            vec3 spotlightLightDir = normalize(spotlightDir3D);
+            
+            // Calculate cone attenuation
+            float coneAngle = dot(-spotlightLightDir, normalize(uSpotlightDir));
+            float coneAngleRad = radians(uSpotlightConeAngle);
+            float innerCone = cos(coneAngleRad * 0.5);
+            float outerCone = cos(coneAngleRad);
+            float coneFactor = smoothstep(outerCone, innerCone, coneAngle);
+            
+            // Distance attenuation
+            float spotDistanceAttenuation = 1.0 - smoothstep(uSpotlightInnerRadius, uSpotlightOuterRadius, spotlightDistance);
+            
+            // Combine with normal mapping
+            float spotNormalDot = max(dot(normal, spotlightLightDir), 0.0);
+            
+            // Apply softness
+            float softness = mix(1.0, coneFactor, uSpotlightSoftness);
+            spotlightLightIntensity = spotNormalDot * uSpotlightIntensity * spotDistanceAttenuation * softness * coneFactor;
+          }
           
           vec3 ambientContribution = diffuseColor.rgb * uAmbientLight;
           vec3 pointLightContribution = diffuseColor.rgb * uLightColor * pointLightIntensity;
           vec3 directionalLightContribution = diffuseColor.rgb * vec3(1.0, 1.0, 0.9) * directionalLightIntensity;
-          vec3 finalColor = (ambientContribution + pointLightContribution + directionalLightContribution) * uColor;
+          vec3 spotlightContribution = diffuseColor.rgb * vec3(1.0, 0.9, 0.8) * spotlightLightIntensity;
+          vec3 finalColor = (ambientContribution + pointLightContribution + directionalLightContribution + spotlightContribution) * uColor;
           
           gl_FragColor = vec4(finalColor, diffuseColor.a);
         }
@@ -238,7 +276,15 @@ const PixiDemo = (props: PixiDemoProps) => {
         uAmbientLight: shaderParams.ambientLight,
         uLightZ: shaderParams.lightZ,
         uDirectionalIntensity: shaderParams.directionalIntensity || 0.5,
-        uDirectionalDir: [shaderParams.directionalDirX || 1.0, shaderParams.directionalDirY || -1.0]
+        uDirectionalAngle: shaderParams.directionalAngle || 315,
+        uSpotlightEnabled: shaderParams.spotlightEnabled || false,
+        uSpotlightPos: [shaderParams.spotlightX || 200, shaderParams.spotlightY || 150, shaderParams.spotlightZ || 100],
+        uSpotlightDir: [shaderParams.spotlightDirX || 0.0, shaderParams.spotlightDirY || 0.0, shaderParams.spotlightDirZ || -1.0],
+        uSpotlightIntensity: shaderParams.spotlightIntensity || 2.0,
+        uSpotlightInnerRadius: shaderParams.spotlightInnerRadius || 50,
+        uSpotlightOuterRadius: shaderParams.spotlightOuterRadius || 150,
+        uSpotlightConeAngle: shaderParams.spotlightConeAngle || 30,
+        uSpotlightSoftness: shaderParams.spotlightSoftness || 0.5
       });
 
       const bgMesh = new PIXI.Mesh(geometry, bgShader as any);
@@ -287,7 +333,15 @@ const PixiDemo = (props: PixiDemoProps) => {
         uAmbientLight: shaderParams.ambientLight,
         uLightZ: shaderParams.lightZ,
         uDirectionalIntensity: shaderParams.directionalIntensity || 0.5,
-        uDirectionalDir: [shaderParams.directionalDirX || 1.0, shaderParams.directionalDirY || -1.0]
+        uDirectionalAngle: shaderParams.directionalAngle || 315,
+        uSpotlightEnabled: shaderParams.spotlightEnabled || false,
+        uSpotlightPos: [shaderParams.spotlightX || 200, shaderParams.spotlightY || 150, shaderParams.spotlightZ || 100],
+        uSpotlightDir: [shaderParams.spotlightDirX || 0.0, shaderParams.spotlightDirY || 0.0, shaderParams.spotlightDirZ || -1.0],
+        uSpotlightIntensity: shaderParams.spotlightIntensity || 2.0,
+        uSpotlightInnerRadius: shaderParams.spotlightInnerRadius || 50,
+        uSpotlightOuterRadius: shaderParams.spotlightOuterRadius || 150,
+        uSpotlightConeAngle: shaderParams.spotlightConeAngle || 30,
+        uSpotlightSoftness: shaderParams.spotlightSoftness || 0.5
       });
 
       const ballMesh = new PIXI.Mesh(ballGeometry, ballShader as any);
@@ -308,7 +362,15 @@ const PixiDemo = (props: PixiDemoProps) => {
         uAmbientLight: shaderParams.ambientLight,
         uLightZ: shaderParams.lightZ,
         uDirectionalIntensity: shaderParams.directionalIntensity || 0.5,
-        uDirectionalDir: [shaderParams.directionalDirX || 1.0, shaderParams.directionalDirY || -1.0]
+        uDirectionalAngle: shaderParams.directionalAngle || 315,
+        uSpotlightEnabled: shaderParams.spotlightEnabled || false,
+        uSpotlightPos: [shaderParams.spotlightX || 200, shaderParams.spotlightY || 150, shaderParams.spotlightZ || 100],
+        uSpotlightDir: [shaderParams.spotlightDirX || 0.0, shaderParams.spotlightDirY || 0.0, shaderParams.spotlightDirZ || -1.0],
+        uSpotlightIntensity: shaderParams.spotlightIntensity || 2.0,
+        uSpotlightInnerRadius: shaderParams.spotlightInnerRadius || 50,
+        uSpotlightOuterRadius: shaderParams.spotlightOuterRadius || 150,
+        uSpotlightConeAngle: shaderParams.spotlightConeAngle || 30,
+        uSpotlightSoftness: shaderParams.spotlightSoftness || 0.5
       });
 
       const blockMesh = new PIXI.Mesh(blockGeometry, blockShader as any);
@@ -364,7 +426,15 @@ const PixiDemo = (props: PixiDemoProps) => {
         shader.uniforms.uAmbientLight = shaderParams.ambientLight;
         shader.uniforms.uLightZ = shaderParams.lightZ;
         shader.uniforms.uDirectionalIntensity = shaderParams.directionalIntensity || 0.5;
-        shader.uniforms.uDirectionalDir = [shaderParams.directionalDirX || 1.0, shaderParams.directionalDirY || -1.0];
+        shader.uniforms.uDirectionalAngle = shaderParams.directionalAngle || 315;
+        shader.uniforms.uSpotlightEnabled = shaderParams.spotlightEnabled || false;
+        shader.uniforms.uSpotlightPos = [shaderParams.spotlightX || 200, shaderParams.spotlightY || 150, shaderParams.spotlightZ || 100];
+        shader.uniforms.uSpotlightDir = [shaderParams.spotlightDirX || 0.0, shaderParams.spotlightDirY || 0.0, shaderParams.spotlightDirZ || -1.0];
+        shader.uniforms.uSpotlightIntensity = shaderParams.spotlightIntensity || 2.0;
+        shader.uniforms.uSpotlightInnerRadius = shaderParams.spotlightInnerRadius || 50;
+        shader.uniforms.uSpotlightOuterRadius = shaderParams.spotlightOuterRadius || 150;
+        shader.uniforms.uSpotlightConeAngle = shaderParams.spotlightConeAngle || 30;
+        shader.uniforms.uSpotlightSoftness = shaderParams.spotlightSoftness || 0.5;
       }
     });
   }, [shaderParams, mousePos]);

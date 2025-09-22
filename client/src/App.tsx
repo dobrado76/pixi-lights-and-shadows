@@ -8,8 +8,6 @@ export interface ShaderParams {
   colorR: number;
   colorG: number;
   colorB: number;
-  waveAmplitude: number;
-  waveFrequency: number;
   // Enhanced lighting controls
   lightIntensity: number;
   lightRadius: number;
@@ -40,6 +38,22 @@ export interface ShaderParams {
   rimLightPower: number;
   // Light positioning
   lightZ: number;
+  // Directional light
+  directionalIntensity: number;
+  directionalAngle: number;
+  // Spotlight
+  spotlightEnabled: boolean;
+  spotlightX: number;
+  spotlightY: number;
+  spotlightZ: number;
+  spotlightDirX: number;
+  spotlightDirY: number;
+  spotlightDirZ: number;
+  spotlightIntensity: number;
+  spotlightInnerRadius: number;
+  spotlightOuterRadius: number;
+  spotlightConeAngle: number;
+  spotlightSoftness: number;
   // Resolution controls
   canvasWidth: number;
   canvasHeight: number;
@@ -60,8 +74,6 @@ function App() {
       colorR: 1,
       colorG: 1,
       colorB: 1,
-      waveAmplitude: 0.02,
-      waveFrequency: 8,
       // Enhanced lighting defaults
       lightIntensity: 1.0,
       lightRadius: 200,
@@ -91,7 +103,23 @@ function App() {
       rimLightIntensity: 0.0,
       rimLightPower: 4.0,
       // Light positioning
-      lightZ: 50.0,
+      lightZ: 0.0,
+      // Directional light
+      directionalIntensity: 0.5,
+      directionalAngle: 315,
+      // Spotlight
+      spotlightEnabled: false,
+      spotlightX: 200,
+      spotlightY: 150,
+      spotlightZ: 100,
+      spotlightDirX: 0.0,
+      spotlightDirY: 0.0,
+      spotlightDirZ: -1.0,
+      spotlightIntensity: 2.0,
+      spotlightInnerRadius: 50,
+      spotlightOuterRadius: 150,
+      spotlightConeAngle: 30,
+      spotlightSoftness: 0.5,
       // Resolution controls
       canvasWidth: 800,
       canvasHeight: 600
