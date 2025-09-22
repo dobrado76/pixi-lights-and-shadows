@@ -449,41 +449,89 @@ const PixiDemo = (props: PixiDemoProps) => {
     };
   }, [pixiApp, geometry, onGeometryUpdate, onShaderUpdate, onMeshUpdate]);
 
-  // Handle dynamic shader updates (mouse following, etc.)
+  // Dynamic shader uniform updates for real-time lighting changes
   useEffect(() => {
-    if (shadersRef.current.length === 0 || lightsConfig.length === 0) return;
+    if (shadersRef.current.length === 0) return;
 
-    // Helper function to update light uniforms dynamically
-    const updateLightUniforms = () => {
-      // Find lights that follow mouse or need dynamic updates
-      const pointLight = lightsConfig.find(light => light.type === 'point');
+    // Full light uniforms recreation - same logic as during setup
+    const createLightUniforms = () => {
+      const uniforms: any = {};
+      
+      // Light 0 (Point Light - with mouse following support)
+      const pointLights = lightsConfig.filter(light => light.type === 'point' && light.enabled);
+      const pointLight = pointLights.find(light => light.followMouse) || pointLights[0];
+      if (pointLight) {
+        uniforms.uLight0Enabled = true;
+        uniforms.uLight0Position = [
+          pointLight.followMouse ? mousePos.x : pointLight.position.x, 
+          pointLight.followMouse ? mousePos.y : pointLight.position.y, 
+          pointLight.position.z
+        ];
+        uniforms.uLight0Color = [pointLight.color.r, pointLight.color.g, pointLight.color.b];
+        uniforms.uLight0Intensity = pointLight.intensity;
+        uniforms.uLight0Radius = pointLight.radius || 200;
+      } else {
+        uniforms.uLight0Enabled = false;
+        uniforms.uLight0Position = [0, 0, 0];
+        uniforms.uLight0Color = [1, 1, 1];
+        uniforms.uLight0Intensity = 0;
+        uniforms.uLight0Radius = 1;
+      }
+      
+      // Light 1 (Directional Light)
       const directionalLight = lightsConfig.find(light => light.type === 'directional');
-      const spotlight = lightsConfig.find(light => light.type === 'spotlight');
-
-      const dynamicUniforms: any = {};
-
-      // Update point light position if it follows mouse
-      if (pointLight && pointLight.enabled) {
-        if (pointLight.followMouse) {
-          dynamicUniforms.uLight0Position = [mousePos.x, mousePos.y, pointLight.position.z];
-        } else {
-          dynamicUniforms.uLight0Position = [pointLight.position.x, pointLight.position.y, pointLight.position.z];
-        }
+      if (directionalLight && directionalLight.enabled) {
+        uniforms.uLight1Enabled = true;
+        uniforms.uLight1Direction = [directionalLight.direction.x, directionalLight.direction.y, directionalLight.direction.z];
+        uniforms.uLight1Color = [directionalLight.color.r, directionalLight.color.g, directionalLight.color.b];
+        uniforms.uLight1Intensity = directionalLight.intensity;
+      } else {
+        uniforms.uLight1Enabled = false;
+        uniforms.uLight1Direction = [1, 1, -1];
+        uniforms.uLight1Color = [1, 1, 1];
+        uniforms.uLight1Intensity = 0;
+      }
+      
+      // Light 2 (Spotlight - with mouse following support)
+      const spotlights = lightsConfig.filter(light => light.type === 'spotlight' && light.enabled);
+      const spotlight = spotlights.find(light => light.followMouse) || spotlights[0];
+      if (spotlight) {
+        uniforms.uLight2Enabled = true;
+        uniforms.uLight2Position = [
+          spotlight.followMouse ? mousePos.x : spotlight.position.x,
+          spotlight.followMouse ? mousePos.y : spotlight.position.y,
+          spotlight.position.z
+        ];
+        uniforms.uLight2Direction = [spotlight.direction.x, spotlight.direction.y, spotlight.direction.z];
+        uniforms.uLight2Color = [spotlight.color.r, spotlight.color.g, spotlight.color.b];
+        uniforms.uLight2Intensity = spotlight.intensity;
+        uniforms.uLight2Radius = spotlight.radius || 150;
+        uniforms.uLight2ConeAngle = spotlight.coneAngle || 30;
+        uniforms.uLight2Softness = spotlight.softness || 0.5;
+      } else {
+        uniforms.uLight2Enabled = false;
+        uniforms.uLight2Position = [200, 150, 100];
+        uniforms.uLight2Direction = [0, 0, -1];
+        uniforms.uLight2Color = [1, 1, 1];
+        uniforms.uLight2Intensity = 0;
+        uniforms.uLight2Radius = 1;
+        uniforms.uLight2ConeAngle = 30;
+        uniforms.uLight2Softness = 0.5;
       }
 
-      // Update basic color from shader params
-      dynamicUniforms.uColor = [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB];
-      dynamicUniforms.uAmbientLight = ambientLight;
-
-      return dynamicUniforms;
+      // Add other dynamic uniforms
+      uniforms.uColor = [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB];
+      uniforms.uAmbientLight = ambientLight;
+      
+      return uniforms;
     };
 
-    const dynamicUniforms = updateLightUniforms();
+    const updatedUniforms = createLightUniforms();
 
-    // Apply updates to all shaders
+    // Apply all uniform updates to all shaders
     shadersRef.current.forEach(shader => {
       if (shader.uniforms) {
-        Object.assign(shader.uniforms, dynamicUniforms);
+        Object.assign(shader.uniforms, updatedUniforms);
       }
     });
   }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight]);

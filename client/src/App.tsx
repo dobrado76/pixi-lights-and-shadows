@@ -206,12 +206,6 @@ function App() {
                 Dynamic shader with wave distortion and color tinting
               </div>
             </div>
-
-            <StatusPanel
-              geometryStatus={geometryStatus}
-              shaderStatus={shaderStatus}
-              meshStatus={meshStatus}
-            />
           </div>
 
           {/* Right Column - Controls and Code */}
@@ -226,44 +220,7 @@ function App() {
               />
             )}
 
-            <CodeDisplay />
-
-            {/* Technical Details */}
-            <div className="bg-card rounded-lg border border-border p-6">
-              <h3 className="text-lg font-semibold text-card-foreground mb-4" data-testid="technical-details-title">
-                Technical Details
-              </h3>
-              <div className="space-y-3 text-sm text-muted-foreground">
-                <div className="flex justify-between">
-                  <span>Rendering Engine:</span>
-                  <span className="text-card-foreground" data-testid="tech-engine">PIXI.js v7.x</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>React Integration:</span>
-                  <span className="text-card-foreground" data-testid="tech-react">@pixi/react</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Shader Language:</span>
-                  <span className="text-card-foreground" data-testid="tech-shader">GLSL ES 1.00</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Geometry Type:</span>
-                  <span className="text-card-foreground" data-testid="tech-geometry">Quad (4 vertices)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Texture Format:</span>
-                  <span className="text-card-foreground" data-testid="tech-texture">Generated Canvas</span>
-                </div>
-              </div>
-            </div>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-12 pt-8 border-t border-border text-center">
-          <p className="text-sm text-muted-foreground" data-testid="footer-description">
-            A minimal demonstration of PIXI.js core primitives: Geometry, Shader, and Mesh
-          </p>
         </div>
       </div>
     </div>
