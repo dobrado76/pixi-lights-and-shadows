@@ -75,7 +75,7 @@
       "y": 220,
       "z": 50,
       "followMouse": false,
-      "castsShadows": false,
+      "castsShadows": true,
       "radius": 200,
       "mask": {
         "image": "00035-3934797537.png",
@@ -97,14 +97,14 @@
       "y": 500,
       "z": 50,
       "followMouse": false,
-      "castsShadows": false,
+      "castsShadows": true,
       "radius": 350
     }
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.3,
-    "maxLength": 160,
-    "height": 7
+    "strength": 0.5,
+    "maxLength": 120,
+    "height": 19
   }
 }

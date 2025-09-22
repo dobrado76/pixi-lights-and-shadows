@@ -865,7 +865,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         pixiApp.render();
       }
     }
-  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight]);
+  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig]);
 
   // Animation loop
   useEffect(() => {
