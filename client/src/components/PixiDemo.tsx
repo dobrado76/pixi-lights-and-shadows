@@ -29,31 +29,14 @@ const PixiDemo = (props: PixiDemoProps) => {
     console.log('Initializing PIXI Application...');
     
     try {
-      // Try WebGL first, fallback to Canvas if needed
-      let app;
-      try {
-        app = new PIXI.Application({
-          width: shaderParams.canvasWidth,
-          height: shaderParams.canvasHeight,
-          backgroundColor: 0x1a1a1a,
-          antialias: true,
-          resolution: window.devicePixelRatio || 1,
-          autoDensity: true,
-          powerPreference: 'default',
-          hello: false,
-        } as any);
-      } catch (webglError) {
-        console.warn('WebGL failed, falling back to Canvas renderer:', webglError);
-        app = new PIXI.Application({
-          width: shaderParams.canvasWidth,
-          height: shaderParams.canvasHeight,
-          backgroundColor: 0x1a1a1a,
-          antialias: false,
-          resolution: 1,
-          forceCanvas: true,
-          hello: false,
-        });
-      }
+      // Simple, reliable PIXI initialization
+      const app = new PIXI.Application({
+        width: shaderParams.canvasWidth,
+        height: shaderParams.canvasHeight,
+        backgroundColor: 0x1a1a1a,
+        antialias: true,
+        hello: false,
+      });
 
       // Use the canvas property for modern PIXI.js or fallback to view
       const canvas = (app as any).canvas || (app as any).view;
