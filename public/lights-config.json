@@ -10,7 +10,7 @@
     {
       "id": "mouse_light",
       "type": "point",
-      "enabled": true,
+      "enabled": false,
       "brightness": 2.2,
       "color": "0xffffff",
       "x": 200,
@@ -65,18 +65,18 @@
       "id": "point_copy_1758529441818",
       "type": "point",
       "enabled": true,
-      "brightness": 2.2,
+      "brightness": 2.5,
       "color": "0xffffff",
-      "x": 200,
+      "x": 160,
       "y": 150,
-      "z": 20,
-      "followMouse": true,
-      "radius": 200,
+      "z": 70,
+      "followMouse": false,
+      "radius": 390,
       "mask": {
         "image": "00019-1224130474.png",
         "offset": {
-          "x": -105,
-          "y": 0
+          "x": 10,
+          "y": -40
         },
         "rotation": 0,
         "scale": 1

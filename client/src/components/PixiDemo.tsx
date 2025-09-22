@@ -180,6 +180,10 @@ const PixiDemo = (props: PixiDemoProps) => {
           uniforms.uDir0Enabled = false; uniforms.uDir1Enabled = false;
           uniforms.uSpot0Enabled = false; uniforms.uSpot1Enabled = false; uniforms.uSpot2Enabled = false; uniforms.uSpot3Enabled = false;
           
+          // Initialize all masks as disabled
+          uniforms.uPoint0HasMask = false; uniforms.uPoint1HasMask = false;
+          uniforms.uSpot0HasMask = false; uniforms.uSpot1HasMask = false; uniforms.uSpot2HasMask = false; uniforms.uSpot3HasMask = false;
+          
           // Point Lights (up to 2)
           pointLights.slice(0, 2).forEach((light, i) => {
             const prefix = `uPoint${i}`;
@@ -192,6 +196,17 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
             uniforms[`${prefix}Intensity`] = light.intensity;
             uniforms[`${prefix}Radius`] = light.radius || 200;
+            
+            // Handle mask
+            if (light.mask) {
+              uniforms[`${prefix}HasMask`] = true;
+              uniforms[`${prefix}Mask`] = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
+              uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
+              uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
+              uniforms[`${prefix}MaskScale`] = light.mask.scale * 100; // Scale adjustment
+            } else {
+              uniforms[`${prefix}HasMask`] = false;
+            }
           });
           
           // Directional Lights (up to 2)
@@ -218,6 +233,17 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}Radius`] = light.radius || 150;
             uniforms[`${prefix}ConeAngle`] = light.coneAngle || 30;
             uniforms[`${prefix}Softness`] = light.softness || 0.5;
+            
+            // Handle mask
+            if (light.mask) {
+              uniforms[`${prefix}HasMask`] = true;
+              uniforms[`${prefix}Mask`] = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
+              uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
+              uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
+              uniforms[`${prefix}MaskScale`] = light.mask.scale * 100; // Scale adjustment
+            } else {
+              uniforms[`${prefix}HasMask`] = false;
+            }
           });
 
           console.log('Expanded Lights:', { 
@@ -251,6 +277,10 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniform bool uPoint0Enabled; uniform vec3 uPoint0Position; uniform vec3 uPoint0Color; uniform float uPoint0Intensity; uniform float uPoint0Radius;
         uniform bool uPoint1Enabled; uniform vec3 uPoint1Position; uniform vec3 uPoint1Color; uniform float uPoint1Intensity; uniform float uPoint1Radius;
         
+        // Point Light Masks
+        uniform bool uPoint0HasMask; uniform sampler2D uPoint0Mask; uniform vec2 uPoint0MaskOffset; uniform float uPoint0MaskRotation; uniform float uPoint0MaskScale;
+        uniform bool uPoint1HasMask; uniform sampler2D uPoint1Mask; uniform vec2 uPoint1MaskOffset; uniform float uPoint1MaskRotation; uniform float uPoint1MaskScale;
+        
         // Directional Lights (0-1) 
         uniform bool uDir0Enabled; uniform vec3 uDir0Direction; uniform vec3 uDir0Color; uniform float uDir0Intensity;
         uniform bool uDir1Enabled; uniform vec3 uDir1Direction; uniform vec3 uDir1Color; uniform float uDir1Intensity;
@@ -260,6 +290,38 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniform bool uSpot1Enabled; uniform vec3 uSpot1Position; uniform vec3 uSpot1Direction; uniform vec3 uSpot1Color; uniform float uSpot1Intensity; uniform float uSpot1Radius; uniform float uSpot1ConeAngle; uniform float uSpot1Softness;
         uniform bool uSpot2Enabled; uniform vec3 uSpot2Position; uniform vec3 uSpot2Direction; uniform vec3 uSpot2Color; uniform float uSpot2Intensity; uniform float uSpot2Radius; uniform float uSpot2ConeAngle; uniform float uSpot2Softness;
         uniform bool uSpot3Enabled; uniform vec3 uSpot3Position; uniform vec3 uSpot3Direction; uniform vec3 uSpot3Color; uniform float uSpot3Intensity; uniform float uSpot3Radius; uniform float uSpot3ConeAngle; uniform float uSpot3Softness;
+        
+        // Spotlight Masks
+        uniform bool uSpot0HasMask; uniform sampler2D uSpot0Mask; uniform vec2 uSpot0MaskOffset; uniform float uSpot0MaskRotation; uniform float uSpot0MaskScale;
+        uniform bool uSpot1HasMask; uniform sampler2D uSpot1Mask; uniform vec2 uSpot1MaskOffset; uniform float uSpot1MaskRotation; uniform float uSpot1MaskScale;
+        uniform bool uSpot2HasMask; uniform sampler2D uSpot2Mask; uniform vec2 uSpot2MaskOffset; uniform float uSpot2MaskRotation; uniform float uSpot2MaskScale;
+        uniform bool uSpot3HasMask; uniform sampler2D uSpot3Mask; uniform vec2 uSpot3MaskOffset; uniform float uSpot3MaskRotation; uniform float uSpot3MaskScale;
+
+        // Function to sample mask with transforms
+        float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offset, float rotation, float scale) {
+          vec2 relativePos = worldPos - lightPos;
+          
+          // Apply offset
+          relativePos -= offset;
+          
+          // Apply rotation
+          float cosR = cos(radians(rotation));
+          float sinR = sin(radians(rotation));
+          vec2 rotatedPos = vec2(
+            relativePos.x * cosR - relativePos.y * sinR,
+            relativePos.x * sinR + relativePos.y * cosR
+          );
+          
+          // Apply scale and convert to UV coordinates
+          vec2 maskUV = (rotatedPos / scale) * 0.002 + 0.5; // Scale factor adjustment
+          
+          // Sample mask (clamp to avoid edge artifacts)
+          if (maskUV.x < 0.0 || maskUV.x > 1.0 || maskUV.y < 0.0 || maskUV.y > 1.0) {
+            return 0.0; // Outside mask bounds
+          }
+          
+          return texture2D(maskTexture, maskUV).r; // Use red channel as mask
+        }
 
         void main(void) {
           vec2 uv = vTextureCoord;
@@ -304,6 +366,13 @@ const PixiDemo = (props: PixiDemoProps) => {
             }
             
             float intensity = normalDot * uPoint0Intensity * attenuation;
+            
+            // Apply mask if present
+            if (uPoint0HasMask) {
+              float maskValue = sampleMask(uPoint0Mask, worldPos.xy, uPoint0Position.xy, uPoint0MaskOffset, uPoint0MaskRotation, uPoint0MaskScale);
+              intensity *= maskValue;
+            }
+            
             finalColor += diffuseColor.rgb * uPoint0Color * intensity;
           }
           
@@ -338,6 +407,13 @@ const PixiDemo = (props: PixiDemoProps) => {
             }
             
             float intensity = normalDot * uPoint1Intensity * attenuation;
+            
+            // Apply mask if present
+            if (uPoint1HasMask) {
+              float maskValue = sampleMask(uPoint1Mask, worldPos.xy, uPoint1Position.xy, uPoint1MaskOffset, uPoint1MaskRotation, uPoint1MaskScale);
+              intensity *= maskValue;
+            }
+            
             finalColor += diffuseColor.rgb * uPoint1Color * intensity;
           }
           
@@ -374,6 +450,13 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             float softness = mix(1.0, coneFactor, uSpot0Softness);
             float intensity = spotNormalDot * uSpot0Intensity * spotDistanceAttenuation * softness * coneFactor;
+            
+            // Apply mask if present
+            if (uSpot0HasMask) {
+              float maskValue = sampleMask(uSpot0Mask, worldPos.xy, uSpot0Position.xy, uSpot0MaskOffset, uSpot0MaskRotation, uSpot0MaskScale);
+              intensity *= maskValue;
+            }
+            
             finalColor += diffuseColor.rgb * uSpot0Color * intensity;
           }
           
@@ -394,6 +477,13 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             float softness = mix(1.0, coneFactor, uSpot1Softness);
             float intensity = spotNormalDot * uSpot1Intensity * spotDistanceAttenuation * softness * coneFactor;
+            
+            // Apply mask if present
+            if (uSpot1HasMask) {
+              float maskValue = sampleMask(uSpot1Mask, worldPos.xy, uSpot1Position.xy, uSpot1MaskOffset, uSpot1MaskRotation, uSpot1MaskScale);
+              intensity *= maskValue;
+            }
+            
             finalColor += diffuseColor.rgb * uSpot1Color * intensity;
           }
           
@@ -414,6 +504,13 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             float softness = mix(1.0, coneFactor, uSpot2Softness);
             float intensity = spotNormalDot * uSpot2Intensity * spotDistanceAttenuation * softness * coneFactor;
+            
+            // Apply mask if present
+            if (uSpot2HasMask) {
+              float maskValue = sampleMask(uSpot2Mask, worldPos.xy, uSpot2Position.xy, uSpot2MaskOffset, uSpot2MaskRotation, uSpot2MaskScale);
+              intensity *= maskValue;
+            }
+            
             finalColor += diffuseColor.rgb * uSpot2Color * intensity;
           }
           
@@ -434,6 +531,13 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             float softness = mix(1.0, coneFactor, uSpot3Softness);
             float intensity = spotNormalDot * uSpot3Intensity * spotDistanceAttenuation * softness * coneFactor;
+            
+            // Apply mask if present
+            if (uSpot3HasMask) {
+              float maskValue = sampleMask(uSpot3Mask, worldPos.xy, uSpot3Position.xy, uSpot3MaskOffset, uSpot3MaskRotation, uSpot3MaskScale);
+              intensity *= maskValue;
+            }
+            
             finalColor += diffuseColor.rgb * uSpot3Color * intensity;
           }
           
