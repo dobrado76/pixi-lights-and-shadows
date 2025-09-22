@@ -5,7 +5,7 @@
       "type": "ambient",
       "enabled": true,
       "brightness": 0.5,
-      "color": "0xffffff"
+      "color": "0x878787"
     },
     {
       "id": "mouse_light",
