@@ -626,8 +626,8 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
                     </label>
                     <input
                       type="range"
-                      min="-200"
-                      max="200"
+                      min="-1000"
+                      max="1000"
                       step="5"
                       value={light.mask?.offset.x || 0}
                       onChange={(e) => updateMaskProperty(light.id, 'offset', { 
@@ -644,8 +644,8 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
                     </label>
                     <input
                       type="range"
-                      min="-200"
-                      max="200"
+                      min="-1000"
+                      max="1000"
                       step="5"
                       value={light.mask?.offset.y || 0}
                       onChange={(e) => updateMaskProperty(light.id, 'offset', { 

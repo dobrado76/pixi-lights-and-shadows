@@ -70,15 +70,15 @@
       "x": 100,
       "y": 100,
       "z": 170,
-      "followMouse": false,
+      "followMouse": true,
       "radius": 400,
       "mask": {
         "image": "00019-1224130474.png",
         "offset": {
-          "x": 200,
+          "x": 170,
           "y": 200
         },
-        "rotation": 0,
+        "rotation": 345,
         "scale": 1
       }
     }

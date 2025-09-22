@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import * as PIXI from 'pixi.js';
 import { useCustomGeometry } from '../hooks/useCustomGeometry';
-import { vertexShaderSource } from '../shaders/vertexShader';
-import { fragmentShaderSource } from '../shaders/fragmentShader';
+// Vertex shader will be loaded dynamically from .glsl file
+// Fragment shader will be loaded dynamically from .glsl file
 import { ShaderParams } from '../App';
 import { Light } from '@shared/lights';
 
@@ -205,11 +205,13 @@ const PixiDemo = (props: PixiDemoProps) => {
               const maskPath = `/light_masks/${light.mask.image}`;
               console.log(`Mask texture path: ${maskPath}`);
               
+              const maskTexture = PIXI.Texture.from(maskPath);
               uniforms[`${prefix}HasMask`] = true;
-              uniforms[`${prefix}Mask`] = PIXI.Texture.from(maskPath);
+              uniforms[`${prefix}Mask`] = maskTexture;
               uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
               uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
               uniforms[`${prefix}MaskScale`] = light.mask.scale; // Use scale directly (1.0 = 100%)
+              uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
               
               console.log(`Mask uniforms for ${prefix}:`, {
                 hasMask: true,
@@ -219,7 +221,6 @@ const PixiDemo = (props: PixiDemoProps) => {
               });
               
               // Validate texture loading
-              const maskTexture = PIXI.Texture.from(maskPath);
               maskTexture.baseTexture.on('loaded', () => {
                 console.log(`Mask texture loaded successfully: ${maskPath} (${maskTexture.width}x${maskTexture.height})`);
               });
@@ -262,11 +263,13 @@ const PixiDemo = (props: PixiDemoProps) => {
               const maskPath = `/light_masks/${light.mask.image}`;
               console.log(`Mask texture path: ${maskPath}`);
               
+              const maskTexture = PIXI.Texture.from(maskPath);
               uniforms[`${prefix}HasMask`] = true;
-              uniforms[`${prefix}Mask`] = PIXI.Texture.from(maskPath);
+              uniforms[`${prefix}Mask`] = maskTexture;
               uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
               uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
               uniforms[`${prefix}MaskScale`] = light.mask.scale; // Use scale directly (1.0 = 100%)
+              uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
               
               console.log(`Mask uniforms for ${prefix}:`, {
                 hasMask: true,
@@ -276,7 +279,6 @@ const PixiDemo = (props: PixiDemoProps) => {
               });
               
               // Validate texture loading
-              const maskTexture = PIXI.Texture.from(maskPath);
               maskTexture.baseTexture.on('loaded', () => {
                 console.log(`Mask texture loaded successfully: ${maskPath} (${maskTexture.width}x${maskTexture.height})`);
               });
@@ -302,9 +304,12 @@ const PixiDemo = (props: PixiDemoProps) => {
       onShaderUpdate?.('Normal-mapped lighting shader created for real textures');
       onMeshUpdate?.('PIXI.Mesh created with real textures and normal mapping');
 
-      // Simplified multi-light shader - supports common 3-light setup
-      const spriteFragmentShader = `
-        precision mediump float;
+      // Load shaders from external files for better syntax highlighting
+      const vertexShaderResponse = await fetch('/src/shaders/vertex.glsl');
+      const vertexShaderSource = await vertexShaderResponse.text();
+      
+      const fragmentShaderResponse = await fetch('/src/shaders/fragment.glsl');
+      const spriteFragmentShader = await fragmentShaderResponse.text();
         varying vec2 vTextureCoord;
         uniform sampler2D uDiffuse;
         uniform sampler2D uNormal;
@@ -321,8 +326,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniform bool uPoint1Enabled; uniform vec3 uPoint1Position; uniform vec3 uPoint1Color; uniform float uPoint1Intensity; uniform float uPoint1Radius;
         
         // Point Light Masks
-        uniform bool uPoint0HasMask; uniform sampler2D uPoint0Mask; uniform vec2 uPoint0MaskOffset; uniform float uPoint0MaskRotation; uniform float uPoint0MaskScale;
-        uniform bool uPoint1HasMask; uniform sampler2D uPoint1Mask; uniform vec2 uPoint1MaskOffset; uniform float uPoint1MaskRotation; uniform float uPoint1MaskScale;
+        uniform bool uPoint0HasMask; uniform sampler2D uPoint0Mask; uniform vec2 uPoint0MaskOffset; uniform float uPoint0MaskRotation; uniform float uPoint0MaskScale; uniform vec2 uPoint0MaskSize;
+        uniform bool uPoint1HasMask; uniform sampler2D uPoint1Mask; uniform vec2 uPoint1MaskOffset; uniform float uPoint1MaskRotation; uniform float uPoint1MaskScale; uniform vec2 uPoint1MaskSize;
         
         // Directional Lights (0-1) 
         uniform bool uDir0Enabled; uniform vec3 uDir0Direction; uniform vec3 uDir0Color; uniform float uDir0Intensity;
@@ -335,13 +340,13 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniform bool uSpot3Enabled; uniform vec3 uSpot3Position; uniform vec3 uSpot3Direction; uniform vec3 uSpot3Color; uniform float uSpot3Intensity; uniform float uSpot3Radius; uniform float uSpot3ConeAngle; uniform float uSpot3Softness;
         
         // Spotlight Masks
-        uniform bool uSpot0HasMask; uniform sampler2D uSpot0Mask; uniform vec2 uSpot0MaskOffset; uniform float uSpot0MaskRotation; uniform float uSpot0MaskScale;
-        uniform bool uSpot1HasMask; uniform sampler2D uSpot1Mask; uniform vec2 uSpot1MaskOffset; uniform float uSpot1MaskRotation; uniform float uSpot1MaskScale;
-        uniform bool uSpot2HasMask; uniform sampler2D uSpot2Mask; uniform vec2 uSpot2MaskOffset; uniform float uSpot2MaskRotation; uniform float uSpot2MaskScale;
-        uniform bool uSpot3HasMask; uniform sampler2D uSpot3Mask; uniform vec2 uSpot3MaskOffset; uniform float uSpot3MaskRotation; uniform float uSpot3MaskScale;
+        uniform bool uSpot0HasMask; uniform sampler2D uSpot0Mask; uniform vec2 uSpot0MaskOffset; uniform float uSpot0MaskRotation; uniform float uSpot0MaskScale; uniform vec2 uSpot0MaskSize;
+        uniform bool uSpot1HasMask; uniform sampler2D uSpot1Mask; uniform vec2 uSpot1MaskOffset; uniform float uSpot1MaskRotation; uniform float uSpot1MaskScale; uniform vec2 uSpot1MaskSize;
+        uniform bool uSpot2HasMask; uniform sampler2D uSpot2Mask; uniform vec2 uSpot2MaskOffset; uniform float uSpot2MaskRotation; uniform float uSpot2MaskScale; uniform vec2 uSpot2MaskSize;
+        uniform bool uSpot3HasMask; uniform sampler2D uSpot3Mask; uniform vec2 uSpot3MaskOffset; uniform float uSpot3MaskRotation; uniform float uSpot3MaskScale; uniform vec2 uSpot3MaskSize;
 
         // Function to sample mask with transforms
-        float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offset, float rotation, float scale) {
+        float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
           vec2 relativePos = worldPos - lightPos;
           
           // Apply offset
@@ -355,9 +360,9 @@ const PixiDemo = (props: PixiDemoProps) => {
             relativePos.x * sinR + relativePos.y * cosR
           );
           
-          // Apply scale and convert to UV coordinates - PIXEL PERFECT
-          // Scale 1.0 = mask covers entire canvas width exactly
-          vec2 maskUV = (rotatedPos / (scale * uCanvasSize.x)) + 0.5;
+          // Apply scale and convert to UV coordinates - MASK-SIZE-BASED
+          // Scale 1.0 = mask displays at its actual pixel size
+          vec2 maskUV = (rotatedPos / (scale * maskSize)) + 0.5;
           
           // Sample mask (clamp to avoid edge artifacts)
           if (maskUV.x < 0.0 || maskUV.x > 1.0 || maskUV.y < 0.0 || maskUV.y > 1.0) {
@@ -413,7 +418,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             // Apply mask if present
             if (uPoint0HasMask) {
-              float maskValue = sampleMask(uPoint0Mask, worldPos.xy, uPoint0Position.xy, uPoint0MaskOffset, uPoint0MaskRotation, uPoint0MaskScale);
+              float maskValue = sampleMask(uPoint0Mask, worldPos.xy, uPoint0Position.xy, uPoint0MaskOffset, uPoint0MaskRotation, uPoint0MaskScale, uPoint0MaskSize);
               intensity *= maskValue; // Multiply light intensity by mask
             }
             
@@ -454,7 +459,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             // Apply mask if present
             if (uPoint1HasMask) {
-              float maskValue = sampleMask(uPoint1Mask, worldPos.xy, uPoint1Position.xy, uPoint1MaskOffset, uPoint1MaskRotation, uPoint1MaskScale);
+              float maskValue = sampleMask(uPoint1Mask, worldPos.xy, uPoint1Position.xy, uPoint1MaskOffset, uPoint1MaskRotation, uPoint1MaskScale, uPoint1MaskSize);
               intensity *= maskValue;
             }
             
@@ -497,7 +502,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             // Apply mask if present
             if (uSpot0HasMask) {
-              float maskValue = sampleMask(uSpot0Mask, worldPos.xy, uSpot0Position.xy, uSpot0MaskOffset, uSpot0MaskRotation, uSpot0MaskScale);
+              float maskValue = sampleMask(uSpot0Mask, worldPos.xy, uSpot0Position.xy, uSpot0MaskOffset, uSpot0MaskRotation, uSpot0MaskScale, uSpot0MaskSize);
               intensity *= maskValue;
             }
             
@@ -524,7 +529,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             // Apply mask if present
             if (uSpot1HasMask) {
-              float maskValue = sampleMask(uSpot1Mask, worldPos.xy, uSpot1Position.xy, uSpot1MaskOffset, uSpot1MaskRotation, uSpot1MaskScale);
+              float maskValue = sampleMask(uSpot1Mask, worldPos.xy, uSpot1Position.xy, uSpot1MaskOffset, uSpot1MaskRotation, uSpot1MaskScale, uSpot1MaskSize);
               intensity *= maskValue;
             }
             
@@ -551,7 +556,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             // Apply mask if present
             if (uSpot2HasMask) {
-              float maskValue = sampleMask(uSpot2Mask, worldPos.xy, uSpot2Position.xy, uSpot2MaskOffset, uSpot2MaskRotation, uSpot2MaskScale);
+              float maskValue = sampleMask(uSpot2Mask, worldPos.xy, uSpot2Position.xy, uSpot2MaskOffset, uSpot2MaskRotation, uSpot2MaskScale, uSpot2MaskSize);
               intensity *= maskValue;
             }
             
@@ -578,7 +583,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             // Apply mask if present
             if (uSpot3HasMask) {
-              float maskValue = sampleMask(uSpot3Mask, worldPos.xy, uSpot3Position.xy, uSpot3MaskOffset, uSpot3MaskRotation, uSpot3MaskScale);
+              float maskValue = sampleMask(uSpot3Mask, worldPos.xy, uSpot3Position.xy, uSpot3MaskOffset, uSpot3MaskRotation, uSpot3MaskScale, uSpot3MaskSize);
               intensity *= maskValue;
             }
             
@@ -743,11 +748,13 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Handle mask
         if (light.mask) {
+          const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
           uniforms[`${prefix}HasMask`] = true;
-          uniforms[`${prefix}Mask`] = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
+          uniforms[`${prefix}Mask`] = maskTexture;
           uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
           uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
           uniforms[`${prefix}MaskScale`] = light.mask.scale;
+          uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
         } else {
           uniforms[`${prefix}HasMask`] = false;
         }
@@ -780,11 +787,13 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Handle mask
         if (light.mask) {
+          const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
           uniforms[`${prefix}HasMask`] = true;
-          uniforms[`${prefix}Mask`] = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
+          uniforms[`${prefix}Mask`] = maskTexture;
           uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
           uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
           uniforms[`${prefix}MaskScale`] = light.mask.scale;
+          uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
         } else {
           uniforms[`${prefix}HasMask`] = false;
         }
