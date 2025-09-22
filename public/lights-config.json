@@ -75,11 +75,11 @@
       "mask": {
         "image": "00019-1224130474.png",
         "offset": {
-          "x": 10,
+          "x": 40,
           "y": -40
         },
         "rotation": 0,
-        "scale": 1
+        "scale": 1.2
       }
     }
   ]

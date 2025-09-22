@@ -201,11 +201,31 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             // Handle mask
             if (light.mask) {
+              console.log(`Loading mask for ${prefix}:`, light.mask);
+              const maskPath = `/light_masks/${light.mask.image}`;
+              console.log(`Mask texture path: ${maskPath}`);
+              
               uniforms[`${prefix}HasMask`] = true;
-              uniforms[`${prefix}Mask`] = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
+              uniforms[`${prefix}Mask`] = PIXI.Texture.from(maskPath);
               uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
               uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
-              uniforms[`${prefix}MaskScale`] = light.mask.scale * 100; // Scale adjustment
+              uniforms[`${prefix}MaskScale`] = light.mask.scale; // Use scale directly (1.0 = 100%)
+              
+              console.log(`Mask uniforms for ${prefix}:`, {
+                hasMask: true,
+                offset: [light.mask.offset.x, light.mask.offset.y],
+                rotation: light.mask.rotation,
+                scale: light.mask.scale
+              });
+              
+              // Validate texture loading
+              const maskTexture = PIXI.Texture.from(maskPath);
+              maskTexture.baseTexture.on('loaded', () => {
+                console.log(`Mask texture loaded successfully: ${maskPath} (${maskTexture.width}x${maskTexture.height})`);
+              });
+              maskTexture.baseTexture.on('error', () => {
+                console.error(`Failed to load mask texture: ${maskPath}`);
+              });
             } else {
               uniforms[`${prefix}HasMask`] = false;
             }
@@ -238,11 +258,31 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             // Handle mask
             if (light.mask) {
+              console.log(`Loading mask for ${prefix}:`, light.mask);
+              const maskPath = `/light_masks/${light.mask.image}`;
+              console.log(`Mask texture path: ${maskPath}`);
+              
               uniforms[`${prefix}HasMask`] = true;
-              uniforms[`${prefix}Mask`] = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
+              uniforms[`${prefix}Mask`] = PIXI.Texture.from(maskPath);
               uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
               uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
-              uniforms[`${prefix}MaskScale`] = light.mask.scale * 100; // Scale adjustment
+              uniforms[`${prefix}MaskScale`] = light.mask.scale; // Use scale directly (1.0 = 100%)
+              
+              console.log(`Mask uniforms for ${prefix}:`, {
+                hasMask: true,
+                offset: [light.mask.offset.x, light.mask.offset.y],
+                rotation: light.mask.rotation,
+                scale: light.mask.scale
+              });
+              
+              // Validate texture loading
+              const maskTexture = PIXI.Texture.from(maskPath);
+              maskTexture.baseTexture.on('loaded', () => {
+                console.log(`Mask texture loaded successfully: ${maskPath} (${maskTexture.width}x${maskTexture.height})`);
+              });
+              maskTexture.baseTexture.on('error', () => {
+                console.error(`Failed to load mask texture: ${maskPath}`);
+              });
             } else {
               uniforms[`${prefix}HasMask`] = false;
             }
@@ -315,7 +355,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           );
           
           // Apply scale and convert to UV coordinates
-          vec2 maskUV = (rotatedPos / scale) * 0.002 + 0.5; // Scale factor adjustment
+          vec2 maskUV = (rotatedPos / (scale * 100.0)) + 0.5; // Scale to reasonable world units
           
           // Sample mask (clamp to avoid edge artifacts)
           if (maskUV.x < 0.0 || maskUV.x > 1.0 || maskUV.y < 0.0 || maskUV.y > 1.0) {
@@ -372,7 +412,12 @@ const PixiDemo = (props: PixiDemoProps) => {
             // Apply mask if present
             if (uPoint0HasMask) {
               float maskValue = sampleMask(uPoint0Mask, worldPos.xy, uPoint0Position.xy, uPoint0MaskOffset, uPoint0MaskRotation, uPoint0MaskScale);
-              intensity *= maskValue;
+              // Debug: Make mask very obvious by turning affected areas red
+              if (maskValue > 0.1) {
+                finalColor = vec3(1.0, 0.0, 0.0); // Bright red where mask is active
+              } else {
+                intensity *= 0.1; // Dim areas without mask
+              }
             }
             
             finalColor += diffuseColor.rgb * uPoint0Color * intensity;
