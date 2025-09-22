@@ -137,45 +137,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       onShaderUpdate?.('Normal-mapped lighting shader created for real textures');
       onMeshUpdate?.('PIXI.Mesh created with real textures and normal mapping');
 
-      // Simple background shader
-      const backgroundFragmentShader = `
-        precision mediump float;
-        varying vec2 vTextureCoord;
-        uniform sampler2D uDiffuse;
-        uniform sampler2D uNormal;
-        uniform vec2 uLightPos;
-        uniform vec2 uResolution;
-        uniform vec3 uColor;
-        uniform float uLightIntensity;
-        uniform float uLightRadius;
-        uniform vec3 uLightColor;
-        uniform float uAmbientLight;
-
-        void main(void) {
-          vec2 uv = vTextureCoord;
-          vec4 diffuseColor = texture2D(uDiffuse, uv);
-          vec3 normal = texture2D(uNormal, uv).rgb * 2.0 - 1.0;
-          
-          vec2 lightPos = uLightPos / uResolution;
-          vec2 lightDir = lightPos - uv;
-          float lightDistance = length(lightDir * uResolution);
-          lightDir = normalize(lightDir);
-          
-          float attenuation = 1.0 - clamp(lightDistance / uLightRadius, 0.0, 1.0);
-          attenuation = attenuation * attenuation;
-          
-          float normalDot = max(dot(normal.xy, lightDir), 0.0);
-          float lightIntensity = normalDot * uLightIntensity * attenuation;
-          
-          vec3 ambientContribution = diffuseColor.rgb * uAmbientLight;
-          vec3 lightContribution = diffuseColor.rgb * uLightColor * lightIntensity;
-          vec3 finalColor = (ambientContribution + lightContribution) * uColor;
-          
-          gl_FragColor = vec4(finalColor, diffuseColor.a);
-        }
-      `;
-
-      // Simple sprite shader  
+      // Unified sprite shader for both background and sprites  
       const spriteFragmentShader = `
         precision mediump float;
         varying vec2 vTextureCoord;
@@ -254,13 +216,14 @@ const PixiDemo = (props: PixiDemoProps) => {
         }
       `;
 
-      // Background shader and mesh
-      const bgShader = PIXI.Shader.from(vertexShaderSource, backgroundFragmentShader, {
+      // Background shader and mesh (using unified sprite shader)
+      const bgShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, {
         uDiffuse: bgDiffuse,
         uNormal: bgNormal,
-        uResolution: [shaderParams.canvasWidth, shaderParams.canvasHeight],
-        uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uLightPos: [mousePos.x, mousePos.y],
+        uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
+        uSpritePos: [0, 0], // Background covers entire canvas starting at (0,0)
+        uSpriteSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Full canvas size
         uLightIntensity: shaderParams.lightIntensity,
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
         uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
