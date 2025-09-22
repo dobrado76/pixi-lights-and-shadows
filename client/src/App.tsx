@@ -40,20 +40,23 @@ export interface ShaderParams {
 function App() {
   // External lights configuration
   const [lightsConfig, setLightsConfig] = useState<Light[]>([]);
-  const [ambientLight, setAmbientLight] = useState<number>(0.3);
+  const [ambientLight, setAmbientLight] = useState<{intensity: number, color: {r: number, g: number, b: number}}>({
+    intensity: 0.3,
+    color: { r: 0.4, g: 0.4, b: 0.4 }
+  });
   const [lightsLoaded, setLightsLoaded] = useState<boolean>(false);
 
   // Debounced save function to prevent excessive saves
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  const debouncedSave = useCallback((lights: Light[], ambient: number) => {
+  const debouncedSave = useCallback((lights: Light[], ambient: {intensity: number, color: {r: number, g: number, b: number}}) => {
     if (saveTimeout) {
       clearTimeout(saveTimeout);
     }
     
     const timeout = setTimeout(async () => {
       try {
-        const success = await saveLightsConfig(lights, ambient);
+        const success = await saveLightsConfig(lights, ambient.intensity);
         if (success) {
           console.log('Configuration auto-saved successfully');
         } else {
@@ -119,12 +122,16 @@ function App() {
   useEffect(() => {
     const loadLights = async () => {
       try {
-        const [lights, ambient] = await Promise.all([
+        const [lights, ambientIntensity] = await Promise.all([
           loadLightsConfig(),
           loadAmbientLight()
         ]);
         setLightsConfig(lights);
-        setAmbientLight(ambient);
+        // Convert single number to object with default color
+        setAmbientLight({
+          intensity: ambientIntensity,
+          color: { r: 0.4, g: 0.4, b: 0.4 }
+        });
         setLightsLoaded(true);
         console.log('Loaded lights configuration:', lights);
       } catch (error) {
@@ -148,7 +155,7 @@ function App() {
   }, [ambientLight, debouncedSave]);
 
   // Handler for ambient light changes
-  const handleAmbientChange = useCallback((newAmbient: number) => {
+  const handleAmbientChange = useCallback((newAmbient: {intensity: number, color: {r: number, g: number, b: number}}) => {
     setAmbientLight(newAmbient);
     debouncedSave(lightsConfig, newAmbient);
   }, [lightsConfig, debouncedSave]);

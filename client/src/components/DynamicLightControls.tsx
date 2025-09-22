@@ -4,9 +4,9 @@ import { Plus, Trash2 } from 'lucide-react';
 
 interface DynamicLightControlsProps {
   lights: Light[];
-  ambientLight: number;
+  ambientLight: {intensity: number, color: {r: number, g: number, b: number}};
   onLightsChange: (lights: Light[]) => void;
-  onAmbientChange: (ambient: number) => void;
+  onAmbientChange: (ambient: {intensity: number, color: {r: number, g: number, b: number}}) => void;
 }
 
 const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientChange }: DynamicLightControlsProps) => {
@@ -117,23 +117,41 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
 
       {/* Compact Ambient Light Control */}
       <div className="border-b border-border pb-2">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 mb-1">
           <label className="text-xs text-muted-foreground min-w-[80px]">
-            Ambient: {localAmbient.toFixed(2)}
+            Ambient: {localAmbient.intensity.toFixed(2)}
           </label>
           <input
             type="range"
             min="0"
             max="1"
             step="0.01"
-            value={localAmbient}
+            value={localAmbient.intensity}
             onChange={(e) => {
-              const value = parseFloat(e.target.value);
-              setLocalAmbient(value);
-              onAmbientChange(value);
+              const newIntensity = parseFloat(e.target.value);
+              const newAmbient = { ...localAmbient, intensity: newIntensity };
+              setLocalAmbient(newAmbient);
+              onAmbientChange(newAmbient);
             }}
             className="flex-1"
             data-testid="slider-ambient-light"
+          />
+        </div>
+        <div className="flex items-center space-x-2">
+          <label className="text-xs text-muted-foreground min-w-[80px]">
+            Color:
+          </label>
+          <input
+            type="color"
+            value={rgbToHex(localAmbient.color.r, localAmbient.color.g, localAmbient.color.b)}
+            onChange={(e) => {
+              const rgb = hexToRgb(e.target.value);
+              const newAmbient = { ...localAmbient, color: rgb };
+              setLocalAmbient(newAmbient);
+              onAmbientChange(newAmbient);
+            }}
+            className="w-20 h-6 rounded border border-border cursor-pointer"
+            data-testid="color-ambient-light"
           />
         </div>
       </div>

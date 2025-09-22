@@ -9,7 +9,7 @@ import { Light } from '@shared/lights';
 interface PixiDemoProps {
   shaderParams: ShaderParams;
   lightsConfig: Light[];
-  ambientLight: number;
+  ambientLight: {intensity: number, color: {r: number, g: number, b: number}};
   onGeometryUpdate: (status: string) => void;
   onShaderUpdate: (status: string) => void;
   onMeshUpdate: (status: string) => void;
@@ -350,7 +350,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uSpritePos: [0, 0], // Background covers entire canvas starting at (0,0)
         uSpriteSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Full canvas size
-        uAmbientLight: ambientLight,
+        uAmbientLight: ambientLight.intensity,
+        uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
         ...lightUniforms
       });
 
@@ -393,7 +394,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uSpritePos:  [ballPos.x, ballPos.y],
         uSpriteSize: [ballDiffuse.width, ballDiffuse.height],
-        uAmbientLight: ambientLight,
+        uAmbientLight: ambientLight.intensity,
+        uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
         ...lightUniforms
       });
 
@@ -408,7 +410,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uSpritePos: [blockPos.x, blockPos.y],
         uSpriteSize: [blockDiffuse.width, blockDiffuse.height],
-        uAmbientLight: ambientLight,
+        uAmbientLight: ambientLight.intensity,
+        uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
         ...lightUniforms
       });
 
@@ -521,7 +524,8 @@ const PixiDemo = (props: PixiDemoProps) => {
 
       // Add other dynamic uniforms
       uniforms.uColor = [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB];
-      uniforms.uAmbientLight = ambientLight;
+      uniforms.uAmbientLight = ambientLight.intensity;
+      uniforms.uAmbientColor = [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b];
       
       return uniforms;
     };
