@@ -4,7 +4,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.54,
+      "brightness": 0.07,
       "color": "0xffffff"
     },
     {
@@ -15,7 +15,7 @@
       "color": "0xffffff",
       "x": 270,
       "y": 70,
-      "z": 70,
+      "z": 10,
       "followMouse": true,
       "castsShadows": true,
       "radius": 400
@@ -24,12 +24,12 @@
       "id": "directional_light",
       "type": "directional",
       "enabled": true,
-      "brightness": 0.2,
+      "brightness": 0.5,
       "color": "0xffffff",
       "directionX": 0.766044443118978,
       "directionY": -0.6427876096865393,
       "directionZ": -1,
-      "castsShadows": true
+      "castsShadows": false
     },
     {
       "id": "spotlight_1",
@@ -43,7 +43,7 @@
       "directionX": 0,
       "directionY": 1,
       "directionZ": -1,
-      "castsShadows": true,
+      "castsShadows": false,
       "radius": 250,
       "coneAngle": 50,
       "softness": 0.4
@@ -60,7 +60,7 @@
       "directionX": 0,
       "directionY": 1,
       "directionZ": -0.5,
-      "castsShadows": true,
+      "castsShadows": false,
       "radius": 400,
       "coneAngle": 43,
       "softness": 0.5
@@ -75,7 +75,7 @@
       "y": 220,
       "z": 50,
       "followMouse": false,
-      "castsShadows": true,
+      "castsShadows": false,
       "radius": 200,
       "mask": {
         "image": "00035-3934797537.png",
@@ -97,7 +97,7 @@
       "y": 500,
       "z": 50,
       "followMouse": false,
-      "castsShadows": true,
+      "castsShadows": false,
       "radius": 350
     }
   ]

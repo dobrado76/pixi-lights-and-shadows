@@ -132,9 +132,12 @@ const PixiDemo = (props: PixiDemoProps) => {
               } else {
                 shader.uniforms[`${prefix}HasMask`] = false;
               }
+              // Shadow casting flag for multi-pass point lights
+              shader.uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
             } else {
               shader.uniforms[`uPoint${i}Enabled`] = false;
               shader.uniforms[`uPoint${i}HasMask`] = false;
+              shader.uniforms[`uPoint${i}CastsShadows`] = false;
             }
           }
 
@@ -164,9 +167,12 @@ const PixiDemo = (props: PixiDemoProps) => {
               } else {
                 shader.uniforms[`${prefix}HasMask`] = false;
               }
+              // Shadow casting flag for multi-pass spotlights
+              shader.uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
             } else {
               shader.uniforms[`uSpot${i}Enabled`] = false;
               shader.uniforms[`uSpot${i}HasMask`] = false;
+              shader.uniforms[`uSpot${i}CastsShadows`] = false;
             }
           }
 
@@ -179,8 +185,11 @@ const PixiDemo = (props: PixiDemoProps) => {
               shader.uniforms[`${prefix}Direction`] = [light.direction!.x, light.direction!.y, light.direction!.z];
               shader.uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
               shader.uniforms[`${prefix}Intensity`] = light.intensity;
+              // Shadow casting flag for multi-pass directional lights
+              shader.uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
             } else {
               shader.uniforms[`uDir${i}Enabled`] = false;
+              shader.uniforms[`uDir${i}CastsShadows`] = false;
             }
           }
         }
@@ -535,6 +544,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Canvas dimensions for pixel-perfect scaling
         uAmbientLight: ambientLight.intensity,
         uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
+        // Shadow participation flags for background
+        uSpriteCastsShadows: false, // Background doesn't cast shadows
+        uSpriteReceivesShadows: true, // Background can receive shadows
         ...lightUniforms
       });
 
@@ -580,6 +592,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Canvas dimensions for pixel-perfect scaling
         uAmbientLight: ambientLight.intensity,
         uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
+        // Shadow participation flags for ball
+        uSpriteCastsShadows: true, // Ball casts shadows on other sprites
+        uSpriteReceivesShadows: true, // Ball can receive shadows
         ...lightUniforms
       });
 
@@ -597,6 +612,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Canvas dimensions for pixel-perfect scaling
         uAmbientLight: ambientLight.intensity,
         uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
+        // Shadow participation flags for block
+        uSpriteCastsShadows: true, // Block casts shadows on other sprites
+        uSpriteReceivesShadows: true, // Block can receive shadows
         ...lightUniforms
       });
 
@@ -661,6 +679,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uPoint0HasMask = false; uniforms.uPoint1HasMask = false; uniforms.uPoint2HasMask = false; uniforms.uPoint3HasMask = false;
       uniforms.uSpot0HasMask = false; uniforms.uSpot1HasMask = false; uniforms.uSpot2HasMask = false; uniforms.uSpot3HasMask = false;
       
+      // Initialize all shadow casting flags as disabled
+      uniforms.uPoint0CastsShadows = false; uniforms.uPoint1CastsShadows = false; uniforms.uPoint2CastsShadows = false; uniforms.uPoint3CastsShadows = false;
+      uniforms.uDir0CastsShadows = false; uniforms.uDir1CastsShadows = false;
+      uniforms.uSpot0CastsShadows = false; uniforms.uSpot1CastsShadows = false; uniforms.uSpot2CastsShadows = false; uniforms.uSpot3CastsShadows = false;
+      
       // Point Lights (up to 4)
       pointLights.slice(0, 4).forEach((light, i) => {
         const prefix = `uPoint${i}`;
@@ -694,6 +717,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         } else {
           uniforms[`${prefix}HasMask`] = false;
         }
+        
+        // Shadow casting flag for point lights
+        uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
       });
       
       // Directional Lights (up to 2)
@@ -703,6 +729,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
         uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
         uniforms[`${prefix}Intensity`] = light.intensity;
+        
+        // Shadow casting flag for directional lights
+        uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
       });
       
       // Spotlights (up to 4)
@@ -733,6 +762,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         } else {
           uniforms[`${prefix}HasMask`] = false;
         }
+        
+        // Shadow casting flag for spotlights
+        uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
       });
 
       // Add other dynamic uniforms
@@ -740,6 +772,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uAmbientLight = ambientLight.intensity;
       uniforms.uAmbientColor = [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b];
       uniforms.uCanvasSize = [shaderParams.canvasWidth, shaderParams.canvasHeight];
+      
+      // Global shadow properties
+      uniforms.uShadowHeight = 10.0; // Height of sprites above ground plane for shadow projection
+      uniforms.uShadowMaxLength = 200.0; // Maximum shadow length to prevent extremely long shadows
       
       // Debug: Log ambient light uniforms
       console.log(`🌅 AMBIENT LIGHT VALUES:`, {

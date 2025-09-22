@@ -213,15 +213,16 @@ void main(void) {
       intensity *= maskValue; // Multiply light intensity by mask
     }
     
-    // Apply shadows if enabled
-    if (uPoint0CastsShadows && uSpriteReceivesShadows && uSpriteCastsShadows) {
+    // Apply shadows if enabled (light casts shadows and this sprite receives them)
+    if (uPoint0CastsShadows && uSpriteReceivesShadows) {
       float softness = computeShadowSoftnessFromZ(lightPos3D.z);
-      if (softness > 0.0) { // Only calculate shadows if Z-depth rules allow it
+      if (lightPos3D.z < -25.0) {
+        intensity = 0.0; // No light if Z < -25 (complete shadow)
+      } else {
+        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
         vec2 shadowVector = projectShadowPoint(lightPos3D, worldPos.xy, uShadowHeight);
         float shadowMultiplier = applyShadow(shadowVector, uv, softness);
         intensity *= shadowMultiplier;
-      } else if (lightPos3D.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
       }
     }
     
@@ -258,15 +259,16 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Apply shadows if enabled
-    if (uPoint1CastsShadows && uSpriteReceivesShadows && uSpriteCastsShadows) {
+    // Apply shadows if enabled (light casts shadows and this sprite receives them)
+    if (uPoint1CastsShadows && uSpriteReceivesShadows) {
       float softness = computeShadowSoftnessFromZ(uPoint1Position.z);
-      if (softness > 0.0) { // Only calculate shadows if Z-depth rules allow it
+      if (uPoint1Position.z < -25.0) {
+        intensity = 0.0; // No light if Z < -25 (complete shadow)
+      } else {
+        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
         vec2 shadowVector = projectShadowPoint(uPoint1Position, worldPos.xy, uShadowHeight);
         float shadowMultiplier = applyShadow(shadowVector, uv, softness);
         intensity *= shadowMultiplier;
-      } else if (uPoint1Position.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
       }
     }
     
@@ -303,15 +305,16 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Apply shadows if enabled
-    if (uPoint2CastsShadows && uSpriteReceivesShadows && uSpriteCastsShadows) {
+    // Apply shadows if enabled (light casts shadows and this sprite receives them)
+    if (uPoint2CastsShadows && uSpriteReceivesShadows) {
       float softness = computeShadowSoftnessFromZ(lightPos3D.z);
-      if (softness > 0.0) { // Only calculate shadows if Z-depth rules allow it
+      if (lightPos3D.z < -25.0) {
+        intensity = 0.0; // No light if Z < -25 (complete shadow)
+      } else {
+        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
         vec2 shadowVector = projectShadowPoint(lightPos3D, worldPos.xy, uShadowHeight);
         float shadowMultiplier = applyShadow(shadowVector, uv, softness);
         intensity *= shadowMultiplier;
-      } else if (lightPos3D.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
       }
     }
     
@@ -348,15 +351,16 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Apply shadows if enabled
-    if (uPoint3CastsShadows && uSpriteReceivesShadows && uSpriteCastsShadows) {
+    // Apply shadows if enabled (light casts shadows and this sprite receives them)
+    if (uPoint3CastsShadows && uSpriteReceivesShadows) {
       float softness = computeShadowSoftnessFromZ(lightPos3D.z);
-      if (softness > 0.0) { // Only calculate shadows if Z-depth rules allow it
+      if (lightPos3D.z < -25.0) {
+        intensity = 0.0; // No light if Z < -25 (complete shadow)
+      } else {
+        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
         vec2 shadowVector = projectShadowPoint(lightPos3D, worldPos.xy, uShadowHeight);
         float shadowMultiplier = applyShadow(shadowVector, uv, softness);
         intensity *= shadowMultiplier;
-      } else if (lightPos3D.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
       }
     }
     
@@ -369,15 +373,16 @@ void main(void) {
     float normalDot = max(dot(normal, lightDir), 0.0);
     float intensity = normalDot * uDir0Intensity;
     
-    // Apply shadows if enabled
-    if (uDir0CastsShadows && uSpriteReceivesShadows && uSpriteCastsShadows) {
+    // Apply shadows if enabled (light casts shadows and this sprite receives them)
+    if (uDir0CastsShadows && uSpriteReceivesShadows) {
       float softness = computeShadowSoftnessFromDirection(uDir0Direction);
-      if (softness > 0.0 && uDir0Direction.z < 0.0) { // Only if light points toward surface (downward)
+      if (uDir0Direction.z >= 0.0) {
+        intensity = 0.0; // No light if direction points away (upward)
+      } else {
+        // Calculate shadows for downward directional lights (all softness levels)
         vec2 shadowVector = projectShadowDirectional(uDir0Direction, uShadowHeight);
         float shadowMultiplier = applyShadow(shadowVector, uv, softness);
         intensity *= shadowMultiplier;
-      } else if (uDir0Direction.z >= 0.0) {
-        intensity = 0.0; // No light if direction points away (upward)
       }
     }
     
@@ -390,15 +395,16 @@ void main(void) {
     float normalDot = max(dot(normal, lightDir), 0.0);
     float intensity = normalDot * uDir1Intensity;
     
-    // Apply shadows if enabled
-    if (uDir1CastsShadows && uSpriteReceivesShadows && uSpriteCastsShadows) {
+    // Apply shadows if enabled (light casts shadows and this sprite receives them)
+    if (uDir1CastsShadows && uSpriteReceivesShadows) {
       float softness = computeShadowSoftnessFromDirection(uDir1Direction);
-      if (softness > 0.0 && uDir1Direction.z < 0.0) { // Only if light points toward surface (downward)
+      if (uDir1Direction.z >= 0.0) {
+        intensity = 0.0; // No light if direction points away (upward)
+      } else {
+        // Calculate shadows for downward directional lights (all softness levels)
         vec2 shadowVector = projectShadowDirectional(uDir1Direction, uShadowHeight);
         float shadowMultiplier = applyShadow(shadowVector, uv, softness);
         intensity *= shadowMultiplier;
-      } else if (uDir1Direction.z >= 0.0) {
-        intensity = 0.0; // No light if direction points away (upward)
       }
     }
     
@@ -431,14 +437,15 @@ void main(void) {
     }
     
     // Apply shadows if enabled (only within spotlight cone)
-    if (uSpot0CastsShadows && uSpriteReceivesShadows && uSpriteCastsShadows && coneFactor > 0.0) {
+    if (uSpot0CastsShadows && uSpriteReceivesShadows && coneFactor > 0.0) {
       float shadowSoftness = computeShadowSoftnessFromZ(spotlightLightPos3D.z);
-      if (shadowSoftness > 0.0) { // Only calculate shadows if Z-depth rules allow it
+      if (spotlightLightPos3D.z < -25.0) {
+        intensity = 0.0; // No light if Z < -25 (complete shadow)
+      } else {
+        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
         vec2 shadowVector = projectShadowPoint(spotlightLightPos3D, worldPos.xy, uShadowHeight);
         float shadowMultiplier = applyShadow(shadowVector, uv, shadowSoftness);
         intensity *= shadowMultiplier;
-      } else if (spotlightLightPos3D.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
       }
     }
     
@@ -471,14 +478,15 @@ void main(void) {
     }
     
     // Apply shadows if enabled (only within spotlight cone)
-    if (uSpot1CastsShadows && uSpriteReceivesShadows && uSpriteCastsShadows && coneFactor > 0.0) {
+    if (uSpot1CastsShadows && uSpriteReceivesShadows && coneFactor > 0.0) {
       float shadowSoftness = computeShadowSoftnessFromZ(spotlightLightPos3D.z);
-      if (shadowSoftness > 0.0) { // Only calculate shadows if Z-depth rules allow it
+      if (spotlightLightPos3D.z < -25.0) {
+        intensity = 0.0; // No light if Z < -25 (complete shadow)
+      } else {
+        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
         vec2 shadowVector = projectShadowPoint(spotlightLightPos3D, worldPos.xy, uShadowHeight);
         float shadowMultiplier = applyShadow(shadowVector, uv, shadowSoftness);
         intensity *= shadowMultiplier;
-      } else if (spotlightLightPos3D.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
       }
     }
     
@@ -511,14 +519,15 @@ void main(void) {
     }
     
     // Apply shadows if enabled (only within spotlight cone)
-    if (uSpot2CastsShadows && uSpriteReceivesShadows && uSpriteCastsShadows && coneFactor > 0.0) {
+    if (uSpot2CastsShadows && uSpriteReceivesShadows && coneFactor > 0.0) {
       float shadowSoftness = computeShadowSoftnessFromZ(spotlightLightPos3D.z);
-      if (shadowSoftness > 0.0) { // Only calculate shadows if Z-depth rules allow it
+      if (spotlightLightPos3D.z < -25.0) {
+        intensity = 0.0; // No light if Z < -25 (complete shadow)
+      } else {
+        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
         vec2 shadowVector = projectShadowPoint(spotlightLightPos3D, worldPos.xy, uShadowHeight);
         float shadowMultiplier = applyShadow(shadowVector, uv, shadowSoftness);
         intensity *= shadowMultiplier;
-      } else if (spotlightLightPos3D.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
       }
     }
     
@@ -551,14 +560,15 @@ void main(void) {
     }
     
     // Apply shadows if enabled (only within spotlight cone)
-    if (uSpot3CastsShadows && uSpriteReceivesShadows && uSpriteCastsShadows && coneFactor > 0.0) {
+    if (uSpot3CastsShadows && uSpriteReceivesShadows && coneFactor > 0.0) {
       float shadowSoftness = computeShadowSoftnessFromZ(spotlightLightPos3D.z);
-      if (shadowSoftness > 0.0) { // Only calculate shadows if Z-depth rules allow it
+      if (spotlightLightPos3D.z < -25.0) {
+        intensity = 0.0; // No light if Z < -25 (complete shadow)
+      } else {
+        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
         vec2 shadowVector = projectShadowPoint(spotlightLightPos3D, worldPos.xy, uShadowHeight);
         float shadowMultiplier = applyShadow(shadowVector, uv, shadowSoftness);
         intensity *= shadowMultiplier;
-      } else if (spotlightLightPos3D.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
       }
     }
     
