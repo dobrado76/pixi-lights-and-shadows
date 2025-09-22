@@ -151,7 +151,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       onShaderUpdate?.('Normal-mapped lighting shader created for real textures');
       onMeshUpdate?.('PIXI.Mesh created with real textures and normal mapping');
 
-      // Enhanced lighting shader with new parameters
+      // Enhanced lighting shader with sprite-local lighting support
       const lightingFragmentShader = `
         precision mediump float;
         varying vec2 vTextureCoord;
@@ -166,6 +166,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniform float uLightRadius;
         uniform vec3 uLightColor;
         uniform float uAmbientLight;
+        // Sprite position uniforms (optional - for sprites only)
+        uniform vec2 uSpritePos;
+        uniform vec2 uSpriteSize;
 
         void main(void) {
           vec2 uv = vTextureCoord;
@@ -174,10 +177,22 @@ const PixiDemo = (props: PixiDemoProps) => {
           vec4 diffuseColor = texture2D(uDiffuse, uv);
           vec3 normal = texture2D(uNormal, uv).rgb * 2.0 - 1.0;
           
-          // Calculate light position in UV space
-          vec2 lightPos = uLightPos / uResolution;
-          vec2 lightDir = lightPos - uv;
-          float lightDistance = length(lightDir * uResolution);
+          // Calculate lighting - check if we have sprite uniforms
+          vec2 lightDir;
+          float lightDistance;
+          
+          if (uSpriteSize.x > 0.0 && uSpriteSize.y > 0.0) {
+            // Sprite mode: calculate world position of current pixel
+            vec2 worldPos = uSpritePos + uv * uSpriteSize;
+            lightDir = uLightPos - worldPos;
+            lightDistance = length(lightDir);
+          } else {
+            // Background mode: use UV-based lighting
+            vec2 lightPos = uLightPos / uResolution;
+            lightDir = lightPos - uv;
+            lightDistance = length(lightDir * uResolution);
+          }
+          
           lightDir = normalize(lightDir);
           
           // Enhanced lighting calculation with falloff
@@ -207,6 +222,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uResolution: [shaderParams.canvasWidth, shaderParams.canvasHeight],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uLightPos: [mousePos.x, mousePos.y],
+        uSpritePos: [0, 0], // Background mode
+        uSpriteSize: [0, 0], // Background mode
         // Enhanced lighting uniforms
         uLightIntensity: shaderParams.lightIntensity,
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0), // Prevent division by zero
@@ -218,18 +235,25 @@ const PixiDemo = (props: PixiDemoProps) => {
       bgMesh.x = 0;
       bgMesh.y = 0;
 
-      // Create sprite geometry
-      const spriteGeometry = new PIXI.Geometry();
-      const spriteSize = 64;
-      const spriteVertices = [0, 0, spriteSize, 0, spriteSize, spriteSize, 0, spriteSize];
-      const spriteUvs = [0, 0, 1, 0, 1, 1, 0, 1];
-      const spriteIndices = [0, 1, 2, 0, 2, 3];
+      // Create proper sprite geometries based on texture dimensions
+      const createSpriteGeometry = (width: number, height: number) => {
+        const geometry = new PIXI.Geometry();
+        const vertices = [0, 0, width, 0, width, height, 0, height];
+        const uvs = [0, 0, 1, 0, 1, 1, 0, 1];
+        const indices = [0, 1, 2, 0, 2, 3];
+        
+        geometry.addAttribute('aVertexPosition', vertices, 2);
+        geometry.addAttribute('aTextureCoord', uvs, 2);
+        geometry.addIndex(indices);
+        return geometry;
+      };
       
-      spriteGeometry.addAttribute('aVertexPosition', spriteVertices, 2);
-      spriteGeometry.addAttribute('aTextureCoord', spriteUvs, 2);
-      spriteGeometry.addIndex(spriteIndices);
+      // Create geometries with proper dimensions
+      const ballGeometry = createSpriteGeometry(ballDiffuse.width, ballDiffuse.height);
+      const blockGeometry = createSpriteGeometry(blockDiffuse.width, blockDiffuse.height);
 
       // Ball shader and mesh
+      const ballPos = { x: 120, y: 80 };
       const ballShader = PIXI.Shader.from(vertexShaderSource, lightingFragmentShader, {
         uDiffuse: ballDiffuse,
         uNormal: ballNormal,
@@ -237,6 +261,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uResolution: [shaderParams.canvasWidth, shaderParams.canvasHeight],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uTime: 0,
+        uSpritePos: [ballPos.x, ballPos.y],
+        uSpriteSize: [ballDiffuse.width, ballDiffuse.height],
         // Enhanced lighting uniforms
         uLightIntensity: shaderParams.lightIntensity,
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0), // Prevent division by zero
@@ -244,11 +270,12 @@ const PixiDemo = (props: PixiDemoProps) => {
         uAmbientLight: shaderParams.ambientLight
       });
 
-      const ballMesh = new PIXI.Mesh(spriteGeometry, ballShader as any);
-      ballMesh.x = 100;
-      ballMesh.y = 100;
+      const ballMesh = new PIXI.Mesh(ballGeometry, ballShader as any);
+      ballMesh.x = 120;
+      ballMesh.y = 80;
 
       // Block shader and mesh
+      const blockPos = { x: 280, y: 120 };
       const blockShader = PIXI.Shader.from(vertexShaderSource, lightingFragmentShader, {
         uDiffuse: blockDiffuse,
         uNormal: blockNormal,
@@ -256,6 +283,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uResolution: [shaderParams.canvasWidth, shaderParams.canvasHeight],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uTime: 0,
+        uSpritePos: [blockPos.x, blockPos.y],
+        uSpriteSize: [blockDiffuse.width, blockDiffuse.height],
         // Enhanced lighting uniforms
         uLightIntensity: shaderParams.lightIntensity,
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0), // Prevent division by zero
@@ -263,9 +292,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         uAmbientLight: shaderParams.ambientLight
       });
 
-      const blockMesh = new PIXI.Mesh(spriteGeometry, blockShader as any);
-      blockMesh.x = 250;
-      blockMesh.y = 150;
+      const blockMesh = new PIXI.Mesh(blockGeometry, blockShader as any);
+      blockMesh.x = 280;
+      blockMesh.y = 120;
 
       // Store references
       meshesRef.current = [bgMesh, ballMesh, blockMesh];
