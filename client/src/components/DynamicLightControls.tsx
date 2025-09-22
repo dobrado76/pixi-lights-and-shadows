@@ -5,11 +5,13 @@ import { Plus, Trash2, Copy, Edit3, ImageIcon } from 'lucide-react';
 interface DynamicLightControlsProps {
   lights: Light[];
   ambientLight: {intensity: number, color: {r: number, g: number, b: number}};
+  multiPassEnabled: boolean;
   onLightsChange: (lights: Light[]) => void;
   onAmbientChange: (ambient: {intensity: number, color: {r: number, g: number, b: number}}) => void;
+  onMultiPassChange: (enabled: boolean) => void;
 }
 
-const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientChange }: DynamicLightControlsProps) => {
+const DynamicLightControls = ({ lights, ambientLight, multiPassEnabled, onLightsChange, onAmbientChange, onMultiPassChange }: DynamicLightControlsProps) => {
   const [localLights, setLocalLights] = useState<Light[]>(lights);
   const [localAmbient, setLocalAmbient] = useState(ambientLight);
   const [newLightType, setNewLightType] = useState<'point' | 'directional' | 'spotlight'>('point');
@@ -271,6 +273,21 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
             className="w-20 h-6 rounded border border-border cursor-pointer"
             data-testid="color-ambient-light"
           />
+        </div>
+        <div className="flex items-center space-x-2 mt-2">
+          <label className="text-xs text-muted-foreground min-w-[80px]">
+            Multi-Pass:
+          </label>
+          <input
+            type="checkbox"
+            checked={multiPassEnabled}
+            onChange={(e) => onMultiPassChange(e.target.checked)}
+            className="w-4 h-4 rounded border border-border cursor-pointer"
+            data-testid="toggle-multipass-rendering"
+          />
+          <span className="text-xs text-muted-foreground">
+            {multiPassEnabled ? 'Enabled (50+ lights)' : 'Auto (>8 lights)'}
+          </span>
         </div>
       </div>
 

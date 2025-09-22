@@ -9,6 +9,9 @@ uniform vec3 uColor;
 uniform float uAmbientLight;
 uniform vec3 uAmbientColor;
 
+// Multi-pass rendering control
+uniform int uPassMode; // 0 = base pass (ambient only), 1 = lighting pass (incremental)
+
 // Expanded Light System - supports 8 lights (more PIXI.js compatible)
 // Point Lights (0-3)
 uniform bool uPoint0Enabled; uniform vec3 uPoint0Position; uniform vec3 uPoint0Color; uniform float uPoint0Intensity; uniform float uPoint0Radius;
@@ -74,8 +77,20 @@ void main(void) {
   vec2 worldPos = uSpritePos + uv * uSpriteSize;
   vec3 worldPos3D = vec3(worldPos.x, worldPos.y, 0.0);
   
-  // Start with ambient lighting
-  vec3 finalColor = diffuseColor.rgb * uAmbientLight * uAmbientColor;
+  // Multi-pass rendering: handle base vs lighting passes
+  vec3 finalColor;
+  
+  if (uPassMode == 0) {
+    // Base pass: ambient lighting only
+    finalColor = diffuseColor.rgb * uAmbientLight * uAmbientColor;
+    
+    // Skip all dynamic lights in base pass
+    gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
+    return;
+  } else {
+    // Lighting pass: incremental light contributions only (no ambient)
+    finalColor = vec3(0.0, 0.0, 0.0);
+  }
   
   // Point Light 0
   if (uPoint0Enabled) {

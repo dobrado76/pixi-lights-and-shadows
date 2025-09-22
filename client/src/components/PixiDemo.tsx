@@ -16,14 +16,187 @@ interface PixiDemoProps {
 }
 
 const PixiDemo = (props: PixiDemoProps) => {
-  const { shaderParams, lightsConfig, ambientLight, onGeometryUpdate, onShaderUpdate, onMeshUpdate } = props;
+  const { shaderParams, lightsConfig, ambientLight, multiPassEnabled, onGeometryUpdate, onShaderUpdate, onMeshUpdate } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
   const [mousePos, setMousePos] = useState({ x: 200, y: 150 });
   const meshesRef = useRef<PIXI.Mesh[]>([]);
   const shadersRef = useRef<PIXI.Shader[]>([]);
   
+  // Multi-pass rendering state
+  const renderTargetRef = useRef<PIXI.RenderTexture | null>(null);
+  const sceneContainerRef = useRef<PIXI.Container | null>(null);
+  const displaySpriteRef = useRef<PIXI.Sprite | null>(null);
+  const LIGHTS_PER_PASS = 8; // 4 point + 4 spot lights per pass
+  
   const geometry = useCustomGeometry(shaderParams.canvasWidth, shaderParams.canvasHeight);
+
+  // Multi-pass lighting composer
+  const renderMultiPass = (lights: Light[]) => {
+    if (!pixiApp || !renderTargetRef.current || !sceneContainerRef.current || !displaySpriteRef.current) return;
+
+    const enabledLights = lights.filter(light => light.enabled && light.type !== 'ambient');
+    console.log(`🎨 MULTI-PASS: Rendering ${enabledLights.length} lights`);
+
+    // Clear accumulation buffer
+    pixiApp.renderer.render(new PIXI.Container(), { renderTexture: renderTargetRef.current, clear: true });
+
+    // BASE PASS: Ambient lighting only
+    shadersRef.current.forEach(shader => {
+      if (shader.uniforms) {
+        shader.uniforms.uPassMode = 0; // Base pass
+        // Reset all light enabled flags for base pass
+        for (let i = 0; i < 4; i++) {
+          shader.uniforms[`uPoint${i}Enabled`] = false;
+          shader.uniforms[`uSpot${i}Enabled`] = false;
+        }
+        shader.uniforms.uDir0Enabled = false;
+        shader.uniforms.uDir1Enabled = false;
+      }
+    });
+    
+    // Render base pass with NORMAL blending
+    pixiApp.renderer.render(sceneContainerRef.current, { 
+      renderTexture: renderTargetRef.current, 
+      clear: false 
+    });
+
+    // LIGHTING PASSES: Batch lights and render additively
+    const pointLights = enabledLights.filter(light => light.type === 'point');
+    const spotlights = enabledLights.filter(light => light.type === 'spotlight');
+    const directionalLights = enabledLights.filter(light => light.type === 'directional');
+
+    // Calculate number of passes needed
+    const maxPointsPerPass = 4;
+    const maxSpotsPerPass = 4;
+    const maxDirPerPass = 2;
+    
+    const pointPasses = Math.ceil(pointLights.length / maxPointsPerPass);
+    const spotPasses = Math.ceil(spotlights.length / maxSpotsPerPass);
+    const dirPasses = Math.ceil(directionalLights.length / maxDirPerPass);
+    
+    const totalPasses = Math.max(pointPasses, spotPasses, dirPasses);
+    
+    console.log(`🔄 RENDERING ${totalPasses} lighting passes:`);
+    console.log(`   Point lights: ${pointLights.length} (${pointPasses} passes)`);
+    console.log(`   Spotlights: ${spotlights.length} (${spotPasses} passes)`);
+    console.log(`   Directional: ${directionalLights.length} (${dirPasses} passes)`);
+
+    // Render each lighting pass
+    for (let pass = 0; pass < totalPasses; pass++) {
+      // Get lights for this pass
+      const passPointLights = pointLights.slice(pass * maxPointsPerPass, (pass + 1) * maxPointsPerPass);
+      const passSpotlights = spotlights.slice(pass * maxSpotsPerPass, (pass + 1) * maxSpotsPerPass);
+      const passDirLights = directionalLights.slice(pass * maxDirPerPass, (pass + 1) * maxDirPerPass);
+
+      // Skip empty passes
+      if (passPointLights.length === 0 && passSpotlights.length === 0 && passDirLights.length === 0) continue;
+
+      console.log(`   Pass ${pass + 1}: ${passPointLights.length} points, ${passSpotlights.length} spots, ${passDirLights.length} dir`);
+
+      // Set up uniforms for this pass
+      shadersRef.current.forEach(shader => {
+        if (shader.uniforms) {
+          shader.uniforms.uPassMode = 1; // Lighting pass
+          shader.uniforms.uAmbientLight = 0; // No ambient in lighting passes
+          
+          // Configure point lights for this pass
+          for (let i = 0; i < 4; i++) {
+            if (i < passPointLights.length) {
+              const light = passPointLights[i];
+              const prefix = `uPoint${i}`;
+              shader.uniforms[`${prefix}Enabled`] = true;
+              shader.uniforms[`${prefix}Position`] = [
+                light.followMouse ? mousePos.x : light.position.x,
+                light.followMouse ? mousePos.y : light.position.y,
+                light.position.z
+              ];
+              shader.uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
+              shader.uniforms[`${prefix}Intensity`] = light.intensity;
+              shader.uniforms[`${prefix}Radius`] = light.radius || 200;
+              
+              // Handle masks
+              if (light.mask) {
+                const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
+                shader.uniforms[`${prefix}HasMask`] = true;
+                shader.uniforms[`${prefix}Mask`] = maskTexture;
+                shader.uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
+                shader.uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
+                shader.uniforms[`${prefix}MaskScale`] = light.mask.scale;
+                shader.uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
+              } else {
+                shader.uniforms[`${prefix}HasMask`] = false;
+              }
+            } else {
+              shader.uniforms[`uPoint${i}Enabled`] = false;
+              shader.uniforms[`uPoint${i}HasMask`] = false;
+            }
+          }
+
+          // Configure spotlights for this pass  
+          for (let i = 0; i < 4; i++) {
+            if (i < passSpotlights.length) {
+              const light = passSpotlights[i];
+              const prefix = `uSpot${i}`;
+              shader.uniforms[`${prefix}Enabled`] = true;
+              shader.uniforms[`${prefix}Position`] = [light.position.x, light.position.y, light.position.z];
+              shader.uniforms[`${prefix}Direction`] = [light.direction!.x, light.direction!.y, light.direction!.z];
+              shader.uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
+              shader.uniforms[`${prefix}Intensity`] = light.intensity;
+              shader.uniforms[`${prefix}Radius`] = light.radius || 150;
+              shader.uniforms[`${prefix}ConeAngle`] = light.coneAngle || 30;
+              shader.uniforms[`${prefix}Softness`] = light.softness || 0.5;
+              
+              // Handle masks
+              if (light.mask) {
+                const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
+                shader.uniforms[`${prefix}HasMask`] = true;
+                shader.uniforms[`${prefix}Mask`] = maskTexture;
+                shader.uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
+                shader.uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
+                shader.uniforms[`${prefix}MaskScale`] = light.mask.scale;
+                shader.uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
+              } else {
+                shader.uniforms[`${prefix}HasMask`] = false;
+              }
+            } else {
+              shader.uniforms[`uSpot${i}Enabled`] = false;
+              shader.uniforms[`uSpot${i}HasMask`] = false;
+            }
+          }
+
+          // Configure directional lights for this pass
+          for (let i = 0; i < 2; i++) {
+            if (i < passDirLights.length) {
+              const light = passDirLights[i];
+              const prefix = `uDir${i}`;
+              shader.uniforms[`${prefix}Enabled`] = true;
+              shader.uniforms[`${prefix}Direction`] = [light.direction!.x, light.direction!.y, light.direction!.z];
+              shader.uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
+              shader.uniforms[`${prefix}Intensity`] = light.intensity;
+            } else {
+              shader.uniforms[`uDir${i}Enabled`] = false;
+            }
+          }
+        }
+      });
+
+      // Render lighting pass with ADDITIVE blending
+      meshesRef.current.forEach(mesh => {
+        mesh.blendMode = PIXI.BLEND_MODES.ADD;
+      });
+      pixiApp.renderer.render(sceneContainerRef.current, { 
+        renderTexture: renderTargetRef.current, 
+        clear: false 
+      });
+      meshesRef.current.forEach(mesh => {
+        mesh.blendMode = PIXI.BLEND_MODES.NORMAL;
+      });
+    }
+
+    // Final render: Display accumulated result
+    pixiApp.renderer.render(displaySpriteRef.current);
+  };
 
   // Initialize PIXI Application
   useEffect(() => {
@@ -79,6 +252,19 @@ const PixiDemo = (props: PixiDemoProps) => {
         setPixiApp(app);
         console.log('PIXI App initialized successfully');
         console.log('Renderer type:', app.renderer.type === PIXI.RENDERER_TYPE.WEBGL ? 'WebGL' : 'Canvas');
+        
+        // Initialize render targets for multi-pass rendering
+        renderTargetRef.current = PIXI.RenderTexture.create({ 
+          width: shaderParams.canvasWidth, 
+          height: shaderParams.canvasHeight 
+        });
+        
+        sceneContainerRef.current = new PIXI.Container();
+        
+        displaySpriteRef.current = new PIXI.Sprite(renderTargetRef.current);
+        app.stage.addChild(displaySpriteRef.current);
+        
+        console.log('🎯 Multi-pass render targets initialized');
       } else {
         throw new Error('Canvas element not found');
       }
@@ -401,9 +587,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       shadersRef.current = [bgShader, ballShader, blockShader];
 
       // Add to stage
-      pixiApp.stage.addChild(bgMesh);
-      pixiApp.stage.addChild(ballMesh);
-      pixiApp.stage.addChild(blockMesh);
+      // Add meshes to scene container for multi-pass rendering
+      sceneContainerRef.current!.addChild(bgMesh);
+      sceneContainerRef.current!.addChild(ballMesh);
+      sceneContainerRef.current!.addChild(blockMesh);
 
       console.log('PIXI demo setup completed successfully');
 
@@ -545,11 +732,24 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
     });
 
-    // Force PIXI to re-render when uniforms change (especially for mask updates)
+    // Choose rendering mode based on light count
     if (pixiApp && pixiApp.renderer) {
-      pixiApp.render();
+      const enabledLights = lightsConfig.filter(light => light.enabled && light.type !== 'ambient');
+      const lightCount = enabledLights.length;
+      
+      // Switch to multi-pass for many lights or when manually enabled
+      const useMultiPass = multiPassEnabled || lightCount > 8;
+      
+      if (useMultiPass && renderTargetRef.current && sceneContainerRef.current && displaySpriteRef.current) {
+        console.log(`🚀 MULTI-PASS: Rendering ${lightCount} lights with multi-pass architecture`);
+        renderMultiPass(lightsConfig);
+      } else {
+        console.log(`⚡ SINGLE-PASS: Rendering ${lightCount} lights with single-pass (direct)`);
+        // Traditional single-pass rendering
+        pixiApp.render();
+      }
     }
-  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight]);
+  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, multiPassEnabled]);
 
   // Animation loop
   useEffect(() => {
