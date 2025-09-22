@@ -178,16 +178,16 @@ const PixiDemo = (props: PixiDemoProps) => {
           const spotlights = enabledLights.filter(light => light.type === 'spotlight');
           
           // Initialize all lights as disabled
-          uniforms.uPoint0Enabled = false; uniforms.uPoint1Enabled = false;
+          uniforms.uPoint0Enabled = false; uniforms.uPoint1Enabled = false; uniforms.uPoint2Enabled = false; uniforms.uPoint3Enabled = false;
           uniforms.uDir0Enabled = false; uniforms.uDir1Enabled = false;
           uniforms.uSpot0Enabled = false; uniforms.uSpot1Enabled = false; uniforms.uSpot2Enabled = false; uniforms.uSpot3Enabled = false;
           
           // Initialize all masks as disabled
-          uniforms.uPoint0HasMask = false; uniforms.uPoint1HasMask = false;
+          uniforms.uPoint0HasMask = false; uniforms.uPoint1HasMask = false; uniforms.uPoint2HasMask = false; uniforms.uPoint3HasMask = false;
           uniforms.uSpot0HasMask = false; uniforms.uSpot1HasMask = false; uniforms.uSpot2HasMask = false; uniforms.uSpot3HasMask = false;
           
-          // Point Lights (up to 2)
-          pointLights.slice(0, 2).forEach((light, i) => {
+          // Point Lights (up to 4)
+          pointLights.slice(0, 4).forEach((light, i) => {
             const prefix = `uPoint${i}`;
             uniforms[`${prefix}Enabled`] = true;
             uniforms[`${prefix}Position`] = [
@@ -439,16 +439,16 @@ const PixiDemo = (props: PixiDemoProps) => {
       const spotlights = enabledLights.filter(light => light.type === 'spotlight');
       
       // Initialize all lights as disabled
-      uniforms.uPoint0Enabled = false; uniforms.uPoint1Enabled = false;
+      uniforms.uPoint0Enabled = false; uniforms.uPoint1Enabled = false; uniforms.uPoint2Enabled = false; uniforms.uPoint3Enabled = false;
       uniforms.uDir0Enabled = false; uniforms.uDir1Enabled = false;
       uniforms.uSpot0Enabled = false; uniforms.uSpot1Enabled = false; uniforms.uSpot2Enabled = false; uniforms.uSpot3Enabled = false;
       
       // Initialize all masks as disabled
-      uniforms.uPoint0HasMask = false; uniforms.uPoint1HasMask = false;
+      uniforms.uPoint0HasMask = false; uniforms.uPoint1HasMask = false; uniforms.uPoint2HasMask = false; uniforms.uPoint3HasMask = false;
       uniforms.uSpot0HasMask = false; uniforms.uSpot1HasMask = false; uniforms.uSpot2HasMask = false; uniforms.uSpot3HasMask = false;
       
-      // Point Lights (up to 2)
-      pointLights.slice(0, 2).forEach((light, i) => {
+      // Point Lights (up to 4)
+      pointLights.slice(0, 4).forEach((light, i) => {
         const prefix = `uPoint${i}`;
         uniforms[`${prefix}Enabled`] = true;
         uniforms[`${prefix}Position`] = [
