@@ -55,6 +55,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
     });
     
+    // Set meshes to NORMAL blending for base pass
+    meshesRef.current.forEach(mesh => {
+      mesh.blendMode = PIXI.BLEND_MODES.NORMAL;
+    });
+    
     // Render base pass with NORMAL blending
     pixiApp.renderer.render(sceneContainerRef.current, { 
       renderTexture: renderTargetRef.current, 
@@ -262,6 +267,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         sceneContainerRef.current = new PIXI.Container();
         
         displaySpriteRef.current = new PIXI.Sprite(renderTargetRef.current);
+        displaySpriteRef.current.blendMode = PIXI.BLEND_MODES.NORMAL; // Display accumulated result normally
         app.stage.addChild(displaySpriteRef.current);
         
         console.log('🎯 Multi-pass render targets initialized');
@@ -737,15 +743,23 @@ const PixiDemo = (props: PixiDemoProps) => {
       const enabledLights = lightsConfig.filter(light => light.enabled && light.type !== 'ambient');
       const lightCount = enabledLights.length;
       
-      // Switch to multi-pass for many lights or when manually enabled
+      // Automatic mode selection: Multi-pass for >8 lights or manual override
       const useMultiPass = multiPassEnabled || lightCount > 8;
       
       if (useMultiPass && renderTargetRef.current && sceneContainerRef.current && displaySpriteRef.current) {
-        console.log(`🚀 MULTI-PASS: Rendering ${lightCount} lights with multi-pass architecture`);
+        console.log(`🚀 MULTI-PASS: Rendering ${lightCount} lights with multi-pass architecture (${Math.ceil(lightCount/8)} passes)`);
         renderMultiPass(lightsConfig);
       } else {
-        console.log(`⚡ SINGLE-PASS: Rendering ${lightCount} lights with single-pass (direct)`);
-        // Traditional single-pass rendering
+        console.log(`⚡ SINGLE-PASS: Rendering ${lightCount} lights directly to screen (≤8 lights)`);
+        // Single-pass: Set all meshes to NORMAL and render directly to screen
+        meshesRef.current.forEach(mesh => {
+          mesh.blendMode = PIXI.BLEND_MODES.NORMAL;
+        });
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uPassMode = 1; // Lighting pass mode (all lights active)
+          }
+        });
         pixiApp.render();
       }
     }
