@@ -27,7 +27,7 @@
       "id": "directional_light",
       "type": "directional",
       "enabled": true,
-      "brightness": 0.5,
+      "brightness": 0.8,
       "color": "0xffffff",
       "directionX": 1,
       "directionY": 1,
@@ -39,15 +39,15 @@
       "enabled": true,
       "brightness": 2,
       "color": "0xffffff",
-      "x": 200,
-      "y": 150,
-      "z": 100,
+      "x": 220,
+      "y": 290,
+      "z": 80,
       "directionX": 0,
       "directionY": 0,
       "directionZ": -1,
-      "radius": 150,
-      "coneAngle": 30,
-      "softness": 0.5
+      "radius": 160,
+      "coneAngle": 42,
+      "softness": 0.4
     }
   ]
 }
