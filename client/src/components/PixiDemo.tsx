@@ -120,7 +120,7 @@ const PixiDemo = (props: PixiDemoProps) => {
 
     console.log('Setting up PIXI demo with real textures...');
 
-    const setupDemo = () => {
+    const setupDemo = async () => {
       try {
         // Load textures 
         const bgDiffuse = PIXI.Texture.from('/BGTextureTest.jpg');
@@ -245,9 +245,18 @@ const PixiDemo = (props: PixiDemoProps) => {
         return geometry;
       };
       
+      // Wait for textures to load, then use their actual dimensions
+      await Promise.all([
+        new Promise(resolve => ballDiffuse.baseTexture.valid ? resolve(null) : ballDiffuse.baseTexture.once('loaded', resolve)),
+        new Promise(resolve => blockDiffuse.baseTexture.valid ? resolve(null) : blockDiffuse.baseTexture.once('loaded', resolve))
+      ]);
+
       // Use actual texture dimensions for proper sprite sizes
-      const ballGeometry = createSpriteGeometry(75, 75); // Ball is 75x75
-      const blockGeometry = createSpriteGeometry(120, 60); // Block is 120x60
+      const ballGeometry = createSpriteGeometry(ballDiffuse.width, ballDiffuse.height);
+      const blockGeometry = createSpriteGeometry(blockDiffuse.width, blockDiffuse.height);
+      
+      console.log('Ball actual dimensions:', ballDiffuse.width, ballDiffuse.height);
+      console.log('Block actual dimensions:', blockDiffuse.width, blockDiffuse.height);
 
       // Ball shader and mesh
       const ballPos = { x: 120, y: 80 };
@@ -257,7 +266,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uLightPos: [mousePos.x, mousePos.y],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uSpritePos: [ballPos.x, ballPos.y],
-        uSpriteSize: [75, 75],
+        uSpriteSize: [ballDiffuse.width, ballDiffuse.height],
         uLightIntensity: shaderParams.lightIntensity,
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
         uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
@@ -276,7 +285,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uLightPos: [mousePos.x, mousePos.y],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uSpritePos: [blockPos.x, blockPos.y],
-        uSpriteSize: [120, 60],
+        uSpriteSize: [blockDiffuse.width, blockDiffuse.height],
         uLightIntensity: shaderParams.lightIntensity,
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
         uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
