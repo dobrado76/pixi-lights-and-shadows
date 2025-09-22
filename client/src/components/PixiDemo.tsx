@@ -266,7 +266,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uNormal: ballNormal,
         uLightPos: [mousePos.x, mousePos.y],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
-        uSpritePos: [0, 0],
+        uSpritePos:  [ballPos.x, ballPos.y],
         uSpriteSize: [ballDiffuse.width, ballDiffuse.height],
         uLightIntensity: shaderParams.lightIntensity,
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
