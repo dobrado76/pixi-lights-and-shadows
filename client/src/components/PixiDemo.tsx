@@ -139,31 +139,39 @@ const PixiDemo = (props: PixiDemoProps) => {
       onShaderUpdate?.('Normal-mapped lighting shader created for real textures');
       onMeshUpdate?.('PIXI.Mesh created with real textures and normal mapping');
 
-      // Unified sprite shader for both background and sprites  
+      // Simplified multi-light shader - supports common 3-light setup
       const spriteFragmentShader = `
         precision mediump float;
         varying vec2 vTextureCoord;
         uniform sampler2D uDiffuse;
         uniform sampler2D uNormal;
-        uniform vec2 uLightPos;
         uniform vec2 uSpritePos;
         uniform vec2 uSpriteSize;
         uniform vec3 uColor;
-        uniform float uLightIntensity;
-        uniform float uLightRadius;
-        uniform vec3 uLightColor;
         uniform float uAmbientLight;
-        uniform float uLightZ;
-        uniform float uDirectionalIntensity;
-        uniform float uDirectionalAngle;
-        uniform bool uSpotlightEnabled;
-        uniform vec3 uSpotlightPos;
-        uniform vec3 uSpotlightDir;
-        uniform float uSpotlightIntensity;
-        uniform float uSpotlightInnerRadius;
-        uniform float uSpotlightOuterRadius;
-        uniform float uSpotlightConeAngle;
-        uniform float uSpotlightSoftness;
+        
+        // Point Light (index 0 - mouse following)
+        uniform bool uLight0Enabled;
+        uniform vec3 uLight0Position;
+        uniform vec3 uLight0Color;
+        uniform float uLight0Intensity;
+        uniform float uLight0Radius;
+        
+        // Directional Light (index 1)
+        uniform bool uLight1Enabled;
+        uniform vec3 uLight1Direction;
+        uniform vec3 uLight1Color;
+        uniform float uLight1Intensity;
+        
+        // Spotlight (index 2)
+        uniform bool uLight2Enabled;
+        uniform vec3 uLight2Position;
+        uniform vec3 uLight2Direction;
+        uniform vec3 uLight2Color;
+        uniform float uLight2Intensity;
+        uniform float uLight2Radius;
+        uniform float uLight2ConeAngle;
+        uniform float uLight2Softness;
 
         void main(void) {
           vec2 uv = vTextureCoord;
@@ -172,91 +180,82 @@ const PixiDemo = (props: PixiDemoProps) => {
           
           // Calculate world position
           vec2 worldPos = uSpritePos + uv * uSpriteSize;
-          
-          // Add Z component to light position (low slider = close, high slider = far)
-          vec3 lightPos3D = vec3(uLightPos.x, uLightPos.y, uLightZ);
           vec3 worldPos3D = vec3(worldPos.x, worldPos.y, 0.0);
           
-          vec3 lightDir3D = lightPos3D - worldPos3D;
-          float lightDistance = length(lightDir3D);
-          vec3 lightDir = normalize(lightDir3D);
+          // Start with ambient lighting
+          vec3 finalColor = diffuseColor.rgb * uAmbientLight;
           
-          float normalDot;
-          float attenuation;
-          
-          if (uLightZ < 0.0) {
-            // Below surface lighting (previous math)
-            vec3 lightDir3D_below = lightPos3D - worldPos3D;
-            float lightDistance_below = length(lightDir3D_below);
-            // Fix Y-axis for screen coordinate system (Y increases downward)
-            lightDir3D_below.y = -lightDir3D_below.y;
-            vec3 lightDir_below = normalize(lightDir3D_below);
+          // Point Light (Light 0)
+          if (uLight0Enabled) {
+            vec3 lightPos3D = uLight0Position;
+            vec3 lightDir3D = lightPos3D - worldPos3D;
+            float lightDistance = length(lightDir3D);
+            vec3 lightDir = normalize(lightDir3D);
             
-            attenuation = 1.0 - clamp(lightDistance_below / uLightRadius, 0.0, 1.0);
-            attenuation = attenuation * attenuation;
+            float attenuation;
+            float normalDot;
             
-            normalDot = max(dot(normal.xy, lightDir_below.xy), 0.0);
-          } else {
-            // Above surface lighting (current math)
-            // Use full 3D normal for proper lighting (normal.z points up)
-            normal.z = sqrt(max(0.0, 1.0 - dot(normal.xy, normal.xy))); // Prevent negative sqrt
+            if (lightPos3D.z < 0.0) {
+              // Below surface lighting
+              lightDir3D.y = -lightDir3D.y;
+              lightDir = normalize(lightDir3D);
+              attenuation = 1.0 - clamp(lightDistance / uLight0Radius, 0.0, 1.0);
+              attenuation = attenuation * attenuation;
+              normalDot = max(dot(normal.xy, lightDir.xy), 0.0);
+            } else {
+              // Above surface lighting
+              normal.z = sqrt(max(0.0, 1.0 - dot(normal.xy, normal.xy)));
+              lightDir3D.y = -lightDir3D.y;
+              lightDir = normalize(lightDir3D);
+              
+              vec2 surfaceDistance = worldPos3D.xy - lightPos3D.xy;
+              float surface2DDistance = length(surfaceDistance);
+              float effectiveRadius = uLight0Radius + (lightPos3D.z * 2.0);
+              
+              attenuation = 1.0 - clamp(surface2DDistance / effectiveRadius, 0.0, 1.0);
+              attenuation = attenuation * attenuation;
+              normalDot = max(dot(normal, lightDir), 0.0);
+            }
             
-            // Fix Y-axis for screen coordinate system for above-surface lighting too
-            vec3 lightDir3D_above = lightPos3D - worldPos3D;
-            lightDir3D_above.y = -lightDir3D_above.y;
-            vec3 lightDir_above = normalize(lightDir3D_above);
-            
-            // Calculate 2D distance on surface for area-based attenuation
-            vec2 surfaceDistance = worldPos.xy - uLightPos.xy;
-            float surface2DDistance = length(surfaceDistance);
-            
-            // Light area increases with Z height - farther light = larger coverage area
-            float effectiveRadius = uLightRadius + (uLightZ * 2.0);
-            
-            attenuation = 1.0 - clamp(surface2DDistance / effectiveRadius, 0.0, 1.0);
-            attenuation = attenuation * attenuation;
-            
-            normalDot = max(dot(normal, lightDir_above), 0.0);
+            float intensity = normalDot * uLight0Intensity * attenuation;
+            finalColor += diffuseColor.rgb * uLight0Color * intensity;
           }
-          float pointLightIntensity = normalDot * uLightIntensity * attenuation;
           
-          // Add directional light (always shows normal mapping) - using angle (no jumping!)
-          float angleRad = radians(uDirectionalAngle);
-          vec2 dirXY = vec2(cos(angleRad), sin(angleRad));
-          vec3 directionalDir = normalize(vec3(dirXY.x, dirXY.y, -0.3));
-          float directionalDot = max(dot(normal, directionalDir), 0.0);
-          float directionalLightIntensity = directionalDot * uDirectionalIntensity;
+          // Directional Light (Light 1)
+          if (uLight1Enabled) {
+            vec3 lightDir = normalize(uLight1Direction);
+            float directionalDot = max(dot(normal, lightDir), 0.0);
+            float intensity = directionalDot * uLight1Intensity;
+            finalColor += diffuseColor.rgb * uLight1Color * intensity;
+          }
           
-          // Add spotlight (if enabled)
-          float spotlightLightIntensity = 0.0;
-          if (uSpotlightEnabled) {
-            vec3 spotlightDir3D = uSpotlightPos - worldPos3D;
+          // Spotlight (Light 2)
+          if (uLight2Enabled) {
+            vec3 spotlightDir3D = uLight2Position - worldPos3D;
             float spotlightDistance = length(spotlightDir3D);
             vec3 spotlightLightDir = normalize(spotlightDir3D);
             
             // Calculate cone attenuation
-            float coneAngle = dot(-spotlightLightDir, normalize(uSpotlightDir));
-            float coneAngleRad = radians(uSpotlightConeAngle);
+            float coneAngle = dot(-spotlightLightDir, normalize(uLight2Direction));
+            float coneAngleRad = radians(uLight2ConeAngle);
             float innerCone = cos(coneAngleRad * 0.5);
             float outerCone = cos(coneAngleRad);
             float coneFactor = smoothstep(outerCone, innerCone, coneAngle);
             
             // Distance attenuation
-            float spotDistanceAttenuation = 1.0 - smoothstep(uSpotlightInnerRadius, uSpotlightOuterRadius, spotlightDistance);
+            float spotDistanceAttenuation = 1.0 - clamp(spotlightDistance / uLight2Radius, 0.0, 1.0);
             
-            // Combine with normal mapping
+            // Normal mapping
             float spotNormalDot = max(dot(normal, spotlightLightDir), 0.0);
             
-            // Apply softness
-            float softness = mix(1.0, coneFactor, uSpotlightSoftness);
-            spotlightLightIntensity = spotNormalDot * uSpotlightIntensity * spotDistanceAttenuation * softness * coneFactor;
+            // Apply softness and combine
+            float softness = mix(1.0, coneFactor, uLight2Softness);
+            float intensity = spotNormalDot * uLight2Intensity * spotDistanceAttenuation * softness * coneFactor;
+            finalColor += diffuseColor.rgb * uLight2Color * intensity;
           }
           
-          vec3 ambientContribution = diffuseColor.rgb * uAmbientLight;
-          vec3 pointLightContribution = diffuseColor.rgb * uLightColor * pointLightIntensity;
-          vec3 directionalLightContribution = diffuseColor.rgb * vec3(1.0, 1.0, 0.9) * directionalLightIntensity;
-          vec3 spotlightContribution = diffuseColor.rgb * vec3(1.0, 0.9, 0.8) * spotlightLightIntensity;
-          vec3 finalColor = (ambientContribution + pointLightContribution + directionalLightContribution + spotlightContribution) * uColor;
+          // Apply color tinting
+          finalColor *= uColor;
           
           gl_FragColor = vec4(finalColor, diffuseColor.a);
         }
