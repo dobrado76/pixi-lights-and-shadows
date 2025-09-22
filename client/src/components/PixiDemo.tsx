@@ -103,7 +103,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       shadersRef.current.forEach(shader => {
         if (shader.uniforms) {
           shader.uniforms.uPassMode = 1; // Lighting pass
-          shader.uniforms.uAmbientLight = 0; // No ambient in lighting passes
+          // Keep ambient light in multi-pass incremental rendering (will be overridden later)
           
           // Configure point lights for this pass
           for (let i = 0; i < 4; i++) {
