@@ -103,8 +103,8 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.1,
-    "maxLength": 150,
-    "height": 10
+    "strength": 0.3,
+    "maxLength": 160,
+    "height": 7
   }
 }
