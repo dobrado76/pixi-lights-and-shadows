@@ -88,8 +88,8 @@ void main(void) {
     gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
     return;
   } else {
-    // Lighting pass: include ambient only in single-pass mode
-    finalColor = diffuseColor.rgb * uAmbientLight * uAmbientColor;
+    // Lighting pass: incremental light contributions only (no ambient)
+    finalColor = vec3(0.0, 0.0, 0.0);
   }
   
   // Point Light 0

@@ -658,14 +658,6 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniforms[`${prefix}Intensity`] = light.intensity;
         uniforms[`${prefix}Radius`] = light.radius || 200;
         
-        // Debug: Log exact uniform values being set
-        console.log(`🔦 ${prefix} UNIFORM VALUES:`, {
-          position: uniforms[`${prefix}Position`],
-          color: uniforms[`${prefix}Color`],
-          intensity: uniforms[`${prefix}Intensity`],
-          radius: uniforms[`${prefix}Radius`]
-        });
-        
         // Handle mask
         if (light.mask) {
           const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
@@ -724,14 +716,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uAmbientLight = ambientLight.intensity;
       uniforms.uAmbientColor = [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b];
       uniforms.uCanvasSize = [shaderParams.canvasWidth, shaderParams.canvasHeight];
-      
-      // Debug: Log ambient light uniforms
-      console.log(`🌅 AMBIENT LIGHT VALUES:`, {
-        intensity: ambientLight.intensity,
-        color: ambientLight.color,
-        uniformIntensity: uniforms.uAmbientLight,
-        uniformColor: uniforms.uAmbientColor
-      });
       
       return uniforms;
     };
