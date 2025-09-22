@@ -1,0 +1,50 @@
+{
+  "lights": [
+    {
+      "id": "ambient_light",
+      "type": "ambient",
+      "enabled": true,
+      "brightness": 0.3,
+      "color": "0x666666"
+    },
+    {
+      "id": "mouse_light",
+      "type": "point",
+      "enabled": true,
+      "x": 400,
+      "y": 300,
+      "z": 0,
+      "brightness": 1.0,
+      "color": "0xF0E6CC",
+      "radius": 200,
+      "followMouse": true
+    },
+    {
+      "id": "directional_light",
+      "type": "directional",
+      "enabled": true,
+      "directionX": 0.707,
+      "directionY": 0.707,
+      "directionZ": -0.3,
+      "brightness": 0.5,
+      "color": "0xFFFFE6",
+      "angle": 315
+    },
+    {
+      "id": "spotlight_1",
+      "type": "spotlight",
+      "enabled": false,
+      "x": 200,
+      "y": 150,
+      "z": 100,
+      "directionX": 0.0,
+      "directionY": 0.0,
+      "directionZ": -1.0,
+      "brightness": 2.0,
+      "color": "0xFFE6CC",
+      "radius": 150,
+      "coneAngle": 30,
+      "softness": 0.5
+    }
+  ]
+}

@@ -1,5 +1,34 @@
-export type LightType = 'point' | 'directional' | 'spotlight';
+export type LightType = 'ambient' | 'point' | 'directional' | 'spotlight';
 
+// JSON format from external config file
+export interface LightConfig {
+  id: string;
+  type: LightType;
+  enabled: boolean;
+  
+  // Position properties
+  x?: number;
+  y?: number;
+  z?: number;
+  
+  // Direction properties  
+  directionX?: number;
+  directionY?: number;
+  directionZ?: number;
+  angle?: number; // For directional lights
+  
+  // Appearance
+  brightness: number;
+  color: string; // Hex color like "0xFFFFFF"
+  
+  // Specific properties
+  radius?: number;
+  coneAngle?: number;
+  softness?: number;
+  followMouse?: boolean;
+}
+
+// Internal runtime format
 export interface Light {
   id: string;
   type: LightType;
@@ -27,10 +56,11 @@ export interface Light {
   };
   intensity: number;
   
-  // Point/Spotlight specific
-  radius?: number;
+  // Special flags
+  followMouse?: boolean;
   
-  // Spotlight specific
+  // Type-specific properties
+  radius?: number;
   coneAngle?: number;
   softness?: number;
 }
@@ -89,4 +119,94 @@ export const angleToDirection = (angle: number): { x: number; y: number; z: numb
 export const directionToAngle = (direction: { x: number; y: number; z: number }): number => {
   const angle = (Math.atan2(direction.y, direction.x) * 180) / Math.PI;
   return angle < 0 ? angle + 360 : angle;
+};
+
+// Convert hex color string to RGB values
+export const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
+  const cleanHex = hex.replace('0x', '').replace('#', '');
+  const bigint = parseInt(cleanHex, 16);
+  return {
+    r: ((bigint >> 16) & 255) / 255,
+    g: ((bigint >> 8) & 255) / 255,
+    b: (bigint & 255) / 255
+  };
+};
+
+// Convert LightConfig from JSON to internal Light format
+export const convertConfigToLight = (config: LightConfig): Light => {
+  const light: Light = {
+    id: config.id,
+    type: config.type,
+    enabled: config.enabled,
+    position: {
+      x: config.x || 0,
+      y: config.y || 0,
+      z: config.z || 0
+    },
+    direction: {
+      x: config.directionX || 0,
+      y: config.directionY || 0,
+      z: config.directionZ || 0
+    },
+    color: hexToRgb(config.color),
+    intensity: config.brightness,
+    followMouse: config.followMouse
+  };
+
+  // Handle directional light angle conversion
+  if (config.type === 'directional' && config.angle !== undefined) {
+    const direction = angleToDirection(config.angle);
+    light.direction = direction;
+  }
+
+  // Add type-specific properties
+  if (config.radius !== undefined) light.radius = config.radius;
+  if (config.coneAngle !== undefined) light.coneAngle = config.coneAngle;
+  if (config.softness !== undefined) light.softness = config.softness;
+
+  return light;
+};
+
+// Load lights configuration from JSON
+export const loadLightsConfig = async (configPath: string = '/lights-config.json'): Promise<Light[]> => {
+  try {
+    const response = await fetch(configPath);
+    if (!response.ok) {
+      throw new Error(`Failed to load lights config: ${response.statusText}`);
+    }
+    
+    const config = await response.json();
+    const lights: Light[] = [];
+    
+    // Convert each light config to internal format
+    for (const lightConfig of config.lights) {
+      if (lightConfig.type !== 'ambient') { // Skip ambient for now since it's handled separately
+        lights.push(convertConfigToLight(lightConfig));
+      }
+    }
+    
+    return lights;
+  } catch (error) {
+    console.error('Error loading lights configuration:', error);
+    // Return fallback lights
+    return [
+      createDefaultLight('point', 'mouse_light'),
+      createDefaultLight('directional', 'directional_light'),
+      createDefaultLight('spotlight', 'spotlight_1')
+    ];
+  }
+};
+
+// Get ambient light setting from config
+export const loadAmbientLight = async (configPath: string = '/lights-config.json'): Promise<number> => {
+  try {
+    const response = await fetch(configPath);
+    if (!response.ok) return 0.3;
+    
+    const config = await response.json();
+    const ambientLight = config.lights.find((light: LightConfig) => light.type === 'ambient');
+    return ambientLight ? ambientLight.brightness : 0.3;
+  } catch (error) {
+    return 0.3;
+  }
 };

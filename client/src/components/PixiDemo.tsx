@@ -4,16 +4,19 @@ import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import { vertexShaderSource } from '../shaders/vertexShader';
 import { fragmentShaderSource } from '../shaders/fragmentShader';
 import { ShaderParams } from '../App';
+import { Light } from '@shared/lights';
 
 interface PixiDemoProps {
   shaderParams: ShaderParams;
+  lightsConfig: Light[];
+  ambientLight: number;
   onGeometryUpdate: (status: string) => void;
   onShaderUpdate: (status: string) => void;
   onMeshUpdate: (status: string) => void;
 }
 
 const PixiDemo = (props: PixiDemoProps) => {
-  const { shaderParams, onGeometryUpdate, onShaderUpdate, onMeshUpdate } = props;
+  const { shaderParams, lightsConfig, ambientLight, onGeometryUpdate, onShaderUpdate, onMeshUpdate } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
   const [mousePos, setMousePos] = useState({ x: 200, y: 150 });
@@ -133,6 +136,69 @@ const PixiDemo = (props: PixiDemoProps) => {
         const blockNormal = PIXI.Texture.from('/blockNormalMap.jpg');
         
         console.log('Textures loaded, creating geometries...');
+
+        // Helper function to convert external lights config to shader uniforms
+        const createLightUniforms = () => {
+          const uniforms: any = {};
+          
+          // Light 0 (Point Light - mouse following)
+          const pointLight = lightsConfig.find(light => light.type === 'point');
+          if (pointLight && pointLight.enabled) {
+            uniforms.uLight0Enabled = true;
+            uniforms.uLight0Position = [
+              pointLight.followMouse ? mousePos.x : pointLight.position.x, 
+              pointLight.followMouse ? mousePos.y : pointLight.position.y, 
+              pointLight.position.z
+            ];
+            uniforms.uLight0Color = [pointLight.color.r, pointLight.color.g, pointLight.color.b];
+            uniforms.uLight0Intensity = pointLight.intensity;
+            uniforms.uLight0Radius = pointLight.radius || 200;
+          } else {
+            uniforms.uLight0Enabled = false;
+            uniforms.uLight0Position = [0, 0, 0];
+            uniforms.uLight0Color = [1, 1, 1];
+            uniforms.uLight0Intensity = 0;
+            uniforms.uLight0Radius = 1;
+          }
+          
+          // Light 1 (Directional Light)
+          const directionalLight = lightsConfig.find(light => light.type === 'directional');
+          if (directionalLight && directionalLight.enabled) {
+            uniforms.uLight1Enabled = true;
+            uniforms.uLight1Direction = [directionalLight.direction.x, directionalLight.direction.y, directionalLight.direction.z];
+            uniforms.uLight1Color = [directionalLight.color.r, directionalLight.color.g, directionalLight.color.b];
+            uniforms.uLight1Intensity = directionalLight.intensity;
+          } else {
+            uniforms.uLight1Enabled = false;
+            uniforms.uLight1Direction = [1, 1, -1];
+            uniforms.uLight1Color = [1, 1, 1];
+            uniforms.uLight1Intensity = 0;
+          }
+          
+          // Light 2 (Spotlight)
+          const spotlight = lightsConfig.find(light => light.type === 'spotlight');
+          if (spotlight && spotlight.enabled) {
+            uniforms.uLight2Enabled = true;
+            uniforms.uLight2Position = [spotlight.position.x, spotlight.position.y, spotlight.position.z];
+            uniforms.uLight2Direction = [spotlight.direction.x, spotlight.direction.y, spotlight.direction.z];
+            uniforms.uLight2Color = [spotlight.color.r, spotlight.color.g, spotlight.color.b];
+            uniforms.uLight2Intensity = spotlight.intensity;
+            uniforms.uLight2Radius = spotlight.radius || 150;
+            uniforms.uLight2ConeAngle = spotlight.coneAngle || 30;
+            uniforms.uLight2Softness = spotlight.softness || 0.5;
+          } else {
+            uniforms.uLight2Enabled = false;
+            uniforms.uLight2Position = [200, 150, 100];
+            uniforms.uLight2Direction = [0, 0, -1];
+            uniforms.uLight2Color = [1, 1, 1];
+            uniforms.uLight2Intensity = 0;
+            uniforms.uLight2Radius = 1;
+            uniforms.uLight2ConeAngle = 30;
+            uniforms.uLight2Softness = 0.5;
+          }
+          
+          return uniforms;
+        };
 
       // Update status
       onGeometryUpdate?.('Geometry created: 4 vertices with real texture mapping');
@@ -262,28 +328,15 @@ const PixiDemo = (props: PixiDemoProps) => {
       `;
 
       // Background shader and mesh (using unified sprite shader)
+      const lightUniforms = createLightUniforms();
       const bgShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, {
         uDiffuse: bgDiffuse,
         uNormal: bgNormal,
-        uLightPos: [mousePos.x, mousePos.y],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uSpritePos: [0, 0], // Background covers entire canvas starting at (0,0)
         uSpriteSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Full canvas size
-        uLightIntensity: shaderParams.lightIntensity,
-        uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
-        uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
-        uAmbientLight: shaderParams.ambientLight,
-        uLightZ: shaderParams.lightZ,
-        uDirectionalIntensity: shaderParams.directionalIntensity || 0.5,
-        uDirectionalAngle: shaderParams.directionalAngle || 315,
-        uSpotlightEnabled: shaderParams.spotlightEnabled || false,
-        uSpotlightPos: [shaderParams.spotlightX || 200, shaderParams.spotlightY || 150, shaderParams.spotlightZ || 100],
-        uSpotlightDir: [shaderParams.spotlightDirX || 0.0, shaderParams.spotlightDirY || 0.0, shaderParams.spotlightDirZ || -1.0],
-        uSpotlightIntensity: shaderParams.spotlightIntensity || 2.0,
-        uSpotlightInnerRadius: shaderParams.spotlightInnerRadius || 50,
-        uSpotlightOuterRadius: shaderParams.spotlightOuterRadius || 150,
-        uSpotlightConeAngle: shaderParams.spotlightConeAngle || 30,
-        uSpotlightSoftness: shaderParams.spotlightSoftness || 0.5
+        uAmbientLight: ambientLight,
+        ...lightUniforms
       });
 
       const bgMesh = new PIXI.Mesh(geometry, bgShader as any);
@@ -322,25 +375,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       const ballShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, {
         uDiffuse: ballDiffuse,
         uNormal: ballNormal,
-        uLightPos: [mousePos.x, mousePos.y],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uSpritePos:  [ballPos.x, ballPos.y],
         uSpriteSize: [ballDiffuse.width, ballDiffuse.height],
-        uLightIntensity: shaderParams.lightIntensity,
-        uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
-        uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
-        uAmbientLight: shaderParams.ambientLight,
-        uLightZ: shaderParams.lightZ,
-        uDirectionalIntensity: shaderParams.directionalIntensity || 0.5,
-        uDirectionalAngle: shaderParams.directionalAngle || 315,
-        uSpotlightEnabled: shaderParams.spotlightEnabled || false,
-        uSpotlightPos: [shaderParams.spotlightX || 200, shaderParams.spotlightY || 150, shaderParams.spotlightZ || 100],
-        uSpotlightDir: [shaderParams.spotlightDirX || 0.0, shaderParams.spotlightDirY || 0.0, shaderParams.spotlightDirZ || -1.0],
-        uSpotlightIntensity: shaderParams.spotlightIntensity || 2.0,
-        uSpotlightInnerRadius: shaderParams.spotlightInnerRadius || 50,
-        uSpotlightOuterRadius: shaderParams.spotlightOuterRadius || 150,
-        uSpotlightConeAngle: shaderParams.spotlightConeAngle || 30,
-        uSpotlightSoftness: shaderParams.spotlightSoftness || 0.5
+        uAmbientLight: ambientLight,
+        ...lightUniforms
       });
 
       const ballMesh = new PIXI.Mesh(ballGeometry, ballShader as any);
@@ -351,25 +390,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       const blockShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, {
         uDiffuse: blockDiffuse,
         uNormal: blockNormal,
-        uLightPos: [mousePos.x, mousePos.y],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uSpritePos: [blockPos.x, blockPos.y],
         uSpriteSize: [blockDiffuse.width, blockDiffuse.height],
-        uLightIntensity: shaderParams.lightIntensity,
-        uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
-        uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
-        uAmbientLight: shaderParams.ambientLight,
-        uLightZ: shaderParams.lightZ,
-        uDirectionalIntensity: shaderParams.directionalIntensity || 0.5,
-        uDirectionalAngle: shaderParams.directionalAngle || 315,
-        uSpotlightEnabled: shaderParams.spotlightEnabled || false,
-        uSpotlightPos: [shaderParams.spotlightX || 200, shaderParams.spotlightY || 150, shaderParams.spotlightZ || 100],
-        uSpotlightDir: [shaderParams.spotlightDirX || 0.0, shaderParams.spotlightDirY || 0.0, shaderParams.spotlightDirZ || -1.0],
-        uSpotlightIntensity: shaderParams.spotlightIntensity || 2.0,
-        uSpotlightInnerRadius: shaderParams.spotlightInnerRadius || 50,
-        uSpotlightOuterRadius: shaderParams.spotlightOuterRadius || 150,
-        uSpotlightConeAngle: shaderParams.spotlightConeAngle || 30,
-        uSpotlightSoftness: shaderParams.spotlightSoftness || 0.5
+        uAmbientLight: ambientLight,
+        ...lightUniforms
       });
 
       const blockMesh = new PIXI.Mesh(blockGeometry, blockShader as any);
