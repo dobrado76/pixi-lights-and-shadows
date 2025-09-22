@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Light } from '@shared/lights';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Copy, Edit3 } from 'lucide-react';
 
 interface DynamicLightControlsProps {
   lights: Light[];
@@ -13,6 +13,8 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
   const [localLights, setLocalLights] = useState<Light[]>(lights);
   const [localAmbient, setLocalAmbient] = useState(ambientLight);
   const [newLightType, setNewLightType] = useState<'point' | 'directional' | 'spotlight'>('point');
+  const [editingLightId, setEditingLightId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState<string>('');
 
   // Update local state when props change
   useEffect(() => {
@@ -37,6 +39,60 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
     const updatedLights = localLights.filter(light => light.id !== lightId);
     setLocalLights(updatedLights);
     onLightsChange(updatedLights);
+  };
+
+  // Helper to duplicate a light
+  const duplicateLight = (lightId: string) => {
+    const originalLight = localLights.find(light => light.id === lightId);
+    if (!originalLight) return;
+
+    // Create new light with unique name
+    const timestamp = Date.now();
+    const newLight: Light = {
+      ...originalLight,
+      id: `${originalLight.type}_copy_${timestamp}`
+    };
+
+    const updatedLights = [...localLights, newLight];
+    setLocalLights(updatedLights);
+    onLightsChange(updatedLights);
+  };
+
+  // Helper to rename a light with validation
+  const startRename = (lightId: string, currentName: string) => {
+    setEditingLightId(lightId);
+    setEditingName(currentName);
+  };
+
+  const finishRename = (lightId: string) => {
+    // Validate: no whitespaces and not empty
+    if (!editingName.trim() || /\s/.test(editingName)) {
+      setEditingLightId(null);
+      setEditingName('');
+      return;
+    }
+
+    // Check if name already exists
+    const nameExists = localLights.some(light => light.id === editingName && light.id !== lightId);
+    if (nameExists) {
+      setEditingLightId(null);
+      setEditingName('');
+      return;
+    }
+
+    // Update the light's ID
+    const updatedLights = localLights.map(light => 
+      light.id === lightId ? { ...light, id: editingName } : light
+    );
+    setLocalLights(updatedLights);
+    onLightsChange(updatedLights);
+    setEditingLightId(null);
+    setEditingName('');
+  };
+
+  const cancelRename = () => {
+    setEditingLightId(null);
+    setEditingName('');
   };
 
   // Helper to add a new light
@@ -175,20 +231,58 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
                   className="w-3 h-3"
                   data-testid={`checkbox-${light.id}-enabled`}
                 />
-                <span className="text-xs font-medium text-foreground">
-                  {light.id}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  ({light.type})
-                </span>
+                {editingLightId === light.id ? (
+                  <div className="flex items-center space-x-1">
+                    <input
+                      type="text"
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onBlur={() => finishRename(light.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') finishRename(light.id);
+                        if (e.key === 'Escape') cancelRename();
+                      }}
+                      className="text-xs font-medium bg-input border border-border rounded px-1 py-0.5 w-20"
+                      placeholder="No spaces"
+                      autoFocus
+                      data-testid={`input-rename-${light.id}`}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      ({light.type})
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <span 
+                      className="text-xs font-medium text-foreground cursor-pointer hover:text-primary flex items-center space-x-1"
+                      onClick={() => startRename(light.id, light.id)}
+                      data-testid={`text-light-name-${light.id}`}
+                    >
+                      <span>{light.id}</span>
+                      <Edit3 size={10} className="opacity-50" />
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ({light.type})
+                    </span>
+                  </>
+                )}
               </div>
-              <button
-                onClick={() => deleteLight(light.id)}
-                className="bg-red-600 hover:bg-red-700 text-white p-1 rounded text-xs flex items-center"
-                data-testid={`button-delete-${light.id}`}
-              >
-                <Trash2 size={12} />
-              </button>
+              <div className="flex items-center space-x-1">
+                <button
+                  onClick={() => duplicateLight(light.id)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white p-1 rounded text-xs flex items-center"
+                  data-testid={`button-duplicate-${light.id}`}
+                >
+                  <Copy size={12} />
+                </button>
+                <button
+                  onClick={() => deleteLight(light.id)}
+                  className="bg-red-600 hover:bg-red-700 text-white p-1 rounded text-xs flex items-center"
+                  data-testid={`button-delete-${light.id}`}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
             </div>
 
             {light.enabled && (

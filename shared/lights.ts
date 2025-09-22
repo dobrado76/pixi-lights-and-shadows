@@ -207,9 +207,13 @@ export const loadAmbientLight = async (configPath: string = '/api/load-lights-co
     const ambientLight = config.lights.find((light: LightConfig) => light.type === 'ambient');
     
     if (ambientLight) {
+      const color = typeof ambientLight.color === 'string' 
+        ? hexToRgb(ambientLight.color)  // Convert hex string to RGB object
+        : ambientLight.color || { r: 0.4, g: 0.4, b: 0.4 };
+      
       return {
         intensity: ambientLight.brightness || 0.3,
-        color: ambientLight.color || { r: 0.4, g: 0.4, b: 0.4 }
+        color
       };
     }
     
@@ -224,6 +228,7 @@ export const rgbToHex = (r: number, g: number, b: number): string => {
   const toHex = (val: number) => Math.round(val * 255).toString(16).padStart(2, '0');
   return `0x${toHex(r)}${toHex(g)}${toHex(b)}`;
 };
+
 
 // Convert internal Light format back to LightConfig for JSON
 export const convertLightToConfig = (light: Light): LightConfig => {
