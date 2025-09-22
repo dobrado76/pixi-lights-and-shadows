@@ -274,8 +274,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
 
       const ballMesh = new PIXI.Mesh(ballGeometry, ballShader as any);
-      ballMesh.x = ballPos.x;
-      ballMesh.y = ballPos.y;
+      ballMesh.x = 0;
+      ballMesh.y = 0;
 
       // Block shader and mesh
       const blockPos = { x: 280, y: 120 };
@@ -293,8 +293,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
 
       const blockMesh = new PIXI.Mesh(blockGeometry, blockShader as any);
-      blockMesh.x = blockPos.x;
-      blockMesh.y = blockPos.y;
+      blockMesh.x = 0;
+      blockMesh.y = 0;
 
       // Store references
       meshesRef.current = [bgMesh, ballMesh, blockMesh];
