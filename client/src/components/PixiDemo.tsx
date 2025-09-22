@@ -32,7 +32,10 @@ const PixiDemo = (props: PixiDemoProps) => {
     console.log('Initializing PIXI Application...');
     
     try {
-      // Simple, reliable PIXI initialization with fallback renderers
+      // Force WebGL renderer with canvas fallback for maximum compatibility
+      PIXI.settings.PREFER_ENV = PIXI.ENV.WEBGL2;
+      PIXI.settings.FAIL_IF_MAJOR_PERFORMANCE_CAVEAT = false;
+      
       const app = new PIXI.Application({
         width: shaderParams.canvasWidth,
         height: shaderParams.canvasHeight,
@@ -41,6 +44,10 @@ const PixiDemo = (props: PixiDemoProps) => {
         hello: false,
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
+        forceCanvas: false, // Try WebGL first
+        powerPreference: 'default',
+        preserveDrawingBuffer: false,
+        clearBeforeRender: true,
       });
 
       // Access canvas using proper PIXI.js property
