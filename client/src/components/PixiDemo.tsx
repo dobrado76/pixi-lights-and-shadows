@@ -530,6 +530,11 @@ const PixiDemo = (props: PixiDemoProps) => {
         Object.assign(shader.uniforms, updatedUniforms);
       }
     });
+
+    // Force PIXI to re-render when uniforms change (especially for mask updates)
+    if (pixiApp && pixiApp.renderer) {
+      pixiApp.render();
+    }
   }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight]);
 
   // Animation loop
