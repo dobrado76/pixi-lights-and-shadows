@@ -78,11 +78,13 @@ const PixiDemo = (props: PixiDemoProps) => {
         canvasRef.current.appendChild(canvas);
         setPixiApp(app);
         console.log('PIXI App initialized successfully');
+        console.log('Renderer type:', app.renderer.type === PIXI.RENDERER_TYPE.WEBGL ? 'WebGL' : 'Canvas');
       } else {
         throw new Error('Canvas element not found');
       }
     } catch (error) {
       console.error('PIXI Application initialization failed:', error);
+      console.error('Error details:', error.message);
       
       // Fallback display for environments without graphics support
       if (canvasRef.current) {
