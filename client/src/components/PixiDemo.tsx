@@ -310,7 +310,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       const fragmentShaderResponse = await fetch('/src/shaders/fragment.glsl');
       const spriteFragmentShader = await fragmentShaderResponse.text();
-        varying vec2 vTextureCoord;
         uniform sampler2D uDiffuse;
         uniform sampler2D uNormal;
         uniform vec2 uSpritePos;
