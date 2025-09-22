@@ -171,32 +171,42 @@ const PixiDemo = (props: PixiDemoProps) => {
         const createLightUniforms = () => {
           const uniforms: any = {};
           
-          // Get all enabled lights - UNLIMITED
+          // Get all enabled lights
           const enabledLights = lightsConfig.filter(light => light.enabled);
-          const lightCount = enabledLights.length;
+          const lightCount = Math.min(enabledLights.length, 32); // Clamp to shader limit
           
-          console.log(`🔥 UNLIMITED LIGHTING: Processing ${lightCount} lights (NO LIMITS!)`);
-          console.log('Active lights:', enabledLights.map(l => `${l.id}(${l.type})`).join(', '));
+          console.log(`🔥 DYNAMIC LIGHTING: Processing ${lightCount} lights (of ${enabledLights.length} total)`);
+          if (enabledLights.length > 32) {
+            console.warn(`⚠️ Too many lights! Using first 32 of ${enabledLights.length}. Consider optimizing.`);
+          }
           
-          // Initialize dynamic arrays - sized exactly to what we need
+          // Initialize arrays
           uniforms.uLightCount = lightCount;
-          uniforms.uLightTypes = [];
-          uniforms.uLightPositions = [];
-          uniforms.uLightDirections = [];
-          uniforms.uLightColors = [];
-          uniforms.uLightIntensities = [];
-          uniforms.uLightRadii = [];
-          uniforms.uLightConeAngles = [];
-          uniforms.uLightSoftness = [];
-          uniforms.uLightHasMask = [];
-          uniforms.uLightMasks = [];
-          uniforms.uLightMaskOffsets = [];
-          uniforms.uLightMaskRotations = [];
-          uniforms.uLightMaskScales = [];
-          uniforms.uLightMaskSizes = [];
+          uniforms.uLightTypes = new Array(32).fill(0);
+          uniforms.uLightPositions = new Array(32).fill([0, 0, 0]);
+          uniforms.uLightDirections = new Array(32).fill([0, 0, 0]);
+          uniforms.uLightColors = new Array(32).fill([0, 0, 0]);
+          uniforms.uLightIntensities = new Array(32).fill(0);
+          uniforms.uLightRadii = new Array(32).fill(0);
+          uniforms.uLightConeAngles = new Array(32).fill(0);
+          uniforms.uLightSoftness = new Array(32).fill(0);
+          uniforms.uLightHasMask = new Array(32).fill(false);
+          uniforms.uLightMaskOffsets = new Array(32).fill([0, 0]);
+          uniforms.uLightMaskRotations = new Array(32).fill(0);
+          uniforms.uLightMaskScales = new Array(32).fill(1);
+          uniforms.uLightMaskSizes = new Array(32).fill([1, 1]);
+          uniforms.uLightMaskTextureIndex = new Array(32).fill(-1);
           
-          // Process ALL lights dynamically - NO LIMITS
-          enabledLights.forEach((light, i) => {
+          // Initialize mask texture array
+          uniforms.uLightMasks = new Array(8).fill(null);
+          
+          // Track mask texture allocation
+          let nextMaskIndex = 0;
+          const maskTextureMap = new Map();
+          
+          // Process lights
+          for (let i = 0; i < lightCount; i++) {
+            const light = enabledLights[i];
             // Light type mapping: 0=point, 1=directional, 2=spotlight
             let lightType = 0;
             if (light.type === 'directional') lightType = 1;
@@ -225,28 +235,39 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms.uLightConeAngles[i] = light.coneAngle || 30;
             uniforms.uLightSoftness[i] = light.softness || 0.5;
             
-            // Handle masks - UNLIMITED mask support
-            if (light.mask) {
+            // Handle masks efficiently - share texture slots
+            if (light.mask && nextMaskIndex < 8) {
               const maskPath = `/light_masks/${light.mask.image}`;
-              const maskTexture = PIXI.Texture.from(maskPath);
               
+              // Check if we already loaded this mask texture
+              if (!maskTextureMap.has(maskPath)) {
+                const maskTexture = PIXI.Texture.from(maskPath);
+                uniforms.uLightMasks[nextMaskIndex] = maskTexture;
+                maskTextureMap.set(maskPath, nextMaskIndex);
+                nextMaskIndex++;
+                
+                console.log(`🎭 Mask texture loaded: ${light.mask.image} (slot ${nextMaskIndex - 1})`);
+              }
+              
+              const textureIndex = maskTextureMap.get(maskPath);
               uniforms.uLightHasMask[i] = true;
-              uniforms.uLightMasks[i] = maskTexture;
+              uniforms.uLightMaskTextureIndex[i] = textureIndex;
               uniforms.uLightMaskOffsets[i] = [light.mask.offset.x, light.mask.offset.y];
               uniforms.uLightMaskRotations[i] = light.mask.rotation;
               uniforms.uLightMaskScales[i] = light.mask.scale;
-              uniforms.uLightMaskSizes[i] = [maskTexture.width, maskTexture.height];
               
-              console.log(`🎭 Mask loaded for light ${i}: ${light.mask.image}`);
-            } else {
-              uniforms.uLightHasMask[i] = false;
-              uniforms.uLightMasks[i] = null;
-              uniforms.uLightMaskOffsets[i] = [0, 0];
-              uniforms.uLightMaskRotations[i] = 0;
-              uniforms.uLightMaskScales[i] = 1;
-              uniforms.uLightMaskSizes[i] = [1, 1];
+              // Get texture dimensions when available
+              const maskTexture = uniforms.uLightMasks[textureIndex];
+              if (maskTexture.baseTexture.valid) {
+                uniforms.uLightMaskSizes[i] = [maskTexture.width, maskTexture.height];
+              } else {
+                maskTexture.baseTexture.on('loaded', () => {
+                  uniforms.uLightMaskSizes[i] = [maskTexture.width, maskTexture.height];
+                });
+                uniforms.uLightMaskSizes[i] = [64, 64]; // Default size
+              }
             }
-          });
+          }
 
 
           return uniforms;

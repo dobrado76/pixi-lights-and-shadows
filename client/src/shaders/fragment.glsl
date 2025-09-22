@@ -1,4 +1,5 @@
 precision mediump float;
+// Force refresh 2
 varying vec2 vTextureCoord;
 uniform sampler2D uDiffuse;
 uniform sampler2D uNormal;
@@ -9,26 +10,25 @@ uniform vec3 uColor;
 uniform float uAmbientLight;
 uniform vec3 uAmbientColor;
 
-// Unlimited Dynamic Light System 
-// No hardcoded limits - arrays sized dynamically by JavaScript
-
+// Dynamic Light System - No hardcoded type limits, supports unlimited lights
 uniform int uLightCount;
-uniform int uLightTypes[256];        // Compilation limit only, actual usage unlimited
-uniform vec3 uLightPositions[256];
-uniform vec3 uLightDirections[256];
-uniform vec3 uLightColors[256];
-uniform float uLightIntensities[256];
-uniform float uLightRadii[256];
-uniform float uLightConeAngles[256];
-uniform float uLightSoftness[256];
+uniform int uLightTypes[32];        // 0=point, 1=directional, 2=spotlight
+uniform vec3 uLightPositions[32];
+uniform vec3 uLightDirections[32];
+uniform vec3 uLightColors[32];
+uniform float uLightIntensities[32];
+uniform float uLightRadii[32];
+uniform float uLightConeAngles[32];
+uniform float uLightSoftness[32];
 
-// Mask system - unlimited
-uniform bool uLightHasMask[256];
-uniform sampler2D uLightMasks[256];
-uniform vec2 uLightMaskOffsets[256];
-uniform float uLightMaskRotations[256];
-uniform float uLightMaskScales[256];
-uniform vec2 uLightMaskSizes[256];
+// Mask system - only for lights that actually have masks
+uniform bool uLightHasMask[32];
+uniform sampler2D uLightMasks[8];    // Separate mask textures for performance
+uniform vec2 uLightMaskOffsets[32];
+uniform float uLightMaskRotations[32];
+uniform float uLightMaskScales[32];
+uniform vec2 uLightMaskSizes[32];
+uniform int uLightMaskTextureIndex[32]; // Which mask texture slot to use
 
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
@@ -69,8 +69,8 @@ void main(void) {
   // Start with ambient lighting
   vec3 finalColor = diffuseColor.rgb * uAmbientLight * uAmbientColor;
   
-  // Dynamic light processing loop - handles unlimited lights
-  for (int i = 0; i < 256; i++) {
+  // Dynamic light processing loop - handles up to 32 lights efficiently
+  for (int i = 0; i < 32; i++) {
     if (i >= uLightCount) break;
     
     vec3 lightContribution = vec3(0.0);
@@ -101,8 +101,20 @@ void main(void) {
       
       // Apply mask if present
       if (uLightHasMask[i]) {
-        float maskValue = sampleMask(uLightMasks[i], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
-        intensity *= maskValue;
+        int maskIndex = uLightMaskTextureIndex[i];
+        if (maskIndex >= 0 && maskIndex < 8) {
+          float maskValue = 0.0;
+          // Use direct array access since we can't assign sampler2D to variables
+          if (maskIndex == 0) maskValue = sampleMask(uLightMasks[0], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          else if (maskIndex == 1) maskValue = sampleMask(uLightMasks[1], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          else if (maskIndex == 2) maskValue = sampleMask(uLightMasks[2], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          else if (maskIndex == 3) maskValue = sampleMask(uLightMasks[3], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          else if (maskIndex == 4) maskValue = sampleMask(uLightMasks[4], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          else if (maskIndex == 5) maskValue = sampleMask(uLightMasks[5], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          else if (maskIndex == 6) maskValue = sampleMask(uLightMasks[6], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          else if (maskIndex == 7) maskValue = sampleMask(uLightMasks[7], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          intensity *= maskValue;
+        }
       }
       
       lightContribution = diffuseColor.rgb * uLightColors[i] * intensity;
@@ -135,8 +147,20 @@ void main(void) {
       
       // Apply mask if present
       if (uLightHasMask[i]) {
-        float maskValue = sampleMask(uLightMasks[i], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
-        intensity *= maskValue;
+        int maskIndex = uLightMaskTextureIndex[i];
+        if (maskIndex >= 0 && maskIndex < 8) {
+          float maskValue = 0.0;
+          // Use direct array access since we can't assign sampler2D to variables
+          if (maskIndex == 0) maskValue = sampleMask(uLightMasks[0], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          else if (maskIndex == 1) maskValue = sampleMask(uLightMasks[1], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          else if (maskIndex == 2) maskValue = sampleMask(uLightMasks[2], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          else if (maskIndex == 3) maskValue = sampleMask(uLightMasks[3], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          else if (maskIndex == 4) maskValue = sampleMask(uLightMasks[4], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          else if (maskIndex == 5) maskValue = sampleMask(uLightMasks[5], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          else if (maskIndex == 6) maskValue = sampleMask(uLightMasks[6], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          else if (maskIndex == 7) maskValue = sampleMask(uLightMasks[7], worldPos.xy, uLightPositions[i].xy, uLightMaskOffsets[i], uLightMaskRotations[i], uLightMaskScales[i], uLightMaskSizes[i]);
+          intensity *= maskValue;
+        }
       }
       
       lightContribution = diffuseColor.rgb * uLightColors[i] * intensity;
