@@ -4,7 +4,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.26,
+      "brightness": 0.5,
       "color": {
         "r": 1,
         "g": 1,
