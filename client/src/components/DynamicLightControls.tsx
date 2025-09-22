@@ -308,6 +308,16 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
                 )}
               </div>
               <div className="flex items-center space-x-1">
+                {!light.mask && (
+                  <button
+                    onClick={() => addMask(light.id)}
+                    className="bg-purple-600 hover:bg-purple-700 text-white p-1 rounded text-xs flex items-center"
+                    data-testid={`button-add-mask-${light.id}`}
+                    title="Add Mask"
+                  >
+                    <ImageIcon size={12} />
+                  </button>
+                )}
                 <button
                   onClick={() => duplicateLight(light.id)}
                   className="bg-blue-600 hover:bg-blue-700 text-white p-1 rounded text-xs flex items-center"
@@ -553,6 +563,37 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
                     </div>
                   </>
                 )}
+              </div>
+            )}
+
+            {/* Mask Controls - Show at bottom when mask is present */}
+            {light.mask && (
+              <div className="mt-2 pt-2 border-t border-border/50">
+                <div className="flex items-center justify-between space-x-2">
+                  <label className="text-xs text-muted-foreground min-w-[40px]">
+                    Mask:
+                  </label>
+                  <select
+                    value={light.mask}
+                    onChange={(e) => changeMask(light.id, e.target.value)}
+                    className="flex-1 bg-input border border-border rounded px-2 py-1 text-xs text-foreground"
+                    data-testid={`dropdown-mask-${light.id}`}
+                  >
+                    {availableMasks.map((maskFile) => (
+                      <option key={maskFile} value={maskFile}>
+                        {maskFile.replace('.png', '')}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => removeMask(light.id)}
+                    className="bg-red-600 hover:bg-red-700 text-white p-1 rounded text-xs"
+                    data-testid={`button-remove-mask-${light.id}`}
+                    title="Remove Mask"
+                  >
+                    <Trash2 size={10} />
+                  </button>
+                </div>
               </div>
             )}
           </div>
