@@ -207,20 +207,38 @@ const PixiDemo = (props: PixiDemoProps) => {
           float lightDistance = length(lightDir3D);
           vec3 lightDir = normalize(lightDir3D);
           
-          // Use full 3D normal for proper lighting (normal.z points up)
-          normal.z = sqrt(1.0 - dot(normal.xy, normal.xy)); // Reconstruct Z component
+          float normalDot;
+          float attenuation;
           
-          // Calculate 2D distance on surface for area-based attenuation
-          vec2 surfaceDistance = worldPos.xy - uLightPos.xy;
-          float surface2DDistance = length(surfaceDistance);
-          
-          // Light area increases with Z height - farther light = larger coverage area
-          float effectiveRadius = uLightRadius + (uLightZ * 2.0);
-          
-          float attenuation = 1.0 - clamp(surface2DDistance / effectiveRadius, 0.0, 1.0);
-          attenuation = attenuation * attenuation;
-          
-          float normalDot = max(dot(normal, lightDir), 0.0);
+          if (uLightZ < 0.0) {
+            // Below surface lighting (previous math)
+            vec3 lightDir3D_below = lightPos3D - worldPos3D;
+            float lightDistance_below = length(lightDir3D_below);
+            // Fix Y-axis for screen coordinate system (Y increases downward)
+            lightDir3D_below.y = -lightDir3D_below.y;
+            vec3 lightDir_below = normalize(lightDir3D_below);
+            
+            attenuation = 1.0 - clamp(lightDistance_below / uLightRadius, 0.0, 1.0);
+            attenuation = attenuation * attenuation;
+            
+            normalDot = max(dot(normal.xy, lightDir_below.xy), 0.0);
+          } else {
+            // Above surface lighting (current math)
+            // Use full 3D normal for proper lighting (normal.z points up)
+            normal.z = sqrt(max(0.0, 1.0 - dot(normal.xy, normal.xy))); // Prevent negative sqrt
+            
+            // Calculate 2D distance on surface for area-based attenuation
+            vec2 surfaceDistance = worldPos.xy - uLightPos.xy;
+            float surface2DDistance = length(surfaceDistance);
+            
+            // Light area increases with Z height - farther light = larger coverage area
+            float effectiveRadius = uLightRadius + (uLightZ * 2.0);
+            
+            attenuation = 1.0 - clamp(surface2DDistance / effectiveRadius, 0.0, 1.0);
+            attenuation = attenuation * attenuation;
+            
+            normalDot = max(dot(normal, lightDir), 0.0);
+          }
           float lightIntensity = normalDot * uLightIntensity * attenuation;
           
           vec3 ambientContribution = diffuseColor.rgb * uAmbientLight;

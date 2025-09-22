@@ -335,10 +335,10 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
           </label>
           <input
             type="range"
-            min="1"
-            max="50"
+            min="-25"
+            max="25"
             step="1"
-            value={shaderParams.lightZ || 15}
+            value={shaderParams.lightZ || 0}
             onChange={(e) => setShaderParams(prev => ({...prev, lightZ: parseFloat(e.target.value)}))}
             style={{
               width: '100%',
@@ -354,7 +354,7 @@ const ControlPanel = ({ shaderParams, setShaderParams }: ControlPanelProps) => {
             data-testid="slider-light-z"
           />
           <span className="text-xs text-muted-foreground" data-testid="value-light-z">
-            Z: {(shaderParams.lightZ || 15).toFixed(0)} units
+            Z: {(shaderParams.lightZ || 0).toFixed(0)} units
           </span>
         </div>
         
