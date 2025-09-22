@@ -34,6 +34,7 @@ export interface LightConfig {
   coneAngle?: number;
   softness?: number;
   followMouse?: boolean;
+  castsShadows?: boolean; // Enable/disable shadow casting for this light
   mask?: MaskConfig; // mask configuration object
 }
 
@@ -67,6 +68,7 @@ export interface Light {
   
   // Special flags
   followMouse?: boolean;
+  castsShadows?: boolean; // Enable/disable shadow casting for this light
   
   // Type-specific properties
   radius?: number;
@@ -86,6 +88,7 @@ export const createDefaultLight = (type: LightType, id?: string): Light => {
     direction: { x: 0, y: 0, z: -1 },
     color: { r: 1, g: 1, b: 1 },
     intensity: 1.0,
+    castsShadows: true, // Enable shadows by default for all lights
   };
 
   switch (type) {
@@ -162,7 +165,8 @@ export const convertConfigToLight = (config: LightConfig): Light => {
     },
     color: hexToRgb(config.color),
     intensity: config.brightness,
-    followMouse: config.followMouse
+    followMouse: config.followMouse,
+    castsShadows: config.castsShadows !== undefined ? config.castsShadows : true // Default to true
   };
 
   // Handle directional light angle conversion
@@ -281,6 +285,7 @@ export const convertLightToConfig = (light: Light): LightConfig => {
 
   // Add type-specific properties
   if (light.followMouse !== undefined) config.followMouse = light.followMouse;
+  if (light.castsShadows !== undefined) config.castsShadows = light.castsShadows;
   if (light.radius !== undefined) config.radius = light.radius;
   if (light.coneAngle !== undefined) config.coneAngle = light.coneAngle;
   if (light.softness !== undefined) config.softness = light.softness;
