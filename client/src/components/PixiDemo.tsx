@@ -434,34 +434,44 @@ const PixiDemo = (props: PixiDemoProps) => {
     };
   }, [pixiApp, geometry, onGeometryUpdate, onShaderUpdate, onMeshUpdate]);
 
-  // Handle shader updates
+  // Handle dynamic shader updates (mouse following, etc.)
   useEffect(() => {
-    if (shadersRef.current.length === 0) return;
+    if (shadersRef.current.length === 0 || lightsConfig.length === 0) return;
 
+    // Helper function to update light uniforms dynamically
+    const updateLightUniforms = () => {
+      // Find lights that follow mouse or need dynamic updates
+      const pointLight = lightsConfig.find(light => light.type === 'point');
+      const directionalLight = lightsConfig.find(light => light.type === 'directional');
+      const spotlight = lightsConfig.find(light => light.type === 'spotlight');
+
+      const dynamicUniforms: any = {};
+
+      // Update point light position if it follows mouse
+      if (pointLight && pointLight.enabled) {
+        if (pointLight.followMouse) {
+          dynamicUniforms.uLight0Position = [mousePos.x, mousePos.y, pointLight.position.z];
+        } else {
+          dynamicUniforms.uLight0Position = [pointLight.position.x, pointLight.position.y, pointLight.position.z];
+        }
+      }
+
+      // Update basic color from shader params
+      dynamicUniforms.uColor = [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB];
+      dynamicUniforms.uAmbientLight = ambientLight;
+
+      return dynamicUniforms;
+    };
+
+    const dynamicUniforms = updateLightUniforms();
+
+    // Apply updates to all shaders
     shadersRef.current.forEach(shader => {
       if (shader.uniforms) {
-        // Basic color and position
-        shader.uniforms.uColor = [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB];
-        shader.uniforms.uLightPos = [mousePos.x, mousePos.y];
-        // Enhanced lighting parameters
-        shader.uniforms.uLightIntensity = shaderParams.lightIntensity;
-        shader.uniforms.uLightRadius = Math.max(shaderParams.lightRadius, 1.0); // Prevent division by zero
-        shader.uniforms.uLightColor = [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB];
-        shader.uniforms.uAmbientLight = shaderParams.ambientLight;
-        shader.uniforms.uLightZ = shaderParams.lightZ;
-        shader.uniforms.uDirectionalIntensity = shaderParams.directionalIntensity || 0.5;
-        shader.uniforms.uDirectionalAngle = shaderParams.directionalAngle || 315;
-        shader.uniforms.uSpotlightEnabled = shaderParams.spotlightEnabled || false;
-        shader.uniforms.uSpotlightPos = [shaderParams.spotlightX || 200, shaderParams.spotlightY || 150, shaderParams.spotlightZ || 100];
-        shader.uniforms.uSpotlightDir = [shaderParams.spotlightDirX || 0.0, shaderParams.spotlightDirY || 0.0, shaderParams.spotlightDirZ || -1.0];
-        shader.uniforms.uSpotlightIntensity = shaderParams.spotlightIntensity || 2.0;
-        shader.uniforms.uSpotlightInnerRadius = shaderParams.spotlightInnerRadius || 50;
-        shader.uniforms.uSpotlightOuterRadius = shaderParams.spotlightOuterRadius || 150;
-        shader.uniforms.uSpotlightConeAngle = shaderParams.spotlightConeAngle || 30;
-        shader.uniforms.uSpotlightSoftness = shaderParams.spotlightSoftness || 0.5;
+        Object.assign(shader.uniforms, dynamicUniforms);
       }
     });
-  }, [shaderParams, mousePos]);
+  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight]);
 
   // Animation loop
   useEffect(() => {
