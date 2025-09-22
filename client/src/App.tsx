@@ -46,8 +46,6 @@ function App() {
   });
   const [lightsLoaded, setLightsLoaded] = useState<boolean>(false);
   
-  // Multi-pass rendering state
-  const [multiPassEnabled, setMultiPassEnabled] = useState<boolean>(false);
 
   // Debounced save function to prevent excessive saves
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -201,7 +199,6 @@ function App() {
                     shaderParams={shaderParams}
                     lightsConfig={lightsConfig}
                     ambientLight={ambientLight}
-                    multiPassEnabled={multiPassEnabled}
                     onGeometryUpdate={setGeometryStatus}
                     onShaderUpdate={setShaderStatus}
                     onMeshUpdate={setMeshStatus}
@@ -222,10 +219,8 @@ function App() {
               <DynamicLightControls
                 lights={lightsConfig}
                 ambientLight={ambientLight}
-                multiPassEnabled={multiPassEnabled}
                 onLightsChange={handleLightsChange}
                 onAmbientChange={handleAmbientChange}
-                onMultiPassChange={setMultiPassEnabled}
               />
             )}
 

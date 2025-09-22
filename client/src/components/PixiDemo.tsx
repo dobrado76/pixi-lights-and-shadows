@@ -16,7 +16,7 @@ interface PixiDemoProps {
 }
 
 const PixiDemo = (props: PixiDemoProps) => {
-  const { shaderParams, lightsConfig, ambientLight, multiPassEnabled, onGeometryUpdate, onShaderUpdate, onMeshUpdate } = props;
+  const { shaderParams, lightsConfig, ambientLight, onGeometryUpdate, onShaderUpdate, onMeshUpdate } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
   const [mousePos, setMousePos] = useState({ x: 200, y: 150 });
@@ -759,8 +759,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       const enabledLights = lightsConfig.filter(light => light.enabled && light.type !== 'ambient');
       const lightCount = enabledLights.length;
       
-      // Automatic mode selection: Multi-pass for >8 lights or manual override
-      const useMultiPass = multiPassEnabled || lightCount > 8;
+      // Automatic mode selection: Multi-pass for >8 lights
+      const useMultiPass = lightCount > 8;
       
       if (useMultiPass && renderTargetRef.current && sceneContainerRef.current && displaySpriteRef.current) {
         console.log(`🚀 MULTI-PASS: Rendering ${lightCount} lights with multi-pass architecture (${Math.ceil(lightCount/8)} passes)`);
@@ -784,7 +784,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         pixiApp.render();
       }
     }
-  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, multiPassEnabled]);
+  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight]);
 
   // Animation loop
   useEffect(() => {
