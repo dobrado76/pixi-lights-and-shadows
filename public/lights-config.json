@@ -10,13 +10,13 @@
     {
       "id": "mouse_light",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 2.2,
       "color": "0xffffff",
-      "x": 200,
-      "y": 150,
+      "x": 270,
+      "y": 70,
       "z": 20,
-      "followMouse": true,
+      "followMouse": false,
       "radius": 200
     },
     {
