@@ -17,8 +17,7 @@
       "y": 150,
       "z": 20,
       "followMouse": true,
-      "radius": 200,
-      "mask": "00019-1224130474.png"
+      "radius": 200
     },
     {
       "id": "directional_light",
@@ -61,6 +60,27 @@
       "radius": 400,
       "coneAngle": 43,
       "softness": 0.5
+    },
+    {
+      "id": "point_copy_1758529441818",
+      "type": "point",
+      "enabled": true,
+      "brightness": 2.2,
+      "color": "0xffffff",
+      "x": 200,
+      "y": 150,
+      "z": 20,
+      "followMouse": true,
+      "radius": 200,
+      "mask": {
+        "image": "00019-1224130474.png",
+        "offset": {
+          "x": -105,
+          "y": 0
+        },
+        "rotation": 0,
+        "scale": 1
+      }
     }
   ]
 }
