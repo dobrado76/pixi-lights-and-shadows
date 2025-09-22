@@ -43,7 +43,7 @@
       "directionX": 0,
       "directionY": 1,
       "directionZ": -1,
-      "castsShadows": false,
+      "castsShadows": true,
       "radius": 250,
       "coneAngle": 50,
       "softness": 0.4
@@ -60,7 +60,7 @@
       "directionX": 0,
       "directionY": 1,
       "directionZ": -0.5,
-      "castsShadows": false,
+      "castsShadows": true,
       "radius": 400,
       "coneAngle": 43,
       "softness": 0.5

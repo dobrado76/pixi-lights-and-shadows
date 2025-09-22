@@ -8,11 +8,12 @@ export interface MaskConfig {
   scale: number;
 }
 
-// JSON format from external config file
+// JSON format from external config file  
 export interface LightConfig {
   id: string;
   type: LightType;
   enabled: boolean;
+  shadowConfig?: ShadowConfig; // Optional shadow configuration
   
   // Position properties
   x?: number;
@@ -36,6 +37,14 @@ export interface LightConfig {
   followMouse?: boolean;
   castsShadows?: boolean; // Enable/disable shadow casting for this light
   mask?: MaskConfig; // mask configuration object
+}
+
+// Shadow configuration interface
+export interface ShadowConfig {
+  enabled: boolean;           // Global shadow enable/disable
+  strength: number;          // Shadow opacity/darkness (0.0 - 1.0)  
+  maxLength: number;         // Maximum shadow length (pixels)
+  height: number;            // Shadow casting height (affects angle)
 }
 
 // Internal runtime format

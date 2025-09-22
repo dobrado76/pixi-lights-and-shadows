@@ -799,6 +799,13 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
     });
 
+    // Debug shadow casting flags
+    const shadowUniforms = Object.keys(updatedUniforms).filter(key => key.includes('CastsShadows'));
+    console.log('🌑 SHADOW CASTING FLAGS:', shadowUniforms.length);
+    shadowUniforms.forEach(key => {
+      console.log(`   ${key}: ${updatedUniforms[key]}`);
+    });
+
     // Apply all uniform updates to all shaders
     shadersRef.current.forEach(shader => {
       if (shader.uniforms) {
