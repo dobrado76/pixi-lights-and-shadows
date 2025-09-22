@@ -10,13 +10,17 @@ uniform float uAmbientLight;
 uniform vec3 uAmbientColor;
 
 // Expanded Light System - supports 8 lights (more PIXI.js compatible)
-// Point Lights (0-1)
+// Point Lights (0-3)
 uniform bool uPoint0Enabled; uniform vec3 uPoint0Position; uniform vec3 uPoint0Color; uniform float uPoint0Intensity; uniform float uPoint0Radius;
 uniform bool uPoint1Enabled; uniform vec3 uPoint1Position; uniform vec3 uPoint1Color; uniform float uPoint1Intensity; uniform float uPoint1Radius;
+uniform bool uPoint2Enabled; uniform vec3 uPoint2Position; uniform vec3 uPoint2Color; uniform float uPoint2Intensity; uniform float uPoint2Radius;
+uniform bool uPoint3Enabled; uniform vec3 uPoint3Position; uniform vec3 uPoint3Color; uniform float uPoint3Intensity; uniform float uPoint3Radius;
 
 // Point Light Masks
 uniform bool uPoint0HasMask; uniform sampler2D uPoint0Mask; uniform vec2 uPoint0MaskOffset; uniform float uPoint0MaskRotation; uniform float uPoint0MaskScale; uniform vec2 uPoint0MaskSize;
 uniform bool uPoint1HasMask; uniform sampler2D uPoint1Mask; uniform vec2 uPoint1MaskOffset; uniform float uPoint1MaskRotation; uniform float uPoint1MaskScale; uniform vec2 uPoint1MaskSize;
+uniform bool uPoint2HasMask; uniform sampler2D uPoint2Mask; uniform vec2 uPoint2MaskOffset; uniform float uPoint2MaskRotation; uniform float uPoint2MaskScale; uniform vec2 uPoint2MaskSize;
+uniform bool uPoint3HasMask; uniform sampler2D uPoint3Mask; uniform vec2 uPoint3MaskOffset; uniform float uPoint3MaskRotation; uniform float uPoint3MaskScale; uniform vec2 uPoint3MaskSize;
 
 // Directional Lights (0-1) 
 uniform bool uDir0Enabled; uniform vec3 uDir0Direction; uniform vec3 uDir0Color; uniform float uDir0Intensity;
@@ -137,6 +141,72 @@ void main(void) {
     }
     
     finalColor += diffuseColor.rgb * uPoint1Color * intensity;
+  }
+  
+  // Point Light 2
+  if (uPoint2Enabled) {
+    vec3 lightPos3D = uPoint2Position;
+    vec3 lightDir3D = lightPos3D - worldPos3D;
+    float lightDistance = length(lightDir3D);
+    vec3 lightDir = normalize(lightDir3D);
+    
+    float attenuation;
+    float normalDot;
+    
+    if (lightPos3D.z < 0.0) {
+      lightDir3D.y = -lightDir3D.y;
+      lightDir = normalize(lightDir3D);
+      attenuation = 1.0 - clamp(lightDistance / uPoint2Radius, 0.0, 1.0);
+      attenuation = attenuation * attenuation;
+      normalDot = max(dot(normal, lightDir), 0.0);
+    } else {
+      attenuation = 1.0 - clamp(lightDistance / uPoint2Radius, 0.0, 1.0);
+      attenuation = attenuation * attenuation;
+      normalDot = max(dot(normal, lightDir), 0.0);
+    }
+    
+    float intensity = normalDot * uPoint2Intensity * attenuation;
+    
+    // Apply mask if present
+    if (uPoint2HasMask) {
+      float maskValue = sampleMask(uPoint2Mask, worldPos.xy, uPoint2Position.xy, uPoint2MaskOffset, uPoint2MaskRotation, uPoint2MaskScale, uPoint2MaskSize);
+      intensity *= maskValue;
+    }
+    
+    finalColor += diffuseColor.rgb * uPoint2Color * intensity;
+  }
+  
+  // Point Light 3
+  if (uPoint3Enabled) {
+    vec3 lightPos3D = uPoint3Position;
+    vec3 lightDir3D = lightPos3D - worldPos3D;
+    float lightDistance = length(lightDir3D);
+    vec3 lightDir = normalize(lightDir3D);
+    
+    float attenuation;
+    float normalDot;
+    
+    if (lightPos3D.z < 0.0) {
+      lightDir3D.y = -lightDir3D.y;
+      lightDir = normalize(lightDir3D);
+      attenuation = 1.0 - clamp(lightDistance / uPoint3Radius, 0.0, 1.0);
+      attenuation = attenuation * attenuation;
+      normalDot = max(dot(normal, lightDir), 0.0);
+    } else {
+      attenuation = 1.0 - clamp(lightDistance / uPoint3Radius, 0.0, 1.0);
+      attenuation = attenuation * attenuation;
+      normalDot = max(dot(normal, lightDir), 0.0);
+    }
+    
+    float intensity = normalDot * uPoint3Intensity * attenuation;
+    
+    // Apply mask if present
+    if (uPoint3HasMask) {
+      float maskValue = sampleMask(uPoint3Mask, worldPos.xy, uPoint3Position.xy, uPoint3MaskOffset, uPoint3MaskRotation, uPoint3MaskScale, uPoint3MaskSize);
+      intensity *= maskValue;
+    }
+    
+    finalColor += diffuseColor.rgb * uPoint3Color * intensity;
   }
   
   // Directional Light 0
