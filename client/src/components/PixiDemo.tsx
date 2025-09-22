@@ -262,9 +262,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         return geometry;
       };
       
-      // Use fixed sprite sizes for reliability
-      const ballGeometry = createSpriteGeometry(64, 64);
-      const blockGeometry = createSpriteGeometry(64, 64);
+      // Use actual texture dimensions for proper sprite sizes
+      const ballGeometry = createSpriteGeometry(75, 75); // Ball is 75x75
+      const blockGeometry = createSpriteGeometry(120, 60); // Block is 120x60
 
       // Ball shader and mesh
       const ballPos = { x: 120, y: 80 };
@@ -274,7 +274,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uLightPos: [mousePos.x, mousePos.y],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uSpritePos: [ballPos.x, ballPos.y],
-        uSpriteSize: [ballDiffuse.width, ballDiffuse.height],
+        uSpriteSize: [75, 75],
         uLightIntensity: shaderParams.lightIntensity,
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
         uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
@@ -293,7 +293,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uLightPos: [mousePos.x, mousePos.y],
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uSpritePos: [blockPos.x, blockPos.y],
-        uSpriteSize: [blockDiffuse.width, blockDiffuse.height],
+        uSpriteSize: [120, 60],
         uLightIntensity: shaderParams.lightIntensity,
         uLightRadius: Math.max(shaderParams.lightRadius, 1.0),
         uLightColor: [shaderParams.lightColorR, shaderParams.lightColorG, shaderParams.lightColorB],
