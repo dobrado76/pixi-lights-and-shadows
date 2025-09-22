@@ -206,7 +206,7 @@ export const convertConfigToLight = (config: LightConfig): Light => {
 };
 
 // Load lights configuration from JSON
-export const loadLightsConfig = async (configPath: string = '/api/load-lights-config'): Promise<Light[]> => {
+export const loadLightsConfig = async (configPath: string = '/api/load-lights-config'): Promise<{lights: Light[], shadowConfig?: ShadowConfig}> => {
   try {
     const response = await fetch(configPath);
     if (!response.ok) {
@@ -223,15 +223,20 @@ export const loadLightsConfig = async (configPath: string = '/api/load-lights-co
       }
     }
     
-    return lights;
+    return {
+      lights,
+      shadowConfig: config.shadowConfig
+    };
   } catch (error) {
     console.error('Error loading lights configuration:', error);
     // Return fallback lights
-    return [
-      createDefaultLight('point', 'mouse_light'),
-      createDefaultLight('directional', 'directional_light'),
-      createDefaultLight('spotlight', 'spotlight_1')
-    ];
+    return {
+      lights: [
+        createDefaultLight('point', 'mouse_light'),
+        createDefaultLight('directional', 'directional_light'),
+        createDefaultLight('spotlight', 'spotlight_1')
+      ]
+    };
   }
 };
 
@@ -304,7 +309,7 @@ export const convertLightToConfig = (light: Light): LightConfig => {
 };
 
 // Save lights configuration to server
-export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity: number, color: {r: number, g: number, b: number}}): Promise<boolean> => {
+export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity: number, color: {r: number, g: number, b: number}}, shadowConfig?: ShadowConfig): Promise<boolean> => {
   try {
     // Convert lights back to config format
     const lightConfigs = lights.map(convertLightToConfig);
@@ -318,9 +323,14 @@ export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity
       color: rgbToHex(ambientLight.color.r, ambientLight.color.g, ambientLight.color.b)
     };
     
-    const config = {
+    const config: any = {
       lights: [ambientConfig, ...lightConfigs]
     };
+
+    // Include shadow configuration if provided
+    if (shadowConfig) {
+      config.shadowConfig = shadowConfig;
+    }
 
     const response = await fetch('/api/save-lights-config', {
       method: 'POST',

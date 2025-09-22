@@ -548,6 +548,11 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Shadow participation flags for background
         uSpriteCastsShadows: false, // Background doesn't cast shadows
         uSpriteReceivesShadows: true, // Background can receive shadows
+        // Global shadow uniforms
+        uShadowsEnabled: shadowConfig.enabled,
+        uShadowStrength: shadowConfig.strength,
+        uShadowMaxLength: shadowConfig.maxLength,
+        uShadowHeight: shadowConfig.height,
         ...lightUniforms
       });
 
@@ -684,6 +689,20 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uPoint0CastsShadows = false; uniforms.uPoint1CastsShadows = false; uniforms.uPoint2CastsShadows = false; uniforms.uPoint3CastsShadows = false;
       uniforms.uDir0CastsShadows = false; uniforms.uDir1CastsShadows = false;
       uniforms.uSpot0CastsShadows = false; uniforms.uSpot1CastsShadows = false; uniforms.uSpot2CastsShadows = false; uniforms.uSpot3CastsShadows = false;
+
+      // Add global shadow configuration uniforms
+      uniforms.uShadowsEnabled = shadowConfig.enabled;
+      uniforms.uShadowStrength = shadowConfig.strength;
+      uniforms.uShadowMaxLength = shadowConfig.maxLength;
+      uniforms.uShadowHeight = shadowConfig.height;
+
+      // Debug shadow uniforms
+      console.log('🌑 SHADOW GLOBAL UNIFORMS:', {
+        enabled: uniforms.uShadowsEnabled,
+        strength: uniforms.uShadowStrength,
+        maxLength: uniforms.uShadowMaxLength,
+        height: uniforms.uShadowHeight
+      });
       
       // Point Lights (up to 4)
       pointLights.slice(0, 4).forEach((light, i) => {

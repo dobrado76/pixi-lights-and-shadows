@@ -100,5 +100,11 @@
       "castsShadows": false,
       "radius": 350
     }
-  ]
+  ],
+  "shadowConfig": {
+    "enabled": true,
+    "strength": 0.1,
+    "maxLength": 150,
+    "height": 10
+  }
 }

@@ -58,14 +58,14 @@ function App() {
   // Debounced save function to prevent excessive saves
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  const debouncedSave = useCallback((lights: Light[], ambient: {intensity: number, color: {r: number, g: number, b: number}}) => {
+  const debouncedSave = useCallback((lights: Light[], ambient: {intensity: number, color: {r: number, g: number, b: number}}, shadows?: ShadowConfig) => {
     if (saveTimeout) {
       clearTimeout(saveTimeout);
     }
     
     const timeout = setTimeout(async () => {
       try {
-        const success = await saveLightsConfig(lights, ambient);
+        const success = await saveLightsConfig(lights, ambient, shadows);
         if (success) {
           console.log('Configuration auto-saved successfully');
         } else {
@@ -131,14 +131,20 @@ function App() {
   useEffect(() => {
     const loadLights = async () => {
       try {
-        const [lights, ambientLightData] = await Promise.all([
+        const [lightsResult, ambientLightData] = await Promise.all([
           loadLightsConfig(),
           loadAmbientLight()
         ]);
-        setLightsConfig(lights);
+        setLightsConfig(lightsResult.lights);
         setAmbientLight(ambientLightData);
+        
+        // Load shadowConfig if available, otherwise keep defaults
+        if (lightsResult.shadowConfig) {
+          setShadowConfig(lightsResult.shadowConfig);
+        }
+        
         setLightsLoaded(true);
-        console.log('Loaded lights configuration:', lights);
+        console.log('Loaded lights configuration:', lightsResult);
       } catch (error) {
         console.error('Failed to load lights configuration:', error);
         setLightsLoaded(true); // Still set to true to proceed with fallbacks
@@ -156,20 +162,20 @@ function App() {
   // Handler for lights configuration changes
   const handleLightsChange = useCallback((newLights: Light[]) => {
     setLightsConfig(newLights);
-    debouncedSave(newLights, ambientLight);
-  }, [ambientLight, debouncedSave]);
+    debouncedSave(newLights, ambientLight, shadowConfig);
+  }, [ambientLight, shadowConfig, debouncedSave]);
 
   // Handler for ambient light changes
   const handleAmbientChange = useCallback((newAmbient: {intensity: number, color: {r: number, g: number, b: number}}) => {
     setAmbientLight(newAmbient);
-    debouncedSave(lightsConfig, newAmbient);
-  }, [lightsConfig, debouncedSave]);
+    debouncedSave(lightsConfig, newAmbient, shadowConfig);
+  }, [lightsConfig, shadowConfig, debouncedSave]);
 
   // Handler for shadow configuration changes
   const handleShadowConfigChange = useCallback((newShadowConfig: ShadowConfig) => {
     setShadowConfig(newShadowConfig);
-    // TODO: Add shadow config to save function when implementing persistence
-  }, []);
+    debouncedSave(lightsConfig, ambientLight, newShadowConfig);
+  }, [lightsConfig, ambientLight, debouncedSave]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -219,10 +225,6 @@ function App() {
                     onMeshUpdate={setMeshStatus}
                   />
                 )}
-              </div>
-
-              <div className="mt-4 text-xs text-muted-foreground" data-testid="demo-description">
-                Dynamic shader with wave distortion and color tinting
               </div>
             </div>
           </div>
