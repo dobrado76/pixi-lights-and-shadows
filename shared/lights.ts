@@ -270,7 +270,7 @@ export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity
       type: 'ambient',
       enabled: true,
       brightness: ambientLight.intensity,
-      color: ambientLight.color
+      color: rgbToHex(ambientLight.color.r, ambientLight.color.g, ambientLight.color.b)
     };
     
     const config = {

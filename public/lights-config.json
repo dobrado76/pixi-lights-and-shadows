@@ -5,16 +5,12 @@
       "type": "ambient",
       "enabled": true,
       "brightness": 0.5,
-      "color": {
-        "r": 1,
-        "g": 1,
-        "b": 1
-      }
+      "color": "0xffffff"
     },
     {
       "id": "mouse_light",
       "type": "point",
-      "enabled": true,
+      "enabled": false,
       "brightness": 1.6,
       "color": "0xffffff",
       "x": 200,
@@ -37,17 +33,33 @@
       "id": "spotlight_1",
       "type": "spotlight",
       "enabled": true,
-      "brightness": 2,
+      "brightness": 2.8,
       "color": "0xffffff",
-      "x": 220,
+      "x": 80,
       "y": 290,
       "z": 80,
       "directionX": 0,
-      "directionY": 0,
+      "directionY": 1,
       "directionZ": -1,
-      "radius": 160,
-      "coneAngle": 42,
+      "radius": 250,
+      "coneAngle": 50,
       "softness": 0.4
+    },
+    {
+      "id": "spotlight_1758527030900",
+      "type": "spotlight",
+      "enabled": true,
+      "brightness": 1.1,
+      "color": "0xffffff",
+      "x": 290,
+      "y": 320,
+      "z": 50,
+      "directionX": 0,
+      "directionY": 1,
+      "directionZ": -0.5,
+      "radius": 400,
+      "coneAngle": 43,
+      "softness": 0.5
     }
   ]
 }

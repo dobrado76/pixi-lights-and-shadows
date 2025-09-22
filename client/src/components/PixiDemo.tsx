@@ -168,70 +168,73 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Helper function to convert external lights config to shader uniforms
         const createLightUniforms = () => {
           const uniforms: any = {};
+          const MAX_LIGHTS = 16;
           
-          // Light 0 (Point Light - with mouse following support)
-          const pointLights = lightsConfig.filter(light => light.type === 'point' && light.enabled);
-          // Prioritize lights with followMouse enabled
-          const pointLight = pointLights.find(light => light.followMouse) || pointLights[0];
-          if (pointLight) {
-            uniforms.uLight0Enabled = true;
-            uniforms.uLight0Position = [
-              pointLight.followMouse ? mousePos.x : pointLight.position.x, 
-              pointLight.followMouse ? mousePos.y : pointLight.position.y, 
-              pointLight.position.z
-            ];
-            uniforms.uLight0Color = [pointLight.color.r, pointLight.color.g, pointLight.color.b];
-            uniforms.uLight0Intensity = pointLight.intensity;
-            uniforms.uLight0Radius = pointLight.radius || 200;
-          } else {
-            uniforms.uLight0Enabled = false;
-            uniforms.uLight0Position = [0, 0, 0];
-            uniforms.uLight0Color = [1, 1, 1];
-            uniforms.uLight0Intensity = 0;
-            uniforms.uLight0Radius = 1;
+          // Get all enabled lights
+          const enabledLights = lightsConfig.filter(light => light.enabled);
+          
+          // Initialize arrays
+          const lightTypes = new Array(MAX_LIGHTS).fill(0);
+          const lightEnabled = new Array(MAX_LIGHTS).fill(false);
+          const lightPositions = new Array(MAX_LIGHTS).fill(null).map(() => [0, 0, 0]);
+          const lightDirections = new Array(MAX_LIGHTS).fill(null).map(() => [0, 0, -1]);
+          const lightColors = new Array(MAX_LIGHTS).fill(null).map(() => [1, 1, 1]);
+          const lightIntensities = new Array(MAX_LIGHTS).fill(0);
+          const lightRadii = new Array(MAX_LIGHTS).fill(100);
+          const lightConeAngles = new Array(MAX_LIGHTS).fill(30);
+          const lightSoftness = new Array(MAX_LIGHTS).fill(0.5);
+          const lightFollowMouse = new Array(MAX_LIGHTS).fill(false);
+          
+          // Populate light data
+          const numLights = Math.min(enabledLights.length, MAX_LIGHTS);
+          for (let i = 0; i < numLights; i++) {
+            const light = enabledLights[i];
+            
+            // Set light type: 1=point, 2=directional, 3=spotlight
+            lightTypes[i] = light.type === 'point' ? 1 : light.type === 'directional' ? 2 : light.type === 'spotlight' ? 3 : 0;
+            lightEnabled[i] = true;
+            
+            // Position (for point and spotlight)
+            if (light.type === 'point' || light.type === 'spotlight') {
+              lightPositions[i] = [
+                light.followMouse ? mousePos.x : light.position.x,
+                light.followMouse ? mousePos.y : light.position.y,
+                light.position.z
+              ];
+            }
+            
+            // Direction (for directional and spotlight)
+            if (light.type === 'directional' || light.type === 'spotlight') {
+              lightDirections[i] = [light.direction.x, light.direction.y, light.direction.z];
+            }
+            
+            // Common properties
+            lightColors[i] = [light.color.r, light.color.g, light.color.b];
+            lightIntensities[i] = light.intensity;
+            lightFollowMouse[i] = light.followMouse || false;
+            
+            // Type-specific properties
+            if (light.type === 'point' || light.type === 'spotlight') {
+              lightRadii[i] = light.radius || 150;
+            }
+            if (light.type === 'spotlight') {
+              lightConeAngles[i] = light.coneAngle || 30;
+              lightSoftness[i] = light.softness || 0.5;
+            }
           }
           
-          // Light 1 (Directional Light)
-          const directionalLight = lightsConfig.find(light => light.type === 'directional');
-          if (directionalLight && directionalLight.enabled) {
-            uniforms.uLight1Enabled = true;
-            uniforms.uLight1Direction = [directionalLight.direction.x, directionalLight.direction.y, directionalLight.direction.z];
-            uniforms.uLight1Color = [directionalLight.color.r, directionalLight.color.g, directionalLight.color.b];
-            uniforms.uLight1Intensity = directionalLight.intensity;
-          } else {
-            uniforms.uLight1Enabled = false;
-            uniforms.uLight1Direction = [1, 1, -1];
-            uniforms.uLight1Color = [1, 1, 1];
-            uniforms.uLight1Intensity = 0;
-          }
-          
-          // Light 2 (Spotlight - with mouse following support)
-          const spotlights = lightsConfig.filter(light => light.type === 'spotlight' && light.enabled);
-          // Prioritize lights with followMouse enabled
-          const spotlight = spotlights.find(light => light.followMouse) || spotlights[0];
-          if (spotlight) {
-            uniforms.uLight2Enabled = true;
-            uniforms.uLight2Position = [
-              spotlight.followMouse ? mousePos.x : spotlight.position.x,
-              spotlight.followMouse ? mousePos.y : spotlight.position.y,
-              spotlight.position.z
-            ];
-            uniforms.uLight2Direction = [spotlight.direction.x, spotlight.direction.y, spotlight.direction.z];
-            uniforms.uLight2Color = [spotlight.color.r, spotlight.color.g, spotlight.color.b];
-            uniforms.uLight2Intensity = spotlight.intensity;
-            uniforms.uLight2Radius = spotlight.radius || 150;
-            uniforms.uLight2ConeAngle = spotlight.coneAngle || 30;
-            uniforms.uLight2Softness = spotlight.softness || 0.5;
-          } else {
-            uniforms.uLight2Enabled = false;
-            uniforms.uLight2Position = [200, 150, 100];
-            uniforms.uLight2Direction = [0, 0, -1];
-            uniforms.uLight2Color = [1, 1, 1];
-            uniforms.uLight2Intensity = 0;
-            uniforms.uLight2Radius = 1;
-            uniforms.uLight2ConeAngle = 30;
-            uniforms.uLight2Softness = 0.5;
-          }
+          // Set uniforms
+          uniforms.uNumLights = numLights;
+          uniforms.uLightTypes = lightTypes;
+          uniforms.uLightEnabled = lightEnabled;
+          uniforms.uLightPositions = lightPositions;
+          uniforms.uLightDirections = lightDirections;
+          uniforms.uLightColors = lightColors;
+          uniforms.uLightIntensities = lightIntensities;
+          uniforms.uLightRadii = lightRadii;
+          uniforms.uLightConeAngles = lightConeAngles;
+          uniforms.uLightSoftness = lightSoftness;
+          uniforms.uLightFollowMouse = lightFollowMouse;
           
           return uniforms;
         };
@@ -253,28 +256,19 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniform float uAmbientLight;
         uniform vec3 uAmbientColor;
         
-        // Point Light (index 0 - mouse following)
-        uniform bool uLight0Enabled;
-        uniform vec3 uLight0Position;
-        uniform vec3 uLight0Color;
-        uniform float uLight0Intensity;
-        uniform float uLight0Radius;
-        
-        // Directional Light (index 1)
-        uniform bool uLight1Enabled;
-        uniform vec3 uLight1Direction;
-        uniform vec3 uLight1Color;
-        uniform float uLight1Intensity;
-        
-        // Spotlight (index 2)
-        uniform bool uLight2Enabled;
-        uniform vec3 uLight2Position;
-        uniform vec3 uLight2Direction;
-        uniform vec3 uLight2Color;
-        uniform float uLight2Intensity;
-        uniform float uLight2Radius;
-        uniform float uLight2ConeAngle;
-        uniform float uLight2Softness;
+        // Dynamic Light System - supports up to 16 lights
+        #define MAX_LIGHTS 16
+        uniform int uNumLights;
+        uniform int uLightTypes[MAX_LIGHTS];     // 0=ambient, 1=point, 2=directional, 3=spotlight
+        uniform bool uLightEnabled[MAX_LIGHTS];
+        uniform vec3 uLightPositions[MAX_LIGHTS];
+        uniform vec3 uLightDirections[MAX_LIGHTS];
+        uniform vec3 uLightColors[MAX_LIGHTS];
+        uniform float uLightIntensities[MAX_LIGHTS];
+        uniform float uLightRadii[MAX_LIGHTS];
+        uniform float uLightConeAngles[MAX_LIGHTS];
+        uniform float uLightSoftness[MAX_LIGHTS];
+        uniform bool uLightFollowMouse[MAX_LIGHTS];
 
         void main(void) {
           vec2 uv = vTextureCoord;
@@ -288,73 +282,81 @@ const PixiDemo = (props: PixiDemoProps) => {
           // Start with ambient lighting
           vec3 finalColor = diffuseColor.rgb * uAmbientLight * uAmbientColor;
           
-          // Point Light (Light 0)
-          if (uLight0Enabled) {
-            vec3 lightPos3D = uLight0Position;
-            vec3 lightDir3D = lightPos3D - worldPos3D;
-            float lightDistance = length(lightDir3D);
-            vec3 lightDir = normalize(lightDir3D);
+          // Process all dynamic lights
+          for (int i = 0; i < MAX_LIGHTS; i++) {
+            if (i >= uNumLights) break;
+            if (!uLightEnabled[i]) continue;
             
-            float attenuation;
-            float normalDot;
+            int lightType = uLightTypes[i];
             
-            if (lightPos3D.z < 0.0) {
-              // Below surface lighting
-              lightDir3D.y = -lightDir3D.y;
-              lightDir = normalize(lightDir3D);
-              attenuation = 1.0 - clamp(lightDistance / uLight0Radius, 0.0, 1.0);
-              attenuation = attenuation * attenuation;
-              normalDot = max(dot(normal.xy, lightDir.xy), 0.0);
-            } else {
-              // Above surface lighting
-              normal.z = sqrt(max(0.0, 1.0 - dot(normal.xy, normal.xy)));
-              lightDir3D.y = -lightDir3D.y;
-              lightDir = normalize(lightDir3D);
+            // Point Light (type 1)
+            if (lightType == 1) {
+              vec3 lightPos3D = uLightPositions[i];
+              vec3 lightDir3D = lightPos3D - worldPos3D;
+              float lightDistance = length(lightDir3D);
+              vec3 lightDir = normalize(lightDir3D);
               
-              vec2 surfaceDistance = worldPos3D.xy - lightPos3D.xy;
-              float surface2DDistance = length(surfaceDistance);
-              float effectiveRadius = uLight0Radius + (lightPos3D.z * 2.0);
+              float attenuation;
+              float normalDot;
               
-              attenuation = 1.0 - clamp(surface2DDistance / effectiveRadius, 0.0, 1.0);
-              attenuation = attenuation * attenuation;
-              normalDot = max(dot(normal, lightDir), 0.0);
+              if (lightPos3D.z < 0.0) {
+                // Below surface lighting
+                lightDir3D.y = -lightDir3D.y;
+                lightDir = normalize(lightDir3D);
+                attenuation = 1.0 - clamp(lightDistance / uLightRadii[i], 0.0, 1.0);
+                attenuation = attenuation * attenuation;
+                normalDot = max(dot(normal.xy, lightDir.xy), 0.0);
+              } else {
+                // Above surface lighting
+                normal.z = sqrt(max(0.0, 1.0 - dot(normal.xy, normal.xy)));
+                lightDir3D.y = -lightDir3D.y;
+                lightDir = normalize(lightDir3D);
+                
+                vec2 surfaceDistance = worldPos3D.xy - lightPos3D.xy;
+                float surface2DDistance = length(surfaceDistance);
+                float effectiveRadius = uLightRadii[i] + (lightPos3D.z * 2.0);
+                
+                attenuation = 1.0 - clamp(surface2DDistance / effectiveRadius, 0.0, 1.0);
+                attenuation = attenuation * attenuation;
+                normalDot = max(dot(normal, lightDir), 0.0);
+              }
+              
+              float intensity = normalDot * uLightIntensities[i] * attenuation;
+              finalColor += diffuseColor.rgb * uLightColors[i] * intensity;
             }
             
-            float intensity = normalDot * uLight0Intensity * attenuation;
-            finalColor += diffuseColor.rgb * uLight0Color * intensity;
-          }
-          
-          // Directional Light (Light 1)
-          if (uLight1Enabled) {
-            vec3 lightDir = normalize(uLight1Direction);
-            float directionalDot = max(dot(normal, lightDir), 0.0);
-            float intensity = directionalDot * uLight1Intensity;
-            finalColor += diffuseColor.rgb * uLight1Color * intensity;
-          }
-          
-          // Spotlight (Light 2)
-          if (uLight2Enabled) {
-            vec3 spotlightDir3D = uLight2Position - worldPos3D;
-            float spotlightDistance = length(spotlightDir3D);
-            vec3 spotlightLightDir = normalize(spotlightDir3D);
+            // Directional Light (type 2)
+            else if (lightType == 2) {
+              vec3 lightDir = normalize(uLightDirections[i]);
+              float directionalDot = max(dot(normal, lightDir), 0.0);
+              float intensity = directionalDot * uLightIntensities[i];
+              finalColor += diffuseColor.rgb * uLightColors[i] * intensity;
+            }
             
-            // Calculate cone attenuation
-            float coneAngle = dot(-spotlightLightDir, normalize(uLight2Direction));
-            float coneAngleRad = radians(uLight2ConeAngle);
-            float innerCone = cos(coneAngleRad * 0.5);
-            float outerCone = cos(coneAngleRad);
-            float coneFactor = smoothstep(outerCone, innerCone, coneAngle);
-            
-            // Distance attenuation
-            float spotDistanceAttenuation = 1.0 - clamp(spotlightDistance / uLight2Radius, 0.0, 1.0);
-            
-            // Normal mapping
-            float spotNormalDot = max(dot(normal, spotlightLightDir), 0.0);
-            
-            // Apply softness and combine
-            float softness = mix(1.0, coneFactor, uLight2Softness);
-            float intensity = spotNormalDot * uLight2Intensity * spotDistanceAttenuation * softness * coneFactor;
-            finalColor += diffuseColor.rgb * uLight2Color * intensity;
+            // Spotlight (type 3)
+            else if (lightType == 3) {
+              vec3 spotlightDir3D = uLightPositions[i] - worldPos3D;
+              float spotlightDistance = length(spotlightDir3D);
+              vec3 spotlightLightDir = normalize(spotlightDir3D);
+              
+              // Calculate cone attenuation
+              float coneAngle = dot(-spotlightLightDir, normalize(uLightDirections[i]));
+              float coneAngleRad = radians(uLightConeAngles[i]);
+              float innerCone = cos(coneAngleRad * 0.5);
+              float outerCone = cos(coneAngleRad);
+              float coneFactor = smoothstep(outerCone, innerCone, coneAngle);
+              
+              // Distance attenuation
+              float spotDistanceAttenuation = 1.0 - clamp(spotlightDistance / uLightRadii[i], 0.0, 1.0);
+              
+              // Normal mapping
+              float spotNormalDot = max(dot(normal, spotlightLightDir), 0.0);
+              
+              // Apply softness and combine
+              float softness = mix(1.0, coneFactor, uLightSoftness[i]);
+              float intensity = spotNormalDot * uLightIntensities[i] * spotDistanceAttenuation * softness * coneFactor;
+              finalColor += diffuseColor.rgb * uLightColors[i] * intensity;
+            }
           }
           
           // Apply color tinting
@@ -517,22 +519,22 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniforms.uLight1Intensity = 0;
       }
       
-      // Light 2 (Spotlight - with mouse following support)
+      // Light 2 (First Spotlight - with mouse following support)
       const spotlights = lightsConfig.filter(light => light.type === 'spotlight' && light.enabled);
-      const spotlight = spotlights.find(light => light.followMouse) || spotlights[0];
-      if (spotlight) {
+      const spotlight1 = spotlights.find(light => light.followMouse) || spotlights[0];
+      if (spotlight1) {
         uniforms.uLight2Enabled = true;
         uniforms.uLight2Position = [
-          spotlight.followMouse ? mousePos.x : spotlight.position.x,
-          spotlight.followMouse ? mousePos.y : spotlight.position.y,
-          spotlight.position.z
+          spotlight1.followMouse ? mousePos.x : spotlight1.position.x,
+          spotlight1.followMouse ? mousePos.y : spotlight1.position.y,
+          spotlight1.position.z
         ];
-        uniforms.uLight2Direction = [spotlight.direction.x, spotlight.direction.y, spotlight.direction.z];
-        uniforms.uLight2Color = [spotlight.color.r, spotlight.color.g, spotlight.color.b];
-        uniforms.uLight2Intensity = spotlight.intensity;
-        uniforms.uLight2Radius = spotlight.radius || 150;
-        uniforms.uLight2ConeAngle = spotlight.coneAngle || 30;
-        uniforms.uLight2Softness = spotlight.softness || 0.5;
+        uniforms.uLight2Direction = [spotlight1.direction.x, spotlight1.direction.y, spotlight1.direction.z];
+        uniforms.uLight2Color = [spotlight1.color.r, spotlight1.color.g, spotlight1.color.b];
+        uniforms.uLight2Intensity = spotlight1.intensity;
+        uniforms.uLight2Radius = spotlight1.radius || 150;
+        uniforms.uLight2ConeAngle = spotlight1.coneAngle || 30;
+        uniforms.uLight2Softness = spotlight1.softness || 0.5;
       } else {
         uniforms.uLight2Enabled = false;
         uniforms.uLight2Position = [200, 150, 100];
@@ -542,6 +544,28 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniforms.uLight2Radius = 1;
         uniforms.uLight2ConeAngle = 30;
         uniforms.uLight2Softness = 0.5;
+      }
+      
+      // Light 3 (Second Spotlight)
+      const spotlight2 = spotlights[1]; // Get the second spotlight
+      if (spotlight2) {
+        uniforms.uLight3Enabled = true;
+        uniforms.uLight3Position = [spotlight2.position.x, spotlight2.position.y, spotlight2.position.z];
+        uniforms.uLight3Direction = [spotlight2.direction.x, spotlight2.direction.y, spotlight2.direction.z];
+        uniforms.uLight3Color = [spotlight2.color.r, spotlight2.color.g, spotlight2.color.b];
+        uniforms.uLight3Intensity = spotlight2.intensity;
+        uniforms.uLight3Radius = spotlight2.radius || 150;
+        uniforms.uLight3ConeAngle = spotlight2.coneAngle || 30;
+        uniforms.uLight3Softness = spotlight2.softness || 0.5;
+      } else {
+        uniforms.uLight3Enabled = false;
+        uniforms.uLight3Position = [300, 200, 100];
+        uniforms.uLight3Direction = [0, 0, -1];
+        uniforms.uLight3Color = [1, 1, 1];
+        uniforms.uLight3Intensity = 0;
+        uniforms.uLight3Radius = 1;
+        uniforms.uLight3ConeAngle = 30;
+        uniforms.uLight3Softness = 0.5;
       }
 
       // Add other dynamic uniforms
