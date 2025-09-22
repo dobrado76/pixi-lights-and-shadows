@@ -4,7 +4,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.42,
+      "brightness": 0.3,
       "color": "0x666666"
     },
     {
@@ -24,8 +24,8 @@
       "enabled": true,
       "brightness": 0.5,
       "color": "0xffffff",
-      "directionX": 0.1,
-      "directionY": 0.2,
+      "directionX": 1,
+      "directionY": 1,
       "directionZ": -1
     },
     {

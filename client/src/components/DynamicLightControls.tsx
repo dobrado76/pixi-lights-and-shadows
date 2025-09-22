@@ -84,303 +84,301 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
   };
 
   return (
-    <div className="bg-card rounded-lg border border-border p-6 space-y-6">
-      <div className="flex items-center space-x-2">
-        <div className="w-3 h-3 rounded-full bg-accent status-active" data-testid="dynamic-controls-status"></div>
-        <h3 className="text-lg font-semibold text-card-foreground" data-testid="dynamic-controls-title">
-          Dynamic Light Controls
-        </h3>
-      </div>
-
-      {/* Add New Light Section */}
-      <div className="border border-border rounded-lg p-4 bg-muted/20">
-        <div className="flex items-center space-x-2 mb-3">
-          <h4 className="text-sm font-medium text-foreground">Add New Light</h4>
-        </div>
+    <div className="bg-card rounded-lg border border-border p-4 space-y-4 max-h-[80vh] overflow-y-auto">
+      <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 rounded-full bg-accent" data-testid="dynamic-controls-status"></div>
+          <h3 className="text-sm font-semibold text-card-foreground" data-testid="dynamic-controls-title">
+            Lighting Controls
+          </h3>
+        </div>
+        
+        {/* Compact Add Light Controls */}
+        <div className="flex items-center space-x-1">
           <select
             value={newLightType}
             onChange={(e) => setNewLightType(e.target.value as 'point' | 'directional' | 'spotlight')}
-            className="flex-1 bg-input border border-border rounded px-3 py-2 text-sm text-foreground"
+            className="bg-input border border-border rounded px-2 py-1 text-xs text-foreground"
             data-testid="dropdown-light-type"
           >
-            <option value="point">Point Light</option>
-            <option value="directional">Directional Light</option>
+            <option value="point">Point</option>
+            <option value="directional">Directional</option>
             <option value="spotlight">Spotlight</option>
           </select>
           <button
             onClick={addNewLight}
-            className="flex items-center space-x-1 bg-primary text-primary-foreground px-3 py-2 rounded text-sm hover:bg-primary/90 transition-colors"
+            className="flex items-center bg-primary text-primary-foreground px-2 py-1 rounded text-xs hover:bg-primary/90"
             data-testid="button-add-light"
           >
-            <Plus size={16} />
-            <span>Add</span>
+            <Plus size={12} />
           </button>
         </div>
       </div>
 
-      {/* Ambient Light Control */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-muted-foreground">
-          Ambient Light: {localAmbient.toFixed(2)}
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={localAmbient}
-          onChange={(e) => {
-            const value = parseFloat(e.target.value);
-            setLocalAmbient(value);
-            onAmbientChange(value);
-          }}
-          className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer"
-          data-testid="slider-ambient-light"
-        />
+      {/* Compact Ambient Light Control */}
+      <div className="border-b border-border pb-2">
+        <div className="flex items-center space-x-2">
+          <label className="text-xs text-muted-foreground min-w-[80px]">
+            Ambient: {localAmbient.toFixed(2)}
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={localAmbient}
+            onChange={(e) => {
+              const value = parseFloat(e.target.value);
+              setLocalAmbient(value);
+              onAmbientChange(value);
+            }}
+            className="flex-1"
+            data-testid="slider-ambient-light"
+          />
+        </div>
       </div>
 
-      {/* Dynamic Light Controls */}
-      {localLights.map((light) => (
-        <div key={light.id} className="border border-border rounded-lg p-4 bg-muted/10">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-2">
-              <h4 className="text-sm font-medium text-foreground">
-                {light.id} ({light.type})
-              </h4>
-              <input
-                type="checkbox"
-                checked={light.enabled}
-                onChange={(e) => updateLight(light.id, { enabled: e.target.checked })}
-                className="w-4 h-4"
-                data-testid={`checkbox-${light.id}-enabled`}
-              />
-              <span className="text-xs text-muted-foreground">
-                {light.enabled ? 'Enabled' : 'Disabled'}
-              </span>
+      {/* Compact Light Controls */}
+      {localLights.map((light) => {
+        // Calculate angle from direction for directional lights
+        const directionAngle = light.type === 'directional' 
+          ? Math.atan2(light.direction.y, light.direction.x) * 180 / Math.PI + 180
+          : 0;
+
+        return (
+          <div key={light.id} className="border border-border rounded p-2 bg-muted/5">
+            {/* Compact Header */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={light.enabled}
+                  onChange={(e) => updateLight(light.id, { enabled: e.target.checked })}
+                  className="w-3 h-3"
+                  data-testid={`checkbox-${light.id}-enabled`}
+                />
+                <span className="text-xs font-medium text-foreground">
+                  {light.id}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  ({light.type})
+                </span>
+              </div>
+              <button
+                onClick={() => deleteLight(light.id)}
+                className="bg-red-600 hover:bg-red-700 text-white p-1 rounded text-xs flex items-center"
+                data-testid={`button-delete-${light.id}`}
+              >
+                <Trash2 size={12} />
+              </button>
             </div>
-            <button
-              onClick={() => deleteLight(light.id)}
-              className="flex items-center space-x-1 bg-destructive text-destructive-foreground px-2 py-1 rounded text-xs hover:bg-destructive/90 transition-colors"
-              data-testid={`button-delete-${light.id}`}
-            >
-              <Trash2 size={12} />
-              <span>Delete</span>
-            </button>
+
+            {light.enabled && (
+              <div className="space-y-2">
+                {/* Row 1: Intensity & Color */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center space-x-1">
+                    <label className="text-xs text-muted-foreground min-w-[40px]">
+                      I: {light.intensity.toFixed(1)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="3"
+                      step="0.1"
+                      value={light.intensity}
+                      onChange={(e) => updateLight(light.id, { intensity: parseFloat(e.target.value) })}
+                      className="flex-1"
+                      data-testid={`slider-${light.id}-intensity`}
+                    />
+                  </div>
+                  <input
+                    type="color"
+                    value={rgbToHex(light.color.r, light.color.g, light.color.b)}
+                    onChange={(e) => {
+                      const rgb = hexToRgb(e.target.value);
+                      updateLight(light.id, { color: rgb });
+                    }}
+                    className="w-full h-6 rounded border border-border cursor-pointer"
+                    data-testid={`color-${light.id}`}
+                  />
+                </div>
+
+                {/* Point Light Controls */}
+                {light.type === 'point' && (
+                  <>
+                    {/* Row 2: Position X, Y, Z */}
+                    <div className="grid grid-cols-3 gap-1">
+                      {['x', 'y', 'z'].map((axis, idx) => {
+                        const value = axis === 'x' ? light.position.x : axis === 'y' ? light.position.y : light.position.z;
+                        const max = axis === 'z' ? 300 : axis === 'x' ? 800 : 600;
+                        const min = axis === 'z' ? -100 : 0;
+                        return (
+                          <div key={axis} className="flex items-center space-x-1">
+                            <label className="text-xs text-muted-foreground min-w-[20px]">
+                              {axis.toUpperCase()}: {value.toFixed(0)}
+                            </label>
+                            <input
+                              type="range"
+                              min={min}
+                              max={max}
+                              step="10"
+                              value={value}
+                              onChange={(e) => updateLight(light.id, { 
+                                position: { ...light.position, [axis]: parseFloat(e.target.value) }
+                              })}
+                              className="flex-1"
+                              data-testid={`slider-${light.id}-${axis}`}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Row 3: Radius & Follow Mouse */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex items-center space-x-1">
+                        <label className="text-xs text-muted-foreground min-w-[40px]">
+                          R: {light.radius?.toFixed(0)}
+                        </label>
+                        <input
+                          type="range"
+                          min="10"
+                          max="400"
+                          step="10"
+                          value={light.radius || 200}
+                          onChange={(e) => updateLight(light.id, { radius: parseFloat(e.target.value) })}
+                          className="flex-1"
+                          data-testid={`slider-${light.id}-radius`}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <input
+                          type="checkbox"
+                          checked={light.followMouse || false}
+                          onChange={(e) => updateLight(light.id, { followMouse: e.target.checked })}
+                          className="w-3 h-3"
+                          data-testid={`checkbox-${light.id}-follow-mouse`}
+                        />
+                        <label className="text-xs text-muted-foreground">Mouse</label>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Directional Light Controls - SINGLE ANGLE */}
+                {light.type === 'directional' && (
+                  <div className="flex items-center space-x-2">
+                    <label className="text-xs text-muted-foreground min-w-[50px]">
+                      Angle: {directionAngle.toFixed(0)}°
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="360"
+                      step="5"
+                      value={directionAngle}
+                      onChange={(e) => {
+                        const angle = parseFloat(e.target.value);
+                        const radians = (angle - 180) * Math.PI / 180;
+                        updateLight(light.id, { 
+                          direction: { 
+                            x: Math.cos(radians), 
+                            y: Math.sin(radians), 
+                            z: -1 
+                          }
+                        });
+                      }}
+                      className="flex-1"
+                      data-testid={`slider-${light.id}-angle`}
+                    />
+                  </div>
+                )}
+
+                {/* Spotlight Controls */}
+                {light.type === 'spotlight' && (
+                  <>
+                    {/* Position */}
+                    <div className="grid grid-cols-3 gap-1">
+                      {['x', 'y', 'z'].map((axis, idx) => {
+                        const value = axis === 'x' ? light.position.x : axis === 'y' ? light.position.y : light.position.z;
+                        const max = axis === 'z' ? 300 : axis === 'x' ? 800 : 600;
+                        const min = axis === 'z' ? -100 : 0;
+                        return (
+                          <div key={axis} className="flex items-center space-x-1">
+                            <label className="text-xs text-muted-foreground min-w-[20px]">
+                              {axis.toUpperCase()}: {value.toFixed(0)}
+                            </label>
+                            <input
+                              type="range"
+                              min={min}
+                              max={max}
+                              step="10"
+                              value={value}
+                              onChange={(e) => updateLight(light.id, { 
+                                position: { ...light.position, [axis]: parseFloat(e.target.value) }
+                              })}
+                              className="flex-1"
+                              data-testid={`slider-${light.id}-${axis}`}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Spotlight Properties */}
+                    <div className="grid grid-cols-3 gap-1">
+                      <div className="flex items-center space-x-1">
+                        <label className="text-xs text-muted-foreground min-w-[20px]">
+                          R: {light.radius?.toFixed(0)}
+                        </label>
+                        <input
+                          type="range"
+                          min="10"
+                          max="400"
+                          step="10"
+                          value={light.radius || 150}
+                          onChange={(e) => updateLight(light.id, { radius: parseFloat(e.target.value) })}
+                          className="flex-1"
+                          data-testid={`slider-${light.id}-radius`}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <label className="text-xs text-muted-foreground min-w-[20px]">
+                          A: {light.coneAngle?.toFixed(0)}°
+                        </label>
+                        <input
+                          type="range"
+                          min="5"
+                          max="90"
+                          step="1"
+                          value={light.coneAngle || 30}
+                          onChange={(e) => updateLight(light.id, { coneAngle: parseFloat(e.target.value) })}
+                          className="flex-1"
+                          data-testid={`slider-${light.id}-cone-angle`}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <label className="text-xs text-muted-foreground min-w-[20px]">
+                          S: {light.softness?.toFixed(1)}
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={light.softness || 0.5}
+                          onChange={(e) => updateLight(light.id, { softness: parseFloat(e.target.value) })}
+                          className="flex-1"
+                          data-testid={`slider-${light.id}-softness`}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
-
-          {light.enabled && (
-            <div className="space-y-3">
-              {/* Intensity Control */}
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">
-                  Intensity: {light.intensity.toFixed(2)}
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="3"
-                  step="0.01"
-                  value={light.intensity}
-                  onChange={(e) => updateLight(light.id, { intensity: parseFloat(e.target.value) })}
-                  className="w-full h-1 bg-input rounded-lg appearance-none cursor-pointer"
-                  data-testid={`slider-${light.id}-intensity`}
-                />
-              </div>
-
-              {/* Color Control */}
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Color</label>
-                <input
-                  type="color"
-                  value={rgbToHex(light.color.r, light.color.g, light.color.b)}
-                  onChange={(e) => {
-                    const rgb = hexToRgb(e.target.value);
-                    updateLight(light.id, { color: rgb });
-                  }}
-                  className="w-full h-8 rounded border border-border cursor-pointer"
-                  data-testid={`color-${light.id}`}
-                />
-              </div>
-
-              {/* Position Controls (for point and spotlight) */}
-              {(light.type === 'point' || light.type === 'spotlight') && (
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">X: {light.position.x.toFixed(0)}</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="800"
-                      step="10"
-                      value={light.position.x}
-                      onChange={(e) => updateLight(light.id, { 
-                        position: { ...light.position, x: parseFloat(e.target.value) }
-                      })}
-                      className="w-full h-1 bg-input rounded-lg appearance-none cursor-pointer"
-                      data-testid={`slider-${light.id}-x`}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">Y: {light.position.y.toFixed(0)}</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="600"
-                      step="10"
-                      value={light.position.y}
-                      onChange={(e) => updateLight(light.id, { 
-                        position: { ...light.position, y: parseFloat(e.target.value) }
-                      })}
-                      className="w-full h-1 bg-input rounded-lg appearance-none cursor-pointer"
-                      data-testid={`slider-${light.id}-y`}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">Z: {light.position.z.toFixed(0)}</label>
-                    <input
-                      type="range"
-                      min="-100"
-                      max="300"
-                      step="10"
-                      value={light.position.z}
-                      onChange={(e) => updateLight(light.id, { 
-                        position: { ...light.position, z: parseFloat(e.target.value) }
-                      })}
-                      className="w-full h-1 bg-input rounded-lg appearance-none cursor-pointer"
-                      data-testid={`slider-${light.id}-z`}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Mouse Following Toggle (for point lights) */}
-              {light.type === 'point' && (
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={light.followMouse || false}
-                    onChange={(e) => updateLight(light.id, { followMouse: e.target.checked })}
-                    className="w-4 h-4"
-                    data-testid={`checkbox-${light.id}-follow-mouse`}
-                  />
-                  <label className="text-xs text-muted-foreground">Follow Mouse</label>
-                </div>
-              )}
-
-              {/* Radius Control (for point and spotlight) */}
-              {(light.type === 'point' || light.type === 'spotlight') && light.radius !== undefined && (
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">
-                    Radius: {light.radius.toFixed(0)}
-                  </label>
-                  <input
-                    type="range"
-                    min="10"
-                    max="400"
-                    step="10"
-                    value={light.radius}
-                    onChange={(e) => updateLight(light.id, { radius: parseFloat(e.target.value) })}
-                    className="w-full h-1 bg-input rounded-lg appearance-none cursor-pointer"
-                    data-testid={`slider-${light.id}-radius`}
-                  />
-                </div>
-              )}
-
-              {/* Direction Controls (for directional and spotlight) */}
-              {(light.type === 'directional' || light.type === 'spotlight') && (
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">Dir X: {light.direction.x.toFixed(1)}</label>
-                    <input
-                      type="range"
-                      min="-1"
-                      max="1"
-                      step="0.1"
-                      value={light.direction.x}
-                      onChange={(e) => updateLight(light.id, { 
-                        direction: { ...light.direction, x: parseFloat(e.target.value) }
-                      })}
-                      className="w-full h-1 bg-input rounded-lg appearance-none cursor-pointer"
-                      data-testid={`slider-${light.id}-dir-x`}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">Dir Y: {light.direction.y.toFixed(1)}</label>
-                    <input
-                      type="range"
-                      min="-1"
-                      max="1"
-                      step="0.1"
-                      value={light.direction.y}
-                      onChange={(e) => updateLight(light.id, { 
-                        direction: { ...light.direction, y: parseFloat(e.target.value) }
-                      })}
-                      className="w-full h-1 bg-input rounded-lg appearance-none cursor-pointer"
-                      data-testid={`slider-${light.id}-dir-y`}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">Dir Z: {light.direction.z.toFixed(1)}</label>
-                    <input
-                      type="range"
-                      min="-1"
-                      max="1"
-                      step="0.1"
-                      value={light.direction.z}
-                      onChange={(e) => updateLight(light.id, { 
-                        direction: { ...light.direction, z: parseFloat(e.target.value) }
-                      })}
-                      className="w-full h-1 bg-input rounded-lg appearance-none cursor-pointer"
-                      data-testid={`slider-${light.id}-dir-z`}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Spotlight-specific controls */}
-              {light.type === 'spotlight' && (
-                <>
-                  {light.coneAngle !== undefined && (
-                    <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">
-                        Cone Angle: {light.coneAngle.toFixed(0)}°
-                      </label>
-                      <input
-                        type="range"
-                        min="5"
-                        max="90"
-                        step="1"
-                        value={light.coneAngle}
-                        onChange={(e) => updateLight(light.id, { coneAngle: parseFloat(e.target.value) })}
-                        className="w-full h-1 bg-input rounded-lg appearance-none cursor-pointer"
-                        data-testid={`slider-${light.id}-cone-angle`}
-                      />
-                    </div>
-                  )}
-                  {light.softness !== undefined && (
-                    <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">
-                        Softness: {light.softness.toFixed(2)}
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value={light.softness}
-                        onChange={(e) => updateLight(light.id, { softness: parseFloat(e.target.value) })}
-                        className="w-full h-1 bg-input rounded-lg appearance-none cursor-pointer"
-                        data-testid={`slider-${light.id}-softness`}
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      ))}
+        );
+      })}
 
       {localLights.length === 0 && (
         <div className="text-center py-6 text-muted-foreground">
