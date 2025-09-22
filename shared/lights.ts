@@ -26,6 +26,7 @@ export interface LightConfig {
   coneAngle?: number;
   softness?: number;
   followMouse?: boolean;
+  mask?: string; // filename of the mask texture
 }
 
 // Internal runtime format
@@ -63,6 +64,9 @@ export interface Light {
   radius?: number;
   coneAngle?: number;
   softness?: number;
+  
+  // Mask properties
+  mask?: string; // filename of the mask texture
 }
 
 export const createDefaultLight = (type: LightType, id?: string): Light => {
@@ -163,6 +167,7 @@ export const convertConfigToLight = (config: LightConfig): Light => {
   if (config.radius !== undefined) light.radius = config.radius;
   if (config.coneAngle !== undefined) light.coneAngle = config.coneAngle;
   if (config.softness !== undefined) light.softness = config.softness;
+  if (config.mask !== undefined) light.mask = config.mask;
 
   return light;
 };
@@ -259,6 +264,7 @@ export const convertLightToConfig = (light: Light): LightConfig => {
   if (light.radius !== undefined) config.radius = light.radius;
   if (light.coneAngle !== undefined) config.coneAngle = light.coneAngle;
   if (light.softness !== undefined) config.softness = light.softness;
+  if (light.mask !== undefined) config.mask = light.mask;
 
   return config;
 };

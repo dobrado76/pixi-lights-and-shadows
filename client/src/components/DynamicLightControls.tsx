@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Light } from '@shared/lights';
-import { Plus, Trash2, Copy, Edit3 } from 'lucide-react';
+import { Plus, Trash2, Copy, Edit3, ImageIcon } from 'lucide-react';
 
 interface DynamicLightControlsProps {
   lights: Light[];
@@ -15,6 +15,31 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
   const [newLightType, setNewLightType] = useState<'point' | 'directional' | 'spotlight'>('point');
   const [editingLightId, setEditingLightId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
+  const [availableMasks, setAvailableMasks] = useState<string[]>([]);
+
+  // Load available mask files on component mount
+  useEffect(() => {
+    const loadMasks = async () => {
+      try {
+        // Get list of mask files from the light_masks directory
+        const maskFiles = [
+          '00001-2446737535.png',
+          '00003-1224130458.png', 
+          '00007-1224130462.png',
+          '00019-1224130474.png',
+          '00022-3934797524.png',
+          '00024-3934797526.png',
+          '00025-3934797527.png',
+          '00032-3934797534.png',
+          '00035-3934797537.png'
+        ];
+        setAvailableMasks(maskFiles);
+      } catch (error) {
+        console.error('Error loading mask files:', error);
+      }
+    };
+    loadMasks();
+  }, []);
 
   // Update local state when props change
   useEffect(() => {
@@ -93,6 +118,21 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
   const cancelRename = () => {
     setEditingLightId(null);
     setEditingName('');
+  };
+
+  // Helper to add mask to a light
+  const addMask = (lightId: string) => {
+    updateLight(lightId, { mask: availableMasks[0] || '' });
+  };
+
+  // Helper to remove mask from a light
+  const removeMask = (lightId: string) => {
+    updateLight(lightId, { mask: undefined });
+  };
+
+  // Helper to change mask for a light
+  const changeMask = (lightId: string, maskFile: string) => {
+    updateLight(lightId, { mask: maskFile });
   };
 
   // Helper to add a new light
@@ -242,7 +282,7 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
                         if (e.key === 'Enter') finishRename(light.id);
                         if (e.key === 'Escape') cancelRename();
                       }}
-                      className="text-xs font-medium bg-input border border-border rounded px-1 py-0.5 w-20"
+                      className="text-xs font-medium bg-input border border-border rounded px-1 py-0.5 w-20 text-foreground"
                       placeholder="No spaces"
                       autoFocus
                       data-testid={`input-rename-${light.id}`}
