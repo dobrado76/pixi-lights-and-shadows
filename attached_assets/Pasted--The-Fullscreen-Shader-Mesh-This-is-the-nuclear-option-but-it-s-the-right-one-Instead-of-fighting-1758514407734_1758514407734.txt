@@ -1,0 +1,156 @@
+ The Fullscreen Shader Mesh
+This is the nuclear option, but it's the right one. Instead of fighting with PIXI.Filter, we are going to create our own "post-processing effect" from scratch using the most basic, reliable objects in Pixi: PIXI.Geometry, PIXI.Shader, and PIXI.Mesh.
+This approach completely avoids PIXI.Filter and gives you raw, direct access to your render textures in the shader, with no remapping and no bugs.
+The Concept: "Drawing a TV Screen"
+Imagine your game isn't rendered directly to the monitor. Instead:
+Render to Textures: Just like before, you render your different passes into off-screen RenderTexture objects.
+sceneTexture: Your colorful game world.
+lightTexture: Your black-and-white light map.
+shadowTexture (optional): Your shadow map.
+Create a "TV Screen": You create a simple rectangle that covers the entire screen. In Pixi, this is a PIXI.Mesh. A mesh is just a shape (Geometry) combined with a material (Shader).
+The "Magic" Shader: You create a custom PIXI.Shader. This shader is the "material" for your TV screen. You pass all your render textures (sceneTexture, lightTexture, shadowTexture) to this shader as uniforms.
+Final Render: You draw the "TV screen" mesh. The custom shader runs for every pixel of the screen, samples from all your textures with correct, 1-to-1 texture coordinates, combines them into the final lit and shadowed image, and draws it.
+Why This is the Right Solution for You
+IT BYPASSES THE BUG: This technique does not use PIXI.Filter's multi-texture system. You get direct, predictable access to your textures in the shader. The texture coordinate issues completely disappear.
+Total Control: This is the lowest-level, highest-control method available. You are essentially building your own post-processing pipeline.
+Standard Pro Technique: This is how post-processing is implemented in most professional game engines. It's a foundational and powerful skill.
+Fits Your Architecture: You already have the systems to generate the different render textures. This just changes the final step of how they are combined.
+A Concrete, Step-by-Step Integration Plan
+Let's refactor the CustomLightingSystem from the previous (flawed) answer into a new, correct PostProcessingSystem that uses this mesh-based technique.
+Step 1: The Shaders (Slightly Modified)
+The fragment shader is almost identical, but the vertex shader is important.
+src/game/core/systems/shaders.ts
+code
+TypeScript
+// Vertex shader: This is standard boilerplate for a fullscreen mesh.
+// It just passes the texture coordinates through.
+export const fullscreenVertexShader = `
+    attribute vec2 aVertexPosition;
+    attribute vec2 aTextureCoord;
+    uniform mat3 projectionMatrix;
+    varying vec2 vTextureCoord;
+
+    void main(void) {
+        gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
+        vTextureCoord = aTextureCoord;
+    }
+`;
+
+// Fragment shader: This is where the magic happens.
+export const finalCompositeShader = `
+    varying vec2 vTextureCoord;
+    uniform sampler2D uSceneSampler;   // Our colorful game scene
+    uniform sampler2D uLightSampler;   // Our black and white light map
+    // uniform sampler2D uShadowSampler; // Add this when you implement shadows
+
+    void main(void) {
+        vec4 sceneColor = texture2D(uSceneSampler, vTextureCoord);
+        vec4 lightColor = texture2D(uLightSampler, vTextureCoord);
+        
+        // Simple lighting: Multiply the scene by the light map
+        gl_FragColor = sceneColor * lightColor;
+        
+        // Make sure alpha is handled correctly
+        gl_FragColor.a = sceneColor.a; 
+    }
+`;
+Step 2: The PostProcessingSystem.tsx Component
+This is the core of the new solution. It manages the render textures and the final shader mesh.
+src/game/core/systems/PostProcessingSystem.tsx (New File)
+code
+Tsx
+import React, { useEffect, useMemo, useRef } from 'react';
+import { useApp } from '@pixi/react';
+import * as PIXI from 'pixi.js';
+import { fullscreenVertexShader, finalCompositeShader } from './shaders';
+
+export const PostProcessingSystem = ({ children }) => {
+    const app = useApp();
+
+    // 1. Create the render textures and the final shader material
+    const pipeline = useMemo(() => {
+        const screen = app.screen;
+        
+        // Textures to hold our intermediate rendering passes
+        const sceneTexture = PIXI.RenderTexture.create({ width: screen.width, height: screen.height });
+        const lightTexture = PIXI.RenderTexture.create({ width: screen.width, height: screen.height });
+
+        // The shader that will combine our textures
+        const finalShader = PIXI.Shader.from(fullscreenVertexShader, finalCompositeShader, {
+            uSceneSampler: sceneTexture,
+            uLightSampler: lightTexture,
+        });
+
+        // The fullscreen "TV screen" mesh
+        const geometry = new PIXI.Geometry()
+            .addAttribute('aVertexPosition', [0, 0, screen.width, 0, screen.width, screen.height, 0, screen.height], 2)
+            .addAttribute('aTextureCoord', [0, 0, 1, 0, 1, 1, 0, 1], 2)
+            .addIndex([0, 1, 2, 0, 2, 3]);
+        
+        const quad = new PIXI.Mesh(geometry, finalShader);
+
+        return { sceneTexture, lightTexture, quad };
+    }, [app.screen.width, app.screen.height]);
+
+    // 2. Create the containers for our different rendering passes
+    const sceneContainer = useRef(new PIXI.Container());
+    const lightContainer = useRef(new PIXI.Container());
+
+    // 3. The main effect hook that orchestrates the rendering pipeline
+    useEffect(() => {
+        // Add our containers to the main stage, but keep them invisible.
+        // We will render them manually to our off-screen textures.
+        app.stage.addChild(sceneContainer.current);
+        app.stage.addChild(lightContainer.current);
+        sceneContainer.current.visible = false;
+        lightContainer.current.visible = false;
+
+        // Add our final "TV screen" mesh to the stage. This is the only thing
+        // that will be visible directly.
+        app.stage.addChild(pipeline.quad);
+
+        const ticker = () => {
+            // STEP A: Render the main game scene into sceneTexture
+            app.renderer.render(sceneContainer.current, { 
+                renderTexture: pipeline.sceneTexture,
+                clear: true, // Clear the texture before drawing
+            });
+
+            // STEP B: Render the light sprites into lightTexture
+            app.renderer.render(lightContainer.current, {
+                renderTexture: pipeline.lightTexture,
+                clear: true,
+                clearColor: [0, 0, 0, 1], // Start with a black light map
+            });
+
+            // STEP C: The final quad is rendered automatically by Pixi's main loop,
+            // which will execute our shader and combine the textures.
+        };
+
+        app.ticker.add(ticker);
+
+        return () => {
+            app.ticker.remove(ticker);
+            app.stage.removeChild(sceneContainer.current, lightContainer.current, pipeline.quad);
+            pipeline.sceneTexture.destroy();
+            pipeline.lightTexture.destroy();
+        };
+    }, [app, pipeline]);
+
+    // Provide the containers to the children. We'll use React's context for this
+    // or just render them directly inside for this example.
+    return (
+        <>
+            {/* Everything rendered here will go into the sceneContainer */}
+            <Container ref={sceneContainer}>
+                {children}
+            </Container>
+
+            {/* A place to render lights */}
+            <Container ref={lightContainer}>
+                {/* Example light sprite */}
+                <PIXI.Sprite texture={PIXI.Texture.from('/path/to/soft_light_circle.png')} x={150} y={150} />
+            </Container>
+        </>
+    );
+};
