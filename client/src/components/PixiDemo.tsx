@@ -354,8 +354,8 @@ const PixiDemo = (props: PixiDemoProps) => {
             relativePos.x * sinR + relativePos.y * cosR
           );
           
-          // Apply scale and convert to UV coordinates
-          vec2 maskUV = (rotatedPos / (scale * 100.0)) + 0.5;
+          // Apply scale and convert to UV coordinates - scale 1.0 covers most of 800x600 canvas
+          vec2 maskUV = (rotatedPos / (scale * 400.0)) + 0.5;
           
           // Sample mask (clamp to avoid edge artifacts)
           if (maskUV.x < 0.0 || maskUV.x > 1.0 || maskUV.y < 0.0 || maskUV.y > 1.0) {

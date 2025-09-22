@@ -368,7 +368,7 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
                     <input
                       type="range"
                       min="0"
-                      max="3"
+                      max="10"
                       step="0.1"
                       value={light.intensity}
                       onChange={(e) => updateLight(light.id, { intensity: parseFloat(e.target.value) })}
@@ -680,7 +680,7 @@ const DynamicLightControls = ({ lights, ambientLight, onLightsChange, onAmbientC
                     <input
                       type="range"
                       min="0.1"
-                      max="3"
+                      max="10"
                       step="0.1"
                       value={light.mask?.scale || 1}
                       onChange={(e) => updateMaskProperty(light.id, 'scale', parseFloat(e.target.value))}
