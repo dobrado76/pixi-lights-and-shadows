@@ -599,9 +599,6 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
                         data-testid={`checkbox-${light.id}-casts-shadows`}
                       />
                       <label className="text-xs text-muted-foreground">Cast Shadows</label>
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        Dir Z: {light.direction.z.toFixed(1)} {light.direction.z <= 0 ? '(No shadows)' : '(Soft shadows)'}
-                      </span>
                     </div>
                   </>
                 )}
