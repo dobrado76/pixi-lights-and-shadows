@@ -211,13 +211,13 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Apply shadow calculation
+    // Apply shadow calculation with texture masking
     float shadowFactor = 1.0;
     if (uShadowCaster0Enabled) {
-      shadowFactor *= calculateShadow(uPoint1Position.xy, worldPos.xy, uShadowCaster0);
+      shadowFactor *= calculateShadow(uPoint1Position.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
     }
     if (uShadowCaster1Enabled) {
-      shadowFactor *= calculateShadow(uPoint1Position.xy, worldPos.xy, uShadowCaster1);
+      shadowFactor *= calculateShadow(uPoint1Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
     }
     intensity *= shadowFactor;
     
