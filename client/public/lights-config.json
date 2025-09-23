@@ -41,11 +41,11 @@
       "y": 210,
       "z": 80,
       "directionX": 0,
-      "directionY": 1,
+      "directionY": -1,
       "directionZ": -1,
       "castsShadows": true,
       "radius": 1050,
-      "coneAngle": 80,
+      "coneAngle": 43,
       "softness": 0.2
     },
     {

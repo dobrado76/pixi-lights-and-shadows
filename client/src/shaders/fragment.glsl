@@ -367,9 +367,9 @@ void main(void) {
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
-    // Removed Y-flip branch that was causing triangular light shapes
+    // TEST: Linear attenuation to debug asymmetry issue
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
-    attenuation = attenuation * attenuation;
+    // REMOVED quadratic: attenuation = attenuation * attenuation;
     
     // Restore normal mapping now that coordinate system is fixed
     float normalDot = max(dot(normal, lightDir), 0.0);
@@ -539,8 +539,9 @@ void main(void) {
   
   // Spotlight 0
   if (uSpot0Enabled) {
-    // Calculate light-to-fragment vector - NO Y-FLIP to fix asymmetry
+    // Calculate light-to-fragment vector with Y-flip for coordinate system
     vec3 L3 = uSpot0Position - worldPos3D;
+    L3.y = -L3.y;
     float dist = length(L3);
     vec3 L = normalize(L3);
     
@@ -582,7 +583,7 @@ void main(void) {
   if (uSpot1Enabled) {
     // Calculate light-to-fragment vector with Y-flip for coordinate system
     vec3 L3 = uSpot1Position - worldPos3D;
-    // NO Y-FLIP - removed coordinate system hack
+    L3.y = -L3.y;
     float dist = length(L3);
     vec3 L = normalize(L3);
     
@@ -624,7 +625,7 @@ void main(void) {
   if (uSpot2Enabled) {
     // Calculate light-to-fragment vector with Y-flip for coordinate system
     vec3 L3 = uSpot2Position - worldPos3D;
-    // NO Y-FLIP - removed coordinate system hack
+    L3.y = -L3.y;
     float dist = length(L3);
     vec3 L = normalize(L3);
     
@@ -666,7 +667,7 @@ void main(void) {
   if (uSpot3Enabled) {
     // Calculate light-to-fragment vector with Y-flip for coordinate system
     vec3 L3 = uSpot3Position - worldPos3D;
-    // NO Y-FLIP - removed coordinate system hack
+    L3.y = -L3.y;
     float dist = length(L3);
     vec3 L = normalize(L3);
     
