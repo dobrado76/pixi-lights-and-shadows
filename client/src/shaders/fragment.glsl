@@ -499,9 +499,9 @@ void main(void) {
   
   // Directional Light 0
   if (uDir0Enabled) {
-    // Convert direction from UI space (+Y down) to shader space, then negate for incoming light vector
+    // Convert direction from UI space (+Y down) to shader space - direction IS the light source direction
     vec3 dir = normalize(vec3(uDir0Direction.x, -uDir0Direction.y, uDir0Direction.z));
-    vec3 L = -dir; // Incoming light direction (negative of light travel direction)
+    vec3 L = dir; // Light comes FROM the direction vector (not opposite)
     float lambert = max(dot(normal, L), 0.0);
     float intensity = lambert * uDir0Intensity;
     
@@ -511,7 +511,7 @@ void main(void) {
       // Compute virtual light position as if light comes from infinite distance
       // This makes all shadow rays parallel, simulating sun/moon lighting
       float infiniteDistance = 10000.0; // Very large distance
-      vec2 virtualLightPos = worldPos.xy - uDir0Direction.xy * infiniteDistance;
+      vec2 virtualLightPos = worldPos.xy + uDir0Direction.xy * infiniteDistance;
       shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
     }
     
@@ -522,9 +522,9 @@ void main(void) {
   
   // Directional Light 1
   if (uDir1Enabled) {
-    // Convert direction from UI space (+Y down) to shader space, then negate for incoming light vector
+    // Convert direction from UI space (+Y down) to shader space - direction IS the light source direction
     vec3 dir = normalize(vec3(uDir1Direction.x, -uDir1Direction.y, uDir1Direction.z));
-    vec3 L = -dir; // Incoming light direction (negative of light travel direction)
+    vec3 L = dir; // Light comes FROM the direction vector (not opposite)
     float lambert = max(dot(normal, L), 0.0);
     float intensity = lambert * uDir1Intensity;
     
@@ -534,7 +534,7 @@ void main(void) {
       // Compute virtual light position as if light comes from infinite distance
       // This makes all shadow rays parallel, simulating sun/moon lighting
       float infiniteDistance = 10000.0; // Very large distance
-      vec2 virtualLightPos = worldPos.xy - uDir1Direction.xy * infiniteDistance;
+      vec2 virtualLightPos = worldPos.xy + uDir1Direction.xy * infiniteDistance;
       shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
     }
     
