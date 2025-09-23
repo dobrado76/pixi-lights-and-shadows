@@ -167,7 +167,7 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shado
           // Binary shadow mask: alpha > 0 = solid (cast shadow)
           if (maskValue > 0.0) {
             // Distance-based soft shadows: shadows get softer further from caster
-            float hitDistance = t; // Distance from light to occluder
+            float hitDistance = samples[i]; // Distance from light to occluder
             float receiverDistanceFromCaster = rayLength - hitDistance; // Distance from occluder to receiver
             float normalizedDistance = receiverDistanceFromCaster / uShadowMaxLength;
             float softnessFactor = mix(0.3, 1.0, uShadowSharpness);
