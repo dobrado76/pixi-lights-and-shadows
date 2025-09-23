@@ -76,57 +76,41 @@ float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offse
   return texture2D(maskTexture, maskUV).r; // Use red channel as mask
 }
 
-// Shadow calculation function - improved ray-rectangle intersection
+// Shadow calculation function - robust line intersection
 float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster) {
   if (!uShadowsEnabled) return 1.0;
   
-  // Extract caster bounds with padding for more visible shadows
-  vec2 casterMin = caster.xy - 20.0;
-  vec2 casterMax = caster.xy + caster.zw + 20.0;
-  vec2 casterCenter = (casterMin + casterMax) * 0.5;
+  // Extract caster bounds
+  vec2 casterMin = caster.xy;
+  vec2 casterMax = caster.xy + caster.zw;
   
-  // Vector from light to pixel and to caster center
-  vec2 lightToPixel = pixelPos - lightPos;
-  vec2 lightToCenter = casterCenter - lightPos;
+  // Direction from light to pixel
+  vec2 rayDir = pixelPos - lightPos;
+  float rayLength = length(rayDir);
   
-  // Distance check - pixel must be further than caster
-  float pixelDist = length(lightToPixel);
-  float centerDist = length(lightToCenter);
+  // Avoid division by zero
+  if (rayLength < 0.001) return 1.0;
   
-  if (pixelDist <= centerDist) return 1.0; // Pixel is in front of caster
+  rayDir /= rayLength; // Normalize
   
-  // Direction check - pixel must be in similar direction as caster
-  vec2 pixelDir = normalize(lightToPixel);
-  vec2 centerDir = normalize(lightToCenter);
-  float dirSimilarity = dot(pixelDir, centerDir);
+  // Check intersection using slab method with proper handling of edge cases
+  vec2 invDir = vec2(
+    abs(rayDir.x) > 0.0001 ? 1.0 / rayDir.x : 1000000.0,
+    abs(rayDir.y) > 0.0001 ? 1.0 / rayDir.y : 1000000.0
+  );
   
-  if (dirSimilarity < 0.5) return 1.0; // Not in shadow direction
+  vec2 t1 = (casterMin - lightPos) * invDir;
+  vec2 t2 = (casterMax - lightPos) * invDir;
   
-  // Ray-rectangle intersection test
-  // Cast ray from light toward pixel and check if it hits the caster rectangle
-  vec2 rayDir = pixelDir;
-  vec2 invRayDir = 1.0 / rayDir;
+  vec2 tNear = min(t1, t2);
+  vec2 tFar = max(t1, t2);
   
-  vec2 t1 = (casterMin - lightPos) * invRayDir;
-  vec2 t2 = (casterMax - lightPos) * invRayDir;
+  float tMin = max(tNear.x, tNear.y);
+  float tMax = min(tFar.x, tFar.y);
   
-  vec2 tMin = min(t1, t2);
-  vec2 tMax = max(t1, t2);
-  
-  float tNear = max(tMin.x, tMin.y);
-  float tFar = min(tMax.x, tMax.y);
-  
-  // Check if ray intersects rectangle and intersection is before pixel
-  if (tNear <= tFar && tNear > 0.0 && tNear < pixelDist) {
-    // Calculate shadow factor based on distance from shadow edge
-    float shadowFactor = 1.0 - uShadowStrength;
-    
-    // Add soft shadow edges based on distance from caster
-    float shadowDistance = pixelDist - centerDist;
-    float softness = smoothstep(0.0, 100.0, shadowDistance);
-    shadowFactor = mix(shadowFactor, 1.0, softness * 0.3);
-    
-    return shadowFactor;
+  // Check if ray intersects rectangle and intersection is between light and pixel
+  if (tMin <= tMax && tMax > 0.0 && tMin < rayLength) {
+    return 1.0 - uShadowStrength;
   }
   
   return 1.0; // Not in shadow

@@ -16,7 +16,7 @@
       "x": 270,
       "y": 70,
       "z": 10,
-      "followMouse": false,
+      "followMouse": true,
       "castsShadows": true,
       "radius": 400
     },
@@ -34,7 +34,7 @@
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": false,
+      "enabled": true,
       "brightness": 2.8,
       "color": "0xffffff",
       "x": 80,
@@ -51,7 +51,7 @@
     {
       "id": "spotlight",
       "type": "spotlight",
-      "enabled": false,
+      "enabled": true,
       "brightness": 1.1,
       "color": "0xffffff",
       "x": 290,
@@ -76,7 +76,7 @@
       "z": 50,
       "followMouse": false,
       "castsShadows": true,
-      "radius": 200,
+      "radius": 290,
       "mask": {
         "image": "00035-3934797537.png",
         "offset": {
@@ -103,7 +103,7 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 1,
+    "strength": 0.4,
     "maxLength": 200,
     "height": 8
   }
