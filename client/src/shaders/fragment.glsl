@@ -371,13 +371,15 @@ void main(void) {
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    // DEBUG: Visualize normal dot product to isolate asymmetry  
-    float normalDot = max(dot(normal, lightDir), 0.0);
+    // FIX: Handle invalid normal maps properly  
+    vec3 safeNormal = normal;
     
-    // Show normal dot product as grayscale - should be symmetric if normal mapping is correct
-    finalColor = vec3(normalDot);
-    gl_FragColor = vec4(finalColor, 1.0);
-    return;
+    // If normal is invalid (too far from unit vector), use flat normal
+    if (length(safeNormal) < 0.8 || length(safeNormal) > 1.2) {
+      safeNormal = vec3(0.0, 0.0, 1.0); // Flat surface normal
+    }
+    
+    float normalDot = max(dot(safeNormal, lightDir), 0.0);
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     

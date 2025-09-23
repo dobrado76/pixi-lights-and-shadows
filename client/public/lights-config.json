@@ -11,14 +11,14 @@
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
-      "brightness": 2.2,
+      "brightness": 1.5,
       "color": "0xffffff",
       "x": 270,
       "y": 360,
       "z": 130,
       "followMouse": false,
       "castsShadows": false,
-      "radius": 250
+      "radius": 440
     },
     {
       "id": "directional_light",
