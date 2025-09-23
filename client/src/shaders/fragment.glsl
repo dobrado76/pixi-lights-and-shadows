@@ -166,20 +166,20 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster) {
     float distanceFromCaster = pixelDist - casterDist;
     
     // Penumbra calculation - softer shadows with distance
-    float penumbraSize = 40.0; // Base penumbra size
-    float penumbraFactor = distanceFromCaster / 100.0; // Grows with distance
+    float penumbraSize = 80.0; // Increased base penumbra size for more softness
+    float penumbraFactor = distanceFromCaster / 80.0; // Faster growth with distance
     float totalPenumbra = penumbraSize * (1.0 + penumbraFactor);
     
     // Soft shadow edges based on distance to shadow boundary
     float softness = smoothstep(0.0, totalPenumbra, minDistToEdge);
     
     // Core shadow with soft edges
-    float coreShadowSize = 20.0;
+    float coreShadowSize = 15.0; // Smaller core for more gradual transition
     float coreIntensity = smoothstep(totalPenumbra, coreShadowSize, minDistToEdge);
     
-    // Combine core and penumbra
-    shadowIntensity *= mix(0.3, 1.0, coreIntensity); // Core is darker
-    shadowIntensity *= (1.0 - softness * 0.7); // Penumbra is lighter
+    // Combine core and penumbra with more gradual transition
+    shadowIntensity *= mix(0.2, 1.0, coreIntensity); // Softer core transition
+    shadowIntensity *= (1.0 - softness * 0.8); // More penumbra softness
     
     return 1.0 - shadowIntensity;
   }
