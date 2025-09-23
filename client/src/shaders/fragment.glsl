@@ -176,11 +176,39 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shado
             float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
             if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
             
+            // Real sharpness control: use edge sampling with variable blur
+            float shadowValue = 1.0; // Start with full shadow
+            
+            // Sharpness controls edge blur: sharp = no blur, soft = blur edges
+            float blurRadius = mix(2.0, 0.0, uShadowSharpness); // 0=blur, 1=no blur
+            
+            if (blurRadius > 0.0) {
+              // Sample around the edge to create soft falloff
+              float edgeSamples = 0.0;
+              float totalSamples = 0.0;
+              
+              for (int bx = -1; bx <= 1; bx++) {
+                for (int by = -1; by <= 1; by++) {
+                  vec2 blurOffset = vec2(float(bx), float(by)) * blurRadius;
+                  vec2 blurSamplePoint = samplePoint + blurOffset;
+                  vec2 blurMaskUV = (blurSamplePoint - casterMin) / (casterMax - casterMin);
+                  
+                  if (blurMaskUV.x >= 0.0 && blurMaskUV.x <= 1.0 && blurMaskUV.y >= 0.0 && blurMaskUV.y <= 1.0) {
+                    float blurMaskValue = texture2D(shadowMask, blurMaskUV).a;
+                    edgeSamples += (blurMaskValue > 0.0) ? 1.0 : 0.0;
+                    totalSamples += 1.0;
+                  }
+                }
+              }
+              
+              shadowValue = (totalSamples > 0.0) ? edgeSamples / totalSamples : 1.0;
+            }
+            
             float normalizedDistance = shadowLength / uShadowMaxLength;
-            float softnessFactor = mix(0.3, 1.0, uShadowSharpness);
-            float baseShadowStrength = uShadowStrength * mix(softnessFactor, 1.0, exp(-normalizedDistance * 3.0));
-            float shadowStrength = baseShadowStrength * maxLengthFade; // Apply fade-out
-            return 1.0 - clamp(shadowStrength, 0.0, uShadowStrength);
+            float distanceFade = exp(-normalizedDistance * 2.0);
+            float finalShadowStrength = uShadowStrength * shadowValue * distanceFade * maxLengthFade;
+            
+            return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
           }
         }
       }
@@ -241,11 +269,38 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
       float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
       if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
       
+      // Real sharpness control: use PCF (Percentage-Closer Filtering) with variable sampling
+      float shadowValue = 0.0;
+      float sampleCount = 0.0;
+      
+      // Sharpness controls sample radius: sharp = tight sampling, soft = wide sampling
+      float sampleRadius = mix(3.0, 0.5, uShadowSharpness); // 0=wide sampling, 1=tight sampling
+      int numSamples = int(mix(9.0, 1.0, uShadowSharpness)); // 0=many samples, 1=few samples
+      
+      // Simple PCF pattern around the hit point
+      for (int sx = -1; sx <= 1; sx++) {
+        for (int sy = -1; sy <= 1; sy++) {
+          if (int(sampleCount) >= numSamples) break;
+          
+          vec2 offset = vec2(float(sx), float(sy)) * sampleRadius;
+          vec2 samplePos = lightPos + rayDir * distance + offset;
+          vec2 sampleUV = samplePos / uCanvasSize;
+          
+          if (sampleUV.x >= 0.0 && sampleUV.x <= 1.0 && sampleUV.y >= 0.0 && sampleUV.y <= 1.0) {
+            float sampleAlpha = texture2D(uOccluderMap, sampleUV).a;
+            shadowValue += (sampleAlpha > 0.0) ? 1.0 : 0.0;
+            sampleCount += 1.0;
+          }
+        }
+      }
+      
+      // Calculate final shadow strength
+      float shadowRatio = (sampleCount > 0.0) ? shadowValue / sampleCount : 0.0;
       float normalizedDistance = shadowLength / uShadowMaxLength;
-      float softnessFactor = mix(0.3, 1.0, uShadowSharpness);
-      float baseShadowStrength = uShadowStrength * mix(softnessFactor, 1.0, exp(-normalizedDistance * 3.0));
-      float shadowStrength = baseShadowStrength * maxLengthFade; // Apply fade-out
-      return 1.0 - clamp(shadowStrength, 0.0, uShadowStrength);
+      float distanceFade = exp(-normalizedDistance * 2.0);
+      float finalShadowStrength = uShadowStrength * shadowRatio * distanceFade * maxLengthFade;
+      
+      return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
     }
   }
   

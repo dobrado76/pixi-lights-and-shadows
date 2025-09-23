@@ -4,7 +4,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.34,
+      "brightness": 0.33,
       "color": "0xffffff"
     },
     {
@@ -104,8 +104,8 @@
   "shadowConfig": {
     "enabled": true,
     "strength": 1,
-    "maxLength": 260,
+    "maxLength": 500,
     "height": 8,
-    "sharpness": 0.5
+    "sharpness": 1
   }
 }
