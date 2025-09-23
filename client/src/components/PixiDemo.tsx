@@ -37,6 +37,8 @@ const PixiDemo = (props: PixiDemoProps) => {
   const shadowMeshesRef = useRef<PIXI.Mesh[]>([]);
   const shadowCastersRef = useRef<ShadowCaster[]>([]);
   const sceneManagerRef = useRef<SceneManager | null>(null);
+  const occluderRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
+  const occluderContainerRef = useRef<PIXI.Container | null>(null);
 
   // Shadow geometry functions (moved to component level for reuse)
   const createShadowGeometry = (caster: ShadowCaster, lightX: number, lightY: number, shadowLength: number = 100) => {
@@ -138,6 +140,40 @@ const PixiDemo = (props: PixiDemoProps) => {
   const LIGHTS_PER_PASS = 8; // 4 point + 4 spot lights per pass
   
   const geometry = useCustomGeometry(shaderParams.canvasWidth, shaderParams.canvasHeight);
+
+  // Occluder map builder for unlimited shadow casters
+  const buildOccluderMap = () => {
+    if (!pixiApp || !occluderRenderTargetRef.current || !occluderContainerRef.current) return;
+    
+    const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
+    
+    // Clear occluder container
+    occluderContainerRef.current.removeChildren();
+    
+    // Render each shadow caster as binary alpha to occluder map
+    shadowCasters.forEach(sprite => {
+      if (!sprite.diffuseTexture) return;
+      
+      // Create a simple sprite for the occluder map - just the diffuse texture
+      const occluderSprite = new PIXI.Sprite(sprite.diffuseTexture);
+      
+      // Position and scale to match the scene sprite
+      const bounds = sprite.getBounds();
+      occluderSprite.x = bounds.x;
+      occluderSprite.y = bounds.y;
+      occluderSprite.width = bounds.width;
+      occluderSprite.height = bounds.height;
+      
+      // Add to occluder container
+      occluderContainerRef.current!.addChild(occluderSprite);
+    });
+    
+    // Render to occluder texture
+    pixiApp.renderer.render(occluderContainerRef.current, { 
+      renderTexture: occluderRenderTargetRef.current, 
+      clear: true 
+    });
+  };
 
   // Multi-pass lighting composer
   const renderMultiPass = (lights: Light[]) => {
@@ -388,6 +424,14 @@ const PixiDemo = (props: PixiDemoProps) => {
         app.stage.addChild(displaySpriteRef.current);
         
         console.log('🎯 Multi-pass render targets initialized');
+      
+      // Initialize occluder render target for unlimited shadow casters
+      occluderRenderTargetRef.current = PIXI.RenderTexture.create({ 
+        width: shaderParams.canvasWidth, 
+        height: shaderParams.canvasHeight 
+      });
+      occluderContainerRef.current = new PIXI.Container();
+      console.log('🌑 Occluder render target initialized for unlimited shadow casters');
       } else {
         throw new Error('Canvas element not found');
       }
@@ -932,8 +976,19 @@ const PixiDemo = (props: PixiDemoProps) => {
       const enabledLights = lightsConfig.filter(light => light.enabled && light.type !== 'ambient');
       const lightCount = enabledLights.length;
       
-      // Automatic mode selection: Multi-pass for >8 lights
+      // Automatic mode selection: Multi-pass for >8 lights  
       const useMultiPass = lightCount > 8;
+      
+      // Shadow system mode selection: Occluder map for >4 shadow casters
+      const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
+      const useOccluderMap = shadowCasters.length > 4;
+      
+      if (useOccluderMap) {
+        console.log(`🌑 OCCLUDER MAP: Using occluder map for ${shadowCasters.length} shadow casters`);
+        buildOccluderMap();
+      } else {
+        console.log(`⚡ FAST SHADOWS: Using per-caster uniforms for ${shadowCasters.length} shadow casters`);
+      }
       
       if (useMultiPass && renderTargetRef.current && sceneContainerRef.current && displaySpriteRef.current) {
         console.log(`🚀 MULTI-PASS: Rendering ${lightCount} lights with multi-pass architecture (${Math.ceil(lightCount/8)} passes)`);
