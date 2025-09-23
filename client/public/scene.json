@@ -32,6 +32,18 @@
       "scale": {"x": 1, "y": 1},
       "castsShadows": true,
       "receiveShadows": true
+    },
+    "block2": {
+        "id": "block2",
+        "type": "sprite", 
+        "image": "/block2.png",
+        "normal": "/block2NormalMap.jpg",
+        "position": {"x": 200, "y": 320},
+        "rotation": 0,
+        "scale": {"x": 1, "y": 1},
+        "castsShadows": true,
+        "receiveShadows": true
+      }
     }
   }
 }
