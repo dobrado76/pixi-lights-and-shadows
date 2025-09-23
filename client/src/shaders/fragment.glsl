@@ -83,26 +83,12 @@ float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offse
   return texture2D(maskTexture, maskUV).r; // Use red channel as mask
 }
 
-// Shadow helper functions based on pseudo-3D ground plane projection
-vec2 projectShadowPoint(vec3 lightPos, vec2 pixelPos, float spriteHeight) {
-  // Calculate shadow vector using similar triangles: v = (h/(Lz - h))*(Pxy - Lxy)
-  // where h = sprite height, Lz = light Z position, Pxy = pixel position, Lxy = light position
-  if (lightPos.z <= spriteHeight) {
-    return vec2(0.0, 0.0); // Light below sprite, no shadow
-  }
-  
-  float denominator = lightPos.z - spriteHeight;
-  if (abs(denominator) < 0.001) {
-    return vec2(0.0, 0.0); // Avoid division by zero
-  }
-  
-  vec2 shadowVector = (spriteHeight / denominator) * (pixelPos - lightPos.xy);
-  // Clamp shadow length to prevent extremely long shadows
-  float shadowLength = length(shadowVector);
-  if (shadowLength > uShadowMaxLength) {
-    shadowVector = normalize(shadowVector) * uShadowMaxLength;
-  }
-  return shadowVector;
+// Simple 2D shadow projection (no height complications)
+vec2 projectShadowPoint2D(vec2 lightPos, vec2 pixelPos) {
+  // Simple 2D shadow: project away from light direction with fixed length
+  vec2 direction = normalize(pixelPos - lightPos);
+  float shadowLength = min(uShadowMaxLength, 100.0); // Fixed base length
+  return direction * shadowLength;
 }
 
 vec2 projectShadowDirectional(vec3 lightDirection, float spriteHeight) {
@@ -138,9 +124,9 @@ float computeShadowSoftnessFromDirection(vec3 lightDirection) {
 }
 
 float applyShadow(vec2 shadowVector, vec2 currentUV, float softness) {
-  // Global shadow disable check
-  if (!uShadowsEnabled) {
-    return 1.0; // Shadows globally disabled
+  // Global shadow disable check + sprite shadow gating
+  if (!uShadowsEnabled || !uSpriteCastsShadows) {
+    return 1.0; // Shadows disabled or sprite doesn't cast shadows
   }
   
   // Add minimum bias to prevent self-shadowing artifacts
@@ -151,7 +137,8 @@ float applyShadow(vec2 shadowVector, vec2 currentUV, float softness) {
   }
   
   // Sample the texture at the shadow offset to determine occlusion
-  vec2 shadowUV = currentUV - (shadowVector / uSpriteSize);
+  // Fixed: Use + instead of - to sample in correct direction (light->pixel)
+  vec2 shadowUV = currentUV + (shadowVector / uSpriteSize);
   
   // Check if shadow UV is within bounds
   if (shadowUV.x < 0.0 || shadowUV.x > 1.0 || shadowUV.y < 0.0 || shadowUV.y > 1.0) {
@@ -202,20 +189,10 @@ void main(void) {
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
-    float attenuation;
-    float normalDot;
-    
-    if (lightPos3D.z < 0.0) {
-      lightDir3D.y = -lightDir3D.y;
-      lightDir = normalize(lightDir3D);
-      attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
-      attenuation = attenuation * attenuation;
-      normalDot = max(dot(normal, lightDir), 0.0);
-    } else {
-      attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
-      attenuation = attenuation * attenuation;
-      normalDot = max(dot(normal, lightDir), 0.0);
-    }
+    // Removed Y-flip branch that was causing triangular light shapes
+    float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
+    attenuation = attenuation * attenuation;
+    float normalDot = max(dot(normal, lightDir), 0.0);
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
@@ -232,7 +209,7 @@ void main(void) {
         intensity = 0.0; // No light if Z < -25 (complete shadow)
       } else {
         // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint(lightPos3D, worldPos.xy, uShadowHeight);
+        vec2 shadowVector = projectShadowPoint2D(lightPos3D.xy, worldPos.xy);
         float shadowMultiplier = applyShadow(shadowVector, uv, softness);
         intensity *= shadowMultiplier;
       }
@@ -248,20 +225,10 @@ void main(void) {
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
-    float attenuation;
-    float normalDot;
-    
-    if (lightPos3D.z < 0.0) {
-      lightDir3D.y = -lightDir3D.y;
-      lightDir = normalize(lightDir3D);
-      attenuation = 1.0 - clamp(lightDistance / uPoint1Radius, 0.0, 1.0);
-      attenuation = attenuation * attenuation;
-      normalDot = max(dot(normal, lightDir), 0.0);
-    } else {
-      attenuation = 1.0 - clamp(lightDistance / uPoint1Radius, 0.0, 1.0);
-      attenuation = attenuation * attenuation;
-      normalDot = max(dot(normal, lightDir), 0.0);
-    }
+    // Removed Y-flip branch that was causing triangular light shapes
+    float attenuation = 1.0 - clamp(lightDistance / uPoint1Radius, 0.0, 1.0);
+    attenuation = attenuation * attenuation;
+    float normalDot = max(dot(normal, lightDir), 0.0);
     
     float intensity = normalDot * uPoint1Intensity * attenuation;
     
@@ -278,7 +245,7 @@ void main(void) {
         intensity = 0.0; // No light if Z < -25 (complete shadow)
       } else {
         // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint(uPoint1Position, worldPos.xy, uShadowHeight);
+        vec2 shadowVector = projectShadowPoint2D(uPoint1Position.xy, worldPos.xy);
         float shadowMultiplier = applyShadow(shadowVector, uv, softness);
         intensity *= shadowMultiplier;
       }
@@ -297,17 +264,10 @@ void main(void) {
     float attenuation;
     float normalDot;
     
-    if (lightPos3D.z < 0.0) {
-      lightDir3D.y = -lightDir3D.y;
-      lightDir = normalize(lightDir3D);
-      attenuation = 1.0 - clamp(lightDistance / uPoint2Radius, 0.0, 1.0);
-      attenuation = attenuation * attenuation;
-      normalDot = max(dot(normal, lightDir), 0.0);
-    } else {
-      attenuation = 1.0 - clamp(lightDistance / uPoint2Radius, 0.0, 1.0);
-      attenuation = attenuation * attenuation;
-      normalDot = max(dot(normal, lightDir), 0.0);
-    }
+    // Removed Y-flip branch that was causing triangular light shapes
+    float attenuation = 1.0 - clamp(lightDistance / uPoint2Radius, 0.0, 1.0);
+    attenuation = attenuation * attenuation;
+    float normalDot = max(dot(normal, lightDir), 0.0);
     
     float intensity = normalDot * uPoint2Intensity * attenuation;
     
@@ -324,7 +284,7 @@ void main(void) {
         intensity = 0.0; // No light if Z < -25 (complete shadow)
       } else {
         // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint(lightPos3D, worldPos.xy, uShadowHeight);
+        vec2 shadowVector = projectShadowPoint2D(lightPos3D.xy, worldPos.xy);
         float shadowMultiplier = applyShadow(shadowVector, uv, softness);
         intensity *= shadowMultiplier;
       }
@@ -343,17 +303,10 @@ void main(void) {
     float attenuation;
     float normalDot;
     
-    if (lightPos3D.z < 0.0) {
-      lightDir3D.y = -lightDir3D.y;
-      lightDir = normalize(lightDir3D);
-      attenuation = 1.0 - clamp(lightDistance / uPoint3Radius, 0.0, 1.0);
-      attenuation = attenuation * attenuation;
-      normalDot = max(dot(normal, lightDir), 0.0);
-    } else {
-      attenuation = 1.0 - clamp(lightDistance / uPoint3Radius, 0.0, 1.0);
-      attenuation = attenuation * attenuation;
-      normalDot = max(dot(normal, lightDir), 0.0);
-    }
+    // Removed Y-flip branch that was causing triangular light shapes
+    float attenuation = 1.0 - clamp(lightDistance / uPoint3Radius, 0.0, 1.0);
+    attenuation = attenuation * attenuation;
+    float normalDot = max(dot(normal, lightDir), 0.0);
     
     float intensity = normalDot * uPoint3Intensity * attenuation;
     
@@ -370,7 +323,7 @@ void main(void) {
         intensity = 0.0; // No light if Z < -25 (complete shadow)
       } else {
         // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint(lightPos3D, worldPos.xy, uShadowHeight);
+        vec2 shadowVector = projectShadowPoint2D(lightPos3D.xy, worldPos.xy);
         float shadowMultiplier = applyShadow(shadowVector, uv, softness);
         intensity *= shadowMultiplier;
       }
@@ -385,18 +338,7 @@ void main(void) {
     float normalDot = max(dot(normal, lightDir), 0.0);
     float intensity = normalDot * uDir0Intensity;
     
-    // Apply shadows if enabled (light casts shadows and this sprite receives them)
-    if (uDir0CastsShadows && uSpriteReceivesShadows) {
-      float softness = computeShadowSoftnessFromDirection(uDir0Direction);
-      if (uDir0Direction.z >= 0.0) {
-        intensity = 0.0; // No light if direction points away (upward)
-      } else {
-        // Calculate shadows for downward directional lights (all softness levels)
-        vec2 shadowVector = projectShadowDirectional(uDir0Direction, uShadowHeight);
-        float shadowMultiplier = applyShadow(shadowVector, uv, softness);
-        intensity *= shadowMultiplier;
-      }
-    }
+    // Directional light shadows disabled for now (user request)
     
     finalColor += diffuseColor.rgb * uDir0Color * intensity;
   }
@@ -407,18 +349,7 @@ void main(void) {
     float normalDot = max(dot(normal, lightDir), 0.0);
     float intensity = normalDot * uDir1Intensity;
     
-    // Apply shadows if enabled (light casts shadows and this sprite receives them)
-    if (uDir1CastsShadows && uSpriteReceivesShadows) {
-      float softness = computeShadowSoftnessFromDirection(uDir1Direction);
-      if (uDir1Direction.z >= 0.0) {
-        intensity = 0.0; // No light if direction points away (upward)
-      } else {
-        // Calculate shadows for downward directional lights (all softness levels)
-        vec2 shadowVector = projectShadowDirectional(uDir1Direction, uShadowHeight);
-        float shadowMultiplier = applyShadow(shadowVector, uv, softness);
-        intensity *= shadowMultiplier;
-      }
-    }
+    // Directional light shadows disabled for now (user request)
     
     finalColor += diffuseColor.rgb * uDir1Color * intensity;
   }
@@ -455,7 +386,7 @@ void main(void) {
         intensity = 0.0; // No light if Z < -25 (complete shadow)
       } else {
         // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint(spotlightLightPos3D, worldPos.xy, uShadowHeight);
+        vec2 shadowVector = projectShadowPoint2D(spotlightLightPos3D.xy, worldPos.xy);
         float shadowMultiplier = applyShadow(shadowVector, uv, shadowSoftness);
         intensity *= shadowMultiplier;
       }
@@ -496,7 +427,7 @@ void main(void) {
         intensity = 0.0; // No light if Z < -25 (complete shadow)
       } else {
         // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint(spotlightLightPos3D, worldPos.xy, uShadowHeight);
+        vec2 shadowVector = projectShadowPoint2D(spotlightLightPos3D.xy, worldPos.xy);
         float shadowMultiplier = applyShadow(shadowVector, uv, shadowSoftness);
         intensity *= shadowMultiplier;
       }
@@ -537,7 +468,7 @@ void main(void) {
         intensity = 0.0; // No light if Z < -25 (complete shadow)
       } else {
         // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint(spotlightLightPos3D, worldPos.xy, uShadowHeight);
+        vec2 shadowVector = projectShadowPoint2D(spotlightLightPos3D.xy, worldPos.xy);
         float shadowMultiplier = applyShadow(shadowVector, uv, shadowSoftness);
         intensity *= shadowMultiplier;
       }
@@ -578,7 +509,7 @@ void main(void) {
         intensity = 0.0; // No light if Z < -25 (complete shadow)
       } else {
         // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint(spotlightLightPos3D, worldPos.xy, uShadowHeight);
+        vec2 shadowVector = projectShadowPoint2D(spotlightLightPos3D.xy, worldPos.xy);
         float shadowMultiplier = applyShadow(shadowVector, uv, shadowSoftness);
         intensity *= shadowMultiplier;
       }

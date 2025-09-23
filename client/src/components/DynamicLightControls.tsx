@@ -347,26 +347,6 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
               />
             </div>
             
-            <div className="flex items-center space-x-2">
-              <label className="text-xs text-muted-foreground min-w-[80px]">
-                Height: {localShadowConfig.height}
-              </label>
-              <input
-                type="range"
-                min="1"
-                max="50"
-                step="1"
-                value={localShadowConfig.height}
-                onChange={(e) => {
-                  const newHeight = parseFloat(e.target.value);
-                  const newConfig = { ...localShadowConfig, height: newHeight };
-                  setLocalShadowConfig(newConfig);
-                  onShadowConfigChange(newConfig);
-                }}
-                className="flex-1"
-                data-testid="slider-shadow-height"
-              />
-            </div>
           </>
         )}
       </div>
