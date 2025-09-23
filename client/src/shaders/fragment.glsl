@@ -362,9 +362,6 @@ void main(void) {
     vec3 lightPos3D = uPoint0Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
     
-    // Fix Y direction flip - coordinate system correction
-    lightDir3D.y = -lightDir3D.y;
-    
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
@@ -396,9 +393,6 @@ void main(void) {
   if (uPoint1Enabled) {
     vec3 lightPos3D = uPoint1Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
-    
-    // Fix Y direction flip - coordinate system correction
-    lightDir3D.y = -lightDir3D.y;
     
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
@@ -432,9 +426,6 @@ void main(void) {
     vec3 lightPos3D = uPoint2Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
     
-    // Fix Y direction flip - coordinate system correction
-    lightDir3D.y = -lightDir3D.y;
-    
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
@@ -466,9 +457,6 @@ void main(void) {
   if (uPoint3Enabled) {
     vec3 lightPos3D = uPoint3Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
-    
-    // Fix Y direction flip - coordinate system correction
-    lightDir3D.y = -lightDir3D.y;
     
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
