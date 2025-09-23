@@ -56,11 +56,12 @@ export class SceneSprite {
   async loadTextures(): Promise<void> {
     this.diffuseTexture = PIXI.Texture.from(this.definition.image);
     
-    // Load normal texture only if provided, otherwise use white (default normal)
+    // Load normal texture only if provided, otherwise create proper flat normal
     if (this.definition.normal && this.definition.normal !== '') {
       this.normalTexture = PIXI.Texture.from(this.definition.normal);
     } else {
-      this.normalTexture = PIXI.Texture.WHITE; // Default normal texture
+      // Create proper flat normal texture (RGB 128,128,255 = normal [0,0,1])
+      this.normalTexture = this.createFlatNormalTexture();
     }
     
     // Wait for textures to load
@@ -202,6 +203,20 @@ export class SceneSprite {
       // Recreate geometry with new transform
       this.createGeometry();
     }
+  }
+
+  // Create a proper flat normal texture (RGB 128,128,255 = normal [0,0,1])
+  private createFlatNormalTexture(): PIXI.Texture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    const ctx = canvas.getContext('2d')!;
+    
+    // Set proper flat normal color: RGB(128, 128, 255) = normal vector [0, 0, 1]
+    ctx.fillStyle = 'rgb(128, 128, 255)';
+    ctx.fillRect(0, 0, 1, 1);
+    
+    return PIXI.Texture.from(canvas);
   }
 
   destroy(): void {
