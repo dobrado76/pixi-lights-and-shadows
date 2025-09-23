@@ -4,19 +4,19 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.24,
+      "brightness": 0.05,
       "color": "0xffffff"
     },
     {
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
-      "brightness": 2.8,
+      "brightness": 5,
       "color": "0xffffff",
       "x": 270,
       "y": 70,
       "z": 10,
-      "followMouse": true,
+      "followMouse": false,
       "castsShadows": true,
       "radius": 400
     },
@@ -51,7 +51,7 @@
     {
       "id": "spotlight",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 1.1,
       "color": "0xffffff",
       "x": 290,
@@ -68,8 +68,8 @@
     {
       "id": "point_copy_1758529441818",
       "type": "point",
-      "enabled": true,
-      "brightness": 5.3,
+      "enabled": false,
+      "brightness": 7.3,
       "color": "0xffffff",
       "x": 160,
       "y": 220,

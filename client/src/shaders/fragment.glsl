@@ -46,6 +46,8 @@ uniform vec4 uShadowCaster0; // x, y, width, height of first shadow caster (ball
 uniform vec4 uShadowCaster1; // x, y, width, height of second shadow caster (block)
 uniform bool uShadowCaster0Enabled;
 uniform bool uShadowCaster1Enabled;
+uniform sampler2D uShadowCaster0Texture; // Diffuse texture for first caster
+uniform sampler2D uShadowCaster1Texture; // Diffuse texture for second caster
 uniform float uShadowStrength; // Global shadow strength
 uniform bool uShadowsEnabled;
 
@@ -76,8 +78,8 @@ float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offse
   return texture2D(maskTexture, maskUV).r; // Use red channel as mask
 }
 
-// Shadow calculation function - robust line intersection
-float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster) {
+// Shadow calculation function - texture-masked intersection
+float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D casterTexture) {
   if (!uShadowsEnabled) return 1.0;
   
   // Extract caster bounds
@@ -108,9 +110,24 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster) {
   float tMin = max(tNear.x, tNear.y);
   float tMax = min(tFar.x, tFar.y);
   
-  // Check if ray intersects rectangle and intersection is between light and pixel
+  // Check if ray intersects rectangle bounds and intersection is between light and pixel
   if (tMin <= tMax && tMax > 0.0 && tMin < rayLength) {
-    return 1.0 - uShadowStrength;
+    // Calculate intersection point
+    vec2 intersectionPoint = lightPos + rayDir * tMin;
+    
+    // Convert intersection point to texture coordinates
+    vec2 texCoord = (intersectionPoint - casterMin) / (casterMax - casterMin);
+    
+    // Check if intersection is within texture bounds
+    if (texCoord.x >= 0.0 && texCoord.x <= 1.0 && texCoord.y >= 0.0 && texCoord.y <= 1.0) {
+      // Sample the texture alpha at intersection point
+      float alpha = texture2D(casterTexture, texCoord).a;
+      
+      // Binary mask: if alpha > 0.5, cast shadow
+      if (alpha > 0.5) {
+        return 1.0 - uShadowStrength;
+      }
+    }
   }
   
   return 1.0; // Not in shadow
@@ -161,13 +178,13 @@ void main(void) {
       intensity *= maskValue; // Multiply light intensity by mask
     }
     
-    // Apply shadow calculation
+    // Apply shadow calculation with texture masking
     float shadowFactor = 1.0;
     if (uShadowCaster0Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster0);
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
     }
     if (uShadowCaster1Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1);
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
     }
     intensity *= shadowFactor;
     
@@ -227,13 +244,13 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Apply shadow calculation
+    // Apply shadow calculation with texture masking
     float shadowFactor = 1.0;
     if (uShadowCaster0Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster0);
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
     }
     if (uShadowCaster1Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1);
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
     }
     intensity *= shadowFactor;
     
@@ -260,13 +277,13 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Apply shadow calculation
+    // Apply shadow calculation with texture masking
     float shadowFactor = 1.0;
     if (uShadowCaster0Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster0);
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
     }
     if (uShadowCaster1Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1);
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
     }
     intensity *= shadowFactor;
     
@@ -320,7 +337,17 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Shadow logic removed - handled in separate pass
+    // Apply shadow calculation for spotlight
+    if (uSpot0CastsShadows) {
+      float shadowFactor = 1.0;
+      if (uShadowCaster0Enabled) {
+        shadowFactor *= calculateShadow(uSpot0Position.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
+      }
+      if (uShadowCaster1Enabled) {
+        shadowFactor *= calculateShadow(uSpot0Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
+      }
+      intensity *= shadowFactor;
+    }
     
     finalColor += diffuseColor.rgb * uSpot0Color * intensity;
   }
@@ -350,7 +377,17 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Shadow logic removed - handled in separate pass
+    // Apply shadow calculation for spotlight
+    if (uSpot1CastsShadows) {
+      float shadowFactor = 1.0;
+      if (uShadowCaster0Enabled) {
+        shadowFactor *= calculateShadow(uSpot1Position.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
+      }
+      if (uShadowCaster1Enabled) {
+        shadowFactor *= calculateShadow(uSpot1Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
+      }
+      intensity *= shadowFactor;
+    }
     
     finalColor += diffuseColor.rgb * uSpot1Color * intensity;
   }
@@ -380,7 +417,17 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Shadow logic removed - handled in separate pass
+    // Apply shadow calculation for spotlight
+    if (uSpot2CastsShadows) {
+      float shadowFactor = 1.0;
+      if (uShadowCaster0Enabled) {
+        shadowFactor *= calculateShadow(uSpot2Position.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
+      }
+      if (uShadowCaster1Enabled) {
+        shadowFactor *= calculateShadow(uSpot2Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
+      }
+      intensity *= shadowFactor;
+    }
     
     finalColor += diffuseColor.rgb * uSpot2Color * intensity;
   }
@@ -410,7 +457,17 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Shadow logic removed - handled in separate pass
+    // Apply shadow calculation for spotlight
+    if (uSpot3CastsShadows) {
+      float shadowFactor = 1.0;
+      if (uShadowCaster0Enabled) {
+        shadowFactor *= calculateShadow(uSpot3Position.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
+      }
+      if (uShadowCaster1Enabled) {
+        shadowFactor *= calculateShadow(uSpot3Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
+      }
+      intensity *= shadowFactor;
+    }
     
     finalColor += diffuseColor.rgb * uSpot3Color * intensity;
   }

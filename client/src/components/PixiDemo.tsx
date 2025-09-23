@@ -657,6 +657,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uShadowCaster1: [280, 120, 120, 60], // Block position and size
         uShadowCaster0Enabled: true,
         uShadowCaster1Enabled: true,
+        uShadowCaster0Texture: ballDiffuse, // Ball texture for masking
+        uShadowCaster1Texture: blockDiffuse, // Block texture for masking
         ...lightUniforms
       });
 
@@ -733,6 +735,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uShadowCaster1: [blockPos.x, blockPos.y, blockDiffuse.width, blockDiffuse.height],
         uShadowCaster0Enabled: true,
         uShadowCaster1Enabled: true,
+        uShadowCaster0Texture: ballDiffuse, // Ball texture for masking
+        uShadowCaster1Texture: blockDiffuse, // Block texture for masking
         ...lightUniforms
       });
 
@@ -757,6 +761,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uShadowCaster1: [blockPos.x, blockPos.y, blockDiffuse.width, blockDiffuse.height],
         uShadowCaster0Enabled: true,
         uShadowCaster1Enabled: true,
+        uShadowCaster0Texture: ballDiffuse, // Ball texture for masking
+        uShadowCaster1Texture: blockDiffuse, // Block texture for masking
         ...lightUniforms
       });
 
@@ -834,6 +840,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uShadowCaster1 = [280, 120, 120, 60]; // Block: x, y, width, height  
       uniforms.uShadowCaster0Enabled = true;
       uniforms.uShadowCaster1Enabled = true;
+      uniforms.uShadowCaster0Texture = ballDiffuse; // Ball texture for masking
+      uniforms.uShadowCaster1Texture = blockDiffuse; // Block texture for masking
 
       // Debug shadow uniforms
       console.log('🌑 SHADOW SYSTEM UNIFORMS:', {
