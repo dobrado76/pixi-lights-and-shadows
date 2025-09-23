@@ -24,10 +24,10 @@
       "id": "directional_light",
       "type": "directional",
       "enabled": true,
-      "brightness": 0.3,
+      "brightness": 0.9,
       "color": "0xffffff",
-      "directionX": -0.42261826174069933,
-      "directionY": 0.90630778703665,
+      "directionX": 6.123233995736766e-17,
+      "directionY": -1,
       "directionZ": -1,
       "castsShadows": true
     },
@@ -51,7 +51,7 @@
     {
       "id": "spotlight",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 1.1,
       "color": "0xffffff",
       "x": 300,
@@ -90,7 +90,7 @@
     {
       "id": "point_1758536509084",
       "type": "point",
-      "enabled": true,
+      "enabled": false,
       "brightness": 5,
       "color": "0xe12323",
       "x": 250,
