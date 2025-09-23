@@ -1,0 +1,224 @@
+The technique we'll implement is 2D Shadow Mapping. It's incredibly performant because it runs almost entirely on the GPU. We will adapt the core concepts from Matt DesLauriers' definitive tutorial and integrate them directly into the shader-based engine you've already built.
+This is an advanced topic, but your current architecture is perfectly suited for it.
+The Concept: How 2D Shadow Mapping Works
+Imagine you are looking down at your game from above.
+Render the "Occluders": For each light source, you first render only the objects that should cast shadows (like walls, the paddle, etc.) from the light's point of view. You don't render their color; you just render their shape into a special texture called a Shadow Map. This texture stores the distance from the light to the nearest shadow-casting object in every direction.
+Render the Final Scene: You then render your main scene as you do now. In the final fragment shader, for every single pixel on the screen, you perform a check:
+"What is my distance from the light source?"
+"Now, let me look up the Shadow Map. At my current angle from the light, what is the distance to the nearest shadow caster?"
+The Shadow Logic: If my distance to the light is greater than the distance stored in the shadow map, it means something is between me and the light. Therefore, I am in shadow. Otherwise, I am lit.
+This check happens for every pixel, for every light, on every frame, allowing for fully dynamic, real-time shadows.
+Step-by-Step Implementation Guide
+We will modify the PostProcessingSystem and the shaders to add this new "shadow map" pass to the rendering pipeline.
+Step 1: The New shadow Shaders
+We need a new, very simple shader whose only job is to render the distances for the shadow map.
+src/game/core/systems/shaders.ts (Add these new shaders)
+code
+TypeScript
+// --- Add this new vertex shader ---
+export const shadowVertexShader = `
+    attribute vec2 aVertexPosition;
+    uniform mat3 projectionMatrix;
+    uniform mat3 translationMatrix;
+    uniform vec2 uLightPos; // The position of the light source
+
+    varying float vDist; // We will pass the distance to the fragment shader
+
+    void main() {
+        vec2 worldPos = (translationMatrix * vec3(aVertexPosition, 1.0)).xy;
+        vDist = distance(worldPos, uLightPos);
+        gl_Position = vec4((projectionMatrix * vec3(worldPos, 1.0)).xy, 0.0, 1.0);
+    }
+`;
+
+// --- Add this new fragment shader ---
+export const shadowFragmentShader = `
+    precision mediump float;
+    varying float vDist;
+    uniform float uLightRadius; // The maximum radius of the light
+
+    void main() {
+        // Normalize the distance to a 0-1 range (black to white)
+        float shadowColor = clamp(vDist / uLightRadius, 0.0, 1.0);
+
+        // Store the normalized distance in the red channel of the texture
+        gl_FragColor = vec4(shadowColor, 0.0, 0.0, 1.0);
+    }
+`;
+Step 2: Update the Final Composite Shader
+Now, we update our main fragment shader to read from the new shadow map and calculate shadows.
+src/game/core/systems/shaders.ts (Update finalCompositeShader)
+code
+TypeScript
+// UPDATE THIS SHADER
+export const finalCompositeShader = `
+    varying vec2 vTextureCoord;
+    uniform sampler2D uSceneSampler;
+    uniform sampler2D uLightSampler;
+    uniform sampler2D uShadowSampler; // <-- NEW: The shadow map texture
+
+    uniform vec2 uLightPos;      // <-- NEW: We need the light's position
+    uniform float uLightRadius;  // <-- NEW: And its radius
+    uniform vec2 uCanvasSize;    // <-- NEW: The canvas dimensions
+
+    void main(void) {
+        // Get the color of the game scene and the light map
+        vec4 sceneColor = texture2D(uSceneSampler, vTextureCoord);
+        vec4 lightColor = texture2D(uLightSampler, vTextureCoord);
+
+        // --- NEW SHADOW LOGIC ---
+        // Calculate the world position of the current pixel
+        vec2 worldPos = vTextureCoord * uCanvasSize;
+
+        // Calculate the direction and distance from the light to this pixel
+        vec2 lightToPixel = worldPos - uLightPos;
+        float distToPixel = length(lightToPixel);
+
+        // The angle is used to look up the correct pixel in the shadow map
+        // We add PI to map the atan2 result from [-PI, PI] to [0, 2*PI]
+        float angle = atan(lightToPixel.y, lightToPixel.x) + 3.14159265;
+        
+        // The shadow map is a 1D texture "unwrapped" into a line.
+        // We look up the pixel in the shadow map based on the angle.
+        // The y-coordinate is constant (e.g., 0.5 for the middle of the texture).
+        float u = angle / (2.0 * 3.14159265);
+        vec4 shadowData = texture2D(uShadowSampler, vec2(u, 0.5));
+
+        // The shadow map stores the distance to the nearest occluder.
+        // We multiply by the light radius to get the distance in world units.
+        float distToOccluder = shadowData.r * uLightRadius;
+
+        // The magic: if we are further from the light than the nearest occluder,
+        // we are in shadow. We add a small bias (1.0) to avoid "shadow acne".
+        float shadow = (distToPixel > distToOccluder + 1.0) ? 0.0 : 1.0;
+        // --- END SHADOW LOGIC ---
+
+        // Multiply the final color by the shadow value (0.0 for shadow, 1.0 for lit)
+        gl_FragColor = sceneColor * lightColor * shadow;
+        gl_FragColor.a = sceneColor.a;
+    }
+`;
+Note: This shadow logic is for one point light. To support multiple lights with shadows, you would typically render a separate shadow map for each light and pass them all to the final shader.
+Step 3: Update PostProcessingSystem.tsx
+This is where we orchestrate the new rendering pass.
+src/game/core/systems/PostProcessingSystem.tsx (Updated)
+code
+Tsx
+import React, { useEffect, useMemo, useRef } from 'react';
+import { useApp } from '@pixi/react';
+import * as PIXI from 'pixi.js';
+import { 
+    fullscreenVertexShader, 
+    finalCompositeShader,
+    shadowVertexShader,       // <-- NEW
+    shadowFragmentShader      // <-- NEW
+} from './shaders';
+
+export const PostProcessingSystem = ({ children, lights, occluders }) => {
+    const app = useApp();
+
+    const pipeline = useMemo(() => {
+        const screen = app.screen;
+        
+        // Textures for our passes
+        const sceneTexture = PIXI.RenderTexture.create({ width: screen.width, height: screen.height });
+        const lightTexture = PIXI.RenderTexture.create({ width: screen.width, height: screen.height });
+        // NEW: Shadow map texture. It can be small for performance.
+        const shadowTexture = PIXI.RenderTexture.create({ width: 1024, height: 1 }); // 1D texture
+
+        // NEW: Shader for rendering the shadow map
+        const shadowShaderMaterial = PIXI.Shader.from(shadowVertexShader, shadowFragmentShader);
+
+        // Shader for combining everything
+        const finalShader = PIXI.Shader.from(fullscreenVertexShader, finalCompositeShader, {
+            uSceneSampler: sceneTexture,
+            uLightSampler: lightTexture,
+            uShadowSampler: shadowTexture, // <-- Pass shadow map to final shader
+            uCanvasSize: [screen.width, screen.height],
+        });
+
+        const geometry = new PIXI.Geometry()
+            .addAttribute('aVertexPosition', [0, 0, screen.width, 0, screen.width, screen.height, 0, screen.height], 2)
+            .addAttribute('aTextureCoord', [0, 0, 1, 0, 1, 1, 0, 1], 2)
+            .addIndex([0, 1, 2, 0, 2, 3]);
+        
+        const quad = new PIXI.Mesh(geometry, finalShader);
+
+        return { sceneTexture, lightTexture, shadowTexture, shadowShaderMaterial, quad };
+    }, [app.screen.width, app.screen.height]);
+
+    // Containers for our passes
+    const sceneContainer = useRef(new PIXI.Container());
+    const lightContainer = useRef(new PIXI.Container());
+    // NEW: Container for objects that cast shadows
+    const occluderContainer = useRef(new PIXI.Container());
+
+    useEffect(() => {
+        // Add containers to the stage but keep them invisible
+        app.stage.addChild(sceneContainer.current, lightContainer.current, occluderContainer.current);
+        sceneContainer.current.visible = false;
+        lightContainer.current.visible = false;
+        occluderContainer.current.visible = false;
+
+        // Add the final quad to be rendered
+        app.stage.addChild(pipeline.quad);
+
+        const ticker = () => {
+            // Let's assume we have one main light for this example
+            const mainLight = lights.find(l => l.enabled);
+            if (!mainLight) {
+                // If no lights, just render the scene normally
+                app.renderer.render(sceneContainer.current, { clear: true });
+                return;
+            }
+
+            // Update shader uniforms
+            pipeline.quad.shader.uniforms.uLightPos = [mainLight.position.x, mainLight.position.y];
+            pipeline.quad.shader.uniforms.uLightRadius = mainLight.radius;
+
+            // STEP A: Render the occluders to the shadow map from the light's POV
+            pipeline.shadowShaderMaterial.uniforms.uLightPos = [mainLight.position.x, mainLight.position.y];
+            pipeline.shadowShaderMaterial.uniforms.uLightRadius = mainLight.radius;
+            // Apply the shader to every object in the occluder container
+            occluderContainer.current.children.forEach(child => {
+                if (child instanceof PIXI.Mesh) {
+                    child.shader = pipeline.shadowShaderMaterial;
+                }
+            });
+            app.renderer.render(occluderContainer.current, { 
+                renderTexture: pipeline.shadowTexture,
+                clear: true,
+                clearColor: [1, 1, 1, 1], // Clear shadow map to white (max distance)
+            });
+
+            // STEP B: Render the main game scene to its texture
+            app.renderer.render(sceneContainer.current, { renderTexture: pipeline.sceneTexture, clear: true });
+            
+            // STEP C: Render the lights to the light map texture
+            app.renderer.render(lightContainer.current, {
+                renderTexture: pipeline.lightTexture,
+                clear: true,
+                clearColor: [0, 0, 0, 1],
+            });
+        };
+        
+        app.ticker.add(ticker);
+
+        // ... cleanup ...
+    }, [app, pipeline, lights]);
+
+    // Populate the containers
+    return (
+        <>
+            <Container ref={sceneContainer}>
+                {children} {/* Your RenderSystem, etc. */}
+            </Container>
+            <Container ref={lightContainer}>
+                {/* Your light sprites */}
+            </Container>
+            <Container ref={occluderContainer}>
+                {occluders} {/* The sprites/meshes that cast shadows */}
+            </Container>
+        </>
+    );
+};
