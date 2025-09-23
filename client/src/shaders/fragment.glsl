@@ -87,7 +87,7 @@ float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offse
   return texture2D(maskTexture, maskUV).r; // Use red channel as mask
 }
 
-// Shadow calculation function - texture-masked intersection
+// Shadow calculation function - binary transparency mask
 float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D casterTexture) {
   if (!uShadowsEnabled) return 1.0;
   
@@ -132,8 +132,8 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D caste
       // Sample the texture alpha at intersection point
       float alpha = texture2D(casterTexture, texCoord).a;
       
-      // Binary mask: if alpha > 0.5, cast shadow
-      if (alpha > 0.5) {
+      // Binary mask: alpha = 0 is air (no shadow), alpha > 0 is solid (full shadow)
+      if (alpha > 0.0) {
         return 1.0 - uShadowStrength;
       }
     }
