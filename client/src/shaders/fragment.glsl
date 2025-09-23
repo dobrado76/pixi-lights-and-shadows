@@ -169,9 +169,15 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shado
             // Distance-based soft shadows: shadows get softer further from caster
             float hitDistance = samples[i]; // Distance from light to occluder
             float receiverDistanceFromCaster = rayLength - hitDistance; // Distance from occluder to receiver
+            
+            // Gradual fade-out towards max length to avoid hard cutoffs
+            float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, receiverDistanceFromCaster);
+            if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
+            
             float normalizedDistance = receiverDistanceFromCaster / uShadowMaxLength;
             float softnessFactor = mix(0.3, 1.0, uShadowSharpness);
-            float shadowStrength = uShadowStrength * mix(softnessFactor, 1.0, exp(-normalizedDistance * 3.0));
+            float baseShadowStrength = uShadowStrength * mix(softnessFactor, 1.0, exp(-normalizedDistance * 3.0));
+            float shadowStrength = baseShadowStrength * maxLengthFade; // Apply fade-out
             return 1.0 - clamp(shadowStrength, 0.0, uShadowStrength);
           }
         }
@@ -223,9 +229,15 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
     if (occluderAlpha > 0.0) {
       float hitDistance = distance; // Distance from light to occluder
       float receiverDistanceFromCaster = rayLength - hitDistance; // Distance from occluder to receiver
+      
+      // Gradual fade-out towards max length to avoid hard cutoffs
+      float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, receiverDistanceFromCaster);
+      if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
+      
       float normalizedDistance = receiverDistanceFromCaster / uShadowMaxLength;
       float softnessFactor = mix(0.3, 1.0, uShadowSharpness);
-      float shadowStrength = uShadowStrength * mix(softnessFactor, 1.0, exp(-normalizedDistance * 3.0));
+      float baseShadowStrength = uShadowStrength * mix(softnessFactor, 1.0, exp(-normalizedDistance * 3.0));
+      float shadowStrength = baseShadowStrength * maxLengthFade; // Apply fade-out
       return 1.0 - clamp(shadowStrength, 0.0, uShadowStrength);
     }
   }
