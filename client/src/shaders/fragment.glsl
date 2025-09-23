@@ -180,12 +180,20 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   
   rayDir /= rayLength; // Normalize
   
-  // Raycast through the occluder map
+  // Raycast through the occluder map with fixed iteration count
   float stepSize = 2.0; // Pixel steps along the ray
-  int maxSteps = int(rayLength / stepSize);
+  float maxDistance = rayLength;
   
-  for (int i = 1; i < maxSteps; i++) {
-    vec2 samplePos = lightPos + rayDir * (float(i) * stepSize);
+  // Use constant loop bounds for WebGL compatibility
+  for (int i = 1; i < 200; i++) {
+    float distance = float(i) * stepSize;
+    
+    // Break early if we've gone past the ray length
+    if (distance >= maxDistance) {
+      break;
+    }
+    
+    vec2 samplePos = lightPos + rayDir * distance;
     
     // Convert world position to UV coordinates
     vec2 occluderUV = samplePos / uCanvasSize;
