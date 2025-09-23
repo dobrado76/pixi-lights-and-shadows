@@ -2,9 +2,17 @@
   "scene": {
     "background": {
       "type": "background",
-      "image-": "/BGTextureTest.jpg",
+      "image": "/BGTextureTest.jpg",
+      "normal": "/BGTextureNORM.jpg",
+      "position": {"x": 0, "y": 0},
+      "rotation": 0,
+      "scale": 1,
+      "castsShadows": false,
+      "receiveShadows": true
+    },
+    "background2": {
+      "type": "background",
       "image": "/white-fabric-texture-background.jpg",
-      "normal-": "/BGTextureNORM.jpg",
       "position": {"x": 0, "y": 0},
       "rotation": 0,
       "scale": 1,

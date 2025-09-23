@@ -11,7 +11,7 @@
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
-      "brightness": 8.7,
+      "brightness": 1,
       "color": "0xffffff",
       "x": 270,
       "y": 360,
