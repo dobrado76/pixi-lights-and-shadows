@@ -14,7 +14,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Load lights configuration from file
   app.get('/api/load-lights-config', async (req, res) => {
     try {
-      const configPath = path.join(process.cwd(), 'public', 'lights-config.json');
+      const configPath = path.join(process.cwd(), 'client', 'public', 'lights-config.json');
       
       // Check if file exists
       try {
@@ -85,7 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const config = req.body;
       
       // Path to save the configuration file
-      const configPath = path.join(process.cwd(), 'public', 'lights-config.json');
+      const configPath = path.join(process.cwd(), 'client', 'public', 'lights-config.json');
       
       // Write the configuration to the JSON file
       await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf8');

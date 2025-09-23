@@ -10,7 +10,7 @@
     {
       "id": "mouse_light",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 2.8,
       "color": "0xffffff",
       "x": 270,
@@ -36,7 +36,7 @@
       "type": "spotlight",
       "enabled": true,
       "brightness": 6.5,
-      "color": "0xffffff",
+      "color": "0xf4f080",
       "x": 220,
       "y": 210,
       "z": 80,
@@ -68,8 +68,8 @@
     {
       "id": "point_copy_1758529441818",
       "type": "point",
-      "enabled": false,
-      "brightness": 3.9,
+      "enabled": true,
+      "brightness": 1.3,
       "color": "0xffffff",
       "x": 220,
       "y": 240,
@@ -90,7 +90,7 @@
     {
       "id": "point_1758536509084",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 5,
       "color": "0xe12323",
       "x": 250,

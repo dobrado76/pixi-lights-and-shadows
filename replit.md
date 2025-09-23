@@ -43,11 +43,11 @@ Preferred communication style: Simple, everyday language.
 # Configuration Files
 
 ## Important File Locations
-- **lights-config.json**: Located in `/public/lights-config.json` (root public directory) - this is where the backend reads configuration from
+- **lights-config.json**: Located in `/client/public/lights-config.json` - light configuration alongside scene assets
 - **scene.json**: Located in `/client/public/scene.json` - sprite and scene configuration for the frontend
 - **Light masks**: Located in `/client/public/light_masks/` - texture files for masked lighting effects
 
-**Note**: Only use `/public/lights-config.json` for light configuration. The backend API reads from this location.
+**Note**: All configuration files are now consolidated in `/client/public/` directory for better organization.
 
 # External Dependencies
 
