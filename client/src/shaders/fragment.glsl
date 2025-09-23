@@ -53,10 +53,13 @@ uniform bool uSpot0CastsShadows; uniform bool uSpot1CastsShadows; uniform bool u
 // Shadow Caster Uniforms - integrated shadow calculation
 uniform vec4 uShadowCaster0; // x, y, width, height of first shadow caster (ball)
 uniform vec4 uShadowCaster1; // x, y, width, height of second shadow caster (block)
+uniform vec4 uShadowCaster2; // x, y, width, height of third shadow caster (block2)
 uniform bool uShadowCaster0Enabled;
 uniform bool uShadowCaster1Enabled;
+uniform bool uShadowCaster2Enabled;
 uniform sampler2D uShadowCaster0Texture; // Diffuse texture for first caster
 uniform sampler2D uShadowCaster1Texture; // Diffuse texture for second caster
+uniform sampler2D uShadowCaster2Texture; // Diffuse texture for third caster
 uniform float uShadowStrength; // Global shadow strength
 uniform bool uShadowsEnabled;
 
@@ -213,6 +216,9 @@ void main(void) {
     if (uShadowCaster1Enabled) {
       shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
     }
+    if (uShadowCaster2Enabled) {
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster2, uShadowCaster2Texture);
+    }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint0HasMask && shadowFactor >= 0.99) {
@@ -289,6 +295,9 @@ void main(void) {
     if (uShadowCaster1Enabled) {
       shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
     }
+    if (uShadowCaster2Enabled) {
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster2, uShadowCaster2Texture);
+    }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint2HasMask && shadowFactor >= 0.99) {
@@ -326,6 +335,9 @@ void main(void) {
     }
     if (uShadowCaster1Enabled) {
       shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
+    }
+    if (uShadowCaster2Enabled) {
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster2, uShadowCaster2Texture);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)

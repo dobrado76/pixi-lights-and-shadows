@@ -640,6 +640,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       const shadowCasters = sceneManagerRef.current!.getShadowCasters();
       const shadowCaster0 = shadowCasters[0]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
       const shadowCaster1 = shadowCasters[1]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
+      const shadowCaster2 = shadowCasters[2]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
       
       // Common shader uniforms for all sprites
       const commonUniforms = {
@@ -652,8 +653,10 @@ const PixiDemo = (props: PixiDemoProps) => {
         uShadowStrength: shadowConfig.strength || 0.5,
         uShadowCaster0: [shadowCaster0.x, shadowCaster0.y, shadowCaster0.width, shadowCaster0.height],
         uShadowCaster1: [shadowCaster1.x, shadowCaster1.y, shadowCaster1.width, shadowCaster1.height],
+        uShadowCaster2: [shadowCaster2.x, shadowCaster2.y, shadowCaster2.width, shadowCaster2.height],
         uShadowCaster0Enabled: shadowCasters.length > 0,
         uShadowCaster1Enabled: shadowCasters.length > 1,
+        uShadowCaster2Enabled: shadowCasters.length > 2,
         ...lightUniforms
       };
       
@@ -690,7 +693,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Set shadow texture uniforms for all sprites
       const shadowTextureUniforms = {
         uShadowCaster0Texture: shadowCasters[0]?.diffuseTexture || PIXI.Texture.WHITE,
-        uShadowCaster1Texture: shadowCasters[1]?.diffuseTexture || PIXI.Texture.WHITE
+        uShadowCaster1Texture: shadowCasters[1]?.diffuseTexture || PIXI.Texture.WHITE,
+        uShadowCaster2Texture: shadowCasters[2]?.diffuseTexture || PIXI.Texture.WHITE
       };
 
       // Apply shadow texture uniforms to all sprite shaders
