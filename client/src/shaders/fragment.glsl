@@ -362,13 +362,17 @@ void main(void) {
     vec3 lightPos3D = uPoint0Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
     
+    // Fix Y direction flip - coordinate system correction
+    lightDir3D.y = -lightDir3D.y;
+    
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
     // Removed Y-flip branch that was causing triangular light shapes
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
-    float normalDot = max(dot(normal, lightDir), 0.0);
+    // Temporarily disable normal mapping to test for perfect circular light
+    float normalDot = 1.0; // max(dot(normal, lightDir), 0.0);
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
@@ -393,6 +397,9 @@ void main(void) {
   if (uPoint1Enabled) {
     vec3 lightPos3D = uPoint1Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
+    
+    // Fix Y direction flip - coordinate system correction
+    lightDir3D.y = -lightDir3D.y;
     
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
@@ -426,6 +433,9 @@ void main(void) {
     vec3 lightPos3D = uPoint2Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
     
+    // Fix Y direction flip - coordinate system correction
+    lightDir3D.y = -lightDir3D.y;
+    
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
@@ -457,6 +467,9 @@ void main(void) {
   if (uPoint3Enabled) {
     vec3 lightPos3D = uPoint3Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
+    
+    // Fix Y direction flip - coordinate system correction
+    lightDir3D.y = -lightDir3D.y;
     
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
