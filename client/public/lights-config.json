@@ -14,9 +14,9 @@
       "brightness": 1.5,
       "color": "0xffffff",
       "x": 270,
-      "y": 360,
+      "y": 300,
       "z": 130,
-      "followMouse": true,
+      "followMouse": false,
       "castsShadows": true,
       "radius": 500
     },
@@ -34,7 +34,7 @@
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 1.2,
       "color": "0xf4f080",
       "x": 220,
@@ -106,6 +106,6 @@
     "strength": 0.75,
     "maxLength": 220,
     "height": 8,
-    "sharpness": 1
+    "sharpness": 0
   }
 }
