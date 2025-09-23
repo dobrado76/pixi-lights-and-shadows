@@ -18,16 +18,16 @@
       "z": 130,
       "followMouse": false,
       "castsShadows": false,
-      "radius": 560
+      "radius": 350
     },
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": false,
+      "enabled": true,
       "brightness": 1,
       "color": "0xffffff",
-      "directionX": -1,
-      "directionY": -1.2246467991473532e-16,
+      "directionX": -0.7660444431189779,
+      "directionY": -0.6427876096865395,
       "directionZ": -1,
       "castsShadows": true
     },
