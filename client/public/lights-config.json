@@ -18,7 +18,7 @@
       "z": 10,
       "followMouse": true,
       "castsShadows": true,
-      "radius": 400
+      "radius": 890
     },
     {
       "id": "directional_light",

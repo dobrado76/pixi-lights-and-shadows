@@ -504,7 +504,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
                         <input
                           type="range"
                           min="10"
-                          max="400"
+                          max="5000"
                           step="10"
                           value={light.radius || 200}
                           onChange={(e) => updateLight(light.id, { radius: parseFloat(e.target.value) })}
@@ -624,7 +624,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
                         <input
                           type="range"
                           min="10"
-                          max="400"
+                          max="5000"
                           step="10"
                           value={light.radius || 150}
                           onChange={(e) => updateLight(light.id, { radius: parseFloat(e.target.value) })}
