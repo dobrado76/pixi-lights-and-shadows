@@ -367,11 +367,20 @@ void main(void) {
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
-    // TEST: Linear attenuation to debug asymmetry issue
+    // Restore quadratic attenuation
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
-    // REMOVED quadratic: attenuation = attenuation * attenuation;
+    attenuation = attenuation * attenuation;
     
-    // Restore normal mapping now that coordinate system is fixed
+    // DEBUG: Visualize light distance to identify asymmetry cause
+    float debugDistance = lightDistance / uPoint0Radius;
+    if (debugDistance < 1.0) {
+      // Color-code the distance: Red = close, Green = medium, Blue = far
+      vec3 debugColor = vec3(debugDistance, 1.0 - debugDistance, 0.0);
+      finalColor = debugColor;
+      gl_FragColor = vec4(finalColor, 1.0);
+      return;
+    }
+    
     float normalDot = max(dot(normal, lightDir), 0.0);
     
     float intensity = normalDot * uPoint0Intensity * attenuation;

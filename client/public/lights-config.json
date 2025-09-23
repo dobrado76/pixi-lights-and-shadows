@@ -41,7 +41,7 @@
       "y": 210,
       "z": 80,
       "directionX": 0,
-      "directionY": 0.6,
+      "directionY": -1,
       "directionZ": -1,
       "castsShadows": true,
       "radius": 690,
