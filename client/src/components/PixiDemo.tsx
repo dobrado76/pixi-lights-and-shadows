@@ -5,6 +5,7 @@ import { useCustomGeometry } from '../hooks/useCustomGeometry';
 // Fragment shader will be loaded dynamically from .glsl file
 import { ShaderParams } from '../App';
 import { Light, ShadowConfig } from '@shared/lights';
+import { SceneManager, SceneSprite } from './Sprite';
 
 // Shadow casting sprite interface
 interface ShadowCaster {
@@ -35,6 +36,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   const shadersRef = useRef<PIXI.Shader[]>([]);
   const shadowMeshesRef = useRef<PIXI.Mesh[]>([]);
   const shadowCastersRef = useRef<ShadowCaster[]>([]);
+  const sceneManagerRef = useRef<SceneManager | null>(null);
 
   // Shadow geometry functions (moved to component level for reuse)
   const createShadowGeometry = (caster: ShadowCaster, lightX: number, lightY: number, shadowLength: number = 100) => {
@@ -464,15 +466,15 @@ const PixiDemo = (props: PixiDemoProps) => {
 
     const setupDemo = async () => {
       try {
-        // Load textures 
-        const bgDiffuse = PIXI.Texture.from('/BGTextureTest.jpg');
-        const bgNormal = PIXI.Texture.from('/BGTextureNORM.jpg');
-        const ballDiffuse = PIXI.Texture.from('/ball.png');
-        const ballNormal = PIXI.Texture.from('/ballN.png');
-        const blockDiffuse = PIXI.Texture.from('/block.png');
-        const blockNormal = PIXI.Texture.from('/blockNormalMap.jpg');
+        // Load scene configuration from JSON
+        const sceneResponse = await fetch('/scene.json');
+        const sceneData = await sceneResponse.json();
         
-        console.log('Textures loaded, creating geometries...');
+        // Initialize scene manager
+        sceneManagerRef.current = new SceneManager();
+        await sceneManagerRef.current.loadScene(sceneData);
+        
+        console.log('Scene loaded, creating geometries...');
 
         // Helper function to convert external lights config to shader uniforms
         const createLightUniforms = () => {
@@ -624,153 +626,85 @@ const PixiDemo = (props: PixiDemoProps) => {
       const fragmentShaderResponse = await fetch('/src/shaders/fragment.glsl');
       const spriteFragmentShader = await fragmentShaderResponse.text();
        
-      // Background shader and mesh (using unified sprite shader)
+      // Create all scene sprites using scene manager
       const lightUniforms = createLightUniforms();
-      const bgShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, {
-        uDiffuse: bgDiffuse,
-        uNormal: bgNormal,
+      
+      // Get shadow casters from scene
+      const shadowCasters = sceneManagerRef.current!.getShadowCasters();
+      const shadowCaster0 = shadowCasters[0]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
+      const shadowCaster1 = shadowCasters[1]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
+      
+      // Common shader uniforms for all sprites
+      const commonUniforms = {
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
-        uSpritePos: [0, 0], // Background covers entire canvas starting at (0,0)
-        uSpriteSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Full canvas size
-        uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Canvas dimensions for pixel-perfect scaling
+        uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
         uAmbientLight: ambientLight.intensity,
         uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
         // Shadow system uniforms
         uShadowsEnabled: shadowConfig.enabled,
         uShadowStrength: shadowConfig.strength || 0.5,
-        uShadowCaster0: [120, 80, 75, 75], // Ball position and size
-        uShadowCaster1: [280, 120, 120, 60], // Block position and size
-        uShadowCaster0Enabled: true,
-        uShadowCaster1Enabled: true,
-        // Shadow texture uniforms added after component setup
+        uShadowCaster0: [shadowCaster0.x, shadowCaster0.y, shadowCaster0.width, shadowCaster0.height],
+        uShadowCaster1: [shadowCaster1.x, shadowCaster1.y, shadowCaster1.width, shadowCaster1.height],
+        uShadowCaster0Enabled: shadowCasters.length > 0,
+        uShadowCaster1Enabled: shadowCasters.length > 1,
         ...lightUniforms
+      };
+      
+      // Create all sprite meshes
+      const spriteMeshes: PIXI.Mesh[] = [];
+      const allSprites = sceneManagerRef.current!.getAllSprites();
+      
+      for (const sprite of allSprites) {
+        const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
+        spriteMeshes.push(mesh);
+      }
+
+      // Log sprite information from scene
+      allSprites.forEach(sprite => {
+        const bounds = sprite.getBounds();
+        console.log(`${sprite.definition.id} actual dimensions:`, bounds.width, bounds.height);
       });
 
-      const bgMesh = new PIXI.Mesh(geometry, bgShader as any);
-      bgMesh.x = 0;
-      bgMesh.y = 0;
+      // Create legacy shadow casters for compatibility
+      const legacyShadowCasters: ShadowCaster[] = shadowCasters.map(sprite => {
+        const bounds = sprite.getBounds();
+        return {
+          id: sprite.definition.id,
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height,
+          castsShadows: sprite.definition.castsShadows
+        };
+      });
 
-      // Create sprite geometries positioned in world space
-      const createSpriteGeometry = (x: number, y: number, width: number, height: number) => {
-        const geometry = new PIXI.Geometry();
-        const vertices = [x, y, x + width, y, x + width, y + height, x, y + height];
-        const uvs = [0, 0, 1, 0, 1, 1, 0, 1];
-        const indices = [0, 1, 2, 0, 2, 3];
-        
-        geometry.addAttribute('aVertexPosition', vertices, 2);
-        geometry.addAttribute('aTextureCoord', uvs, 2);
-        geometry.addIndex(indices);
-        return geometry;
+      console.log('💡 Shadow casters created:', legacyShadowCasters);
+
+      // Set shadow texture uniforms for all sprites
+      const shadowTextureUniforms = {
+        uShadowCaster0Texture: shadowCasters[0]?.diffuseTexture || PIXI.Texture.WHITE,
+        uShadowCaster1Texture: shadowCasters[1]?.diffuseTexture || PIXI.Texture.WHITE
       };
 
-      // Shadow functions moved to component level for reuse
-      
-      // Wait for textures to load, then use their actual dimensions
-      await Promise.all([
-        new Promise(resolve => ballDiffuse.baseTexture.valid ? resolve(null) : ballDiffuse.baseTexture.once('loaded', resolve)),
-        new Promise(resolve => blockDiffuse.baseTexture.valid ? resolve(null) : blockDiffuse.baseTexture.once('loaded', resolve))
-      ]);
-
-      // Create geometries positioned at correct world coordinates
-      const ballPos = { x: 120, y: 80 };
-      const blockPos = { x: 280, y: 120 };
-      const ballGeometry = createSpriteGeometry(ballPos.x, ballPos.y, ballDiffuse.width, ballDiffuse.height);
-      const blockGeometry = createSpriteGeometry(blockPos.x, blockPos.y, blockDiffuse.width, blockDiffuse.height);
-      
-      console.log('Ball actual dimensions:', ballDiffuse.width, ballDiffuse.height);
-      console.log('Block actual dimensions:', blockDiffuse.width, blockDiffuse.height);
-
-      // Create shadow casters from sprite data
-      const shadowCasters: ShadowCaster[] = [
-        {
-          id: 'ball',
-          x: ballPos.x,
-          y: ballPos.y,
-          width: ballDiffuse.width,
-          height: ballDiffuse.height,
-          castsShadows: true
-        },
-        {
-          id: 'block',
-          x: blockPos.x,
-          y: blockPos.y,
-          width: blockDiffuse.width,
-          height: blockDiffuse.height,
-          castsShadows: true
+      // Apply shadow texture uniforms to all sprite shaders
+      spriteMeshes.forEach(mesh => {
+        if (mesh.shader && mesh.shader.uniforms) {
+          Object.assign(mesh.shader.uniforms, shadowTextureUniforms);
         }
-      ];
-
-      console.log('💡 Shadow casters created:', shadowCasters);
-
-      // Ball shader and mesh
-      const ballShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, {
-        uDiffuse: ballDiffuse,
-        uNormal: ballNormal,
-        uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
-        uSpritePos:  [ballPos.x, ballPos.y],
-        uSpriteSize: [ballDiffuse.width, ballDiffuse.height],
-        uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Canvas dimensions for pixel-perfect scaling
-        uAmbientLight: ambientLight.intensity,
-        uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
-        // Shadow system uniforms
-        uShadowsEnabled: shadowConfig.enabled,
-        uShadowStrength: shadowConfig.strength || 0.5,
-        uShadowCaster0: [ballPos.x, ballPos.y, ballDiffuse.width, ballDiffuse.height],
-        uShadowCaster1: [blockPos.x, blockPos.y, blockDiffuse.width, blockDiffuse.height],
-        uShadowCaster0Enabled: true,
-        uShadowCaster1Enabled: true,
-        // Shadow texture uniforms added after component setup
-        ...lightUniforms
       });
-
-      const ballMesh = new PIXI.Mesh(ballGeometry, ballShader as any);
-      ballMesh.x = 0;
-      ballMesh.y = 0;
-
-      // Block shader and mesh
-      const blockShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, {
-        uDiffuse: blockDiffuse,
-        uNormal: blockNormal,
-        uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
-        uSpritePos: [blockPos.x, blockPos.y],
-        uSpriteSize: [blockDiffuse.width, blockDiffuse.height],
-        uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Canvas dimensions for pixel-perfect scaling
-        uAmbientLight: ambientLight.intensity,
-        uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
-        // Shadow system uniforms
-        uShadowsEnabled: shadowConfig.enabled,
-        uShadowStrength: shadowConfig.strength || 0.5,
-        uShadowCaster0: [ballPos.x, ballPos.y, ballDiffuse.width, ballDiffuse.height],
-        uShadowCaster1: [blockPos.x, blockPos.y, blockDiffuse.width, blockDiffuse.height],
-        uShadowCaster0Enabled: true,
-        uShadowCaster1Enabled: true,
-        // Shadow texture uniforms added after component setup
-        ...lightUniforms
-      });
-
-      const blockMesh = new PIXI.Mesh(blockGeometry, blockShader as any);
-      blockMesh.x = 0;
-      blockMesh.y = 0;
 
       // Store references
-      meshesRef.current = [bgMesh, ballMesh, blockMesh];
-      shadersRef.current = [bgShader, ballShader, blockShader];
+      meshesRef.current = spriteMeshes;
+      shadersRef.current = spriteMeshes.map(mesh => mesh.shader!);
+      shadowCastersRef.current = legacyShadowCasters;
 
-      // Add to stage
-      sceneContainerRef.current!.addChild(bgMesh);
-      sceneContainerRef.current!.addChild(ballMesh);
-      sceneContainerRef.current!.addChild(blockMesh);
-
-      // Set shadow texture uniforms for all shaders after textures are loaded
-      const shadowTextureUniforms = {
-        uShadowCaster0Texture: ballDiffuse,
-        uShadowCaster1Texture: blockDiffuse
-      };
-
-      // Apply texture uniforms to all shaders
-      shadersRef.current.forEach(shader => {
-        Object.assign(shader.uniforms, shadowTextureUniforms);
+      // Add all sprite meshes to stage
+      spriteMeshes.forEach(mesh => {
+        sceneContainerRef.current!.addChild(mesh);
       });
+
+      // Apply shadow texture uniforms to all sprite shaders (already done above)
+      console.log('All sprite shaders created with shadow texture uniforms');
 
       console.log('🌑 Shadow system integrated into lighting shader');
       console.log('🌑 Shadow texture uniforms applied to all shaders');
@@ -796,6 +730,12 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
       meshesRef.current = [];
       shadersRef.current = [];
+      
+      // Clean up scene manager
+      if (sceneManagerRef.current) {
+        sceneManagerRef.current.destroy();
+        sceneManagerRef.current = null;
+      }
     };
   }, [pixiApp, geometry, onGeometryUpdate, onShaderUpdate, onMeshUpdate]);
 

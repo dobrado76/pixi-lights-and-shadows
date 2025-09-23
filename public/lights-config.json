@@ -11,7 +11,7 @@
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
-      "brightness": 3.1,
+      "brightness": 6.6,
       "color": "0xffffff",
       "x": 270,
       "y": 70,
@@ -54,7 +54,7 @@
       "enabled": true,
       "brightness": 1.1,
       "color": "0xffffff",
-      "x": 290,
+      "x": 300,
       "y": 300,
       "z": 50,
       "directionX": 0,
@@ -68,12 +68,12 @@
     {
       "id": "point_copy_1758529441818",
       "type": "point",
-      "enabled": true,
-      "brightness": 10,
+      "enabled": false,
+      "brightness": 3.9,
       "color": "0xffffff",
-      "x": 170,
+      "x": 220,
       "y": 240,
-      "z": 100,
+      "z": 90,
       "followMouse": false,
       "castsShadows": true,
       "radius": 400,
@@ -103,8 +103,8 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.4,
-    "maxLength": 200,
+    "strength": 0.55,
+    "maxLength": 130,
     "height": 8
   }
 }

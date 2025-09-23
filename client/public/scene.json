@@ -1,0 +1,37 @@
+{
+  "scene": {
+    "background": {
+      "id": "background",
+      "type": "background",
+      "image": "/BGTextureTest.jpg",
+      "normal": "/BGTextureNORM.jpg",
+      "position": {"x": 0, "y": 0},
+      "rotation": 0,
+      "scale": {"x": 1, "y": 1},
+      "castsShadows": false,
+      "receiveShadows": true
+    },
+    "ball": {
+      "id": "ball",
+      "type": "sprite",
+      "image": "/ball.png",
+      "normal": "/ballN.png",
+      "position": {"x": 120, "y": 80},
+      "rotation": 0,
+      "scale": {"x": 1, "y": 1},
+      "castsShadows": true,
+      "receiveShadows": true
+    },
+    "block": {
+      "id": "block",
+      "type": "sprite", 
+      "image": "/block.png",
+      "normal": "/blockNormalMap.jpg",
+      "position": {"x": 280, "y": 120},
+      "rotation": 0,
+      "scale": {"x": 1, "y": 1},
+      "castsShadows": true,
+      "receiveShadows": true
+    }
+  }
+}
