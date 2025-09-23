@@ -657,8 +657,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uShadowCaster1: [280, 120, 120, 60], // Block position and size
         uShadowCaster0Enabled: true,
         uShadowCaster1Enabled: true,
-        uShadowCaster0Texture: ballDiffuse, // Ball texture for masking
-        uShadowCaster1Texture: blockDiffuse, // Block texture for masking
+        // Shadow texture uniforms added after component setup
         ...lightUniforms
       });
 
@@ -735,8 +734,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uShadowCaster1: [blockPos.x, blockPos.y, blockDiffuse.width, blockDiffuse.height],
         uShadowCaster0Enabled: true,
         uShadowCaster1Enabled: true,
-        uShadowCaster0Texture: ballDiffuse, // Ball texture for masking
-        uShadowCaster1Texture: blockDiffuse, // Block texture for masking
+        // Shadow texture uniforms added after component setup
         ...lightUniforms
       });
 
@@ -761,8 +759,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uShadowCaster1: [blockPos.x, blockPos.y, blockDiffuse.width, blockDiffuse.height],
         uShadowCaster0Enabled: true,
         uShadowCaster1Enabled: true,
-        uShadowCaster0Texture: ballDiffuse, // Ball texture for masking
-        uShadowCaster1Texture: blockDiffuse, // Block texture for masking
+        // Shadow texture uniforms added after component setup
         ...lightUniforms
       });
 
@@ -779,7 +776,19 @@ const PixiDemo = (props: PixiDemoProps) => {
       sceneContainerRef.current!.addChild(ballMesh);
       sceneContainerRef.current!.addChild(blockMesh);
 
+      // Set shadow texture uniforms for all shaders after textures are loaded
+      const shadowTextureUniforms = {
+        uShadowCaster0Texture: ballDiffuse,
+        uShadowCaster1Texture: blockDiffuse
+      };
+
+      // Apply texture uniforms to all shaders
+      shadersRef.current.forEach(shader => {
+        Object.assign(shader.uniforms, shadowTextureUniforms);
+      });
+
       console.log('🌑 Shadow system integrated into lighting shader');
+      console.log('🌑 Shadow texture uniforms applied to all shaders');
 
       console.log('PIXI demo setup completed successfully');
 
@@ -840,8 +849,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uShadowCaster1 = [280, 120, 120, 60]; // Block: x, y, width, height  
       uniforms.uShadowCaster0Enabled = true;
       uniforms.uShadowCaster1Enabled = true;
-      uniforms.uShadowCaster0Texture = ballDiffuse; // Ball texture for masking
-      uniforms.uShadowCaster1Texture = blockDiffuse; // Block texture for masking
+      // Texture uniforms will be set after textures are loaded
 
       // Debug shadow uniforms
       console.log('🌑 SHADOW SYSTEM UNIFORMS:', {
