@@ -34,7 +34,7 @@
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 6.5,
       "color": "0xf4f080",
       "x": 220,
@@ -103,8 +103,9 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.6,
-    "maxLength": 80,
-    "height": 8
+    "strength": 1,
+    "maxLength": 180,
+    "height": 8,
+    "sharpness": 0.5
   }
 }

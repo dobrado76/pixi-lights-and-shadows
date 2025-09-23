@@ -952,6 +952,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uShadowMaxLength = shadowConfig.maxLength; // Maximum shadow length to prevent extremely long shadows
       uniforms.uShadowsEnabled = shadowConfig.enabled; // Global shadow enable/disable
       uniforms.uShadowStrength = shadowConfig.strength; // Global shadow strength/opacity
+      uniforms.uShadowSharpness = shadowConfig.sharpness ?? 0.5; // Shadow sharpness (0=soft, 1=sharp)
       
       // Debug: Log ambient light uniforms
       console.log(`🌅 AMBIENT LIGHT VALUES:`, {

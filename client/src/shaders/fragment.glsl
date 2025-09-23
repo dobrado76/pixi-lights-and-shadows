@@ -62,6 +62,8 @@ uniform sampler2D uShadowCaster1Texture; // Diffuse texture for second caster
 uniform sampler2D uShadowCaster2Texture; // Diffuse texture for third caster
 uniform float uShadowStrength; // Global shadow strength
 uniform bool uShadowsEnabled;
+uniform float uShadowMaxLength; // Maximum shadow length to prevent extremely long shadows
+uniform float uShadowSharpness; // Shadow sharpness (0=soft, 1=sharp)
 
 // Occluder Map System (for unlimited shadow casters)
 uniform bool uUseOccluderMap; // Switch between per-caster and occluder map
@@ -118,6 +120,11 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shado
   // Avoid division by zero
   if (rayLength < 0.001) return 1.0;
   
+  // Limit shadow length
+  if (rayLength > uShadowMaxLength) {
+    return 1.0; // Beyond max shadow length
+  }
+  
   rayDir /= rayLength; // Normalize
   
   // Check intersection using slab method
@@ -159,7 +166,13 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shado
           
           // Binary shadow mask: alpha > 0 = solid (cast shadow)
           if (maskValue > 0.0) {
-            return 1.0 - uShadowStrength; // Found solid pixel, cast shadow
+            // Distance-based soft shadows: shadows get softer further from caster
+            float hitDistance = t; // Distance from light to occluder
+            float receiverDistanceFromCaster = rayLength - hitDistance; // Distance from occluder to receiver
+            float normalizedDistance = receiverDistanceFromCaster / uShadowMaxLength;
+            float softnessFactor = mix(0.3, 1.0, uShadowSharpness);
+            float shadowStrength = uShadowStrength * mix(softnessFactor, 1.0, exp(-normalizedDistance * 3.0));
+            return 1.0 - clamp(shadowStrength, 0.0, uShadowStrength);
           }
         }
       }
@@ -182,7 +195,7 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   
   // Raycast through the occluder map with fixed iteration count
   float stepSize = 2.0; // Pixel steps along the ray
-  float maxDistance = rayLength;
+  float maxDistance = min(rayLength, uShadowMaxLength);
   
   // Use constant loop bounds for WebGL compatibility
   for (int i = 1; i < 200; i++) {
@@ -206,9 +219,14 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
     // Sample occluder map alpha
     float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
     
-    // If we hit an occluder, cast shadow
+    // If we hit an occluder, cast shadow with distance-based softness
     if (occluderAlpha > 0.0) {
-      return 1.0 - uShadowStrength;
+      float hitDistance = distance; // Distance from light to occluder
+      float receiverDistanceFromCaster = rayLength - hitDistance; // Distance from occluder to receiver
+      float normalizedDistance = receiverDistanceFromCaster / uShadowMaxLength;
+      float softnessFactor = mix(0.3, 1.0, uShadowSharpness);
+      float shadowStrength = uShadowStrength * mix(softnessFactor, 1.0, exp(-normalizedDistance * 3.0));
+      return 1.0 - clamp(shadowStrength, 0.0, uShadowStrength);
     }
   }
   
