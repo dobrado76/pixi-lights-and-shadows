@@ -603,6 +603,13 @@ const PixiDemo = (props: PixiDemoProps) => {
             }
           });
 
+          // Clear uniforms for unused spotlight slots (just like multi-pass rendering)
+          for (let i = enabledSpotlights.length; i < 4; i++) {
+            uniforms[`uSpot${i}Enabled`] = false;
+            uniforms[`uSpot${i}HasMask`] = false;
+            uniforms[`uSpot${i}CastsShadows`] = false;
+          }
+
           console.log('DEBUG: All lights config:', lightsConfig.map(l => ({id: l.id, type: l.type, enabled: l.enabled})));
           console.log('DEBUG: Point lights found (all):', allPointLights.map(l => ({id: l.id, enabled: l.enabled})));
           console.log('Expanded Lights:', { 
