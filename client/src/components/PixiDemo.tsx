@@ -828,6 +828,12 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uShadowCaster1 = [280, 120, 120, 60]; // Block: x, y, width, height  
       uniforms.uShadowCaster0Enabled = true;
       uniforms.uShadowCaster1Enabled = true;
+      
+      // Occluder map uniforms for unlimited shadow casters
+      const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
+      uniforms.uUseOccluderMap = shadowCasters.length > 4;
+      uniforms.uOccluderMap = occluderRenderTargetRef.current || null;
+      
       // Texture uniforms will be set after textures are loaded
 
       // Debug shadow uniforms

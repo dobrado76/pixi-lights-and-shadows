@@ -63,6 +63,10 @@ uniform sampler2D uShadowCaster2Texture; // Diffuse texture for third caster
 uniform float uShadowStrength; // Global shadow strength
 uniform bool uShadowsEnabled;
 
+// Occluder Map System (for unlimited shadow casters)
+uniform bool uUseOccluderMap; // Switch between per-caster and occluder map
+uniform sampler2D uOccluderMap; // Binary alpha map of all shadow casters
+
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
   vec2 relativePos = worldPos - lightPos;
@@ -165,6 +169,69 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shado
   return 1.0; // Not in shadow
 }
 
+// Occluder map shadow calculation - raycasts through binary alpha texture
+float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
+  if (!uShadowsEnabled) return 1.0;
+  
+  vec2 rayDir = pixelPos - lightPos;
+  float rayLength = length(rayDir);
+  
+  if (rayLength < 0.001) return 1.0;
+  
+  rayDir /= rayLength; // Normalize
+  
+  // Raycast through the occluder map
+  float stepSize = 2.0; // Pixel steps along the ray
+  int maxSteps = int(rayLength / stepSize);
+  
+  for (int i = 1; i < maxSteps; i++) {
+    vec2 samplePos = lightPos + rayDir * (float(i) * stepSize);
+    
+    // Convert world position to UV coordinates
+    vec2 occluderUV = samplePos / uCanvasSize;
+    
+    // Check bounds
+    if (occluderUV.x < 0.0 || occluderUV.x > 1.0 || occluderUV.y < 0.0 || occluderUV.y > 1.0) {
+      continue;
+    }
+    
+    // Sample occluder map alpha
+    float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
+    
+    // If we hit an occluder, cast shadow
+    if (occluderAlpha > 0.0) {
+      return 1.0 - uShadowStrength;
+    }
+  }
+  
+  return 1.0; // No occlusion found
+}
+
+// Unified shadow calculation with auto-switching
+float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
+  if (!uShadowsEnabled) return 1.0;
+  
+  if (uUseOccluderMap) {
+    // Use unlimited occluder map approach
+    return calculateShadowOccluderMap(lightPos, pixelPos);
+  } else {
+    // Use fast per-caster uniform approach (≤4 casters)
+    float shadowFactor = 1.0;
+    
+    if (uShadowCaster0Enabled) {
+      shadowFactor *= calculateShadow(lightPos, pixelPos, uShadowCaster0, uShadowCaster0Texture);
+    }
+    if (uShadowCaster1Enabled) {
+      shadowFactor *= calculateShadow(lightPos, pixelPos, uShadowCaster1, uShadowCaster1Texture);
+    }
+    if (uShadowCaster2Enabled) {
+      shadowFactor *= calculateShadow(lightPos, pixelPos, uShadowCaster2, uShadowCaster2Texture);
+    }
+    
+    return shadowFactor;
+  }
+}
+
 void main(void) {
   vec2 uv = vTextureCoord;
   vec4 diffuseColor = texture2D(uDiffuse, uv);
@@ -210,15 +277,7 @@ void main(void) {
     
     // Apply shadow calculation FIRST - blocks light completely in shadowed areas
     float shadowFactor = 1.0;
-    if (uShadowCaster0Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
-    }
-    if (uShadowCaster1Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
-    }
-    if (uShadowCaster2Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster2, uShadowCaster2Texture);
-    }
+    shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint0HasMask && shadowFactor >= 0.99) {
@@ -251,11 +310,8 @@ void main(void) {
     
     // Apply shadow calculation FIRST - blocks light completely in shadowed areas
     float shadowFactor = 1.0;
-    if (uShadowCaster0Enabled) {
-      shadowFactor *= calculateShadow(uPoint1Position.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
-    }
-    if (uShadowCaster1Enabled) {
-      shadowFactor *= calculateShadow(uPoint1Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
+    if (uPoint1CastsShadows) {
+      shadowFactor *= calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -289,15 +345,7 @@ void main(void) {
     
     // Apply shadow calculation FIRST - blocks light completely in shadowed areas
     float shadowFactor = 1.0;
-    if (uShadowCaster0Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
-    }
-    if (uShadowCaster1Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
-    }
-    if (uShadowCaster2Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster2, uShadowCaster2Texture);
-    }
+    shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint2HasMask && shadowFactor >= 0.99) {
@@ -330,15 +378,7 @@ void main(void) {
     
     // Apply shadow calculation FIRST - blocks light completely in shadowed areas
     float shadowFactor = 1.0;
-    if (uShadowCaster0Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
-    }
-    if (uShadowCaster1Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
-    }
-    if (uShadowCaster2Enabled) {
-      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster2, uShadowCaster2Texture);
-    }
+    shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint3HasMask && shadowFactor >= 0.99) {
@@ -399,12 +439,7 @@ void main(void) {
     // Apply shadow calculation FIRST for spotlight
     float shadowFactor = 1.0;
     if (uSpot0CastsShadows) {
-      if (uShadowCaster0Enabled) {
-        shadowFactor *= calculateShadow(uSpot0Position.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
-      }
-      if (uShadowCaster1Enabled) {
-        shadowFactor *= calculateShadow(uSpot0Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
-      }
+      shadowFactor *= calculateShadowUnified(uSpot0Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
