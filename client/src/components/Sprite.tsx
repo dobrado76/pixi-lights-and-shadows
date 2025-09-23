@@ -1,13 +1,12 @@
 import * as PIXI from 'pixi.js';
 
 export interface SpriteDefinition {
-  id: string;
   type: 'background' | 'sprite';
   image: string;
   normal: string;
   position: { x: number; y: number };
   rotation: number;
-  scale: { x: number; y: number };
+  scale: number;
   castsShadows: boolean;
   receiveShadows: boolean;
 }
@@ -15,10 +14,11 @@ export interface SpriteDefinition {
 export interface SpriteTransform {
   position: { x: number; y: number };
   rotation: number;
-  scale: { x: number; y: number };
+  scale: number;
 }
 
 export class SceneSprite {
+  public id: string;
   public definition: SpriteDefinition;
   public mesh: PIXI.Mesh | null = null;
   public shader: PIXI.Shader | null = null;
@@ -26,7 +26,8 @@ export class SceneSprite {
   public diffuseTexture: PIXI.Texture | null = null;
   public normalTexture: PIXI.Texture | null = null;
 
-  constructor(definition: SpriteDefinition) {
+  constructor(id: string, definition: SpriteDefinition) {
+    this.id = id;
     this.definition = definition;
   }
 
@@ -51,8 +52,8 @@ export class SceneSprite {
     if (!this.diffuseTexture) throw new Error('Textures must be loaded before creating geometry');
 
     const { x, y } = this.definition.position;
-    const width = this.diffuseTexture.width * this.definition.scale.x;
-    const height = this.diffuseTexture.height * this.definition.scale.y;
+    const width = this.diffuseTexture.width * this.definition.scale;
+    const height = this.diffuseTexture.height * this.definition.scale;
 
     // Create sprite geometry with proper positioning and scaling
     const geometry = new PIXI.Geometry();
@@ -111,8 +112,8 @@ export class SceneSprite {
     }
 
     const { x, y } = this.definition.position;
-    const width = this.diffuseTexture.width * this.definition.scale.x;
-    const height = this.diffuseTexture.height * this.definition.scale.y;
+    const width = this.diffuseTexture.width * this.definition.scale;
+    const height = this.diffuseTexture.height * this.definition.scale;
 
     const shaderUniforms = {
       uDiffuse: this.diffuseTexture,
@@ -142,8 +143,8 @@ export class SceneSprite {
     if (!this.diffuseTexture) throw new Error('Texture must be loaded to get bounds');
     
     const { x, y } = this.definition.position;
-    const width = this.diffuseTexture.width * this.definition.scale.x;
-    const height = this.diffuseTexture.height * this.definition.scale.y;
+    const width = this.diffuseTexture.width * this.definition.scale;
+    const height = this.diffuseTexture.height * this.definition.scale;
     
     return { x, y, width, height };
   }
@@ -156,8 +157,8 @@ export class SceneSprite {
     if (transform.rotation !== undefined) {
       this.definition.rotation = transform.rotation;
     }
-    if (transform.scale) {
-      this.definition.scale = { ...this.definition.scale, ...transform.scale };
+    if (transform.scale !== undefined) {
+      this.definition.scale = transform.scale;
     }
 
     // Recreate geometry and update shader uniforms if mesh exists
@@ -193,7 +194,7 @@ export class SceneManager {
     
     // Load all sprites from scene data
     for (const [key, spriteData] of Object.entries(sceneData.scene)) {
-      const sprite = new SceneSprite(spriteData as SpriteDefinition);
+      const sprite = new SceneSprite(key, spriteData as SpriteDefinition);
       await sprite.loadTextures();
       this.sprites.set(key, sprite);
     }

@@ -669,14 +669,14 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Log sprite information from scene
       allSprites.forEach(sprite => {
         const bounds = sprite.getBounds();
-        console.log(`${sprite.definition.id} actual dimensions:`, bounds.width, bounds.height);
+        console.log(`${sprite.id} actual dimensions:`, bounds.width, bounds.height);
       });
 
       // Create legacy shadow casters for compatibility
       const legacyShadowCasters: ShadowCaster[] = shadowCasters.map(sprite => {
         const bounds = sprite.getBounds();
         return {
-          id: sprite.definition.id,
+          id: sprite.id,
           x: bounds.x,
           y: bounds.y,
           width: bounds.width,

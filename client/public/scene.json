@@ -1,49 +1,44 @@
 {
   "scene": {
     "background": {
-      "id": "background",
       "type": "background",
       "image": "/BGTextureTest.jpg",
       "normal": "/BGTextureNORM.jpg",
       "position": {"x": 0, "y": 0},
       "rotation": 0,
-      "scale": {"x": 1, "y": 1},
+      "scale": 1,
       "castsShadows": false,
       "receiveShadows": true
     },
     "ball": {
-      "id": "ball",
       "type": "sprite",
       "image": "/ball.png",
       "normal": "/ballN.png",
       "position": {"x": 120, "y": 80},
       "rotation": 0,
-      "scale": {"x": 1, "y": 1},
+      "scale": 1,
       "castsShadows": true,
       "receiveShadows": true
     },
     "block": {
-      "id": "block",
       "type": "sprite", 
       "image": "/block.png",
       "normal": "/blockNormalMap.jpg",
       "position": {"x": 280, "y": 120},
       "rotation": 0,
-      "scale": {"x": 1, "y": 1},
+      "scale": 1,
       "castsShadows": true,
       "receiveShadows": true
     },
     "block2": {
-        "id": "block2",
-        "type": "sprite", 
-        "image": "/block2.png",
-        "normal": "/block2NormalMap.jpg",
-        "position": {"x": 200, "y": 320},
-        "rotation": 0,
-        "scale": {"x": 1, "y": 1},
-        "castsShadows": true,
-        "receiveShadows": true
-      }
+      "type": "sprite", 
+      "image": "/block2.png",
+      "normal": "/block2NormalMap.png",
+      "position": {"x": 200, "y": 320},
+      "rotation": 0,
+      "scale": 1,
+      "castsShadows": true,
+      "receiveShadows": true
     }
   }
 }
