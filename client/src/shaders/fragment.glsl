@@ -407,7 +407,8 @@ void main(void) {
   
   // Directional Light 0
   if (uDir0Enabled) {
-    vec3 lightDir = normalize(-uDir0Direction);
+    // Fix coordinate system inconsistency for surface lighting (X-axis was inverted)
+    vec3 lightDir = normalize(vec3(uDir0Direction.x, -uDir0Direction.y, -uDir0Direction.z));
     float normalDot = max(dot(normal, lightDir), 0.0);
     float intensity = normalDot * uDir0Intensity;
     
@@ -428,7 +429,8 @@ void main(void) {
   
   // Directional Light 1
   if (uDir1Enabled) {
-    vec3 lightDir = normalize(-uDir1Direction);
+    // Fix coordinate system inconsistency for surface lighting (X-axis was inverted)
+    vec3 lightDir = normalize(vec3(uDir1Direction.x, -uDir1Direction.y, -uDir1Direction.z));
     float normalDot = max(dot(normal, lightDir), 0.0);
     float intensity = normalDot * uDir1Intensity;
     
