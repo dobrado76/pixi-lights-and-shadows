@@ -407,10 +407,11 @@ void main(void) {
   
   // Directional Light 0
   if (uDir0Enabled) {
-    // Fix coordinate system inconsistency for surface lighting (X-axis was inverted)
-    vec3 lightDir = normalize(vec3(uDir0Direction.x, -uDir0Direction.y, -uDir0Direction.z));
-    float normalDot = max(dot(normal, lightDir), 0.0);
-    float intensity = normalDot * uDir0Intensity;
+    // Convert direction from UI space (+Y down) to shader space, then negate for incoming light vector
+    vec3 dir = normalize(vec3(uDir0Direction.x, -uDir0Direction.y, uDir0Direction.z));
+    vec3 L = -dir; // Incoming light direction (negative of light travel direction)
+    float lambert = max(dot(normal, L), 0.0);
+    float intensity = lambert * uDir0Intensity;
     
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
@@ -429,10 +430,11 @@ void main(void) {
   
   // Directional Light 1
   if (uDir1Enabled) {
-    // Fix coordinate system inconsistency for surface lighting (X-axis was inverted)
-    vec3 lightDir = normalize(vec3(uDir1Direction.x, -uDir1Direction.y, -uDir1Direction.z));
-    float normalDot = max(dot(normal, lightDir), 0.0);
-    float intensity = normalDot * uDir1Intensity;
+    // Convert direction from UI space (+Y down) to shader space, then negate for incoming light vector
+    vec3 dir = normalize(vec3(uDir1Direction.x, -uDir1Direction.y, uDir1Direction.z));
+    vec3 L = -dir; // Incoming light direction (negative of light travel direction)
+    float lambert = max(dot(normal, L), 0.0);
+    float intensity = lambert * uDir1Intensity;
     
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
@@ -451,28 +453,28 @@ void main(void) {
   
   // Spotlight 0
   if (uSpot0Enabled) {
-    vec3 spotlightLightPos3D = uSpot0Position;
-    vec3 spotlightLightDir3D = spotlightLightPos3D - worldPos3D;
+    // Calculate light-to-fragment vector with Y-flip for coordinate system
+    vec3 L3 = uSpot0Position - worldPos3D;
+    L3.y = -L3.y;
+    float dist = length(L3);
+    vec3 L = normalize(L3);
     
-    // Fix Y direction flip - coordinate system correction
-    spotlightLightDir3D.y = -spotlightLightDir3D.y;
+    // Distance attenuation with quadratic falloff
+    float atten = 1.0 - clamp(dist / uSpot0Radius, 0.0, 1.0);
+    atten *= atten;
     
-    float spotlightDistance = length(spotlightLightDir3D);
-    vec3 spotlightLightDir = normalize(spotlightLightDir3D);
+    // Convert spotlight direction from UI space (+Y down) to shader space
+    vec3 S = normalize(vec3(uSpot0Direction.x, -uSpot0Direction.y, uSpot0Direction.z));
     
-    // Fix coordinate system inconsistency for spotlight direction (same fix as directional lights)
-    vec3 spotDirection = normalize(vec3(uSpot0Direction.x, -uSpot0Direction.y, -uSpot0Direction.z));
-    float coneAngle = dot(-spotlightLightDir, spotDirection);
-    float coneAngleRad = radians(uSpot0ConeAngle);
-    float innerCone = cos(coneAngleRad * 0.5);
-    float outerCone = cos(coneAngleRad);
-    float coneFactor = smoothstep(outerCone, innerCone, coneAngle);
+    // Cone calculation with softness
+    float cosAng = dot(-L, S);
+    float outer = cos(radians(uSpot0ConeAngle));
+    float inner = cos(radians(uSpot0ConeAngle * (1.0 - uSpot0Softness)));
+    float spotFactor = smoothstep(outer, inner, cosAng);
     
-    float spotDistanceAttenuation = 1.0 - clamp(spotlightDistance / uSpot0Radius, 0.0, 1.0);
-    float spotNormalDot = max(dot(normal, spotlightLightDir), 0.0);
-    
-    float softness = mix(1.0, coneFactor, uSpot0Softness);
-    float intensity = spotNormalDot * uSpot0Intensity * spotDistanceAttenuation * softness * coneFactor;
+    // Lambert lighting
+    float lambert = max(dot(normal, L), 0.0);
+    float intensity = lambert * uSpot0Intensity * atten * spotFactor;
     
     // Apply shadow calculation FIRST for spotlight
     float shadowFactor = 1.0;
@@ -493,28 +495,28 @@ void main(void) {
   
   // Spotlight 1
   if (uSpot1Enabled) {
-    vec3 spotlightLightPos3D = uSpot1Position;
-    vec3 spotlightLightDir3D = spotlightLightPos3D - worldPos3D;
+    // Calculate light-to-fragment vector with Y-flip for coordinate system
+    vec3 L3 = uSpot1Position - worldPos3D;
+    L3.y = -L3.y;
+    float dist = length(L3);
+    vec3 L = normalize(L3);
     
-    // Fix Y direction flip - coordinate system correction
-    spotlightLightDir3D.y = -spotlightLightDir3D.y;
+    // Distance attenuation with quadratic falloff
+    float atten = 1.0 - clamp(dist / uSpot1Radius, 0.0, 1.0);
+    atten *= atten;
     
-    float spotlightDistance = length(spotlightLightDir3D);
-    vec3 spotlightLightDir = normalize(spotlightLightDir3D);
+    // Convert spotlight direction from UI space (+Y down) to shader space
+    vec3 S = normalize(vec3(uSpot1Direction.x, -uSpot1Direction.y, uSpot1Direction.z));
     
-    // Fix coordinate system inconsistency for spotlight direction (same fix as directional lights)
-    vec3 spotDirection = normalize(vec3(uSpot1Direction.x, -uSpot1Direction.y, -uSpot1Direction.z));
-    float coneAngle = dot(-spotlightLightDir, spotDirection);
-    float coneAngleRad = radians(uSpot1ConeAngle);
-    float innerCone = cos(coneAngleRad * 0.5);
-    float outerCone = cos(coneAngleRad);
-    float coneFactor = smoothstep(outerCone, innerCone, coneAngle);
+    // Cone calculation with softness
+    float cosAng = dot(-L, S);
+    float outer = cos(radians(uSpot1ConeAngle));
+    float inner = cos(radians(uSpot1ConeAngle * (1.0 - uSpot1Softness)));
+    float spotFactor = smoothstep(outer, inner, cosAng);
     
-    float spotDistanceAttenuation = 1.0 - clamp(spotlightDistance / uSpot1Radius, 0.0, 1.0);
-    float spotNormalDot = max(dot(normal, spotlightLightDir), 0.0);
-    
-    float softness = mix(1.0, coneFactor, uSpot1Softness);
-    float intensity = spotNormalDot * uSpot1Intensity * spotDistanceAttenuation * softness * coneFactor;
+    // Lambert lighting
+    float lambert = max(dot(normal, L), 0.0);
+    float intensity = lambert * uSpot1Intensity * atten * spotFactor;
     
     // Apply shadow calculation FIRST for spotlight
     float shadowFactor = 1.0;
@@ -535,28 +537,28 @@ void main(void) {
   
   // Spotlight 2
   if (uSpot2Enabled) {
-    vec3 spotlightLightPos3D = uSpot2Position;
-    vec3 spotlightLightDir3D = spotlightLightPos3D - worldPos3D;
+    // Calculate light-to-fragment vector with Y-flip for coordinate system
+    vec3 L3 = uSpot2Position - worldPos3D;
+    L3.y = -L3.y;
+    float dist = length(L3);
+    vec3 L = normalize(L3);
     
-    // Fix Y direction flip - coordinate system correction
-    spotlightLightDir3D.y = -spotlightLightDir3D.y;
+    // Distance attenuation with quadratic falloff
+    float atten = 1.0 - clamp(dist / uSpot2Radius, 0.0, 1.0);
+    atten *= atten;
     
-    float spotlightDistance = length(spotlightLightDir3D);
-    vec3 spotlightLightDir = normalize(spotlightLightDir3D);
+    // Convert spotlight direction from UI space (+Y down) to shader space
+    vec3 S = normalize(vec3(uSpot2Direction.x, -uSpot2Direction.y, uSpot2Direction.z));
     
-    // Fix coordinate system inconsistency for spotlight direction (same fix as directional lights)
-    vec3 spotDirection = normalize(vec3(uSpot2Direction.x, -uSpot2Direction.y, -uSpot2Direction.z));
-    float coneAngle = dot(-spotlightLightDir, spotDirection);
-    float coneAngleRad = radians(uSpot2ConeAngle);
-    float innerCone = cos(coneAngleRad * 0.5);
-    float outerCone = cos(coneAngleRad);
-    float coneFactor = smoothstep(outerCone, innerCone, coneAngle);
+    // Cone calculation with softness
+    float cosAng = dot(-L, S);
+    float outer = cos(radians(uSpot2ConeAngle));
+    float inner = cos(radians(uSpot2ConeAngle * (1.0 - uSpot2Softness)));
+    float spotFactor = smoothstep(outer, inner, cosAng);
     
-    float spotDistanceAttenuation = 1.0 - clamp(spotlightDistance / uSpot2Radius, 0.0, 1.0);
-    float spotNormalDot = max(dot(normal, spotlightLightDir), 0.0);
-    
-    float softness = mix(1.0, coneFactor, uSpot2Softness);
-    float intensity = spotNormalDot * uSpot2Intensity * spotDistanceAttenuation * softness * coneFactor;
+    // Lambert lighting
+    float lambert = max(dot(normal, L), 0.0);
+    float intensity = lambert * uSpot2Intensity * atten * spotFactor;
     
     // Apply shadow calculation FIRST for spotlight
     float shadowFactor = 1.0;
@@ -577,28 +579,28 @@ void main(void) {
   
   // Spotlight 3
   if (uSpot3Enabled) {
-    vec3 spotlightLightPos3D = uSpot3Position;
-    vec3 spotlightLightDir3D = spotlightLightPos3D - worldPos3D;
+    // Calculate light-to-fragment vector with Y-flip for coordinate system
+    vec3 L3 = uSpot3Position - worldPos3D;
+    L3.y = -L3.y;
+    float dist = length(L3);
+    vec3 L = normalize(L3);
     
-    // Fix Y direction flip - coordinate system correction
-    spotlightLightDir3D.y = -spotlightLightDir3D.y;
+    // Distance attenuation with quadratic falloff
+    float atten = 1.0 - clamp(dist / uSpot3Radius, 0.0, 1.0);
+    atten *= atten;
     
-    float spotlightDistance = length(spotlightLightDir3D);
-    vec3 spotlightLightDir = normalize(spotlightLightDir3D);
+    // Convert spotlight direction from UI space (+Y down) to shader space
+    vec3 S = normalize(vec3(uSpot3Direction.x, -uSpot3Direction.y, uSpot3Direction.z));
     
-    // Fix coordinate system inconsistency for spotlight direction (same fix as directional lights)
-    vec3 spotDirection = normalize(vec3(uSpot3Direction.x, -uSpot3Direction.y, -uSpot3Direction.z));
-    float coneAngle = dot(-spotlightLightDir, spotDirection);
-    float coneAngleRad = radians(uSpot3ConeAngle);
-    float innerCone = cos(coneAngleRad * 0.5);
-    float outerCone = cos(coneAngleRad);
-    float coneFactor = smoothstep(outerCone, innerCone, coneAngle);
+    // Cone calculation with softness
+    float cosAng = dot(-L, S);
+    float outer = cos(radians(uSpot3ConeAngle));
+    float inner = cos(radians(uSpot3ConeAngle * (1.0 - uSpot3Softness)));
+    float spotFactor = smoothstep(outer, inner, cosAng);
     
-    float spotDistanceAttenuation = 1.0 - clamp(spotlightDistance / uSpot3Radius, 0.0, 1.0);
-    float spotNormalDot = max(dot(normal, spotlightLightDir), 0.0);
-    
-    float softness = mix(1.0, coneFactor, uSpot3Softness);
-    float intensity = spotNormalDot * uSpot3Intensity * spotDistanceAttenuation * softness * coneFactor;
+    // Lambert lighting
+    float lambert = max(dot(normal, L), 0.0);
+    float intensity = lambert * uSpot3Intensity * atten * spotFactor;
     
     // Apply shadow calculation FIRST for spotlight
     float shadowFactor = 1.0;

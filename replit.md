@@ -40,6 +40,15 @@ Preferred communication style: Simple, everyday language.
 - **Asset Handling**: Public directory structure for PIXI.js textures and game assets
 - **Development Tools**: Runtime error overlay and source mapping for debugging
 
+# Configuration Files
+
+## Important File Locations
+- **lights-config.json**: Located in `/public/lights-config.json` (root public directory) - this is where the backend reads configuration from
+- **scene.json**: Located in `/client/public/scene.json` - sprite and scene configuration for the frontend
+- **Light masks**: Located in `/client/public/light_masks/` - texture files for masked lighting effects
+
+**Note**: Only use `/public/lights-config.json` for light configuration. The backend API reads from this location.
+
 # External Dependencies
 
 ## Core Runtime Dependencies
