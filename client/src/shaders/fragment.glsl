@@ -371,17 +371,13 @@ void main(void) {
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    // DEBUG: Visualize light distance to identify asymmetry cause
-    float debugDistance = lightDistance / uPoint0Radius;
-    if (debugDistance < 1.0) {
-      // Color-code the distance: Red = close, Green = medium, Blue = far
-      vec3 debugColor = vec3(debugDistance, 1.0 - debugDistance, 0.0);
-      finalColor = debugColor;
-      gl_FragColor = vec4(finalColor, 1.0);
-      return;
-    }
-    
+    // DEBUG: Visualize normal dot product to isolate asymmetry  
     float normalDot = max(dot(normal, lightDir), 0.0);
+    
+    // Show normal dot product as grayscale - should be symmetric if normal mapping is correct
+    finalColor = vec3(normalDot);
+    gl_FragColor = vec4(finalColor, 1.0);
+    return;
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
