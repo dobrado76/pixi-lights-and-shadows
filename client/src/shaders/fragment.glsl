@@ -359,18 +359,23 @@ void main(void) {
   
   // Point Light 0
   if (uPoint0Enabled) {
-    // Fix coordinate system at source - convert light position to match world coordinates
-    vec3 lightPos3D = vec3(uPoint0Position.x, uPoint0Position.y, uPoint0Position.z);
-    vec3 worldPos3DFixed = vec3(worldPos3D.x, worldPos3D.y, worldPos3D.z);
+    vec3 lightPos3D = uPoint0Position;
+    vec3 lightDir3D = lightPos3D - worldPos3D;
     
-    vec3 lightDir3D = lightPos3D - worldPos3DFixed;
+    // Fix Y direction flip - coordinate system correction
+    lightDir3D.y = -lightDir3D.y;
+    
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
-    // Standard Lambert calculation without coordinate system hacks
+    // Removed Y-flip branch that was causing triangular light shapes
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
-    float normalDot = max(dot(normal, lightDir), 0.0);
+    
+    // Handle flat normal case - if normal is close to [0,0,1], treat as flat surface
+    vec3 flatNormal = vec3(0.0, 0.0, 1.0);
+    bool isFlatNormal = length(normal - flatNormal) < 0.1;
+    float normalDot = isFlatNormal ? 1.0 : max(dot(normal, lightDir), 0.0);
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
