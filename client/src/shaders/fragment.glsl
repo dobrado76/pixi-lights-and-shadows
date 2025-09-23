@@ -511,7 +511,7 @@ void main(void) {
       // Compute virtual light position as if light comes from infinite distance
       // This makes all shadow rays parallel, simulating sun/moon lighting
       float infiniteDistance = 10000.0; // Very large distance
-      vec2 virtualLightPos = worldPos.xy + uDir0Direction.xy * infiniteDistance;
+      vec2 virtualLightPos = worldPos.xy - uDir0Direction.xy * infiniteDistance;
       shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
     }
     
@@ -534,7 +534,7 @@ void main(void) {
       // Compute virtual light position as if light comes from infinite distance
       // This makes all shadow rays parallel, simulating sun/moon lighting
       float infiniteDistance = 10000.0; // Very large distance
-      vec2 virtualLightPos = worldPos.xy + uDir1Direction.xy * infiniteDistance;
+      vec2 virtualLightPos = worldPos.xy - uDir1Direction.xy * infiniteDistance;
       shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
     }
     
