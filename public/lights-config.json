@@ -26,8 +26,8 @@
       "enabled": true,
       "brightness": 0.9,
       "color": "0xffffff",
-      "directionX": 0.766044443118978,
-      "directionY": 0.6427876096865393,
+      "directionX": 0.9063077870366499,
+      "directionY": -0.42261826174069944,
       "directionZ": -1,
       "castsShadows": true
     },
@@ -103,7 +103,7 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.55,
+    "strength": 0.15,
     "maxLength": 130,
     "height": 8
   }
