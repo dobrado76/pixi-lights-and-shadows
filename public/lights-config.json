@@ -16,7 +16,7 @@
       "x": 270,
       "y": 70,
       "z": 10,
-      "followMouse": true,
+      "followMouse": false,
       "castsShadows": true,
       "radius": 400
     },
@@ -103,7 +103,7 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.95,
+    "strength": 1,
     "maxLength": 200,
     "height": 8
   }
