@@ -370,61 +370,54 @@ const PixiDemo = (props: PixiDemoProps) => {
 
   // Initialize PIXI Application
   useEffect(() => {
-    if (!canvasRef.current) {
-      console.log('Canvas ref not ready, delaying PIXI initialization...');
-      return;
-    }
+    if (!canvasRef.current) return;
 
-    const initializePixi = async () => {
+    try {
+      console.log('Initializing PIXI Application...');
+      
+      // Reset PIXI settings for maximum compatibility
+      PIXI.settings.PREFER_ENV = PIXI.ENV.WEBGL;
+      PIXI.settings.FAIL_IF_MAJOR_PERFORMANCE_CAVEAT = false;
+      
+      let app: PIXI.Application;
+      
       try {
-        console.log('Initializing PIXI Application...');
-        console.log('Canvas container ready:', !!canvasRef.current);
-        
-        // Reset PIXI settings for maximum compatibility
-        PIXI.settings.PREFER_ENV = PIXI.ENV.WEBGL;
-        PIXI.settings.FAIL_IF_MAJOR_PERFORMANCE_CAVEAT = false;
-        
-        let app: PIXI.Application;
-        
-        try {
-          // First try WebGL with minimal options
-          console.log('Attempting WebGL initialization...');
-          app = new PIXI.Application({
-            width: shaderParams.canvasWidth,
-            height: shaderParams.canvasHeight,
-            backgroundColor: 0x1a1a1a,
-            antialias: true,
-            hello: false,
-            resolution: 1, // Use fixed resolution for compatibility
-            autoDensity: false,
-            forceCanvas: false,
-          });
-          console.log('WebGL initialization successful');
-        } catch (webglError) {
-          console.warn('WebGL failed, trying Canvas fallback:', webglError);
-          // Fallback to Canvas renderer with minimal config
-          try {
-            app = new PIXI.Application({
-              width: shaderParams.canvasWidth,
-              height: shaderParams.canvasHeight,
-              backgroundColor: 0x1a1a1a,
-              antialias: false,
-              hello: false,
-              resolution: 1,
-              autoDensity: false,
-              forceCanvas: true, // Force Canvas renderer
-            });
-            console.log('Canvas fallback successful');
-          } catch (canvasError) {
-            console.error('Both WebGL and Canvas failed:', canvasError);
-            throw new Error(`Renderer initialization failed: WebGL Error: ${webglError}, Canvas Error: ${canvasError}`);
-          }
-        }
+        // First try WebGL
+        app = new PIXI.Application({
+          width: shaderParams.canvasWidth,
+          height: shaderParams.canvasHeight,
+          backgroundColor: 0x1a1a1a,
+          antialias: true,
+          hello: false,
+          resolution: 1, // Use fixed resolution for compatibility
+          autoDensity: false,
+          forceCanvas: false,
+          powerPreference: 'default',
+          preserveDrawingBuffer: false,
+          clearBeforeRender: true,
+        });
+      } catch (webglError) {
+        console.warn('WebGL failed, trying Canvas fallback:', webglError);
+        // Fallback to Canvas renderer
+        app = new PIXI.Application({
+          width: shaderParams.canvasWidth,
+          height: shaderParams.canvasHeight,
+          backgroundColor: 0x1a1a1a,
+          antialias: false, // Disable for canvas
+          hello: false,
+          resolution: 1,
+          autoDensity: false,
+          forceCanvas: true, // Force Canvas renderer
+          powerPreference: 'default',
+          preserveDrawingBuffer: false,
+          clearBeforeRender: true,
+        });
+      }
 
-        // Access canvas using proper PIXI.js property
-        const canvas = app.view as HTMLCanvasElement;
-        
-        if (canvas && canvasRef.current) {
+      // Access canvas using proper PIXI.js property
+      const canvas = app.view as HTMLCanvasElement;
+      
+      if (canvas && canvasRef.current) {
         canvasRef.current.appendChild(canvas);
         setPixiApp(app);
         console.log('PIXI App initialized successfully');
@@ -493,12 +486,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
     }
 
-    };
-    
-    // Call the async initialization function
-    initializePixi();
-    
-    // Cleanup function
+    // Cleanup
     return () => {
       if (pixiApp) {
         const canvas = pixiApp.view as HTMLCanvasElement;
@@ -563,11 +551,11 @@ const PixiDemo = (props: PixiDemoProps) => {
           uniforms.uSpot0HasMask = false; uniforms.uSpot1HasMask = false; uniforms.uSpot2HasMask = false; uniforms.uSpot3HasMask = false;
           
           // Point Lights (up to 4) - pass ALL lights with stable slot assignment
-          // Processing point lights (logging removed for performance)
+          console.log(`🔍 PROCESSING ${allPointLights.length} POINT LIGHTS (all):`, allPointLights.map(l => `${l.id}(${l.enabled ? 'ON' : 'OFF'})`));
           
           allPointLights.slice(0, 4).forEach((light, slotIdx) => {
             const prefix = `uPoint${slotIdx}`;
-            // Setting light uniforms (logging removed for performance)
+            console.log(`   Setting ${prefix} for light: ${light.id} (slot ${slotIdx}, enabled: ${light.enabled})`);
             
             // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
             uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
@@ -614,11 +602,11 @@ const PixiDemo = (props: PixiDemoProps) => {
           });
           
           // Directional Lights (up to 2) - pass ALL lights with stable slot assignment
-          // Processing directional lights (logging removed for performance)
+          console.log(`🔍 PROCESSING ${allDirectionalLights.length} DIRECTIONAL LIGHTS (all):`, allDirectionalLights.map(l => `${l.id}(${l.enabled ? 'ON' : 'OFF'})`));
           
           allDirectionalLights.slice(0, 2).forEach((light, slotIdx) => {
             const prefix = `uDir${slotIdx}`;
-            // Setting light uniforms (logging removed for performance)
+            console.log(`   Setting ${prefix} for light: ${light.id} (slot ${slotIdx}, enabled: ${light.enabled})`);
             
             // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
             uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
@@ -628,11 +616,11 @@ const PixiDemo = (props: PixiDemoProps) => {
           });
           
           // Spotlights (up to 4) - pass ALL lights with stable slot assignment
-          // Processing spotlights (logging removed for performance)
+          console.log(`🔍 PROCESSING ${allSpotlights.length} SPOTLIGHTS (all):`, allSpotlights.map(l => `${l.id}(${l.enabled ? 'ON' : 'OFF'})`));
           
           allSpotlights.slice(0, 4).forEach((light, slotIdx) => {
             const prefix = `uSpot${slotIdx}`;
-            // Setting light uniforms (logging removed for performance)
+            console.log(`   Setting ${prefix} for light: ${light.id} (slot ${slotIdx}, enabled: ${light.enabled})`);
             
             // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
             uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
@@ -870,7 +858,13 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Texture uniforms will be set after textures are loaded
 
-      // Debug shadow uniforms (removed for performance)
+      // Debug shadow uniforms
+      console.log('🌑 SHADOW SYSTEM UNIFORMS:', {
+        enabled: uniforms.uShadowsEnabled,
+        strength: uniforms.uShadowStrength,
+        caster0: uniforms.uShadowCaster0,
+        caster1: uniforms.uShadowCaster1
+      });
       
       // Point Lights (up to 4) - pass ALL lights with stable slot assignment
       allPointLights.slice(0, 4).forEach((light, slotIdx) => {
@@ -887,7 +881,13 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
         uniforms[`${prefix}Radius`] = light.radius || 200;
         
-        // Debug: Log exact uniform values being set (removed for performance)
+        // Debug: Log exact uniform values being set
+        console.log(`🔦 ${prefix} UNIFORM VALUES:`, {
+          position: uniforms[`${prefix}Position`],
+          color: uniforms[`${prefix}Color`],
+          intensity: uniforms[`${prefix}Intensity`],
+          radius: uniforms[`${prefix}Radius`]
+        });
         
         // Handle mask
         if (light.mask) {
@@ -968,14 +968,34 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uShadowStrength = shadowConfig.strength; // Global shadow strength/opacity
       uniforms.uShadowSharpness = shadowConfig.sharpness ?? 0.5; // Shadow sharpness (0=soft, 1=sharp)
       
-      // Debug: Log ambient light uniforms (removed for performance)
+      // Debug: Log ambient light uniforms
+      console.log(`🌅 AMBIENT LIGHT VALUES:`, {
+        intensity: ambientLight.intensity,
+        color: ambientLight.color,
+        uniformIntensity: uniforms.uAmbientLight,
+        uniformColor: uniforms.uAmbientColor
+      });
       
       return uniforms;
     };
 
     const updatedUniforms = createLightUniforms();
 
-    // DEBUG: Log point light uniform details (removed for performance)
+    // DEBUG: Log point light uniform details
+    const pointUniforms = Object.keys(updatedUniforms).filter(key => key.includes('Point'));
+    console.log('🔧 POINT LIGHT UNIFORMS:', pointUniforms.length);
+    pointUniforms.forEach(key => {
+      if (key.includes('Enabled')) {
+        console.log(`   ${key}: ${updatedUniforms[key]}`);
+      }
+    });
+
+    // Debug shadow casting flags
+    const shadowUniforms = Object.keys(updatedUniforms).filter(key => key.includes('CastsShadows'));
+    console.log('🌑 SHADOW CASTING FLAGS:', shadowUniforms.length);
+    shadowUniforms.forEach(key => {
+      console.log(`   ${key}: ${updatedUniforms[key]}`);
+    });
 
     // Apply all uniform updates to all shaders
     shadersRef.current.forEach(shader => {
@@ -997,7 +1017,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       const useOccluderMap = shadowCasters.length > 4;
       
       if (useOccluderMap) {
-        // Using occluder map for shadow casters (logging removed for performance)
+        console.log(`🌑 OCCLUDER MAP: Using occluder map for ${shadowCasters.length} shadow casters`);
         buildOccluderMap();
         
         // Update all shaders to use occluder map
@@ -1008,7 +1028,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           }
         });
       } else {
-        // Using per-caster uniforms for shadow casters (logging removed for performance)
+        console.log(`⚡ FAST SHADOWS: Using per-caster uniforms for ${shadowCasters.length} shadow casters`);
         
         // Update all shaders to use per-caster uniforms
         shadersRef.current.forEach(shader => {
@@ -1020,10 +1040,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
       
       if (useMultiPass && renderTargetRef.current && sceneContainerRef.current && displaySpriteRef.current) {
-        // Multi-pass rendering (logging removed for performance)
+        console.log(`🚀 MULTI-PASS: Rendering ${lightCount} lights with multi-pass architecture (${Math.ceil(lightCount/8)} passes)`);
         renderMultiPass(lightsConfig);
       } else {
-        // Single-pass rendering (logging removed for performance)
+        console.log(`⚡ SINGLE-PASS: Rendering ${lightCount} lights directly to screen (≤8 lights)`);
         // Single-pass: Ensure meshes are on main stage and render directly
         meshesRef.current.forEach(mesh => {
           mesh.blendMode = PIXI.BLEND_MODES.NORMAL;
@@ -1038,10 +1058,10 @@ const PixiDemo = (props: PixiDemoProps) => {
             shader.uniforms.uPassMode = 1; // Lighting pass mode (all lights active)
           }
         });
-        pixiApp.renderer.render(pixiApp.stage);
+        pixiApp.render();
       }
     }
-  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, lightsConfig, ambientLight, shadowConfig]); // Removed mousePos to prevent constant updates
+  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig]);
 
   // Animation loop
   useEffect(() => {
@@ -1073,23 +1093,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       const y = event.clientY - rect.top;
       setMousePos({ x, y });
       
-      // Efficiently update only lights that follow mouse - no full uniform recalculation
-      const mouseFollowingLights = lightsConfig.filter(light => light.followMouse);
-      if (mouseFollowingLights.length > 0) {
-        shadersRef.current.forEach(shader => {
-          if (shader.uniforms) {
-            mouseFollowingLights.forEach((light, index) => {
-              if (light.type === 'point' && index < 4) {
-                const prefix = `uPoint${index}`;
-                shader.uniforms[`${prefix}Position`] = [x, y, light.position.z];
-              } else if (light.type === 'spotlight' && index < 4) {
-                const prefix = `uSpot${index}`;
-                shader.uniforms[`${prefix}Position`] = [x, y, light.position.z];
-              }
-            });
-          }
-        });
-      }
+      // Shadows are now calculated dynamically in the shader
     };
 
     // No need for dynamic shadow mesh updates - shadows are now calculated in shader
