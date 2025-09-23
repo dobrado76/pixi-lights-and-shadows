@@ -76,36 +76,77 @@ float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offse
   return texture2D(maskTexture, maskUV).r; // Use red channel as mask
 }
 
-// Shadow calculation function - improved ray-rectangle intersection
+// Shadow calculation function - realistic shadow casting with penumbra
 float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster) {
   if (!uShadowsEnabled) return 1.0;
   
-  // Extract caster bounds with padding for more visible shadows
-  vec2 casterMin = caster.xy - 20.0;
-  vec2 casterMax = caster.xy + caster.zw + 20.0;
+  // Extract caster bounds
+  vec2 casterMin = caster.xy;
+  vec2 casterMax = caster.xy + caster.zw;
   vec2 casterCenter = (casterMin + casterMax) * 0.5;
   
-  // Vector from light to pixel and to caster center
+  // Vector from light to pixel and caster
   vec2 lightToPixel = pixelPos - lightPos;
   vec2 lightToCenter = casterCenter - lightPos;
   
-  // Distance check - pixel must be further than caster
+  // Check if pixel is behind the caster (shadows only appear behind objects)
   float pixelDist = length(lightToPixel);
-  float centerDist = length(lightToCenter);
+  float casterDist = length(lightToCenter);
   
-  if (pixelDist <= centerDist) return 1.0; // Pixel is in front of caster
+  // Early exit if pixel is closer to light than caster center
+  if (pixelDist <= casterDist + 20.0) return 1.0;
   
-  // Direction check - pixel must be in similar direction as caster
-  vec2 pixelDir = normalize(lightToPixel);
-  vec2 centerDir = normalize(lightToCenter);
-  float dirSimilarity = dot(pixelDir, centerDir);
+  // Check if pixel is in the general direction away from light through caster
+  vec2 lightDir = normalize(lightToPixel);
+  vec2 casterDir = normalize(lightToCenter);
+  float directionAlignment = dot(lightDir, casterDir);
   
-  if (dirSimilarity < 0.5) return 1.0; // Not in shadow direction
+  // Only consider pixels that are roughly behind the caster
+  if (directionAlignment < 0.3) return 1.0;
   
-  // Ray-rectangle intersection test
-  // Cast ray from light toward pixel and check if it hits the caster rectangle
-  vec2 rayDir = pixelDir;
+  // Calculate shadow boundaries using the caster edges
+  // Project caster corners away from light to create shadow volume
+  vec2 corners[4];
+  corners[0] = casterMin;
+  corners[1] = vec2(casterMax.x, casterMin.y);
+  corners[2] = casterMax;
+  corners[3] = vec2(casterMin.x, casterMax.y);
+  
+  // Find the shadow silhouette by projecting visible edges
+  vec2 lightToCaster = casterCenter - lightPos;
+  
+  // Simple shadow volume test: check if pixel is inside shadow projection
+  bool inShadow = false;
+  float minDistToEdge = 999999.0;
+  
+  // Test against each edge of the caster
+  for (int i = 0; i < 4; i++) {
+    vec2 corner = corners[i];
+    vec2 lightToCorner = corner - lightPos;
+    
+    // Project this corner away from light
+    vec2 projectionDir = normalize(lightToCorner);
+    vec2 projectedPoint = corner + projectionDir * 300.0; // Extend shadow
+    
+    // Check if pixel is on the shadow side of this projection line
+    vec2 edgeToPixel = pixelPos - corner;
+    vec2 edgeToProjected = projectedPoint - corner;
+    
+    // Cross product to determine which side of line the pixel is on
+    float cross = edgeToPixel.x * edgeToProjected.y - edgeToPixel.y * edgeToProjected.x;
+    
+    // Calculate distance to shadow edge for softness
+    float distToEdge = abs(cross) / length(edgeToProjected);
+    minDistToEdge = min(minDistToEdge, distToEdge);
+  }
+  
+  // Ray-box intersection for core shadow
+  vec2 rayDir = normalize(lightToPixel);
   vec2 invRayDir = 1.0 / rayDir;
+  
+  // Handle near-zero direction components
+  if (abs(rayDir.x) < 0.001) invRayDir.x = 1000000.0;
+  if (abs(rayDir.y) < 0.001) invRayDir.y = 1000000.0;
   
   vec2 t1 = (casterMin - lightPos) * invRayDir;
   vec2 t2 = (casterMax - lightPos) * invRayDir;
@@ -116,17 +157,31 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster) {
   float tNear = max(tMin.x, tMin.y);
   float tFar = min(tMax.x, tMax.y);
   
-  // Check if ray intersects rectangle and intersection is before pixel
+  // Check if ray intersects caster and intersection is before pixel
   if (tNear <= tFar && tNear > 0.0 && tNear < pixelDist) {
-    // Calculate shadow factor based on distance from shadow edge
-    float shadowFactor = 1.0 - uShadowStrength;
+    // In shadow - calculate intensity with soft edges
+    float shadowIntensity = uShadowStrength;
     
-    // Add soft shadow edges based on distance from caster
-    float shadowDistance = pixelDist - centerDist;
-    float softness = smoothstep(0.0, 100.0, shadowDistance);
-    shadowFactor = mix(shadowFactor, 1.0, softness * 0.3);
+    // Distance from caster affects shadow sharpness
+    float distanceFromCaster = pixelDist - casterDist;
     
-    return shadowFactor;
+    // Penumbra calculation - softer shadows with distance
+    float penumbraSize = 40.0; // Base penumbra size
+    float penumbraFactor = distanceFromCaster / 100.0; // Grows with distance
+    float totalPenumbra = penumbraSize * (1.0 + penumbraFactor);
+    
+    // Soft shadow edges based on distance to shadow boundary
+    float softness = smoothstep(0.0, totalPenumbra, minDistToEdge);
+    
+    // Core shadow with soft edges
+    float coreShadowSize = 20.0;
+    float coreIntensity = smoothstep(totalPenumbra, coreShadowSize, minDistToEdge);
+    
+    // Combine core and penumbra
+    shadowIntensity *= mix(0.3, 1.0, coreIntensity); // Core is darker
+    shadowIntensity *= (1.0 - softness * 0.7); // Penumbra is lighter
+    
+    return 1.0 - shadowIntensity;
   }
   
   return 1.0; // Not in shadow
