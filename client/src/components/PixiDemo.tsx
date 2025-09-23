@@ -538,8 +538,8 @@ const PixiDemo = (props: PixiDemoProps) => {
           
           // Get all lights by type (enabled and disabled - let shader handle via intensity)
           const allPointLights = lightsConfig.filter(light => light.type === 'point');
-          const enabledDirectionalLights = lightsConfig.filter(light => light.type === 'directional' && light.enabled);
-          const enabledSpotlights = lightsConfig.filter(light => light.type === 'spotlight' && light.enabled);
+          const allDirectionalLights = lightsConfig.filter(light => light.type === 'directional');
+          const allSpotlights = lightsConfig.filter(light => light.type === 'spotlight');
           
           // Initialize all lights as disabled
           uniforms.uPoint0Enabled = false; uniforms.uPoint1Enabled = false; uniforms.uPoint2Enabled = false; uniforms.uPoint3Enabled = false;
@@ -601,19 +601,29 @@ const PixiDemo = (props: PixiDemoProps) => {
             }
           });
           
-          // Directional Lights (up to 2)
-          enabledDirectionalLights.slice(0, 2).forEach((light, i) => {
-            const prefix = `uDir${i}`;
-            uniforms[`${prefix}Enabled`] = true;
+          // Directional Lights (up to 2) - pass ALL lights with stable slot assignment
+          console.log(`🔍 PROCESSING ${allDirectionalLights.length} DIRECTIONAL LIGHTS (all):`, allDirectionalLights.map(l => `${l.id}(${l.enabled ? 'ON' : 'OFF'})`));
+          
+          allDirectionalLights.slice(0, 2).forEach((light, slotIdx) => {
+            const prefix = `uDir${slotIdx}`;
+            console.log(`   Setting ${prefix} for light: ${light.id} (slot ${slotIdx}, enabled: ${light.enabled})`);
+            
+            // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
+            uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
             uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
             uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
-            uniforms[`${prefix}Intensity`] = light.intensity;
+            uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
           });
           
-          // Spotlights (up to 4)
-          enabledSpotlights.slice(0, 4).forEach((light, i) => {
-            const prefix = `uSpot${i}`;
-            uniforms[`${prefix}Enabled`] = true;
+          // Spotlights (up to 4) - pass ALL lights with stable slot assignment
+          console.log(`🔍 PROCESSING ${allSpotlights.length} SPOTLIGHTS (all):`, allSpotlights.map(l => `${l.id}(${l.enabled ? 'ON' : 'OFF'})`));
+          
+          allSpotlights.slice(0, 4).forEach((light, slotIdx) => {
+            const prefix = `uSpot${slotIdx}`;
+            console.log(`   Setting ${prefix} for light: ${light.id} (slot ${slotIdx}, enabled: ${light.enabled})`);
+            
+            // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
+            uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
             uniforms[`${prefix}Position`] = [
               light.followMouse ? mousePos.x : light.position.x,
               light.followMouse ? mousePos.y : light.position.y,
@@ -621,7 +631,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             ];
             uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
             uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
-            uniforms[`${prefix}Intensity`] = light.intensity;
+            uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
             uniforms[`${prefix}Radius`] = light.radius || 150;
             uniforms[`${prefix}ConeAngle`] = light.coneAngle || 30;
             uniforms[`${prefix}Softness`] = light.softness || 0.5;
@@ -660,7 +670,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           });
 
           // Clear uniforms for unused spotlight slots (just like multi-pass rendering)
-          for (let i = enabledSpotlights.length; i < 4; i++) {
+          for (let i = allSpotlights.length; i < 4; i++) {
             uniforms[`uSpot${i}Enabled`] = false;
             uniforms[`uSpot${i}HasMask`] = false;
             uniforms[`uSpot${i}CastsShadows`] = false;
@@ -670,8 +680,8 @@ const PixiDemo = (props: PixiDemoProps) => {
           console.log('DEBUG: Point lights found (all):', allPointLights.map(l => ({id: l.id, enabled: l.enabled})));
           console.log('Expanded Lights:', { 
             pointLights: allPointLights.length, 
-            directionalLights: enabledDirectionalLights.length, 
-            spotlights: enabledSpotlights.length 
+            directionalLights: allDirectionalLights.length, 
+            spotlights: allSpotlights.length 
           });
 
           return uniforms;
@@ -816,8 +826,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Get all lights by type (enabled and disabled - let shader handle via intensity)
       const allPointLights = lightsConfig.filter(light => light.type === 'point');
-      const enabledDirectionalLights = lightsConfig.filter(light => light.type === 'directional' && light.enabled);
-      const enabledSpotlights = lightsConfig.filter(light => light.type === 'spotlight' && light.enabled);
+      const allDirectionalLights = lightsConfig.filter(light => light.type === 'directional');
+      const allSpotlights = lightsConfig.filter(light => light.type === 'spotlight');
       
       // Initialize all lights as disabled
       uniforms.uPoint0Enabled = false; uniforms.uPoint1Enabled = false; uniforms.uPoint2Enabled = false; uniforms.uPoint3Enabled = false;
@@ -896,22 +906,26 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
       });
       
-      // Directional Lights (up to 2)
-      enabledDirectionalLights.slice(0, 2).forEach((light, i) => {
-        const prefix = `uDir${i}`;
-        uniforms[`${prefix}Enabled`] = true;
+      // Directional Lights (up to 2) - pass ALL lights with stable slot assignment
+      allDirectionalLights.slice(0, 2).forEach((light, slotIdx) => {
+        const prefix = `uDir${slotIdx}`;
+        
+        // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
+        uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
         uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
         uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
-        uniforms[`${prefix}Intensity`] = light.intensity;
+        uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
         
         // Shadow casting flag for directional lights
         uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
       });
       
-      // Spotlights (up to 4)
-      enabledSpotlights.slice(0, 4).forEach((light, i) => {
-        const prefix = `uSpot${i}`;
-        uniforms[`${prefix}Enabled`] = true;
+      // Spotlights (up to 4) - pass ALL lights with stable slot assignment
+      allSpotlights.slice(0, 4).forEach((light, slotIdx) => {
+        const prefix = `uSpot${slotIdx}`;
+        
+        // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
+        uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
         uniforms[`${prefix}Position`] = [
           light.followMouse ? mousePos.x : light.position.x,
           light.followMouse ? mousePos.y : light.position.y,
@@ -919,7 +933,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         ];
         uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
         uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
-        uniforms[`${prefix}Intensity`] = light.intensity;
+        uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
         uniforms[`${prefix}Radius`] = light.radius || 150;
         uniforms[`${prefix}ConeAngle`] = light.coneAngle || 30;
         uniforms[`${prefix}Softness`] = light.softness || 0.5;
