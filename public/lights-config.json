@@ -51,7 +51,7 @@
     {
       "id": "spotlight",
       "type": "spotlight",
-      "enabled": false,
+      "enabled": true,
       "brightness": 1.1,
       "color": "0xffffff",
       "x": 290,

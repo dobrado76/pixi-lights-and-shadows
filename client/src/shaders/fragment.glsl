@@ -87,8 +87,8 @@ float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offse
   return texture2D(maskTexture, maskUV).r; // Use red channel as mask
 }
 
-// Shadow calculation function - binary transparency mask
-float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D casterTexture) {
+// Shadow calculation function - uses shadow mask (alpha channel or custom mask)
+float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shadowMask) {
   if (!uShadowsEnabled) return 1.0;
   
   // Extract caster bounds
@@ -104,7 +104,7 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D caste
   
   rayDir /= rayLength; // Normalize
   
-  // Check intersection using slab method with proper handling of edge cases
+  // Check intersection using slab method
   vec2 invDir = vec2(
     abs(rayDir.x) > 0.0001 ? 1.0 / rayDir.x : 1000000.0,
     abs(rayDir.y) > 0.0001 ? 1.0 / rayDir.y : 1000000.0
@@ -116,24 +116,22 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D caste
   vec2 tNear = min(t1, t2);
   vec2 tFar = max(t1, t2);
   
-  float tMin = max(tNear.x, tNear.y);
-  float tMax = min(tFar.x, tFar.y);
+  float tMin = max(max(tNear.x, tNear.y), 0.0);
+  float tMax = min(min(tFar.x, tFar.y), rayLength);
   
-  // Check if ray intersects rectangle bounds and intersection is between light and pixel
-  if (tMin <= tMax && tMax > 0.0 && tMin < rayLength) {
-    // Calculate intersection point
+  // Check if ray intersects caster bounds
+  if (tMin <= tMax && tMax > 0.0) {
+    // Sample shadow mask at intersection point
     vec2 intersectionPoint = lightPos + rayDir * tMin;
+    vec2 maskUV = (intersectionPoint - casterMin) / (casterMax - casterMin);
     
-    // Convert intersection point to texture coordinates
-    vec2 texCoord = (intersectionPoint - casterMin) / (casterMax - casterMin);
-    
-    // Check if intersection is within texture bounds
-    if (texCoord.x >= 0.0 && texCoord.x <= 1.0 && texCoord.y >= 0.0 && texCoord.y <= 1.0) {
-      // Sample the texture alpha at intersection point
-      float alpha = texture2D(casterTexture, texCoord).a;
+    // Ensure UV coordinates are within bounds
+    if (maskUV.x >= 0.0 && maskUV.x <= 1.0 && maskUV.y >= 0.0 && maskUV.y <= 1.0) {
+      // Sample shadow mask - use alpha channel for shadow determination
+      float maskValue = texture2D(shadowMask, maskUV).a;
       
-      // Binary mask: alpha = 0 is air (no shadow), alpha > 0 is solid (full shadow)
-      if (alpha > 0.0) {
+      // Binary shadow mask: alpha > 0 = solid (cast shadow), alpha = 0 = transparent (no shadow)
+      if (maskValue > 0.0) {
         return 1.0 - uShadowStrength;
       }
     }
