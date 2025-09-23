@@ -372,9 +372,10 @@ void main(void) {
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    // Handle flat normal case - if normal is close to [0,0,1], treat as flat surface
+    // Debug flat normal detection - more generous threshold
     vec3 flatNormal = vec3(0.0, 0.0, 1.0);
-    bool isFlatNormal = length(normal - flatNormal) < 0.1;
+    float normalDistance = length(normal - flatNormal);
+    bool isFlatNormal = normalDistance < 0.3; // More generous threshold
     float normalDot = isFlatNormal ? 1.0 : max(dot(normal, lightDir), 0.0);
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
@@ -503,11 +504,9 @@ void main(void) {
   
   // Directional Light 0
   if (uDir0Enabled) {
-    // Flip direction 180° to match shadow direction, then convert and negate
-    vec3 dir = normalize(vec3(-uDir0Direction.x, uDir0Direction.y, uDir0Direction.z));
-    vec3 L = -dir; // Incoming light direction (negative of light travel direction)
-    float lambert = max(dot(normal, L), 0.0);
-    float intensity = lambert * uDir0Intensity;
+    // Directional lights provide UNIFORM illumination - no Lambert shading
+    // Only use direction for shadow calculations, not for lighting intensity
+    float intensity = uDir0Intensity;
     
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
@@ -526,11 +525,9 @@ void main(void) {
   
   // Directional Light 1
   if (uDir1Enabled) {
-    // Flip direction 180° to match shadow direction, then convert and negate
-    vec3 dir = normalize(vec3(-uDir1Direction.x, uDir1Direction.y, uDir1Direction.z));
-    vec3 L = -dir; // Incoming light direction (negative of light travel direction)
-    float lambert = max(dot(normal, L), 0.0);
-    float intensity = lambert * uDir1Intensity;
+    // Directional lights provide UNIFORM illumination - no Lambert shading
+    // Only use direction for shadow calculations, not for lighting intensity
+    float intensity = uDir1Intensity;
     
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
