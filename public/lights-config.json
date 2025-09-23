@@ -10,7 +10,7 @@
     {
       "id": "mouse_light",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 3.1,
       "color": "0xffffff",
       "x": 270,
@@ -69,14 +69,14 @@
       "id": "point_copy_1758529441818",
       "type": "point",
       "enabled": true,
-      "brightness": 1.9,
+      "brightness": 4.5,
       "color": "0xffffff",
-      "x": 240,
+      "x": 180,
       "y": 240,
       "z": 100,
       "followMouse": false,
       "castsShadows": true,
-      "radius": 290,
+      "radius": 400,
       "mask": {
         "image": "00035-3934797537.png",
         "offset": {
