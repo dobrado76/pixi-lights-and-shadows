@@ -372,11 +372,8 @@ void main(void) {
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    // Debug flat normal detection - more generous threshold
-    vec3 flatNormal = vec3(0.0, 0.0, 1.0);
-    float normalDistance = length(normal - flatNormal);
-    bool isFlatNormal = normalDistance < 0.3; // More generous threshold
-    float normalDot = isFlatNormal ? 1.0 : max(dot(normal, lightDir), 0.0);
+    // TEMPORARY TEST: Force perfect circular light to isolate the issue
+    float normalDot = 1.0; // Force flat lighting to test if light becomes circular
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
