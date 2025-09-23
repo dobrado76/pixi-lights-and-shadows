@@ -10,7 +10,7 @@
     {
       "id": "mouse_light",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 5,
       "color": "0xffffff",
       "x": 270,
