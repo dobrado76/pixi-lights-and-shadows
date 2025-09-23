@@ -41,7 +41,13 @@ uniform bool uSpot1HasMask; uniform sampler2D uSpot1Mask; uniform vec2 uSpot1Mas
 uniform bool uSpot2HasMask; uniform sampler2D uSpot2Mask; uniform vec2 uSpot2MaskOffset; uniform float uSpot2MaskRotation; uniform float uSpot2MaskScale; uniform vec2 uSpot2MaskSize;
 uniform bool uSpot3HasMask; uniform sampler2D uSpot3Mask; uniform vec2 uSpot3MaskOffset; uniform float uSpot3MaskRotation; uniform float uSpot3MaskScale; uniform vec2 uSpot3MaskSize;
 
-// Shadow uniforms removed - shadows now handled in separate pass
+// Shadow Caster Uniforms - integrated shadow calculation
+uniform vec4 uShadowCaster0; // x, y, width, height of first shadow caster (ball)
+uniform vec4 uShadowCaster1; // x, y, width, height of second shadow caster (block)
+uniform bool uShadowCaster0Enabled;
+uniform bool uShadowCaster1Enabled;
+uniform float uShadowStrength; // Global shadow strength
+uniform bool uShadowsEnabled;
 
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
@@ -70,7 +76,44 @@ float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offse
   return texture2D(maskTexture, maskUV).r; // Use red channel as mask
 }
 
-// Shadow functions removed - shadows now handled in separate pass
+// Shadow calculation function - ray-rectangle intersection
+float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster) {
+  if (!uShadowsEnabled) return 1.0;
+  
+  // Extract caster bounds
+  vec2 casterMin = caster.xy;
+  vec2 casterMax = caster.xy + caster.zw;
+  
+  // Check if pixel is behind the caster relative to light
+  vec2 lightToPixel = pixelPos - lightPos;
+  vec2 lightToCaster = (casterMin + casterMax) * 0.5 - lightPos; // Center of caster
+  
+  // Simple shadow test: if pixel is further from light than caster center and in same general direction
+  float pixelDist = length(lightToPixel);
+  float casterDist = length(lightToCaster);
+  
+  // Check if ray from light to pixel intersects caster rectangle
+  // Normalize directions
+  vec2 lightToPixelDir = normalize(lightToPixel);
+  vec2 lightToCasterDir = normalize(lightToCaster);
+  
+  // Simple angular test + distance test
+  float angleDiff = dot(lightToPixelDir, lightToCasterDir);
+  
+  if (angleDiff > 0.8 && pixelDist > casterDist) {
+    // Check if pixel ray actually intersects the rectangle
+    // Simple bounding box intersection
+    vec2 rayEnd = lightPos + lightToPixelDir * pixelDist;
+    
+    // Check if ray passes through or near the caster bounds
+    if (rayEnd.x >= casterMin.x - 10.0 && rayEnd.x <= casterMax.x + 10.0 &&
+        rayEnd.y >= casterMin.y - 10.0 && rayEnd.y <= casterMax.y + 10.0) {
+      return 1.0 - uShadowStrength; // In shadow
+    }
+  }
+  
+  return 1.0; // Not in shadow
+}
 
 void main(void) {
   vec2 uv = vTextureCoord;
@@ -117,7 +160,15 @@ void main(void) {
       intensity *= maskValue; // Multiply light intensity by mask
     }
     
-    // Shadow logic removed - handled in separate pass
+    // Apply shadow calculation
+    float shadowFactor = 1.0;
+    if (uShadowCaster0Enabled) {
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster0);
+    }
+    if (uShadowCaster1Enabled) {
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1);
+    }
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint0Color * intensity;
   }
@@ -142,7 +193,15 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Shadow logic removed - handled in separate pass
+    // Apply shadow calculation
+    float shadowFactor = 1.0;
+    if (uShadowCaster0Enabled) {
+      shadowFactor *= calculateShadow(uPoint1Position.xy, worldPos.xy, uShadowCaster0);
+    }
+    if (uShadowCaster1Enabled) {
+      shadowFactor *= calculateShadow(uPoint1Position.xy, worldPos.xy, uShadowCaster1);
+    }
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint1Color * intensity;
   }
@@ -167,7 +226,15 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Shadow logic removed - handled in separate pass
+    // Apply shadow calculation
+    float shadowFactor = 1.0;
+    if (uShadowCaster0Enabled) {
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster0);
+    }
+    if (uShadowCaster1Enabled) {
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1);
+    }
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint2Color * intensity;
   }
@@ -192,7 +259,15 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Shadow logic removed - handled in separate pass
+    // Apply shadow calculation
+    float shadowFactor = 1.0;
+    if (uShadowCaster0Enabled) {
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster0);
+    }
+    if (uShadowCaster1Enabled) {
+      shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1);
+    }
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint3Color * intensity;
   }

@@ -650,14 +650,13 @@ const PixiDemo = (props: PixiDemoProps) => {
         uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Canvas dimensions for pixel-perfect scaling
         uAmbientLight: ambientLight.intensity,
         uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
-        // Shadow participation flags for background
-        uSpriteCastsShadows: false, // Background doesn't cast shadows
-        uSpriteReceivesShadows: true, // Background can receive shadows
-        // Global shadow uniforms
+        // Shadow system uniforms
         uShadowsEnabled: shadowConfig.enabled,
-        uShadowStrength: shadowConfig.strength,
-        uShadowMaxLength: shadowConfig.maxLength,
-        uShadowHeight: shadowConfig.height,
+        uShadowStrength: shadowConfig.strength || 0.5,
+        uShadowCaster0: [120, 80, 75, 75], // Ball position and size
+        uShadowCaster1: [280, 120, 120, 60], // Block position and size
+        uShadowCaster0Enabled: true,
+        uShadowCaster1Enabled: true,
         ...lightUniforms
       });
 
@@ -727,9 +726,13 @@ const PixiDemo = (props: PixiDemoProps) => {
         uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Canvas dimensions for pixel-perfect scaling
         uAmbientLight: ambientLight.intensity,
         uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
-        // Shadow participation flags for ball
-        uSpriteCastsShadows: true, // Ball casts shadows on other sprites
-        uSpriteReceivesShadows: true, // Ball can receive shadows
+        // Shadow system uniforms
+        uShadowsEnabled: shadowConfig.enabled,
+        uShadowStrength: shadowConfig.strength || 0.5,
+        uShadowCaster0: [ballPos.x, ballPos.y, ballDiffuse.width, ballDiffuse.height],
+        uShadowCaster1: [blockPos.x, blockPos.y, blockDiffuse.width, blockDiffuse.height],
+        uShadowCaster0Enabled: true,
+        uShadowCaster1Enabled: true,
         ...lightUniforms
       });
 
@@ -747,9 +750,13 @@ const PixiDemo = (props: PixiDemoProps) => {
         uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight], // Canvas dimensions for pixel-perfect scaling
         uAmbientLight: ambientLight.intensity,
         uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
-        // Shadow participation flags for block
-        uSpriteCastsShadows: true, // Block casts shadows on other sprites
-        uSpriteReceivesShadows: true, // Block can receive shadows
+        // Shadow system uniforms
+        uShadowsEnabled: shadowConfig.enabled,
+        uShadowStrength: shadowConfig.strength || 0.5,
+        uShadowCaster0: [ballPos.x, ballPos.y, ballDiffuse.width, ballDiffuse.height],
+        uShadowCaster1: [blockPos.x, blockPos.y, blockDiffuse.width, blockDiffuse.height],
+        uShadowCaster0Enabled: true,
+        uShadowCaster1Enabled: true,
         ...lightUniforms
       });
 
@@ -757,52 +764,16 @@ const PixiDemo = (props: PixiDemoProps) => {
       blockMesh.x = 0;
       blockMesh.y = 0;
 
-      // Create shadow rendering function
-      const renderShadows = (lights: Light[]) => {
-        if (!shadowConfig.enabled) return [];
-        
-        const shadowMeshes: PIXI.Mesh[] = [];
-        const enabledLights = lights.filter(light => light.enabled && light.castsShadows);
-        
-        console.log(`🌑 Creating shadows for ${enabledLights.length} lights`);
-        
-        enabledLights.forEach(light => {
-          if (light.type !== 'point') return; // Only point lights for now
-          
-          const lightX = light.followMouse ? mousePos.x : light.position.x;
-          const lightY = light.followMouse ? mousePos.y : light.position.y;
-          
-          shadowCasters.forEach(caster => {
-            const shadowGeometry = createShadowGeometry(caster, lightX, lightY, shadowConfig.maxLength || 200);
-            if (shadowGeometry) {
-              const shadowMesh = createShadowMesh(shadowGeometry, shadowConfig.strength || 0.3);
-              shadowMesh.blendMode = PIXI.BLEND_MODES.MULTIPLY; // Dark shadows blend multiplicatively
-              shadowMeshes.push(shadowMesh);
-              sceneContainerRef.current!.addChild(shadowMesh);
-            }
-          });
-        });
-        
-        return shadowMeshes;
-      };
-
-      // Store references (will be updated when shadows are created)
+      // Store references
       meshesRef.current = [bgMesh, ballMesh, blockMesh];
       shadersRef.current = [bgShader, ballShader, blockShader];
 
       // Add to stage
-      // Add meshes to scene container for multi-pass rendering
       sceneContainerRef.current!.addChild(bgMesh);
       sceneContainerRef.current!.addChild(ballMesh);
       sceneContainerRef.current!.addChild(blockMesh);
 
-      // Store shadow casters for dynamic updates
-      shadowCastersRef.current = shadowCasters;
-
-      // Render initial shadows
-      const initialShadowMeshes = renderShadows(lightsConfig);
-      shadowMeshesRef.current = initialShadowMeshes;
-      console.log(`🌑 Created ${initialShadowMeshes.length} shadow meshes`);
+      console.log('🌑 Shadow system integrated into lighting shader');
 
       console.log('PIXI demo setup completed successfully');
 
@@ -856,18 +827,20 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uDir0CastsShadows = false; uniforms.uDir1CastsShadows = false;
       uniforms.uSpot0CastsShadows = false; uniforms.uSpot1CastsShadows = false; uniforms.uSpot2CastsShadows = false; uniforms.uSpot3CastsShadows = false;
 
-      // Add global shadow configuration uniforms
+      // Add shadow system uniforms
       uniforms.uShadowsEnabled = shadowConfig.enabled;
-      uniforms.uShadowStrength = shadowConfig.strength;
-      uniforms.uShadowMaxLength = shadowConfig.maxLength;
-      uniforms.uShadowHeight = shadowConfig.height;
+      uniforms.uShadowStrength = shadowConfig.strength || 0.5;
+      uniforms.uShadowCaster0 = [120, 80, 75, 75]; // Ball: x, y, width, height
+      uniforms.uShadowCaster1 = [280, 120, 120, 60]; // Block: x, y, width, height  
+      uniforms.uShadowCaster0Enabled = true;
+      uniforms.uShadowCaster1Enabled = true;
 
       // Debug shadow uniforms
-      console.log('🌑 SHADOW GLOBAL UNIFORMS:', {
+      console.log('🌑 SHADOW SYSTEM UNIFORMS:', {
         enabled: uniforms.uShadowsEnabled,
         strength: uniforms.uShadowStrength,
-        maxLength: uniforms.uShadowMaxLength,
-        height: uniforms.uShadowHeight
+        caster0: uniforms.uShadowCaster0,
+        caster1: uniforms.uShadowCaster1
       });
       
       // Point Lights (up to 4)
@@ -1063,38 +1036,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       const y = event.clientY - rect.top;
       setMousePos({ x, y });
       
-      // Update shadows for mouse light dynamically
-      updateShadowsForMouseLight(x, y);
+      // Shadows are now calculated dynamically in the shader
     };
 
-    const updateShadowsForMouseLight = (mouseX: number, mouseY: number) => {
-      if (!shadowConfig.enabled || !sceneContainerRef.current) return;
-      
-      // Find mouse light in config
-      const mouseLight = lightsConfig.find(light => light.followMouse && light.enabled && light.castsShadows);
-      if (!mouseLight) return;
-      
-      // Remove old shadow meshes for mouse light (first light creates first 2 shadow meshes)
-      const mouseShadowMeshes = shadowMeshesRef.current.slice(0, 2);
-      mouseShadowMeshes.forEach(mesh => {
-        if (mesh.parent) mesh.parent.removeChild(mesh);
-      });
-      
-      // Create new shadow meshes for mouse light
-      const newMouseShadows: PIXI.Mesh[] = [];
-      shadowCastersRef.current.forEach(caster => {
-        const shadowGeometry = createShadowGeometry(caster, mouseX, mouseY, shadowConfig.maxLength || 200);
-        if (shadowGeometry) {
-          const shadowMesh = createShadowMesh(shadowGeometry, shadowConfig.strength || 0.3);
-          shadowMesh.blendMode = PIXI.BLEND_MODES.MULTIPLY;
-          newMouseShadows.push(shadowMesh);
-          sceneContainerRef.current!.addChild(shadowMesh);
-        }
-      });
-      
-      // Update shadow meshes array (replace first 2 with new ones)
-      shadowMeshesRef.current = [...newMouseShadows, ...shadowMeshesRef.current.slice(2)];
-    };
+    // No need for dynamic shadow mesh updates - shadows are now calculated in shader
 
     const canvas = pixiApp.view as HTMLCanvasElement;
     canvas.addEventListener('mousemove', handleMouseMove);
