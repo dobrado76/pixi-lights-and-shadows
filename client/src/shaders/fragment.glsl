@@ -371,11 +371,11 @@ void main(void) {
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    // FIX: Handle invalid normal maps properly  
+    // FIX: Handle severely corrupted normals only (preserve legitimate normal maps)
     vec3 safeNormal = normal;
     
-    // If normal is invalid (too far from unit vector), use flat normal
-    if (length(safeNormal) < 0.8 || length(safeNormal) > 1.2) {
+    // Only replace SEVERELY corrupted normals (much more lenient)
+    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
       safeNormal = vec3(0.0, 0.0, 1.0); // Flat surface normal
     }
     
@@ -565,9 +565,9 @@ void main(void) {
     float inner = cos(radians(uSpot0ConeAngle * (1.0 - uSpot0Softness)));
     float spotFactor = smoothstep(outer, inner, cosAng);
     
-    // Lambert lighting with safe normal validation
+    // Lambert lighting with safe normal validation  
     vec3 safeNormal = normal;
-    if (length(safeNormal) < 0.8 || length(safeNormal) > 1.2) {
+    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
       safeNormal = vec3(0.0, 0.0, 1.0);
     }
     float lambert = max(dot(safeNormal, L), 0.0);
@@ -611,9 +611,9 @@ void main(void) {
     float inner = cos(radians(uSpot1ConeAngle * (1.0 - uSpot1Softness)));
     float spotFactor = smoothstep(outer, inner, cosAng);
     
-    // Lambert lighting with safe normal validation
+    // Lambert lighting with safe normal validation  
     vec3 safeNormal = normal;
-    if (length(safeNormal) < 0.8 || length(safeNormal) > 1.2) {
+    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
       safeNormal = vec3(0.0, 0.0, 1.0);
     }
     float lambert = max(dot(safeNormal, L), 0.0);
@@ -657,9 +657,9 @@ void main(void) {
     float inner = cos(radians(uSpot2ConeAngle * (1.0 - uSpot2Softness)));
     float spotFactor = smoothstep(outer, inner, cosAng);
     
-    // Lambert lighting with safe normal validation
+    // Lambert lighting with safe normal validation  
     vec3 safeNormal = normal;
-    if (length(safeNormal) < 0.8 || length(safeNormal) > 1.2) {
+    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
       safeNormal = vec3(0.0, 0.0, 1.0);
     }
     float lambert = max(dot(safeNormal, L), 0.0);
@@ -703,9 +703,9 @@ void main(void) {
     float inner = cos(radians(uSpot3ConeAngle * (1.0 - uSpot3Softness)));
     float spotFactor = smoothstep(outer, inner, cosAng);
     
-    // Lambert lighting with safe normal validation
+    // Lambert lighting with safe normal validation  
     vec3 safeNormal = normal;
-    if (length(safeNormal) < 0.8 || length(safeNormal) > 1.2) {
+    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
       safeNormal = vec3(0.0, 0.0, 1.0);
     }
     float lambert = max(dot(safeNormal, L), 0.0);
