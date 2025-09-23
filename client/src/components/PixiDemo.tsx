@@ -39,6 +39,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   const sceneManagerRef = useRef<SceneManager | null>(null);
   const occluderRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
   const occluderContainerRef = useRef<PIXI.Container | null>(null);
+  const occluderSpritesRef = useRef<PIXI.Sprite[]>([]);
 
   // Shadow geometry functions (moved to component level for reuse)
   const createShadowGeometry = (caster: ShadowCaster, lightX: number, lightY: number, shadowLength: number = 100) => {
@@ -141,34 +142,45 @@ const PixiDemo = (props: PixiDemoProps) => {
   
   const geometry = useCustomGeometry(shaderParams.canvasWidth, shaderParams.canvasHeight);
 
-  // Occluder map builder for unlimited shadow casters
+  // Occluder map builder for unlimited shadow casters - optimized to reuse sprites
   const buildOccluderMap = () => {
     if (!pixiApp || !occluderRenderTargetRef.current || !occluderContainerRef.current) return;
     
     const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
     
-    // Clear occluder container
-    occluderContainerRef.current.removeChildren();
+    // Ensure we have enough pooled sprites
+    while (occluderSpritesRef.current.length < shadowCasters.length) {
+      const sprite = new PIXI.Sprite();
+      occluderSpritesRef.current.push(sprite);
+      occluderContainerRef.current.addChild(sprite);
+    }
     
-    // Render each shadow caster as binary alpha to occluder map
-    shadowCasters.forEach(sprite => {
-      if (!sprite.diffuseTexture) return;
+    // Update existing sprites with current shadow caster data
+    shadowCasters.forEach((caster, index) => {
+      if (!caster.diffuseTexture) return;
       
-      // Create a simple sprite for the occluder map - just the diffuse texture
-      const occluderSprite = new PIXI.Sprite(sprite.diffuseTexture);
+      const occluderSprite = occluderSpritesRef.current[index];
       
-      // Position and scale to match the scene sprite
-      const bounds = sprite.getBounds();
+      // Update texture only if changed
+      if (occluderSprite.texture !== caster.diffuseTexture) {
+        occluderSprite.texture = caster.diffuseTexture;
+      }
+      
+      // Update position and scale to match the scene sprite
+      const bounds = caster.getBounds();
       occluderSprite.x = bounds.x;
       occluderSprite.y = bounds.y;
       occluderSprite.width = bounds.width;
       occluderSprite.height = bounds.height;
-      
-      // Add to occluder container
-      occluderContainerRef.current!.addChild(occluderSprite);
+      occluderSprite.visible = true;
     });
     
-    // Render to occluder texture
+    // Hide unused sprites
+    for (let i = shadowCasters.length; i < occluderSpritesRef.current.length; i++) {
+      occluderSpritesRef.current[i].visible = false;
+    }
+    
+    // Render to occluder texture with optimized settings
     pixiApp.renderer.render(occluderContainerRef.current, { 
       renderTexture: occluderRenderTargetRef.current, 
       clear: true 
@@ -992,8 +1004,24 @@ const PixiDemo = (props: PixiDemoProps) => {
       if (useOccluderMap) {
         console.log(`🌑 OCCLUDER MAP: Using occluder map for ${shadowCasters.length} shadow casters`);
         buildOccluderMap();
+        
+        // Update all shaders to use occluder map
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uUseOccluderMap = true;
+            shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+          }
+        });
       } else {
         console.log(`⚡ FAST SHADOWS: Using per-caster uniforms for ${shadowCasters.length} shadow casters`);
+        
+        // Update all shaders to use per-caster uniforms
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uUseOccluderMap = false;
+            shader.uniforms.uOccluderMap = PIXI.Texture.EMPTY;
+          }
+        });
       }
       
       if (useMultiPass && renderTargetRef.current && sceneContainerRef.current && displaySpriteRef.current) {

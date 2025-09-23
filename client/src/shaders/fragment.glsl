@@ -277,7 +277,9 @@ void main(void) {
     
     // Apply shadow calculation FIRST - blocks light completely in shadowed areas
     float shadowFactor = 1.0;
-    shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
+    if (uPoint0CastsShadows) {
+      shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
+    }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint0HasMask && shadowFactor >= 0.99) {
@@ -345,7 +347,9 @@ void main(void) {
     
     // Apply shadow calculation FIRST - blocks light completely in shadowed areas
     float shadowFactor = 1.0;
-    shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
+    if (uPoint2CastsShadows) {
+      shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
+    }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint2HasMask && shadowFactor >= 0.99) {
@@ -378,7 +382,9 @@ void main(void) {
     
     // Apply shadow calculation FIRST - blocks light completely in shadowed areas
     float shadowFactor = 1.0;
-    shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
+    if (uPoint3CastsShadows) {
+      shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
+    }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint3HasMask && shadowFactor >= 0.99) {
@@ -479,12 +485,7 @@ void main(void) {
     // Apply shadow calculation FIRST for spotlight
     float shadowFactor = 1.0;
     if (uSpot1CastsShadows) {
-      if (uShadowCaster0Enabled) {
-        shadowFactor *= calculateShadow(uSpot1Position.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
-      }
-      if (uShadowCaster1Enabled) {
-        shadowFactor *= calculateShadow(uSpot1Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
-      }
+      shadowFactor *= calculateShadowUnified(uSpot1Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -524,12 +525,7 @@ void main(void) {
     // Apply shadow calculation FIRST for spotlight
     float shadowFactor = 1.0;
     if (uSpot2CastsShadows) {
-      if (uShadowCaster0Enabled) {
-        shadowFactor *= calculateShadow(uSpot2Position.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
-      }
-      if (uShadowCaster1Enabled) {
-        shadowFactor *= calculateShadow(uSpot2Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
-      }
+      shadowFactor *= calculateShadowUnified(uSpot2Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -569,12 +565,7 @@ void main(void) {
     // Apply shadow calculation FIRST for spotlight
     float shadowFactor = 1.0;
     if (uSpot3CastsShadows) {
-      if (uShadowCaster0Enabled) {
-        shadowFactor *= calculateShadow(uSpot3Position.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
-      }
-      if (uShadowCaster1Enabled) {
-        shadowFactor *= calculateShadow(uSpot3Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
-      }
+      shadowFactor *= calculateShadowUnified(uSpot3Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
