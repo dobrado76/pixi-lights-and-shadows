@@ -6,6 +6,16 @@ import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import { ShaderParams } from '../App';
 import { Light, ShadowConfig } from '@shared/lights';
 
+// Shadow casting sprite interface
+interface ShadowCaster {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  castsShadows: boolean;
+}
+
 interface PixiDemoProps {
   shaderParams: ShaderParams;
   lightsConfig: Light[];
@@ -23,6 +33,101 @@ const PixiDemo = (props: PixiDemoProps) => {
   const [mousePos, setMousePos] = useState({ x: 200, y: 150 });
   const meshesRef = useRef<PIXI.Mesh[]>([]);
   const shadersRef = useRef<PIXI.Shader[]>([]);
+  const shadowMeshesRef = useRef<PIXI.Mesh[]>([]);
+  const shadowCastersRef = useRef<ShadowCaster[]>([]);
+
+  // Shadow geometry functions (moved to component level for reuse)
+  const createShadowGeometry = (caster: ShadowCaster, lightX: number, lightY: number, shadowLength: number = 100) => {
+    if (!caster.castsShadows) return null;
+    
+    // Get the four corners of the sprite rectangle
+    const corners = [
+      { x: caster.x, y: caster.y },                           // Top-left
+      { x: caster.x + caster.width, y: caster.y },            // Top-right  
+      { x: caster.x + caster.width, y: caster.y + caster.height }, // Bottom-right
+      { x: caster.x, y: caster.y + caster.height }            // Bottom-left
+    ];
+
+    // Project each corner away from the light
+    const projectedCorners = corners.map(corner => {
+      const dx = corner.x - lightX;
+      const dy = corner.y - lightY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < 0.1) return corner; // Avoid division by zero
+      
+      // Normalize and project
+      const normalizedX = dx / distance;
+      const normalizedY = dy / distance;
+      
+      return {
+        x: corner.x + normalizedX * shadowLength,
+        y: corner.y + normalizedY * shadowLength
+      };
+    });
+
+    // Create shadow quad vertices (original + projected)
+    const vertices: number[] = [];
+    
+    // Add original corners
+    corners.forEach(corner => {
+      vertices.push(corner.x, corner.y);
+    });
+    
+    // Add projected corners  
+    projectedCorners.forEach(corner => {
+      vertices.push(corner.x, corner.y);
+    });
+
+    // Create triangles to form shadow volume
+    // Shadow consists of 4 quads, one for each edge of the rectangle
+    const shadowIndices = [
+      // Edge 0->1 (top edge)
+      0, 1, 5,  0, 5, 4,
+      // Edge 1->2 (right edge)  
+      1, 2, 6,  1, 6, 5,
+      // Edge 2->3 (bottom edge)
+      2, 3, 7,  2, 7, 6,
+      // Edge 3->0 (left edge)
+      3, 0, 4,  3, 4, 7
+    ];
+
+    const geometry = new PIXI.Geometry();
+    geometry.addAttribute('aVertexPosition', vertices, 2);
+    geometry.addIndex(shadowIndices);
+    
+    return geometry;
+  };
+
+  // Create shadow mesh with basic black color
+  const createShadowMesh = (geometry: PIXI.Geometry, alpha: number = 0.3) => {
+    const shader = new PIXI.Shader(
+      PIXI.Program.from(
+        // Simple vertex shader for shadows
+        `
+        attribute vec2 aVertexPosition;
+        uniform mat3 projectionMatrix;
+        uniform mat3 translationMatrix;
+        
+        void main() {
+          gl_Position = vec4((projectionMatrix * translationMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
+        }
+        `,
+        // Simple fragment shader for shadows
+        `
+        precision mediump float;
+        uniform float uAlpha;
+        
+        void main() {
+          gl_Color = vec4(0.0, 0.0, 0.0, uAlpha);
+        }
+        `
+      ),
+      { uAlpha: alpha }
+    );
+    
+    return new PIXI.Mesh(geometry, shader as any);
+  };
   
   // Multi-pass rendering state
   const renderTargetRef = useRef<PIXI.RenderTexture | null>(null);
@@ -572,6 +677,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         geometry.addIndex(indices);
         return geometry;
       };
+
+      // Shadow functions moved to component level for reuse
       
       // Wait for textures to load, then use their actual dimensions
       await Promise.all([
@@ -587,6 +694,28 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       console.log('Ball actual dimensions:', ballDiffuse.width, ballDiffuse.height);
       console.log('Block actual dimensions:', blockDiffuse.width, blockDiffuse.height);
+
+      // Create shadow casters from sprite data
+      const shadowCasters: ShadowCaster[] = [
+        {
+          id: 'ball',
+          x: ballPos.x,
+          y: ballPos.y,
+          width: ballDiffuse.width,
+          height: ballDiffuse.height,
+          castsShadows: true
+        },
+        {
+          id: 'block',
+          x: blockPos.x,
+          y: blockPos.y,
+          width: blockDiffuse.width,
+          height: blockDiffuse.height,
+          castsShadows: true
+        }
+      ];
+
+      console.log('💡 Shadow casters created:', shadowCasters);
 
       // Ball shader and mesh
       const ballShader = PIXI.Shader.from(vertexShaderSource, spriteFragmentShader, {
@@ -628,7 +757,36 @@ const PixiDemo = (props: PixiDemoProps) => {
       blockMesh.x = 0;
       blockMesh.y = 0;
 
-      // Store references
+      // Create shadow rendering function
+      const renderShadows = (lights: Light[]) => {
+        if (!shadowConfig.enabled) return [];
+        
+        const shadowMeshes: PIXI.Mesh[] = [];
+        const enabledLights = lights.filter(light => light.enabled && light.castsShadows);
+        
+        console.log(`🌑 Creating shadows for ${enabledLights.length} lights`);
+        
+        enabledLights.forEach(light => {
+          if (light.type !== 'point') return; // Only point lights for now
+          
+          const lightX = light.followMouse ? mousePos.x : light.position.x;
+          const lightY = light.followMouse ? mousePos.y : light.position.y;
+          
+          shadowCasters.forEach(caster => {
+            const shadowGeometry = createShadowGeometry(caster, lightX, lightY, shadowConfig.maxLength || 200);
+            if (shadowGeometry) {
+              const shadowMesh = createShadowMesh(shadowGeometry, shadowConfig.strength || 0.3);
+              shadowMesh.blendMode = PIXI.BLEND_MODES.MULTIPLY; // Dark shadows blend multiplicatively
+              shadowMeshes.push(shadowMesh);
+              sceneContainerRef.current!.addChild(shadowMesh);
+            }
+          });
+        });
+        
+        return shadowMeshes;
+      };
+
+      // Store references (will be updated when shadows are created)
       meshesRef.current = [bgMesh, ballMesh, blockMesh];
       shadersRef.current = [bgShader, ballShader, blockShader];
 
@@ -637,6 +795,14 @@ const PixiDemo = (props: PixiDemoProps) => {
       sceneContainerRef.current!.addChild(bgMesh);
       sceneContainerRef.current!.addChild(ballMesh);
       sceneContainerRef.current!.addChild(blockMesh);
+
+      // Store shadow casters for dynamic updates
+      shadowCastersRef.current = shadowCasters;
+
+      // Render initial shadows
+      const initialShadowMeshes = renderShadows(lightsConfig);
+      shadowMeshesRef.current = initialShadowMeshes;
+      console.log(`🌑 Created ${initialShadowMeshes.length} shadow meshes`);
 
       console.log('PIXI demo setup completed successfully');
 
@@ -896,6 +1062,38 @@ const PixiDemo = (props: PixiDemoProps) => {
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
       setMousePos({ x, y });
+      
+      // Update shadows for mouse light dynamically
+      updateShadowsForMouseLight(x, y);
+    };
+
+    const updateShadowsForMouseLight = (mouseX: number, mouseY: number) => {
+      if (!shadowConfig.enabled || !sceneContainerRef.current) return;
+      
+      // Find mouse light in config
+      const mouseLight = lightsConfig.find(light => light.followMouse && light.enabled && light.castsShadows);
+      if (!mouseLight) return;
+      
+      // Remove old shadow meshes for mouse light (first light creates first 2 shadow meshes)
+      const mouseShadowMeshes = shadowMeshesRef.current.slice(0, 2);
+      mouseShadowMeshes.forEach(mesh => {
+        if (mesh.parent) mesh.parent.removeChild(mesh);
+      });
+      
+      // Create new shadow meshes for mouse light
+      const newMouseShadows: PIXI.Mesh[] = [];
+      shadowCastersRef.current.forEach(caster => {
+        const shadowGeometry = createShadowGeometry(caster, mouseX, mouseY, shadowConfig.maxLength || 200);
+        if (shadowGeometry) {
+          const shadowMesh = createShadowMesh(shadowGeometry, shadowConfig.strength || 0.3);
+          shadowMesh.blendMode = PIXI.BLEND_MODES.MULTIPLY;
+          newMouseShadows.push(shadowMesh);
+          sceneContainerRef.current!.addChild(shadowMesh);
+        }
+      });
+      
+      // Update shadow meshes array (replace first 2 with new ones)
+      shadowMeshesRef.current = [...newMouseShadows, ...shadowMeshesRef.current.slice(2)];
     };
 
     const canvas = pixiApp.view as HTMLCanvasElement;
