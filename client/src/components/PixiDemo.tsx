@@ -858,13 +858,13 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Texture uniforms will be set after textures are loaded
 
-      // Debug shadow uniforms
-      console.log('🌑 SHADOW SYSTEM UNIFORMS:', {
-        enabled: uniforms.uShadowsEnabled,
-        strength: uniforms.uShadowStrength,
-        caster0: uniforms.uShadowCaster0,
-        caster1: uniforms.uShadowCaster1
-      });
+      // Debug shadow uniforms (disabled for performance)
+      // console.log('🌑 SHADOW SYSTEM UNIFORMS:', {
+      //   enabled: uniforms.uShadowsEnabled,
+      //   strength: uniforms.uShadowStrength,
+      //   caster0: uniforms.uShadowCaster0,
+      //   caster1: uniforms.uShadowCaster1
+      // });
       
       // Point Lights (up to 4) - pass ALL lights with stable slot assignment
       allPointLights.slice(0, 4).forEach((light, slotIdx) => {
@@ -881,13 +881,13 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
         uniforms[`${prefix}Radius`] = light.radius || 200;
         
-        // Debug: Log exact uniform values being set
-        console.log(`🔦 ${prefix} UNIFORM VALUES:`, {
-          position: uniforms[`${prefix}Position`],
-          color: uniforms[`${prefix}Color`],
-          intensity: uniforms[`${prefix}Intensity`],
-          radius: uniforms[`${prefix}Radius`]
-        });
+        // Debug: Log exact uniform values being set (disabled for performance)
+        // console.log(`🔦 ${prefix} UNIFORM VALUES:`, {
+        //   position: uniforms[`${prefix}Position`],
+        //   color: uniforms[`${prefix}Color`],
+        //   intensity: uniforms[`${prefix}Intensity`],
+        //   radius: uniforms[`${prefix}Radius`]
+        // });
         
         // Handle mask
         if (light.mask) {
@@ -968,34 +968,34 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uShadowStrength = shadowConfig.strength; // Global shadow strength/opacity
       uniforms.uShadowSharpness = shadowConfig.sharpness ?? 0.5; // Shadow sharpness (0=soft, 1=sharp)
       
-      // Debug: Log ambient light uniforms
-      console.log(`🌅 AMBIENT LIGHT VALUES:`, {
-        intensity: ambientLight.intensity,
-        color: ambientLight.color,
-        uniformIntensity: uniforms.uAmbientLight,
-        uniformColor: uniforms.uAmbientColor
-      });
+      // Debug: Log ambient light uniforms (disabled for performance)
+      // console.log(`🌅 AMBIENT LIGHT VALUES:`, {
+      //   intensity: ambientLight.intensity,
+      //   color: ambientLight.color,
+      //   uniformIntensity: uniforms.uAmbientLight,
+      //   uniformColor: uniforms.uAmbientColor
+      // });
       
       return uniforms;
     };
 
     const updatedUniforms = createLightUniforms();
 
-    // DEBUG: Log point light uniform details
-    const pointUniforms = Object.keys(updatedUniforms).filter(key => key.includes('Point'));
-    console.log('🔧 POINT LIGHT UNIFORMS:', pointUniforms.length);
-    pointUniforms.forEach(key => {
-      if (key.includes('Enabled')) {
-        console.log(`   ${key}: ${updatedUniforms[key]}`);
-      }
-    });
+    // DEBUG: Log point light uniform details (disabled for performance)
+    // const pointUniforms = Object.keys(updatedUniforms).filter(key => key.includes('Point'));
+    // console.log('🔧 POINT LIGHT UNIFORMS:', pointUniforms.length);
+    // pointUniforms.forEach(key => {
+    //   if (key.includes('Enabled')) {
+    //     console.log(`   ${key}: ${updatedUniforms[key]}`);
+    //   }
+    // });
 
-    // Debug shadow casting flags
-    const shadowUniforms = Object.keys(updatedUniforms).filter(key => key.includes('CastsShadows'));
-    console.log('🌑 SHADOW CASTING FLAGS:', shadowUniforms.length);
-    shadowUniforms.forEach(key => {
-      console.log(`   ${key}: ${updatedUniforms[key]}`);
-    });
+    // Debug shadow casting flags (disabled for performance)
+    // const shadowUniforms = Object.keys(updatedUniforms).filter(key => key.includes('CastsShadows'));
+    // console.log('🌑 SHADOW CASTING FLAGS:', shadowUniforms.length);
+    // shadowUniforms.forEach(key => {
+    //   console.log(`   ${key}: ${updatedUniforms[key]}`);
+    // });
 
     // Apply all uniform updates to all shaders
     shadersRef.current.forEach(shader => {
@@ -1017,7 +1017,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       const useOccluderMap = shadowCasters.length > 4;
       
       if (useOccluderMap) {
-        console.log(`🌑 OCCLUDER MAP: Using occluder map for ${shadowCasters.length} shadow casters`);
+        // console.log(`🌑 OCCLUDER MAP: Using occluder map for ${shadowCasters.length} shadow casters`);
         buildOccluderMap();
         
         // Update all shaders to use occluder map
@@ -1028,7 +1028,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           }
         });
       } else {
-        console.log(`⚡ FAST SHADOWS: Using per-caster uniforms for ${shadowCasters.length} shadow casters`);
+        // console.log(`⚡ FAST SHADOWS: Using per-caster uniforms for ${shadowCasters.length} shadow casters`);
         
         // Update all shaders to use per-caster uniforms
         shadersRef.current.forEach(shader => {
@@ -1040,10 +1040,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
       
       if (useMultiPass && renderTargetRef.current && sceneContainerRef.current && displaySpriteRef.current) {
-        console.log(`🚀 MULTI-PASS: Rendering ${lightCount} lights with multi-pass architecture (${Math.ceil(lightCount/8)} passes)`);
+        // console.log(`🚀 MULTI-PASS: Rendering ${lightCount} lights with multi-pass architecture (${Math.ceil(lightCount/8)} passes`);
         renderMultiPass(lightsConfig);
       } else {
-        console.log(`⚡ SINGLE-PASS: Rendering ${lightCount} lights directly to screen (≤8 lights)`);
+        // console.log(`⚡ SINGLE-PASS: Rendering ${lightCount} lights directly to screen (≤8 lights)`);
         // Single-pass: Ensure meshes are on main stage and render directly
         meshesRef.current.forEach(mesh => {
           mesh.blendMode = PIXI.BLEND_MODES.NORMAL;
