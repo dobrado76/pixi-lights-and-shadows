@@ -371,17 +371,8 @@ void main(void) {
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    // FIX: Handle severely corrupted normals only, preserve surface details
-    vec3 safeNormal = normal;
-    
-    // Only fix extremely broken normals (diagonal stripes), preserve surface bumps
-    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0 || any(isnan(safeNormal))) {
-      safeNormal = vec3(0.0, 0.0, 1.0); // Flat surface normal
-    } else {
-      safeNormal = normalize(safeNormal); // Normalize valid normals
-    }
-    
-    float normalDot = max(dot(safeNormal, lightDir), 0.0);
+    // Clean normal mapping without validation gymnastics
+    float normalDot = max(dot(normal, lightDir), 0.0);
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
@@ -567,14 +558,8 @@ void main(void) {
     float inner = cos(radians(uSpot0ConeAngle * (1.0 - uSpot0Softness)));
     float spotFactor = smoothstep(outer, inner, cosAng);
     
-    // Lambert lighting with gentle normal validation
-    vec3 safeNormal = normal;
-    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0 || any(isnan(safeNormal))) {
-      safeNormal = vec3(0.0, 0.0, 1.0);
-    } else {
-      safeNormal = normalize(safeNormal);
-    }
-    float lambert = max(dot(safeNormal, L), 0.0);
+    // Clean Lambert lighting
+    float lambert = max(dot(normal, L), 0.0);
     float intensity = lambert * uSpot0Intensity * atten * spotFactor;
     
     // Apply shadow calculation FIRST for spotlight
@@ -615,14 +600,8 @@ void main(void) {
     float inner = cos(radians(uSpot1ConeAngle * (1.0 - uSpot1Softness)));
     float spotFactor = smoothstep(outer, inner, cosAng);
     
-    // Lambert lighting with gentle normal validation
-    vec3 safeNormal = normal;
-    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0 || any(isnan(safeNormal))) {
-      safeNormal = vec3(0.0, 0.0, 1.0);
-    } else {
-      safeNormal = normalize(safeNormal);
-    }
-    float lambert = max(dot(safeNormal, L), 0.0);
+    // Clean Lambert lighting
+    float lambert = max(dot(normal, L), 0.0);
     float intensity = lambert * uSpot1Intensity * atten * spotFactor;
     
     // Apply shadow calculation FIRST for spotlight
@@ -663,14 +642,8 @@ void main(void) {
     float inner = cos(radians(uSpot2ConeAngle * (1.0 - uSpot2Softness)));
     float spotFactor = smoothstep(outer, inner, cosAng);
     
-    // Lambert lighting with gentle normal validation
-    vec3 safeNormal = normal;
-    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0 || any(isnan(safeNormal))) {
-      safeNormal = vec3(0.0, 0.0, 1.0);
-    } else {
-      safeNormal = normalize(safeNormal);
-    }
-    float lambert = max(dot(safeNormal, L), 0.0);
+    // Clean Lambert lighting
+    float lambert = max(dot(normal, L), 0.0);
     float intensity = lambert * uSpot2Intensity * atten * spotFactor;
     
     // Apply shadow calculation FIRST for spotlight
@@ -711,14 +684,8 @@ void main(void) {
     float inner = cos(radians(uSpot3ConeAngle * (1.0 - uSpot3Softness)));
     float spotFactor = smoothstep(outer, inner, cosAng);
     
-    // Lambert lighting with gentle normal validation
-    vec3 safeNormal = normal;
-    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0 || any(isnan(safeNormal))) {
-      safeNormal = vec3(0.0, 0.0, 1.0);
-    } else {
-      safeNormal = normalize(safeNormal);
-    }
-    float lambert = max(dot(safeNormal, L), 0.0);
+    // Clean Lambert lighting
+    float lambert = max(dot(normal, L), 0.0);
     float intensity = lambert * uSpot3Intensity * atten * spotFactor;
     
     // Apply shadow calculation FIRST for spotlight
