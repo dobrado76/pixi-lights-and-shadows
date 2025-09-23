@@ -41,20 +41,7 @@ uniform bool uSpot1HasMask; uniform sampler2D uSpot1Mask; uniform vec2 uSpot1Mas
 uniform bool uSpot2HasMask; uniform sampler2D uSpot2Mask; uniform vec2 uSpot2MaskOffset; uniform float uSpot2MaskRotation; uniform float uSpot2MaskScale; uniform vec2 uSpot2MaskSize;
 uniform bool uSpot3HasMask; uniform sampler2D uSpot3Mask; uniform vec2 uSpot3MaskOffset; uniform float uSpot3MaskRotation; uniform float uSpot3MaskScale; uniform vec2 uSpot3MaskSize;
 
-// Shadow Casting Flags
-uniform bool uPoint0CastsShadows; uniform bool uPoint1CastsShadows; uniform bool uPoint2CastsShadows; uniform bool uPoint3CastsShadows;
-uniform bool uDir0CastsShadows; uniform bool uDir1CastsShadows;
-uniform bool uSpot0CastsShadows; uniform bool uSpot1CastsShadows; uniform bool uSpot2CastsShadows; uniform bool uSpot3CastsShadows;
-
-// Sprite Shadow Properties
-uniform bool uSpriteCastsShadows;
-uniform bool uSpriteReceivesShadows;
-uniform float uShadowHeight; // Height of the sprite for shadow calculation
-uniform float uShadowMaxLength; // Maximum shadow length to prevent very long shadows
-
-// Global Shadow Configuration
-uniform bool uShadowsEnabled; // Global shadow enable/disable
-uniform float uShadowStrength; // Global shadow strength/opacity (0.0 - 1.0)
+// Shadow uniforms removed - shadows now handled in separate pass
 
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
@@ -83,79 +70,7 @@ float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offse
   return texture2D(maskTexture, maskUV).r; // Use red channel as mask
 }
 
-// Simple 2D shadow projection (no height complications)
-vec2 projectShadowPoint2D(vec2 lightPos, vec2 pixelPos) {
-  // Simple 2D shadow: project away from light direction with fixed length
-  vec2 direction = normalize(pixelPos - lightPos);
-  float shadowLength = min(uShadowMaxLength, 100.0); // Fixed base length
-  return direction * shadowLength;
-}
-
-vec2 projectShadowDirectional(vec3 lightDirection, float spriteHeight) {
-  // For directional lights: v = -(D.xy/D.z)*h
-  // where D = light direction, h = sprite height
-  if (lightDirection.z >= 0.0) {
-    return vec2(0.0, 0.0); // Light pointing away, no shadow
-  }
-  
-  vec2 shadowVector = -(lightDirection.xy / lightDirection.z) * spriteHeight;
-  // Clamp shadow length to prevent extremely long shadows
-  float shadowLength = length(shadowVector);
-  if (shadowLength > uShadowMaxLength) {
-    shadowVector = normalize(shadowVector) * uShadowMaxLength;
-  }
-  return shadowVector;
-}
-
-float computeShadowSoftnessFromZ(float lightZ) {
-  // Z-depth rules: No shadows if Z < -25, soft shadows from -25 to 25, sharp if Z > 25
-  if (lightZ < -25.0) {
-    return 0.0; // No shadows
-  } else if (lightZ <= 25.0) {
-    return 1.0 - (abs(lightZ) / 25.0); // Soft shadows, closer = softer
-  } else {
-    return 0.0; // Sharp shadows (but using 0.0 for now to distinguish from soft)
-  }
-}
-
-float computeShadowSoftnessFromDirection(vec3 lightDirection) {
-  // For directional lights, use direction Z component to determine softness
-  return clamp(1.0 - abs(lightDirection.z), 0.0, 1.0);
-}
-
-float applyShadow(vec2 shadowVector, vec2 currentUV, float softness) {
-  // Global shadow disable check + sprite shadow gating
-  if (!uShadowsEnabled || !uSpriteCastsShadows) {
-    return 1.0; // Shadows disabled or sprite doesn't cast shadows
-  }
-  
-  // Add minimum bias to prevent self-shadowing artifacts
-  float shadowLength = length(shadowVector);
-  float minBias = 0.02; // Minimum offset to prevent self-shadowing
-  if (shadowLength < minBias) {
-    return 1.0; // Too close to self, no shadow
-  }
-  
-  // Sample the texture at the shadow offset to determine occlusion
-  // Fixed: Use + instead of - to sample in correct direction (light->pixel)
-  vec2 shadowUV = currentUV + (shadowVector / uSpriteSize);
-  
-  // Check if shadow UV is within bounds
-  if (shadowUV.x < 0.0 || shadowUV.x > 1.0 || shadowUV.y < 0.0 || shadowUV.y > 1.0) {
-    return 1.0; // No occlusion if outside sprite bounds
-  }
-  
-  // Sample alpha at shadow position to determine occlusion
-  float occluderAlpha = texture2D(uDiffuse, shadowUV).a;
-  
-  // Apply softness to the shadow edge
-  float rawShadowAmount = occluderAlpha * (1.0 - softness * 0.5);
-  
-  // Apply global shadow strength
-  float finalShadowAmount = rawShadowAmount * uShadowStrength;
-  
-  return 1.0 - finalShadowAmount; // Return light multiplier (1.0 = no shadow, 0.0 = full shadow)
-}
+// Shadow functions removed - shadows now handled in separate pass
 
 void main(void) {
   vec2 uv = vTextureCoord;
@@ -202,18 +117,7 @@ void main(void) {
       intensity *= maskValue; // Multiply light intensity by mask
     }
     
-    // Apply shadows if enabled (light casts shadows and this sprite receives them)
-    if (uPoint0CastsShadows && uSpriteReceivesShadows) {
-      float softness = computeShadowSoftnessFromZ(lightPos3D.z);
-      if (lightPos3D.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
-      } else {
-        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint2D(lightPos3D.xy, worldPos.xy);
-        float shadowMultiplier = applyShadow(shadowVector, uv, softness);
-        intensity *= shadowMultiplier;
-      }
-    }
+    // Shadow logic removed - handled in separate pass
     
     finalColor += diffuseColor.rgb * uPoint0Color * intensity;
   }
@@ -238,18 +142,7 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Apply shadows if enabled (light casts shadows and this sprite receives them)
-    if (uPoint1CastsShadows && uSpriteReceivesShadows) {
-      float softness = computeShadowSoftnessFromZ(uPoint1Position.z);
-      if (uPoint1Position.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
-      } else {
-        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint2D(uPoint1Position.xy, worldPos.xy);
-        float shadowMultiplier = applyShadow(shadowVector, uv, softness);
-        intensity *= shadowMultiplier;
-      }
-    }
+    // Shadow logic removed - handled in separate pass
     
     finalColor += diffuseColor.rgb * uPoint1Color * intensity;
   }
@@ -260,9 +153,6 @@ void main(void) {
     vec3 lightDir3D = lightPos3D - worldPos3D;
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
-    
-    float attenuation;
-    float normalDot;
     
     // Removed Y-flip branch that was causing triangular light shapes
     float attenuation = 1.0 - clamp(lightDistance / uPoint2Radius, 0.0, 1.0);
@@ -277,18 +167,7 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Apply shadows if enabled (light casts shadows and this sprite receives them)
-    if (uPoint2CastsShadows && uSpriteReceivesShadows) {
-      float softness = computeShadowSoftnessFromZ(lightPos3D.z);
-      if (lightPos3D.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
-      } else {
-        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint2D(lightPos3D.xy, worldPos.xy);
-        float shadowMultiplier = applyShadow(shadowVector, uv, softness);
-        intensity *= shadowMultiplier;
-      }
-    }
+    // Shadow logic removed - handled in separate pass
     
     finalColor += diffuseColor.rgb * uPoint2Color * intensity;
   }
@@ -299,9 +178,6 @@ void main(void) {
     vec3 lightDir3D = lightPos3D - worldPos3D;
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
-    
-    float attenuation;
-    float normalDot;
     
     // Removed Y-flip branch that was causing triangular light shapes
     float attenuation = 1.0 - clamp(lightDistance / uPoint3Radius, 0.0, 1.0);
@@ -316,18 +192,7 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Apply shadows if enabled (light casts shadows and this sprite receives them)
-    if (uPoint3CastsShadows && uSpriteReceivesShadows) {
-      float softness = computeShadowSoftnessFromZ(lightPos3D.z);
-      if (lightPos3D.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
-      } else {
-        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint2D(lightPos3D.xy, worldPos.xy);
-        float shadowMultiplier = applyShadow(shadowVector, uv, softness);
-        intensity *= shadowMultiplier;
-      }
-    }
+    // Shadow logic removed - handled in separate pass
     
     finalColor += diffuseColor.rgb * uPoint3Color * intensity;
   }
@@ -379,18 +244,7 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Apply shadows if enabled (only within spotlight cone)
-    if (uSpot0CastsShadows && uSpriteReceivesShadows && coneFactor > 0.0) {
-      float shadowSoftness = computeShadowSoftnessFromZ(spotlightLightPos3D.z);
-      if (spotlightLightPos3D.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
-      } else {
-        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint2D(spotlightLightPos3D.xy, worldPos.xy);
-        float shadowMultiplier = applyShadow(shadowVector, uv, shadowSoftness);
-        intensity *= shadowMultiplier;
-      }
-    }
+    // Shadow logic removed - handled in separate pass
     
     finalColor += diffuseColor.rgb * uSpot0Color * intensity;
   }
@@ -420,18 +274,7 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Apply shadows if enabled (only within spotlight cone)
-    if (uSpot1CastsShadows && uSpriteReceivesShadows && coneFactor > 0.0) {
-      float shadowSoftness = computeShadowSoftnessFromZ(spotlightLightPos3D.z);
-      if (spotlightLightPos3D.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
-      } else {
-        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint2D(spotlightLightPos3D.xy, worldPos.xy);
-        float shadowMultiplier = applyShadow(shadowVector, uv, shadowSoftness);
-        intensity *= shadowMultiplier;
-      }
-    }
+    // Shadow logic removed - handled in separate pass
     
     finalColor += diffuseColor.rgb * uSpot1Color * intensity;
   }
@@ -461,18 +304,7 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Apply shadows if enabled (only within spotlight cone)
-    if (uSpot2CastsShadows && uSpriteReceivesShadows && coneFactor > 0.0) {
-      float shadowSoftness = computeShadowSoftnessFromZ(spotlightLightPos3D.z);
-      if (spotlightLightPos3D.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
-      } else {
-        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint2D(spotlightLightPos3D.xy, worldPos.xy);
-        float shadowMultiplier = applyShadow(shadowVector, uv, shadowSoftness);
-        intensity *= shadowMultiplier;
-      }
-    }
+    // Shadow logic removed - handled in separate pass
     
     finalColor += diffuseColor.rgb * uSpot2Color * intensity;
   }
@@ -502,18 +334,7 @@ void main(void) {
       intensity *= maskValue;
     }
     
-    // Apply shadows if enabled (only within spotlight cone)
-    if (uSpot3CastsShadows && uSpriteReceivesShadows && coneFactor > 0.0) {
-      float shadowSoftness = computeShadowSoftnessFromZ(spotlightLightPos3D.z);
-      if (spotlightLightPos3D.z < -25.0) {
-        intensity = 0.0; // No light if Z < -25 (complete shadow)
-      } else {
-        // Calculate shadows for all Z >= -25 (soft shadows -25 to 25, sharp shadows > 25)
-        vec2 shadowVector = projectShadowPoint2D(spotlightLightPos3D.xy, worldPos.xy);
-        float shadowMultiplier = applyShadow(shadowVector, uv, shadowSoftness);
-        intensity *= shadowMultiplier;
-      }
-    }
+    // Shadow logic removed - handled in separate pass
     
     finalColor += diffuseColor.rgb * uSpot3Color * intensity;
   }
