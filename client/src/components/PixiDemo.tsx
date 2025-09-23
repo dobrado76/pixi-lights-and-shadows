@@ -499,8 +499,8 @@ const PixiDemo = (props: PixiDemoProps) => {
             const prefix = `uPoint${slotIdx}`;
             console.log(`   Setting ${prefix} for light: ${light.id} (slot ${slotIdx}, enabled: ${light.enabled})`);
             
-            // Always set the light data, but use intensity=0 for disabled lights
-            uniforms[`${prefix}Enabled`] = light.enabled;
+            // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
+            uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
             uniforms[`${prefix}Position`] = [
               light.followMouse ? mousePos.x : light.position.x,
               light.followMouse ? mousePos.y : light.position.y,
