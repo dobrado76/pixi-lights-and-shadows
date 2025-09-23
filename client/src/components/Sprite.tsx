@@ -3,6 +3,18 @@ import * as PIXI from 'pixi.js';
 export interface SpriteDefinition {
   type: 'background' | 'sprite';
   image: string;
+  normal?: string;
+  position?: { x: number; y: number };
+  rotation?: number;
+  scale?: number;
+  castsShadows?: boolean;
+  receiveShadows?: boolean;
+}
+
+// Internal interface with all fields required (after applying defaults)
+interface CompleteSpriteDefinition {
+  type: 'background' | 'sprite';
+  image: string;
   normal: string;
   position: { x: number; y: number };
   rotation: number;
@@ -19,7 +31,7 @@ export interface SpriteTransform {
 
 export class SceneSprite {
   public id: string;
-  public definition: SpriteDefinition;
+  public definition: CompleteSpriteDefinition;
   public mesh: PIXI.Mesh | null = null;
   public shader: PIXI.Shader | null = null;
   public geometry: PIXI.Geometry | null = null;
@@ -28,24 +40,44 @@ export class SceneSprite {
 
   constructor(id: string, definition: SpriteDefinition) {
     this.id = id;
-    this.definition = definition;
+    // Apply defaults for optional fields, ensuring all fields are set
+    this.definition = {
+      type: definition.type,
+      image: definition.image,
+      normal: definition.normal || '', // Empty string as default
+      position: definition.position || { x: 0, y: 0 },
+      rotation: definition.rotation || 0,
+      scale: definition.scale || 1,
+      castsShadows: definition.castsShadows ?? true, // Default true
+      receiveShadows: definition.receiveShadows ?? true // Default true
+    };
   }
 
   async loadTextures(): Promise<void> {
     this.diffuseTexture = PIXI.Texture.from(this.definition.image);
-    this.normalTexture = PIXI.Texture.from(this.definition.normal);
+    
+    // Load normal texture only if provided, otherwise use white (default normal)
+    if (this.definition.normal && this.definition.normal !== '') {
+      this.normalTexture = PIXI.Texture.from(this.definition.normal);
+    } else {
+      this.normalTexture = PIXI.Texture.WHITE; // Default normal texture
+    }
     
     // Wait for textures to load
-    await Promise.all([
-      new Promise(resolve => {
-        if (this.diffuseTexture!.baseTexture.valid) resolve(true);
-        else this.diffuseTexture!.baseTexture.on('loaded', resolve);
-      }),
-      new Promise(resolve => {
+    const promises = [new Promise(resolve => {
+      if (this.diffuseTexture!.baseTexture.valid) resolve(true);
+      else this.diffuseTexture!.baseTexture.on('loaded', resolve);
+    })];
+    
+    // Only wait for normal texture if it's not the default white texture
+    if (this.definition.normal && this.definition.normal !== '') {
+      promises.push(new Promise(resolve => {
         if (this.normalTexture!.baseTexture.valid) resolve(true);
         else this.normalTexture!.baseTexture.on('loaded', resolve);
-      })
-    ]);
+      }));
+    }
+    
+    await Promise.all(promises);
   }
 
   createGeometry(): PIXI.Geometry {

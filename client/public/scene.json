@@ -2,8 +2,9 @@
   "scene": {
     "background": {
       "type": "background",
-      "image": "/BGTextureTest.jpg",
-      "normal": "/BGTextureNORM.jpg",
+      "image-": "/BGTextureTest.jpg",
+      "image": "/white-fabric-texture-background.jpg",
+      "normal-": "/BGTextureNORM.jpg",
       "position": {"x": 0, "y": 0},
       "rotation": 0,
       "scale": 1,
