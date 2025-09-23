@@ -411,7 +411,17 @@ void main(void) {
     float normalDot = max(dot(normal, lightDir), 0.0);
     float intensity = normalDot * uDir0Intensity;
     
-    // Directional light shadows disabled for now (user request)
+    // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
+    float shadowFactor = 1.0;
+    if (uDir0CastsShadows) {
+      // Compute virtual light position as if light comes from infinite distance
+      // This makes all shadow rays parallel, simulating sun/moon lighting
+      float infiniteDistance = 10000.0; // Very large distance
+      vec2 virtualLightPos = worldPos.xy - uDir0Direction.xy * infiniteDistance;
+      shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
+    }
+    
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uDir0Color * intensity;
   }
@@ -422,7 +432,17 @@ void main(void) {
     float normalDot = max(dot(normal, lightDir), 0.0);
     float intensity = normalDot * uDir1Intensity;
     
-    // Directional light shadows disabled for now (user request)
+    // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
+    float shadowFactor = 1.0;
+    if (uDir1CastsShadows) {
+      // Compute virtual light position as if light comes from infinite distance
+      // This makes all shadow rays parallel, simulating sun/moon lighting
+      float infiniteDistance = 10000.0; // Very large distance
+      vec2 virtualLightPos = worldPos.xy - uDir1Direction.xy * infiniteDistance;
+      shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
+    }
+    
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uDir1Color * intensity;
   }
