@@ -478,11 +478,10 @@ const PixiDemo = (props: PixiDemoProps) => {
         const createLightUniforms = () => {
           const uniforms: any = {};
           
-          // Get all enabled lights by type
-          const enabledLights = lightsConfig.filter(light => light.enabled);
-          const pointLights = enabledLights.filter(light => light.type === 'point');
-          const directionalLights = enabledLights.filter(light => light.type === 'directional');
-          const spotlights = enabledLights.filter(light => light.type === 'spotlight');
+          // Get all lights by type (enabled and disabled - let shader handle via intensity)
+          const allPointLights = lightsConfig.filter(light => light.type === 'point');
+          const enabledDirectionalLights = lightsConfig.filter(light => light.type === 'directional' && light.enabled);
+          const enabledSpotlights = lightsConfig.filter(light => light.type === 'spotlight' && light.enabled);
           
           // Initialize all lights as disabled
           uniforms.uPoint0Enabled = false; uniforms.uPoint1Enabled = false; uniforms.uPoint2Enabled = false; uniforms.uPoint3Enabled = false;
@@ -493,34 +492,22 @@ const PixiDemo = (props: PixiDemoProps) => {
           uniforms.uPoint0HasMask = false; uniforms.uPoint1HasMask = false; uniforms.uPoint2HasMask = false; uniforms.uPoint3HasMask = false;
           uniforms.uSpot0HasMask = false; uniforms.uSpot1HasMask = false; uniforms.uSpot2HasMask = false; uniforms.uSpot3HasMask = false;
           
-          // Point Lights (up to 4) - use stable slot assignment
-          console.log(`🔍 PROCESSING ${pointLights.length} POINT LIGHTS:`, pointLights.map(l => l.id));
+          // Point Lights (up to 4) - pass ALL lights with stable slot assignment
+          console.log(`🔍 PROCESSING ${allPointLights.length} POINT LIGHTS (all):`, allPointLights.map(l => `${l.id}(${l.enabled ? 'ON' : 'OFF'})`));
           
-          // Create a mapping of light IDs to stable uniform slots
-          const lightIdToSlot = new Map<string, number>();
-          let slotIndex = 0;
-          
-          // FIXED: Only assign slots to ENABLED lights in the original config order (for stability)
-          lightsConfig.filter(light => light.type === 'point' && light.enabled).forEach(light => {
-            if (slotIndex < 4) {
-              lightIdToSlot.set(light.id, slotIndex);
-              slotIndex++;
-            }
-          });
-          
-          pointLights.slice(0, 4).forEach((light) => {
-            const slotIdx = lightIdToSlot.get(light.id);
-            if (slotIdx !== undefined) {
-              const prefix = `uPoint${slotIdx}`;
-              console.log(`   Setting ${prefix}Enabled = true for light: ${light.id} (stable slot ${slotIdx})`);
-              uniforms[`${prefix}Enabled`] = true;
+          allPointLights.slice(0, 4).forEach((light, slotIdx) => {
+            const prefix = `uPoint${slotIdx}`;
+            console.log(`   Setting ${prefix} for light: ${light.id} (slot ${slotIdx}, enabled: ${light.enabled})`);
+            
+            // Always set the light data, but use intensity=0 for disabled lights
+            uniforms[`${prefix}Enabled`] = light.enabled;
             uniforms[`${prefix}Position`] = [
               light.followMouse ? mousePos.x : light.position.x,
               light.followMouse ? mousePos.y : light.position.y,
               light.position.z
             ];
             uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
-            uniforms[`${prefix}Intensity`] = light.intensity;
+            uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
             uniforms[`${prefix}Radius`] = light.radius || 200;
             
             // Handle mask
@@ -554,11 +541,10 @@ const PixiDemo = (props: PixiDemoProps) => {
             } else {
               uniforms[`${prefix}HasMask`] = false;
             }
-            }
           });
           
           // Directional Lights (up to 2)
-          directionalLights.slice(0, 2).forEach((light, i) => {
+          enabledDirectionalLights.slice(0, 2).forEach((light, i) => {
             const prefix = `uDir${i}`;
             uniforms[`${prefix}Enabled`] = true;
             uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
@@ -567,7 +553,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           });
           
           // Spotlights (up to 4)
-          spotlights.slice(0, 4).forEach((light, i) => {
+          enabledSpotlights.slice(0, 4).forEach((light, i) => {
             const prefix = `uSpot${i}`;
             uniforms[`${prefix}Enabled`] = true;
             uniforms[`${prefix}Position`] = [
@@ -616,12 +602,11 @@ const PixiDemo = (props: PixiDemoProps) => {
           });
 
           console.log('DEBUG: All lights config:', lightsConfig.map(l => ({id: l.id, type: l.type, enabled: l.enabled})));
-          console.log('DEBUG: Enabled lights:', enabledLights.map(l => ({id: l.id, type: l.type})));
-          console.log('DEBUG: Point lights found:', pointLights.map(l => ({id: l.id, enabled: l.enabled})));
+          console.log('DEBUG: Point lights found (all):', allPointLights.map(l => ({id: l.id, enabled: l.enabled})));
           console.log('Expanded Lights:', { 
-            pointLights: pointLights.length, 
-            directionalLights: directionalLights.length, 
-            spotlights: spotlights.length 
+            pointLights: allPointLights.length, 
+            directionalLights: enabledDirectionalLights.length, 
+            spotlights: enabledSpotlights.length 
           });
 
           return uniforms;
