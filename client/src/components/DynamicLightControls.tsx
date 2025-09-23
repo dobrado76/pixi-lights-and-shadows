@@ -376,7 +376,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
       {localLights.map((light) => {
         // Calculate angle from direction for directional lights
         const directionAngle = light.type === 'directional' 
-          ? Math.atan2(light.direction.y, light.direction.x) * 180 / Math.PI + 180
+          ? Math.atan2(light.direction.y, light.direction.x) * 180 / Math.PI - 180
           : 0;
 
         return (
@@ -576,7 +576,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
                         value={directionAngle}
                         onChange={(e) => {
                           const angle = parseFloat(e.target.value);
-                          const radians = (angle - 180) * Math.PI / 180;
+                          const radians = (angle + 180) * Math.PI / 180;
                           updateLight(light.id, { 
                             direction: { 
                               x: Math.cos(radians), 
