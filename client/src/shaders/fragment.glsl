@@ -499,9 +499,9 @@ void main(void) {
   
   // Directional Light 0
   if (uDir0Enabled) {
-    // Convert direction from UI space (+Y down) to shader space, then flip 180° for correct lighting
-    vec3 dir = normalize(vec3(uDir0Direction.x, -uDir0Direction.y, uDir0Direction.z));
-    vec3 L = dir; // Flip lighting direction 180° to match shadows
+    // Flip direction 180° to match shadow direction, then convert and negate
+    vec3 dir = normalize(vec3(-uDir0Direction.x, uDir0Direction.y, uDir0Direction.z));
+    vec3 L = -dir; // Incoming light direction (negative of light travel direction)
     float lambert = max(dot(normal, L), 0.0);
     float intensity = lambert * uDir0Intensity;
     
@@ -522,9 +522,9 @@ void main(void) {
   
   // Directional Light 1
   if (uDir1Enabled) {
-    // Convert direction from UI space (+Y down) to shader space, then flip 180° for correct lighting  
-    vec3 dir = normalize(vec3(uDir1Direction.x, -uDir1Direction.y, uDir1Direction.z));
-    vec3 L = dir; // Flip lighting direction 180° to match shadows
+    // Flip direction 180° to match shadow direction, then convert and negate
+    vec3 dir = normalize(vec3(-uDir1Direction.x, uDir1Direction.y, uDir1Direction.z));
+    vec3 L = -dir; // Incoming light direction (negative of light travel direction)
     float lambert = max(dot(normal, L), 0.0);
     float intensity = lambert * uDir1Intensity;
     
