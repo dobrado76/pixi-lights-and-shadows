@@ -76,40 +76,57 @@ float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offse
   return texture2D(maskTexture, maskUV).r; // Use red channel as mask
 }
 
-// Shadow calculation function - ray-rectangle intersection
+// Shadow calculation function - improved ray-rectangle intersection
 float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster) {
   if (!uShadowsEnabled) return 1.0;
   
-  // Extract caster bounds
-  vec2 casterMin = caster.xy;
-  vec2 casterMax = caster.xy + caster.zw;
+  // Extract caster bounds with padding for more visible shadows
+  vec2 casterMin = caster.xy - 20.0;
+  vec2 casterMax = caster.xy + caster.zw + 20.0;
+  vec2 casterCenter = (casterMin + casterMax) * 0.5;
   
-  // Check if pixel is behind the caster relative to light
+  // Vector from light to pixel and to caster center
   vec2 lightToPixel = pixelPos - lightPos;
-  vec2 lightToCaster = (casterMin + casterMax) * 0.5 - lightPos; // Center of caster
+  vec2 lightToCenter = casterCenter - lightPos;
   
-  // Simple shadow test: if pixel is further from light than caster center and in same general direction
+  // Distance check - pixel must be further than caster
   float pixelDist = length(lightToPixel);
-  float casterDist = length(lightToCaster);
+  float centerDist = length(lightToCenter);
   
-  // Check if ray from light to pixel intersects caster rectangle
-  // Normalize directions
-  vec2 lightToPixelDir = normalize(lightToPixel);
-  vec2 lightToCasterDir = normalize(lightToCaster);
+  if (pixelDist <= centerDist) return 1.0; // Pixel is in front of caster
   
-  // Simple angular test + distance test
-  float angleDiff = dot(lightToPixelDir, lightToCasterDir);
+  // Direction check - pixel must be in similar direction as caster
+  vec2 pixelDir = normalize(lightToPixel);
+  vec2 centerDir = normalize(lightToCenter);
+  float dirSimilarity = dot(pixelDir, centerDir);
   
-  if (angleDiff > 0.8 && pixelDist > casterDist) {
-    // Check if pixel ray actually intersects the rectangle
-    // Simple bounding box intersection
-    vec2 rayEnd = lightPos + lightToPixelDir * pixelDist;
+  if (dirSimilarity < 0.5) return 1.0; // Not in shadow direction
+  
+  // Ray-rectangle intersection test
+  // Cast ray from light toward pixel and check if it hits the caster rectangle
+  vec2 rayDir = pixelDir;
+  vec2 invRayDir = 1.0 / rayDir;
+  
+  vec2 t1 = (casterMin - lightPos) * invRayDir;
+  vec2 t2 = (casterMax - lightPos) * invRayDir;
+  
+  vec2 tMin = min(t1, t2);
+  vec2 tMax = max(t1, t2);
+  
+  float tNear = max(tMin.x, tMin.y);
+  float tFar = min(tMax.x, tMax.y);
+  
+  // Check if ray intersects rectangle and intersection is before pixel
+  if (tNear <= tFar && tNear > 0.0 && tNear < pixelDist) {
+    // Calculate shadow factor based on distance from shadow edge
+    float shadowFactor = 1.0 - uShadowStrength;
     
-    // Check if ray passes through or near the caster bounds
-    if (rayEnd.x >= casterMin.x - 10.0 && rayEnd.x <= casterMax.x + 10.0 &&
-        rayEnd.y >= casterMin.y - 10.0 && rayEnd.y <= casterMax.y + 10.0) {
-      return 1.0 - uShadowStrength; // In shadow
-    }
+    // Add soft shadow edges based on distance from caster
+    float shadowDistance = pixelDist - centerDist;
+    float softness = smoothstep(0.0, 100.0, shadowDistance);
+    shadowFactor = mix(shadowFactor, 1.0, softness * 0.3);
+    
+    return shadowFactor;
   }
   
   return 1.0; // Not in shadow
