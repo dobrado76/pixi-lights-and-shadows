@@ -213,13 +213,14 @@ void main(void) {
     if (uShadowCaster1Enabled) {
       shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
     }
-    intensity *= shadowFactor;
     
-    // Apply mask ONLY to remaining lit areas (no mask in shadows)
-    if (uPoint0HasMask) {
+    // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
+    if (uPoint0HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uPoint0Mask, worldPos.xy, uPoint0Position.xy, uPoint0MaskOffset, uPoint0MaskRotation, uPoint0MaskScale, uPoint0MaskSize);
-      intensity *= maskValue; // Multiply remaining light by mask
+      intensity *= maskValue; // Apply mask only where there's no shadow
     }
+    
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint0Color * intensity;
   }
@@ -250,13 +251,14 @@ void main(void) {
     if (uShadowCaster1Enabled) {
       shadowFactor *= calculateShadow(uPoint1Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
     }
-    intensity *= shadowFactor;
     
-    // Apply mask ONLY to remaining lit areas (no mask in shadows)
-    if (uPoint1HasMask) {
+    // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
+    if (uPoint1HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uPoint1Mask, worldPos.xy, uPoint1Position.xy, uPoint1MaskOffset, uPoint1MaskRotation, uPoint1MaskScale, uPoint1MaskSize);
-      intensity *= maskValue;
+      intensity *= maskValue; // Apply mask only where there's no shadow
     }
+    
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint1Color * intensity;
   }
@@ -287,13 +289,14 @@ void main(void) {
     if (uShadowCaster1Enabled) {
       shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
     }
-    intensity *= shadowFactor;
     
-    // Apply mask ONLY to remaining lit areas (no mask in shadows)
-    if (uPoint2HasMask) {
+    // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
+    if (uPoint2HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uPoint2Mask, worldPos.xy, uPoint2Position.xy, uPoint2MaskOffset, uPoint2MaskRotation, uPoint2MaskScale, uPoint2MaskSize);
-      intensity *= maskValue;
+      intensity *= maskValue; // Apply mask only where there's no shadow
     }
+    
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint2Color * intensity;
   }
@@ -324,13 +327,14 @@ void main(void) {
     if (uShadowCaster1Enabled) {
       shadowFactor *= calculateShadow(lightPos3D.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
     }
-    intensity *= shadowFactor;
     
-    // Apply mask ONLY to remaining lit areas (no mask in shadows)
-    if (uPoint3HasMask) {
+    // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
+    if (uPoint3HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uPoint3Mask, worldPos.xy, uPoint3Position.xy, uPoint3MaskOffset, uPoint3MaskRotation, uPoint3MaskScale, uPoint3MaskSize);
-      intensity *= maskValue;
+      intensity *= maskValue; // Apply mask only where there's no shadow
     }
+    
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint3Color * intensity;
   }
@@ -381,22 +385,23 @@ void main(void) {
     float intensity = spotNormalDot * uSpot0Intensity * spotDistanceAttenuation * softness * coneFactor;
     
     // Apply shadow calculation FIRST for spotlight
+    float shadowFactor = 1.0;
     if (uSpot0CastsShadows) {
-      float shadowFactor = 1.0;
       if (uShadowCaster0Enabled) {
         shadowFactor *= calculateShadow(uSpot0Position.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
       }
       if (uShadowCaster1Enabled) {
         shadowFactor *= calculateShadow(uSpot0Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
       }
-      intensity *= shadowFactor;
     }
     
-    // Apply mask ONLY to remaining lit areas (no mask in shadows)
-    if (uSpot0HasMask) {
+    // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
+    if (uSpot0HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uSpot0Mask, worldPos.xy, uSpot0Position.xy, uSpot0MaskOffset, uSpot0MaskRotation, uSpot0MaskScale, uSpot0MaskSize);
-      intensity *= maskValue;
+      intensity *= maskValue; // Apply mask only where there's no shadow
     }
+    
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uSpot0Color * intensity;
   }
@@ -425,22 +430,23 @@ void main(void) {
     float intensity = spotNormalDot * uSpot1Intensity * spotDistanceAttenuation * softness * coneFactor;
     
     // Apply shadow calculation FIRST for spotlight
+    float shadowFactor = 1.0;
     if (uSpot1CastsShadows) {
-      float shadowFactor = 1.0;
       if (uShadowCaster0Enabled) {
         shadowFactor *= calculateShadow(uSpot1Position.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
       }
       if (uShadowCaster1Enabled) {
         shadowFactor *= calculateShadow(uSpot1Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
       }
-      intensity *= shadowFactor;
     }
     
-    // Apply mask ONLY to remaining lit areas (no mask in shadows)
-    if (uSpot1HasMask) {
+    // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
+    if (uSpot1HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uSpot1Mask, worldPos.xy, uSpot1Position.xy, uSpot1MaskOffset, uSpot1MaskRotation, uSpot1MaskScale, uSpot1MaskSize);
-      intensity *= maskValue;
+      intensity *= maskValue; // Apply mask only where there's no shadow
     }
+    
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uSpot1Color * intensity;
   }
@@ -469,22 +475,23 @@ void main(void) {
     float intensity = spotNormalDot * uSpot2Intensity * spotDistanceAttenuation * softness * coneFactor;
     
     // Apply shadow calculation FIRST for spotlight
+    float shadowFactor = 1.0;
     if (uSpot2CastsShadows) {
-      float shadowFactor = 1.0;
       if (uShadowCaster0Enabled) {
         shadowFactor *= calculateShadow(uSpot2Position.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
       }
       if (uShadowCaster1Enabled) {
         shadowFactor *= calculateShadow(uSpot2Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
       }
-      intensity *= shadowFactor;
     }
     
-    // Apply mask ONLY to remaining lit areas (no mask in shadows)
-    if (uSpot2HasMask) {
+    // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
+    if (uSpot2HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uSpot2Mask, worldPos.xy, uSpot2Position.xy, uSpot2MaskOffset, uSpot2MaskRotation, uSpot2MaskScale, uSpot2MaskSize);
-      intensity *= maskValue;
+      intensity *= maskValue; // Apply mask only where there's no shadow
     }
+    
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uSpot2Color * intensity;
   }
@@ -513,22 +520,23 @@ void main(void) {
     float intensity = spotNormalDot * uSpot3Intensity * spotDistanceAttenuation * softness * coneFactor;
     
     // Apply shadow calculation FIRST for spotlight
+    float shadowFactor = 1.0;
     if (uSpot3CastsShadows) {
-      float shadowFactor = 1.0;
       if (uShadowCaster0Enabled) {
         shadowFactor *= calculateShadow(uSpot3Position.xy, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
       }
       if (uShadowCaster1Enabled) {
         shadowFactor *= calculateShadow(uSpot3Position.xy, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
       }
-      intensity *= shadowFactor;
     }
     
-    // Apply mask ONLY to remaining lit areas (no mask in shadows)
-    if (uSpot3HasMask) {
+    // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
+    if (uSpot3HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uSpot3Mask, worldPos.xy, uSpot3Position.xy, uSpot3MaskOffset, uSpot3MaskRotation, uSpot3MaskScale, uSpot3MaskSize);
-      intensity *= maskValue;
+      intensity *= maskValue; // Apply mask only where there's no shadow
     }
+    
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uSpot3Color * intensity;
   }
