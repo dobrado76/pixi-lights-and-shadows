@@ -500,8 +500,8 @@ const PixiDemo = (props: PixiDemoProps) => {
           const lightIdToSlot = new Map<string, number>();
           let slotIndex = 0;
           
-          // First, assign slots to all lights in the original config order (for stability)
-          lightsConfig.filter(light => light.type === 'point').forEach(light => {
+          // FIXED: Only assign slots to ENABLED lights in the original config order (for stability)
+          lightsConfig.filter(light => light.type === 'point' && light.enabled).forEach(light => {
             if (slotIndex < 4) {
               lightIdToSlot.set(light.id, slotIndex);
               slotIndex++;
