@@ -18,7 +18,7 @@
       "z": 10,
       "followMouse": true,
       "castsShadows": true,
-      "radius": 890
+      "radius": 720
     },
     {
       "id": "directional_light",
@@ -103,8 +103,8 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.4,
-    "maxLength": 130,
+    "strength": 0.6,
+    "maxLength": 80,
     "height": 8
   }
 }
