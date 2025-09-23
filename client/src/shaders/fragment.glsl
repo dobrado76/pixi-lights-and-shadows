@@ -371,8 +371,9 @@ void main(void) {
     // Removed Y-flip branch that was causing triangular light shapes
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
-    // Temporarily disable normal mapping to test for perfect circular light
-    float normalDot = 1.0; // max(dot(normal, lightDir), 0.0);
+    // Fix coordinate system alignment - normal map Y should match light direction Y
+    vec3 correctedNormal = vec3(normal.x, -normal.y, normal.z);  
+    float normalDot = max(dot(correctedNormal, lightDir), 0.0);
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
