@@ -121,24 +121,18 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shado
   
   // Check if ray intersects caster bounds
   if (tMin <= tMax && tMax > 0.0) {
-    // Ray marching through the caster to find any solid pixels
-    float stepCount = 8.0;
-    float stepSize = (tMax - tMin) / stepCount;
+    // Sample shadow mask at the entry point of the ray into the caster
+    vec2 entryPoint = lightPos + rayDir * tMin;
+    vec2 maskUV = (entryPoint - casterMin) / (casterMax - casterMin);
     
-    for (float i = 0.0; i < stepCount; i += 1.0) {
-      float t = tMin + i * stepSize;
-      vec2 samplePoint = lightPos + rayDir * t;
-      vec2 maskUV = (samplePoint - casterMin) / (casterMax - casterMin);
+    // Ensure UV coordinates are within bounds
+    if (maskUV.x >= 0.0 && maskUV.x <= 1.0 && maskUV.y >= 0.0 && maskUV.y <= 1.0) {
+      // Sample shadow mask - use alpha channel for shadow determination
+      float maskValue = texture2D(shadowMask, maskUV).a;
       
-      // Ensure UV coordinates are within bounds
-      if (maskUV.x >= 0.0 && maskUV.x <= 1.0 && maskUV.y >= 0.0 && maskUV.y <= 1.0) {
-        // Sample shadow mask - use alpha channel for shadow determination
-        float maskValue = texture2D(shadowMask, maskUV).a;
-        
-        // Binary shadow mask: alpha > 0 = solid (cast shadow), alpha = 0 = transparent (no shadow)
-        if (maskValue > 0.0) {
-          return 1.0 - uShadowStrength; // Found solid pixel, cast shadow
-        }
+      // Binary shadow mask: alpha > 0 = solid (cast shadow), alpha = 0 = transparent (no shadow)
+      if (maskValue > 0.0) {
+        return 1.0 - uShadowStrength; // Solid pixel found, cast shadow
       }
     }
   }
