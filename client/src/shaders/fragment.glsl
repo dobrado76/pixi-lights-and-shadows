@@ -191,6 +191,12 @@ void main(void) {
   if (uPoint0Enabled) {
     vec3 lightPos3D = uPoint0Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
+    
+    // Fix Y direction flip when light Z > 0 (light above object)
+    if (lightPos3D.z > 0.0) {
+      lightDir3D.y = -lightDir3D.y;
+    }
+    
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
@@ -224,6 +230,12 @@ void main(void) {
   if (uPoint1Enabled) {
     vec3 lightPos3D = uPoint1Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
+    
+    // Fix Y direction flip when light Z > 0 (light above object)
+    if (lightPos3D.z > 0.0) {
+      lightDir3D.y = -lightDir3D.y;
+    }
+    
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
@@ -257,6 +269,12 @@ void main(void) {
   if (uPoint2Enabled) {
     vec3 lightPos3D = uPoint2Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
+    
+    // Fix Y direction flip when light Z > 0 (light above object)
+    if (lightPos3D.z > 0.0) {
+      lightDir3D.y = -lightDir3D.y;
+    }
+    
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
@@ -290,6 +308,12 @@ void main(void) {
   if (uPoint3Enabled) {
     vec3 lightPos3D = uPoint3Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
+    
+    // Fix Y direction flip when light Z > 0 (light above object)
+    if (lightPos3D.z > 0.0) {
+      lightDir3D.y = -lightDir3D.y;
+    }
+    
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
@@ -345,6 +369,12 @@ void main(void) {
   if (uSpot0Enabled) {
     vec3 spotlightLightPos3D = uSpot0Position;
     vec3 spotlightLightDir3D = spotlightLightPos3D - worldPos3D;
+    
+    // Fix Y direction flip when light Z > 0 (light above object)
+    if (spotlightLightPos3D.z > 0.0) {
+      spotlightLightDir3D.y = -spotlightLightDir3D.y;
+    }
+    
     float spotlightDistance = length(spotlightLightDir3D);
     vec3 spotlightLightDir = normalize(spotlightLightDir3D);
     
@@ -385,6 +415,12 @@ void main(void) {
   if (uSpot1Enabled) {
     vec3 spotlightLightPos3D = uSpot1Position;
     vec3 spotlightLightDir3D = spotlightLightPos3D - worldPos3D;
+    
+    // Fix Y direction flip when light Z > 0 (light above object)
+    if (spotlightLightPos3D.z > 0.0) {
+      spotlightLightDir3D.y = -spotlightLightDir3D.y;
+    }
+    
     float spotlightDistance = length(spotlightLightDir3D);
     vec3 spotlightLightDir = normalize(spotlightLightDir3D);
     
@@ -425,6 +461,12 @@ void main(void) {
   if (uSpot2Enabled) {
     vec3 spotlightLightPos3D = uSpot2Position;
     vec3 spotlightLightDir3D = spotlightLightPos3D - worldPos3D;
+    
+    // Fix Y direction flip when light Z > 0 (light above object)
+    if (spotlightLightPos3D.z > 0.0) {
+      spotlightLightDir3D.y = -spotlightLightDir3D.y;
+    }
+    
     float spotlightDistance = length(spotlightLightDir3D);
     vec3 spotlightLightDir = normalize(spotlightLightDir3D);
     
@@ -465,6 +507,12 @@ void main(void) {
   if (uSpot3Enabled) {
     vec3 spotlightLightPos3D = uSpot3Position;
     vec3 spotlightLightDir3D = spotlightLightPos3D - worldPos3D;
+    
+    // Fix Y direction flip when light Z > 0 (light above object)
+    if (spotlightLightPos3D.z > 0.0) {
+      spotlightLightDir3D.y = -spotlightLightDir3D.y;
+    }
+    
     float spotlightDistance = length(spotlightLightDir3D);
     vec3 spotlightLightDir = normalize(spotlightLightDir3D);
     

@@ -11,11 +11,11 @@
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
-      "brightness": 5,
+      "brightness": 3.1,
       "color": "0xffffff",
       "x": 270,
       "y": 70,
-      "z": 10,
+      "z": 40,
       "followMouse": true,
       "castsShadows": true,
       "radius": 400
