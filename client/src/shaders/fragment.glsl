@@ -120,10 +120,7 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shado
   // Avoid division by zero
   if (rayLength < 0.001) return 1.0;
   
-  // Limit shadow length
-  if (rayLength > uShadowMaxLength) {
-    return 1.0; // Beyond max shadow length
-  }
+  // Note: Don't limit rayLength here - we need to check actual shadow length after finding occluder
   
   rayDir /= rayLength; // Normalize
   
@@ -168,13 +165,18 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shado
           if (maskValue > 0.0) {
             // Distance-based soft shadows: shadows get softer further from caster
             float hitDistance = samples[i]; // Distance from light to occluder
-            float receiverDistanceFromCaster = rayLength - hitDistance; // Distance from occluder to receiver
+            float shadowLength = rayLength - hitDistance; // Actual shadow length (occluder to receiver)
             
-            // Gradual fade-out towards max length to avoid hard cutoffs
-            float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, receiverDistanceFromCaster);
+            // Limit shadow by actual shadow length, not distance from light
+            if (shadowLength > uShadowMaxLength) {
+              return 1.0; // Shadow is longer than max allowed
+            }
+            
+            // Gradual fade-out towards max shadow length to avoid hard cutoffs
+            float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
             if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
             
-            float normalizedDistance = receiverDistanceFromCaster / uShadowMaxLength;
+            float normalizedDistance = shadowLength / uShadowMaxLength;
             float softnessFactor = mix(0.3, 1.0, uShadowSharpness);
             float baseShadowStrength = uShadowStrength * mix(softnessFactor, 1.0, exp(-normalizedDistance * 3.0));
             float shadowStrength = baseShadowStrength * maxLengthFade; // Apply fade-out
@@ -201,7 +203,7 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   
   // Raycast through the occluder map with fixed iteration count
   float stepSize = 2.0; // Pixel steps along the ray
-  float maxDistance = min(rayLength, uShadowMaxLength);
+  float maxDistance = rayLength; // Don't limit by uShadowMaxLength here - limit by shadow length instead
   
   // Use constant loop bounds for WebGL compatibility
   for (int i = 1; i < 200; i++) {
@@ -228,13 +230,18 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
     // If we hit an occluder, cast shadow with distance-based softness
     if (occluderAlpha > 0.0) {
       float hitDistance = distance; // Distance from light to occluder
-      float receiverDistanceFromCaster = rayLength - hitDistance; // Distance from occluder to receiver
+      float shadowLength = rayLength - hitDistance; // Actual shadow length (occluder to receiver)
       
-      // Gradual fade-out towards max length to avoid hard cutoffs
-      float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, receiverDistanceFromCaster);
+      // Limit shadow by actual shadow length, not distance from light
+      if (shadowLength > uShadowMaxLength) {
+        return 1.0; // Shadow is longer than max allowed
+      }
+      
+      // Gradual fade-out towards max shadow length to avoid hard cutoffs
+      float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
       if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
       
-      float normalizedDistance = receiverDistanceFromCaster / uShadowMaxLength;
+      float normalizedDistance = shadowLength / uShadowMaxLength;
       float softnessFactor = mix(0.3, 1.0, uShadowSharpness);
       float baseShadowStrength = uShadowStrength * mix(softnessFactor, 1.0, exp(-normalizedDistance * 3.0));
       float shadowStrength = baseShadowStrength * maxLengthFade; // Apply fade-out
