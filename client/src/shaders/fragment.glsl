@@ -460,7 +460,9 @@ void main(void) {
     float spotlightDistance = length(spotlightLightDir3D);
     vec3 spotlightLightDir = normalize(spotlightLightDir3D);
     
-    float coneAngle = dot(-spotlightLightDir, normalize(uSpot0Direction));
+    // Fix coordinate system inconsistency for spotlight direction (same fix as directional lights)
+    vec3 spotDirection = normalize(vec3(uSpot0Direction.x, -uSpot0Direction.y, -uSpot0Direction.z));
+    float coneAngle = dot(-spotlightLightDir, spotDirection);
     float coneAngleRad = radians(uSpot0ConeAngle);
     float innerCone = cos(coneAngleRad * 0.5);
     float outerCone = cos(coneAngleRad);
@@ -500,7 +502,9 @@ void main(void) {
     float spotlightDistance = length(spotlightLightDir3D);
     vec3 spotlightLightDir = normalize(spotlightLightDir3D);
     
-    float coneAngle = dot(-spotlightLightDir, normalize(uSpot1Direction));
+    // Fix coordinate system inconsistency for spotlight direction (same fix as directional lights)
+    vec3 spotDirection = normalize(vec3(uSpot1Direction.x, -uSpot1Direction.y, -uSpot1Direction.z));
+    float coneAngle = dot(-spotlightLightDir, spotDirection);
     float coneAngleRad = radians(uSpot1ConeAngle);
     float innerCone = cos(coneAngleRad * 0.5);
     float outerCone = cos(coneAngleRad);
@@ -540,7 +544,9 @@ void main(void) {
     float spotlightDistance = length(spotlightLightDir3D);
     vec3 spotlightLightDir = normalize(spotlightLightDir3D);
     
-    float coneAngle = dot(-spotlightLightDir, normalize(uSpot2Direction));
+    // Fix coordinate system inconsistency for spotlight direction (same fix as directional lights)
+    vec3 spotDirection = normalize(vec3(uSpot2Direction.x, -uSpot2Direction.y, -uSpot2Direction.z));
+    float coneAngle = dot(-spotlightLightDir, spotDirection);
     float coneAngleRad = radians(uSpot2ConeAngle);
     float innerCone = cos(coneAngleRad * 0.5);
     float outerCone = cos(coneAngleRad);
@@ -580,7 +586,9 @@ void main(void) {
     float spotlightDistance = length(spotlightLightDir3D);
     vec3 spotlightLightDir = normalize(spotlightLightDir3D);
     
-    float coneAngle = dot(-spotlightLightDir, normalize(uSpot3Direction));
+    // Fix coordinate system inconsistency for spotlight direction (same fix as directional lights)
+    vec3 spotDirection = normalize(vec3(uSpot3Direction.x, -uSpot3Direction.y, -uSpot3Direction.z));
+    float coneAngle = dot(-spotlightLightDir, spotDirection);
     float coneAngleRad = radians(uSpot3ConeAngle);
     float innerCone = cos(coneAngleRad * 0.5);
     float outerCone = cos(coneAngleRad);
