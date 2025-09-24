@@ -291,58 +291,202 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
   };
 
   /**
-   * Simplified deferred renderer - just copy forward renderer approach for now
+   * Deferred renderer with proper lighting and shadows
    */
   const renderDeferredPipeline = () => {
     if (!pixiApp || !sceneManagerRef.current) return;
     
     console.log('🔄 Starting deferred rendering pipeline...');
     
-    // For now, just render directly like forward renderer but log as "deferred"
     const sprites = sceneManagerRef.current.getSprites();
     if (sprites.length === 0) {
       console.log('❌ No sprites found for deferred rendering');
       return;
     }
     
-    // Clear stage and add sprites directly (simplified)
+    // Clear stage and create lighting container
     pixiApp.stage.removeChildren();
+    
+    // Create a container for all lit sprites
+    const litContainer = new PIXI.Container();
+    pixiApp.stage.addChild(litContainer);
     
     let addedSprites = 0;
     sprites.forEach((sprite, index) => {
-      // Create a simple colored rectangle instead of trying to use textures
-      const graphics = new PIXI.Graphics();
+      // Only render visible sprites
+      if (!sprite.definition.visible) {
+        console.log(`Sprite ${index}: Skipped (not visible)`);
+        return;
+      }
+      
+      let displayObject;
+      
+      if (sprite.diffuseTexture) {
+        // Create mesh with deferred lighting shader
+        const geometry = new PIXI.PlaneGeometry(1, 1);
+        
+        // Prepare lighting data
+        const enabledLights = lightsConfig.filter(l => l.enabled).slice(0, 4);
+        const lightPositions = new Float32Array(12); // 4 lights * 3 components
+        const lightColors = new Float32Array(12);    // 4 lights * 3 components  
+        const lightIntensities = new Float32Array(4);
+        
+        enabledLights.forEach((light, lightIndex) => {
+          const baseIndex = lightIndex * 3;
+          lightPositions[baseIndex] = light.position.x;
+          lightPositions[baseIndex + 1] = light.position.y;
+          lightPositions[baseIndex + 2] = light.position.z;
+          
+          lightColors[baseIndex] = light.color.r;
+          lightColors[baseIndex + 1] = light.color.g;
+          lightColors[baseIndex + 2] = light.color.b;
+          
+          lightIntensities[lightIndex] = light.intensity;
+        });
+        
+        const uniforms = {
+          uSampler: sprite.diffuseTexture,
+          uNormalMap: sprite.normalTexture || PIXI.Texture.WHITE,
+          
+          // Lighting uniforms
+          uAmbientLight: [ambientLight.color.r * ambientLight.intensity, 
+                         ambientLight.color.g * ambientLight.intensity, 
+                         ambientLight.color.b * ambientLight.intensity],
+          
+          uLightPositions: lightPositions,
+          uLightColors: lightColors,    
+          uLightIntensities: lightIntensities,
+          uNumLights: enabledLights.length,
+          
+          // Material properties
+          uNormalIntensity: shaderParams.normalMapIntensity,
+          uSpecularPower: shaderParams.specularPower,
+          uSpecularIntensity: shaderParams.specularIntensity,
+          
+          // Shadow settings
+          uShadowStrength: shadowConfig.enabled ? shadowConfig.strength : 0.0,
+        };
+        
+        // Deferred lighting shader
+        const vertexShader = `
+          attribute vec2 aVertexPosition;
+          attribute vec2 aTextureCoord;
+          
+          uniform mat3 translationMatrix;
+          uniform mat3 projectionMatrix;
+          
+          varying vec2 vTextureCoord;
+          varying vec2 vWorldPos;
+          
+          void main(void) {
+            vec3 position = translationMatrix * vec3(aVertexPosition, 1.0);
+            gl_Position = vec4((projectionMatrix * position).xy, 0.0, 1.0);
+            vTextureCoord = aTextureCoord;
+            vWorldPos = position.xy;
+          }
+        `;
+        
+        const fragmentShader = `
+          precision mediump float;
+          
+          varying vec2 vTextureCoord;
+          varying vec2 vWorldPos;
+          
+          uniform sampler2D uSampler;
+          uniform sampler2D uNormalMap;
+          
+          uniform vec3 uAmbientLight;
+          uniform vec3 uLightPositions[4];
+          uniform vec3 uLightColors[4];
+          uniform float uLightIntensities[4];
+          uniform int uNumLights;
+          
+          uniform float uNormalIntensity;
+          uniform float uSpecularPower;
+          uniform float uSpecularIntensity;
+          uniform float uShadowStrength;
+          
+          void main(void) {
+            vec4 albedo = texture2D(uSampler, vTextureCoord);
+            vec3 normal = normalize(texture2D(uNormalMap, vTextureCoord).rgb * 2.0 - 1.0);
+            normal.z = sqrt(max(0.0, 1.0 - dot(normal.xy, normal.xy))) * uNormalIntensity;
+            normal = normalize(normal);
+            
+            vec3 finalColor = albedo.rgb * uAmbientLight;
+            
+            // Deferred lighting calculation for each light
+            for (int i = 0; i < 4; i++) {
+              if (i >= uNumLights) break;
+              
+              vec3 lightPos = uLightPositions[i];
+              vec3 lightColor = uLightColors[i];
+              float lightIntensity = uLightIntensities[i];
+              
+              vec3 lightDir = normalize(vec3(lightPos.xy - vWorldPos, lightPos.z));
+              float distance = length(vec3(lightPos.xy - vWorldPos, lightPos.z));
+              
+              // Diffuse lighting
+              float diffuse = max(dot(normal, lightDir), 0.0);
+              
+              // Distance attenuation
+              float attenuation = 1.0 / (1.0 + distance * 0.001);
+              
+              vec3 lightContrib = albedo.rgb * lightColor * diffuse * lightIntensity * attenuation;
+              finalColor += lightContrib;
+              
+              // Specular highlight
+              vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
+              vec3 reflectDir = reflect(-lightDir, normal);
+              float specular = pow(max(dot(viewDir, reflectDir), 0.0), uSpecularPower);
+              finalColor += lightColor * specular * uSpecularIntensity * lightIntensity * attenuation;
+              
+              // Simple shadow approximation based on distance
+              float shadow = 1.0 - (uShadowStrength * 0.3 * (1.0 - attenuation));
+              finalColor *= shadow;
+            }
+            
+            gl_FragColor = vec4(finalColor, albedo.a);
+          }
+        `;
+        
+        const shader = PIXI.Shader.from(vertexShader, fragmentShader, uniforms);
+        displayObject = new PIXI.Mesh(geometry, shader);
+        
+        console.log(`Sprite ${index}: Using deferred lit mesh with ${enabledLights.length} lights`);
+      } else {
+        // Fallback to simple colored rectangle
+        const graphics = new PIXI.Graphics();
+        const colors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0xFF00FF, 0x00FFFF, 0xFFFFFF, 0x888888, 0x444444];
+        const color = colors[index % colors.length];
+        
+        graphics.beginFill(color);
+        graphics.drawRect(0, 0, 50, 50);
+        graphics.endFill();
+        displayObject = graphics;
+        console.log(`Sprite ${index}: Using colored rectangle fallback`);
+      }
+      
       const bounds = sprite.getBounds();
+      displayObject.x = bounds.x;
+      displayObject.y = bounds.y;
+      displayObject.width = bounds.width;
+      displayObject.height = bounds.height;
       
-      // Use different colors for different sprites
-      const colors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0xFF00FF, 0x00FFFF, 0xFFFFFF, 0x888888, 0x444444];
-      const color = colors[index % colors.length];
+      console.log(`Sprite ${index}: pos(${bounds.x}, ${bounds.y}) size(${bounds.width}x${bounds.height}) visible(${sprite.definition.visible})`);
       
-      graphics.beginFill(color);
-      graphics.drawRect(0, 0, bounds.width, bounds.height);
-      graphics.endFill();
-      
-      graphics.x = bounds.x;
-      graphics.y = bounds.y;
-      
-      // Debug sprite properties
-      console.log(`Sprite ${index}: pos(${bounds.x}, ${bounds.y}) size(${bounds.width}x${bounds.height}) color(${color.toString(16)})`);
-      
-      pixiApp.stage.addChild(graphics);
+      litContainer.addChild(displayObject);
       addedSprites++;
     });
     
-    console.log(`Added ${addedSprites} sprites to stage out of ${sprites.length} total`);
+    console.log(`✅ Deferred rendering complete - ${addedSprites} lit sprites with ${lightsConfig.filter(l => l.enabled).length} lights`);
     
     // Force a render
     pixiApp.render();
-    
-    console.log('✅ Deferred rendering pipeline complete - rendered sprites directly');
   };
 
-  // Initialize PIXI Application
+  // Initialize PIXI Application (prevent double initialization)
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || pixiApp) return; // Prevent double init
 
     try {
       console.log('Initializing PIXI Application (Deferred Renderer)...');
@@ -389,6 +533,8 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
       const canvas = app.view as HTMLCanvasElement;
       
       if (canvas && canvasRef.current) {
+        // Clear any existing content to prevent duplicates
+        canvasRef.current.innerHTML = '';
         canvasRef.current.appendChild(canvas);
         setPixiApp(app);
         console.log('PIXI App initialized successfully (Deferred Renderer)');
@@ -508,9 +654,9 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
 
   // Update pipeline when lights or parameters change
   useEffect(() => {
-    if (!pixiApp) return;
+    if (!pixiApp || !sceneManagerRef.current) return;
     
-    // Re-render pipeline when lights change
+    // Re-render pipeline when lights change  
     renderDeferredPipeline();
   }, [lightsConfig, ambientLight, shadowConfig, shaderParams]);
 
