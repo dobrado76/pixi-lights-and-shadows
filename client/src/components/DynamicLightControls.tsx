@@ -708,8 +708,8 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
               </div>
             )}
 
-            {/* Mask Controls - Show at bottom when mask is present for point/spotlight only */}
-            {light.mask && (light.type === 'point' || light.type === 'spotlight') && (
+            {/* Mask Controls - Show at bottom when mask is present for enabled point/spotlight only */}
+            {light.enabled && light.mask && (light.type === 'point' || light.type === 'spotlight') && (
               <div className="mt-2 pt-2 border-t border-border/50">
                 <div className="flex items-center justify-between space-x-2">
                   <label className="text-xs text-muted-foreground min-w-[40px]">
