@@ -51,7 +51,7 @@
       },
       "rotation": 1.2217304763960306,
       "scale": 0.7,
-      "zOrder": 1,
+      "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
@@ -84,7 +84,7 @@
       "image": "/textures/test2.png",
       "normal": "/textures/test2Normal.png",
       "position": {
-        "x": 87,
+        "x": 95,
         "y": 403
       },
       "rotation": 0,
@@ -94,9 +94,9 @@
       "visible": true,
       "useNormalMap": true,
       "pivot": {
-        "preset": "middle-center",
         "offsetX": 0,
-        "offsetY": 0
+        "offsetY": 0,
+        "preset": "middle-center"
       }
     },
     "test3": {

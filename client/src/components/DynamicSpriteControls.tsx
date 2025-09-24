@@ -92,12 +92,12 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
   return (
     <Card className="w-full max-w-md bg-card/95 backdrop-blur border-border">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold text-card-foreground flex items-center gap-2">
+        <CardTitle className="text-sm font-semibold text-card-foreground flex items-center gap-2">
           🎭 Scene Sprites
           <span className="text-xs text-muted-foreground">({sprites.length})</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 max-h-[600px] overflow-y-auto">
+      <CardContent className="space-y-2 max-h-[600px] overflow-y-auto">
         {sprites.map(([spriteId, sprite]) => {
           const isExpanded = expandedSprites.has(spriteId);
           
@@ -140,7 +140,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
                 </CollapsibleTrigger>
                 
                 <CollapsibleContent>
-                  <CardContent className="pt-0 space-y-4">
+                  <CardContent className="pt-0 space-y-2">
                     {sprite.visible && (
                       <>
                         {/* Position Controls */}
@@ -232,20 +232,20 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
                               }
                             })}
                           >
-                            <SelectTrigger className="h-7 text-xs" data-testid={`select-pivot-${spriteId}`}>
+                            <SelectTrigger className="h-6 text-xs bg-card/80 border-border text-card-foreground" data-testid={`select-pivot-${spriteId}`}>
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="top-left">Top Left</SelectItem>
-                              <SelectItem value="top-center">Top Center</SelectItem>
-                              <SelectItem value="top-right">Top Right</SelectItem>
-                              <SelectItem value="middle-left">Middle Left</SelectItem>
-                              <SelectItem value="middle-center">Middle Center</SelectItem>
-                              <SelectItem value="middle-right">Middle Right</SelectItem>
-                              <SelectItem value="bottom-left">Bottom Left</SelectItem>
-                              <SelectItem value="bottom-center">Bottom Center</SelectItem>
-                              <SelectItem value="bottom-right">Bottom Right</SelectItem>
-                              <SelectItem value="offset">Custom Offset</SelectItem>
+                            <SelectContent className="bg-card border-border text-card-foreground">
+                              <SelectItem value="top-left" className="text-xs hover:bg-accent hover:text-accent-foreground">Top Left</SelectItem>
+                              <SelectItem value="top-center" className="text-xs hover:bg-accent hover:text-accent-foreground">Top Center</SelectItem>
+                              <SelectItem value="top-right" className="text-xs hover:bg-accent hover:text-accent-foreground">Top Right</SelectItem>
+                              <SelectItem value="middle-left" className="text-xs hover:bg-accent hover:text-accent-foreground">Middle Left</SelectItem>
+                              <SelectItem value="middle-center" className="text-xs hover:bg-accent hover:text-accent-foreground">Middle Center</SelectItem>
+                              <SelectItem value="middle-right" className="text-xs hover:bg-accent hover:text-accent-foreground">Middle Right</SelectItem>
+                              <SelectItem value="bottom-left" className="text-xs hover:bg-accent hover:text-accent-foreground">Bottom Left</SelectItem>
+                              <SelectItem value="bottom-center" className="text-xs hover:bg-accent hover:text-accent-foreground">Bottom Center</SelectItem>
+                              <SelectItem value="bottom-right" className="text-xs hover:bg-accent hover:text-accent-foreground">Bottom Right</SelectItem>
+                              <SelectItem value="offset" className="text-xs hover:bg-accent hover:text-accent-foreground">Custom Offset</SelectItem>
                             </SelectContent>
                           </Select>
                           
@@ -309,7 +309,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
                         </div>
 
                         {/* Shadow & Rendering Controls */}
-                        <div className="space-y-3 pt-2 border-t border-border/50">
+                        <div className="space-y-2 pt-2 border-t border-border/50">
                           <Label className="text-xs font-medium text-muted-foreground">Rendering Options</Label>
                           
                           <div className="flex items-center justify-between">
