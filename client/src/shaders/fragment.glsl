@@ -176,15 +176,39 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shado
             float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
             if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
             
-            // Working shadow with sharpness control via final strength modulation
-            float shadowValue = 1.0; // Keep the working binary shadow
+            // Real soft shadows: sample around the hit point for penumbra
+            float shadowValue = 1.0;
+            
+            // If we want soft shadows, sample around the hit point
+            if (uShadowSharpness < 0.95) {
+              float penumbraRadius = mix(3.0, 0.5, uShadowSharpness);
+              float shadowSamples = 0.0;
+              float totalSamples = 0.0;
+              
+              // Sample in a cross pattern around the hit point
+              for (int dx = -2; dx <= 2; dx++) {
+                for (int dy = -2; dy <= 2; dy++) {
+                  vec2 offset = vec2(float(dx), float(dy)) * penumbraRadius;
+                  vec2 testPoint = samplePoint + offset;
+                  vec2 testUV = (testPoint - casterMin) / (casterMax - casterMin);
+                  
+                  if (testUV.x >= 0.0 && testUV.x <= 1.0 && testUV.y >= 0.0 && testUV.y <= 1.0) {
+                    float testAlpha = texture2D(shadowMask, testUV).a;
+                    shadowSamples += (testAlpha > 0.0) ? 1.0 : 0.0;
+                    totalSamples += 1.0;
+                  }
+                }
+              }
+              
+              // Create soft falloff: full samples = full shadow, partial = soft
+              shadowValue = (totalSamples > 0.0) ? shadowSamples / totalSamples : 0.0;
+            }
             
             float normalizedDistance = shadowLength / uShadowMaxLength;
             float distanceFade = exp(-normalizedDistance * 2.0);
             
-            // Apply sharpness control to final shadow strength
-            float sharpnessModifier = mix(0.3, 1.0, uShadowSharpness); // Soft = 30% strength, Sharp = 100% strength
-            float finalShadowStrength = uShadowStrength * shadowValue * distanceFade * maxLengthFade * sharpnessModifier;
+            // shadowValue now contains the soft/sharp shadow information
+            float finalShadowStrength = uShadowStrength * shadowValue * distanceFade * maxLengthFade;
             
             return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
           }
@@ -247,17 +271,41 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
       float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
       if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
       
-      // Working shadow with sharpness control via final strength modulation
-      float shadowValue = 1.0; // Keep the working binary shadow
+      // Real soft shadows: sample around the hit point for penumbra
+      float shadowValue = 1.0;
+      
+      // If we want soft shadows, sample around the hit point
+      if (uShadowSharpness < 0.95) {
+        float penumbraRadius = mix(4.0, 1.0, uShadowSharpness);
+        float shadowSamples = 0.0;
+        float totalSamples = 0.0;
+        
+        // Sample in a pattern around the original hit point
+        for (int dx = -2; dx <= 2; dx++) {
+          for (int dy = -2; dy <= 2; dy++) {
+            vec2 offset = vec2(float(dx), float(dy)) * penumbraRadius;
+            vec2 testPos = lightPos + rayDir * distance + offset;
+            vec2 testUV = testPos / uCanvasSize;
+            
+            if (testUV.x >= 0.0 && testUV.x <= 1.0 && testUV.y >= 0.0 && testUV.y <= 1.0) {
+              float testAlpha = texture2D(uOccluderMap, testUV).a;
+              shadowSamples += (testAlpha > 0.0) ? 1.0 : 0.0;
+              totalSamples += 1.0;
+            }
+          }
+        }
+        
+        // Create soft falloff: full samples = full shadow, partial = soft
+        shadowValue = (totalSamples > 0.0) ? shadowSamples / totalSamples : 0.0;
+      }
       
       // Calculate final shadow strength
       float shadowRatio = shadowValue;
       float normalizedDistance = shadowLength / uShadowMaxLength;
       float distanceFade = exp(-normalizedDistance * 2.0);
       
-      // Apply sharpness control to final shadow strength
-      float sharpnessModifier = mix(0.3, 1.0, uShadowSharpness); // Soft = 30% strength, Sharp = 100% strength
-      float finalShadowStrength = uShadowStrength * shadowRatio * distanceFade * maxLengthFade * sharpnessModifier;
+      // shadowValue now contains the soft/sharp shadow information
+      float finalShadowStrength = uShadowStrength * shadowRatio * distanceFade * maxLengthFade;
       
       return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
     }
