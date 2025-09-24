@@ -321,7 +321,8 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
       // shadowValue now contains the soft/sharp shadow information
       float finalShadowStrength = uShadowStrength * shadowRatio * distanceFade * maxLengthFade;
       
-      return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
+      // Make this consistent with the working per-caster approach
+      return clamp(1.0 - finalShadowStrength, 0.0, 1.0);
     }
   }
   
@@ -493,12 +494,6 @@ void main(void) {
     }
     
     intensity *= shadowFactor;
-    
-    // DEBUG: Visualize shadow factor as color (remove this after debugging)
-    if (uPoint0CastsShadows && uPoint0Enabled) {
-      gl_FragColor = vec4(shadowFactor, shadowFactor, shadowFactor, diffuseColor.a);
-      return;
-    }
     
     finalColor += diffuseColor.rgb * uPoint0Color * intensity;
   }
