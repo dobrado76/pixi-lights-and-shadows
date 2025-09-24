@@ -145,12 +145,12 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
     });
     
     // Render geometry data for all sprites
-    const sprites = sceneManagerRef.current?.getSceneSprites() || [];
+    const sprites = sceneManagerRef.current?.getSprites() || [];
     
-    sprites.forEach((sprite, index) => {
+    sprites.forEach((sprite: SceneSprite, index: number) => {
       // Create G-Buffer sprite for this scene sprite (if not exists)
       if (!geometrySpritesRef.current[index]) {
-        const gBufferSprite = new PIXI.Sprite(sprite.diffuseTexture);
+        const gBufferSprite = new PIXI.Sprite(sprite.diffuseTexture || PIXI.Texture.WHITE);
         geometrySpritesRef.current[index] = gBufferSprite;
         geometryPassContainerRef.current!.addChild(gBufferSprite);
       }
@@ -163,7 +163,7 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
       gSprite.y = bounds.y;
       gSprite.width = bounds.width;
       gSprite.height = bounds.height;
-      gSprite.texture = sprite.diffuseTexture;
+      gSprite.texture = sprite.diffuseTexture || PIXI.Texture.WHITE;
     });
     
     // TODO: Create geometry pass shaders that output to different G-Buffer targets
@@ -222,7 +222,7 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
     if (!pixiApp || !finalCompositeRef.current || !finalCompositeContainerRef.current) return;
     
     // Create final composite sprite
-    const compositeSprite = new PIXI.Sprite(lightAccumulationRef.current);
+    const compositeSprite = new PIXI.Sprite(lightAccumulationRef.current || PIXI.Texture.WHITE);
     compositeSprite.width = shaderParams.canvasWidth;
     compositeSprite.height = shaderParams.canvasHeight;
     

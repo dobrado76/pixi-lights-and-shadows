@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import PixiDemo from './components/PixiDemo';
+import PixiDemo2 from './components/PixiDemo2';
 import DynamicLightControls from './components/DynamicLightControls';
 import { DynamicSpriteControls } from './components/DynamicSpriteControls';
 import { Light, ShadowConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
@@ -65,6 +66,8 @@ function App() {
   const [sceneConfig, setSceneConfig] = useState<{ scene: Record<string, any> }>({ scene: {} });
   const [sceneLoaded, setSceneLoaded] = useState<boolean>(false);
   
+  // Renderer version toggle (easy revert system)
+  const [useDeferred, setUseDeferred] = useState<boolean>(false);
 
   // Auto-save system with debouncing to prevent excessive writes during UI manipulation
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -267,22 +270,47 @@ function App() {
             <div className="bg-card rounded-lg border border-border p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-card-foreground" data-testid="demo-title">
-                  Live Demo
+                  Live Demo - {useDeferred ? 'Deferred Renderer' : 'Forward Renderer'}
                 </h2>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium text-muted-foreground">Renderer:</label>
+                  <select 
+                    value={useDeferred ? 'deferred' : 'forward'}
+                    onChange={(e) => setUseDeferred(e.target.value === 'deferred')}
+                    className="px-3 py-1 text-xs border rounded bg-background text-foreground"
+                    data-testid="renderer-selector"
+                  >
+                    <option value="forward">Forward (Original)</option>
+                    <option value="deferred">Deferred (Experimental)</option>
+                  </select>
+                </div>
               </div>
 
               <div className="pixi-canvas rounded-lg overflow-hidden glow" data-testid="pixi-container">
                 {lightsLoaded && sceneLoaded && (
-                  <PixiDemo
-                    shaderParams={shaderParams}
-                    lightsConfig={lightsConfig}
-                    ambientLight={ambientLight}
-                    shadowConfig={shadowConfig}
-                    sceneConfig={sceneConfig}
-                    onGeometryUpdate={setGeometryStatus}
-                    onShaderUpdate={setShaderStatus}
-                    onMeshUpdate={setMeshStatus}
-                  />
+                  useDeferred ? (
+                    <PixiDemo2
+                      shaderParams={shaderParams}
+                      lightsConfig={lightsConfig}
+                      ambientLight={ambientLight}
+                      shadowConfig={shadowConfig}
+                      sceneConfig={sceneConfig}
+                      onGeometryUpdate={setGeometryStatus}
+                      onShaderUpdate={setShaderStatus}
+                      onMeshUpdate={setMeshStatus}
+                    />
+                  ) : (
+                    <PixiDemo
+                      shaderParams={shaderParams}
+                      lightsConfig={lightsConfig}
+                      ambientLight={ambientLight}
+                      shadowConfig={shadowConfig}
+                      sceneConfig={sceneConfig}
+                      onGeometryUpdate={setGeometryStatus}
+                      onShaderUpdate={setShaderStatus}
+                      onMeshUpdate={setMeshStatus}
+                    />
+                  )
                 )}
               </div>
             </div>
