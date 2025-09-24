@@ -834,6 +834,50 @@ const PixiDemo = (props: PixiDemoProps) => {
     try {
       sceneManagerRef.current.updateFromConfig(sceneConfig);
       
+      // Handle sprites that need mesh creation (were invisible, now visible)
+      const spritesNeedingMeshes = sceneManagerRef.current.getAllSprites().filter(sprite => sprite.needsMeshCreation);
+      if (spritesNeedingMeshes.length > 0) {
+        // Use already imported shader sources
+        const spriteFragmentShader = fragmentShaderSource;
+        
+        // Get current light uniforms for new meshes
+        const allPointLights = lightsConfig.filter(light => light.type === 'point');
+        const allDirectionalLights = lightsConfig.filter(light => light.type === 'directional');
+        const allSpotlights = lightsConfig.filter(light => light.type === 'spotlight');
+        
+        // Create light uniforms (simplified version)
+        const lightUniforms: any = {};
+        allPointLights.slice(0, 4).forEach((light, idx) => {
+          const prefix = `uPoint${idx}`;
+          lightUniforms[`${prefix}Enabled`] = true;
+          lightUniforms[`${prefix}Position`] = [light.position.x, light.position.y, light.position.z];
+          lightUniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
+          lightUniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0;
+          lightUniforms[`${prefix}Radius`] = light.radius || 200;
+        });
+        
+        // Create meshes for sprites that need them
+        for (const sprite of spritesNeedingMeshes) {
+          if (sprite.diffuseTexture && sprite.normalTexture) {
+            const commonUniforms = {
+              uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
+              uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
+              uAmbientLight: ambientLight.intensity,
+              uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
+              uShadowsEnabled: shadowConfig.enabled,
+              uShadowStrength: shadowConfig.strength || 0.5,
+              ...lightUniforms
+            };
+            
+            const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
+            pixiApp.stage.addChild(mesh);
+            meshesRef.current.push(mesh);
+            shadersRef.current.push(mesh.shader as PIXI.Shader);
+            sprite.needsMeshCreation = false;
+          }
+        }
+      }
+      
       // Update shadow casters immediately when sprite visibility changes
       if (shadersRef.current.length > 0) {
         const shadowCasters = sceneManagerRef.current.getShadowCasters();

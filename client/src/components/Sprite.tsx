@@ -50,6 +50,7 @@ export class SceneSprite {
   public geometry: PIXI.Geometry | null = null;   // Vertex/UV/index buffers
   public diffuseTexture: PIXI.Texture | null = null;  // Main color texture
   public normalTexture: PIXI.Texture | null = null;   // Normal map or generated flat normal
+  public needsMeshCreation: boolean = false;      // Flag indicating mesh needs to be created
 
   constructor(id: string, definition: SpriteDefinition) {
     this.id = id;
@@ -304,10 +305,17 @@ export class SceneManager {
       if (existingSprite) {
         // Update the sprite's definition
         const newDef = newSpriteData as SpriteDefinition;
+        const wasVisible = existingSprite.definition.visible;
         existingSprite.definition = { ...existingSprite.definition, ...newDef };
         
-        // Update transform if mesh exists
-        if (existingSprite.mesh) {
+        // Handle visibility changes that require mesh creation/destruction
+        const isNowVisible = newDef.visible ?? true;
+        
+        if (!wasVisible && isNowVisible && !existingSprite.mesh) {
+          // Sprite was invisible and now visible but has no mesh - flag for recreation
+          existingSprite.needsMeshCreation = true;
+        } else if (existingSprite.mesh) {
+          // Update existing mesh
           existingSprite.updateTransform({
             position: newDef.position,
             rotation: newDef.rotation,
@@ -315,7 +323,7 @@ export class SceneManager {
           });
           
           // Update visibility
-          existingSprite.mesh.visible = newDef.visible ?? true;
+          existingSprite.mesh.visible = isNowVisible;
         }
       }
     }
