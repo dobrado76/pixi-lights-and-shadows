@@ -208,6 +208,71 @@ const PixiDemo = (props: PixiDemoProps) => {
     });
   };
 
+  // Unified normal map buffer builder (regenerated every frame based on current sprite positions)
+  const buildUnifiedNormalBuffer = () => {
+    if (!pixiApp || !normalBufferRef.current || !normalContainerRef.current) return;
+    
+    console.log('🎨 Rebuilding unified normal map buffer for current frame');
+    
+    // Clear the container for this frame
+    normalContainerRef.current.removeChildren();
+    
+    // Get all sprites from scene manager
+    const allSprites = sceneManagerRef.current?.getSprites() || [];
+    
+    // Create normal map sprites for current frame based on current positions and transformations
+    allSprites.forEach((sprite) => {
+      if (!sprite.normalTexture) return;
+      
+      // Create a sprite for the normal map at current position
+      const normalSprite = new PIXI.Sprite(sprite.normalTexture);
+      
+      // Apply current position from sprite definition
+      normalSprite.x = sprite.definition.position.x;
+      normalSprite.y = sprite.definition.position.y;
+      
+      // Apply scaling (affects normal map size)
+      const baseWidth = sprite.normalTexture.width;
+      const baseHeight = sprite.normalTexture.height;
+      normalSprite.width = baseWidth * sprite.definition.scale;
+      normalSprite.height = baseHeight * sprite.definition.scale;
+      
+      // Apply rotation from sprite definition
+      normalSprite.rotation = sprite.definition.rotation;
+      
+      // Set pivot to match original sprite
+      const pivot = sprite.definition.pivot || { preset: 'middle-center' };
+      switch (pivot.preset) {
+        case 'top-left': normalSprite.anchor.set(0, 0); break;
+        case 'top-center': normalSprite.anchor.set(0.5, 0); break;
+        case 'top-right': normalSprite.anchor.set(1, 0); break;
+        case 'middle-left': normalSprite.anchor.set(0, 0.5); break;
+        case 'middle-center': normalSprite.anchor.set(0.5, 0.5); break;
+        case 'middle-right': normalSprite.anchor.set(1, 0.5); break;
+        case 'bottom-left': normalSprite.anchor.set(0, 1); break;
+        case 'bottom-center': normalSprite.anchor.set(0.5, 1); break;
+        case 'bottom-right': normalSprite.anchor.set(1, 1); break;
+        case 'offset':
+          // Apply offset-based pivot
+          const offsetX = (pivot.offsetX || 0) / baseWidth;
+          const offsetY = (pivot.offsetY || 0) / baseHeight;
+          normalSprite.anchor.set(0.5 + offsetX, 0.5 + offsetY);
+          break;
+      }
+      
+      // Add to container (null check handled above)
+      normalContainerRef.current!.addChild(normalSprite);
+    });
+    
+    // Render all normal maps to the unified buffer
+    pixiApp.renderer.render(normalContainerRef.current, { 
+      renderTexture: normalBufferRef.current, 
+      clear: true 
+    });
+    
+    console.log(`🎨 Unified normal buffer rebuilt with ${allSprites.length} sprite normal maps (with transformations)`);
+  };
+
   // Multi-pass lighting composer
   const renderMultiPass = (lights: Light[]) => {
     if (!pixiApp || !renderTargetRef.current || !sceneContainerRef.current || !displaySpriteRef.current) return;
