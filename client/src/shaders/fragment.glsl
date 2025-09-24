@@ -620,7 +620,8 @@ void main(void) {
     
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
-    if (uDir0CastsShadows) {
+    // TEMPORARILY DISABLE DIRECTIONAL SHADOWS FOR TESTING
+    if (false && uDir0CastsShadows) {
       // 🌟 DIRECTIONAL SHADOWS: Auto-switching system with specialized directional shadow support
       shadowFactor *= calculateDirectionalShadowUnified(uDir0Direction.xy, worldPos.xy);
     }
@@ -646,7 +647,8 @@ void main(void) {
     
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
-    if (uDir1CastsShadows) {
+    // TEMPORARILY DISABLE DIRECTIONAL SHADOWS FOR TESTING
+    if (false && uDir1CastsShadows) {
       // 🌟 DIRECTIONAL SHADOWS: Auto-switching system with specialized directional shadow support
       shadowFactor *= calculateDirectionalShadowUnified(uDir1Direction.xy, worldPos.xy);
     }
