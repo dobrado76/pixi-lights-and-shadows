@@ -961,6 +961,8 @@ const PixiDemo = (props: PixiDemoProps) => {
   // Dynamic shader uniform updates for real-time lighting changes
   useEffect(() => {
     if (shadersRef.current.length === 0) return;
+    
+    console.log('🔥 LIGHTING UPDATE TRIGGERED - updating shader uniforms in real-time');
 
     // Full light uniforms recreation - individual uniform approach
     const createLightUniforms = () => {
@@ -1209,10 +1211,13 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Force immediate render after updating lighting uniforms
       if (pixiApp && pixiApp.renderer) {
+        console.log('🎨 FORCING IMMEDIATE RENDER after lighting uniform updates');
         pixiApp.render();
+      } else {
+        console.warn('⚠️ Cannot render - pixiApp or renderer not available');
       }
     }
-  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig]);
+  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, JSON.stringify(lightsConfig), JSON.stringify(ambientLight), JSON.stringify(shadowConfig)]);
 
 
   // Animation loop
