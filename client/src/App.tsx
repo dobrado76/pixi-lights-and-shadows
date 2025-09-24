@@ -189,10 +189,10 @@ function App() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground" data-testid="app-title">
-                PIXI.js Primitives Demo
+                PIXI.js 2.5D Advanced Light and Shadow System
               </h1>
               <p className="text-sm text-muted-foreground" data-testid="app-subtitle">
-                Showcasing PIXI.Geometry, PIXI.Shader, and PIXI.Mesh
+                A comprehensive React.js application showcasing advanced pseudo-3D shadow casting using PIXI.js primitives
               </p>
             </div>
             <div className="flex items-center space-x-2">

@@ -831,6 +831,37 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
     };
   }, [pixiApp, geometry, onGeometryUpdate, onShaderUpdate, onMeshUpdate]);
+  
+  // Force auto-render when textures finish loading
+  useEffect(() => {
+    if (!pixiApp || meshesRef.current.length === 0) return;
+    
+    // Trigger additional renders after texture loading completes
+    const forceRender = () => {
+      if (pixiApp && pixiApp.renderer) {
+        pixiApp.render();
+      }
+    };
+    
+    // Multiple render passes to catch any delayed texture loading
+    const renderInterval = setInterval(forceRender, 100);
+    const timeouts = [
+      setTimeout(forceRender, 200),
+      setTimeout(forceRender, 500),
+      setTimeout(forceRender, 1000),
+      setTimeout(() => clearInterval(renderInterval), 2000)
+    ];
+    
+    // Also force render when window gains focus (handles tab switching)
+    const handleFocus = () => forceRender();
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      clearInterval(renderInterval);
+      timeouts.forEach(timeout => clearTimeout(timeout));
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [pixiApp, meshesRef.current.length])
 
   // Dynamic shader uniform updates for real-time lighting changes
   useEffect(() => {
