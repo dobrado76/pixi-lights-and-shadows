@@ -493,11 +493,17 @@ void main(void) {
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
     if (uDir0CastsShadows) {
-      // Compute virtual light position as if light comes from infinite distance
-      // This makes all shadow rays parallel, simulating sun/moon lighting
-      float infiniteDistance = 10000.0; // Very large distance
-      vec2 virtualLightPos = worldPos.xy + uDir0Direction.xy * infiniteDistance;
-      shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
+      if (uUseOccluderMap) {
+        // For occluder map: use reasonable distance that works with raycast loop
+        float sceneDistance = 800.0; // Reasonable distance for 200-iteration raycast
+        vec2 virtualLightPos = worldPos.xy + normalize(uDir0Direction.xy) * sceneDistance;
+        shadowFactor *= calculateShadowOccluderMap(virtualLightPos, worldPos.xy);
+      } else {
+        // For per-caster uniforms: use the original infinite distance approach
+        float infiniteDistance = 10000.0; // Very large distance
+        vec2 virtualLightPos = worldPos.xy + uDir0Direction.xy * infiniteDistance;
+        shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
+      }
     }
     
     intensity *= shadowFactor;
@@ -522,11 +528,17 @@ void main(void) {
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
     if (uDir1CastsShadows) {
-      // Compute virtual light position as if light comes from infinite distance
-      // This makes all shadow rays parallel, simulating sun/moon lighting
-      float infiniteDistance = 10000.0; // Very large distance
-      vec2 virtualLightPos = worldPos.xy + uDir1Direction.xy * infiniteDistance;
-      shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
+      if (uUseOccluderMap) {
+        // For occluder map: use reasonable distance that works with raycast loop
+        float sceneDistance = 800.0; // Reasonable distance for 200-iteration raycast
+        vec2 virtualLightPos = worldPos.xy + normalize(uDir1Direction.xy) * sceneDistance;
+        shadowFactor *= calculateShadowOccluderMap(virtualLightPos, worldPos.xy);
+      } else {
+        // For per-caster uniforms: use the original infinite distance approach
+        float infiniteDistance = 10000.0; // Very large distance
+        vec2 virtualLightPos = worldPos.xy + uDir1Direction.xy * infiniteDistance;
+        shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
+      }
     }
     
     intensity *= shadowFactor;
