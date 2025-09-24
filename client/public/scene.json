@@ -53,7 +53,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true
     },
     "test2": {
