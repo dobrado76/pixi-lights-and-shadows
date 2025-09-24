@@ -96,7 +96,7 @@
       "zOrder": 0,
       "castsShadows": true,
       "receiveShadows": false,
-      "visible": false,
+      "visible": true,
       "useNormalMap": true
     },
     "block": {
