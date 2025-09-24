@@ -40,13 +40,13 @@
       "x": 220,
       "y": 210,
       "z": 80,
-      "directionX": 0,
+      "directionX": 1,
       "directionY": 1,
       "directionZ": -1,
       "castsShadows": true,
-      "radius": 690,
-      "coneAngle": 47,
-      "softness": 0.2
+      "radius": 2070,
+      "coneAngle": 59,
+      "softness": 0.3
     },
     {
       "id": "spotlight",

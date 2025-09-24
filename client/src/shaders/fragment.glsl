@@ -476,10 +476,7 @@ void main(void) {
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    // Normalize the normal vector to ensure it's valid for lighting calculations
-    vec3 safeNormal = normalize(normal);
-    
-    float normalDot = max(dot(safeNormal, lightDir), 0.0);
+    float normalDot = max(dot(normal, lightDir), 0.0);
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
