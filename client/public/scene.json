@@ -46,10 +46,10 @@
       "image": "/textures/ball.png",
       "normal": "/textures/ballN.png",
       "position": {
-        "x": 204,
+        "x": 175,
         "y": 226
       },
-      "rotation": 0.9948376736367678,
+      "rotation": 0,
       "scale": 0.9,
       "zOrder": 0,
       "castsShadows": true,
@@ -88,7 +88,7 @@
         "y": 403
       },
       "rotation": 0,
-      "scale": 0.9,
+      "scale": 0.8,
       "zOrder": 1,
       "castsShadows": true,
       "visible": true,

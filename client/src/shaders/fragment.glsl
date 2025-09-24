@@ -8,6 +8,7 @@ uniform vec2 uCanvasSize;
 uniform vec3 uColor;
 uniform float uAmbientLight;
 uniform vec3 uAmbientColor;
+uniform float uRotation; // Sprite rotation for UV transformation
 
 // Multi-pass rendering control
 uniform int uPassMode; // 0 = base pass (ambient only), 1 = lighting pass (incremental)
@@ -289,8 +290,28 @@ float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
   }
 }
 
+// UV rotation function - rotates UV coordinates around center (0.5, 0.5)
+vec2 rotateUV(vec2 uv, float rotation) {
+  // Translate to center
+  vec2 centered = uv - 0.5;
+  
+  // Apply rotation matrix
+  float cosRot = cos(rotation);
+  float sinRot = sin(rotation);
+  vec2 rotated = vec2(
+    centered.x * cosRot - centered.y * sinRot,
+    centered.x * sinRot + centered.y * cosRot
+  );
+  
+  // Translate back
+  return rotated + 0.5;
+}
+
 void main(void) {
-  vec2 uv = vTextureCoord;
+  // Apply rotation to UV coordinates BEFORE texture sampling (physically correct)
+  vec2 uv = rotateUV(vTextureCoord, uRotation);
+  
+  // Sample textures with rotated UV coordinates (rotation affects lighting calculation)
   vec4 diffuseColor = texture2D(uDiffuse, uv);
   vec3 normal = texture2D(uNormal, uv).rgb * 2.0 - 1.0;
   
