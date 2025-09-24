@@ -26,8 +26,8 @@
       "enabled": true,
       "brightness": 0.4,
       "color": "0xffffff",
-      "directionX": -0.42261826174069933,
-      "directionY": -0.90630778703665,
+      "directionX": 0.5000000000000001,
+      "directionY": -0.8660254037844386,
       "directionZ": -1,
       "castsShadows": true
     },
