@@ -2,8 +2,8 @@
   "scene": {
     "background": {
       "type": "background",
-      "image": "/BGTextureTest.jpg",
-      "normal": "/BGTextureNORM.jpg",
+      "image": "/textures/BGTextureTest.jpg",
+      "normal": "/textures/BGTextureNORM.jpg",
       "position": {"x": 0, "y": 0},
       "rotation": 0,
       "scale": 1,
@@ -12,7 +12,7 @@
     },
     "background2": {
       "type": "background",
-      "image": "/white-fabric-texture-background.jpg",
+      "image": "/textures/white-fabric-texture-background.jpg",
       "position": {"x": 0, "y": 0},
       "rotation": 0,
       "scale": 1,
@@ -21,8 +21,8 @@
     },
     "ball": {
       "type": "sprite",
-      "image": "/ball.png",
-      "normal": "/ballN.png",
+      "image": "/textures/ball.png",
+      "normal": "/textures/ballN.png",
       "position": {"x": 120, "y": 80},
       "rotation": 0,
       "scale": 1,
@@ -31,8 +31,8 @@
     },
     "block": {
       "type": "sprite", 
-      "image": "/block.png",
-      "normal": "/blockNormalMap.jpg",
+      "image": "/textures/block.png",
+      "normal": "/textures/blockNormalMap.jpg",
       "position": {"x": 280, "y": 120},
       "rotation": 0,
       "scale": 1,
@@ -41,8 +41,8 @@
     },
     "block2": {
       "type": "sprite", 
-      "image": "/block2.png",
-      "normal": "/block2NormalMap.png",
+      "image": "/textures/block2.png",
+      "normal": "/textures/block2NormalMap.png",
       "position": {"x": 200, "y": 320},
       "rotation": 0,
       "scale": 1,
