@@ -282,43 +282,39 @@ function App() {
           </div>
 
           {/* Right Column - Tabbed Controls */}
-          <div className="space-y-6">
-            <Card className="bg-card/95 backdrop-blur border-border">
-              <CardContent className="pt-6">
-                <Tabs defaultValue="lights" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="lights" data-testid="tab-lights">
-                      💡 Lights ({lightsConfig.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="sprites" data-testid="tab-sprites">
-                      🎭 Sprites ({Object.keys(sceneConfig.scene || {}).length})
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="lights" className="mt-4">
-                    {lightsLoaded && (
-                      <DynamicLightControls
-                        lights={lightsConfig}
-                        ambientLight={ambientLight}
-                        shadowConfig={shadowConfig}
-                        onLightsChange={handleLightsChange}
-                        onAmbientChange={handleAmbientChange}
-                        onShadowConfigChange={handleShadowConfigChange}
-                      />
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="sprites" className="mt-4">
-                    {sceneLoaded && (
-                      <DynamicSpriteControls
-                        sceneConfig={sceneConfig}
-                        onSceneConfigChange={handleSceneConfigChange}
-                      />
-                    )}
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
+          <div>
+            <Tabs defaultValue="lights" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="lights" data-testid="tab-lights">
+                  💡 Lights ({lightsConfig.length})
+                </TabsTrigger>
+                <TabsTrigger value="sprites" data-testid="tab-sprites">
+                  🎭 Sprites ({Object.keys(sceneConfig.scene || {}).length})
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="lights" className="mt-4">
+                {lightsLoaded && (
+                  <DynamicLightControls
+                    lights={lightsConfig}
+                    ambientLight={ambientLight}
+                    shadowConfig={shadowConfig}
+                    onLightsChange={handleLightsChange}
+                    onAmbientChange={handleAmbientChange}
+                    onShadowConfigChange={handleShadowConfigChange}
+                  />
+                )}
+              </TabsContent>
+              
+              <TabsContent value="sprites" className="mt-4">
+                {sceneLoaded && (
+                  <DynamicSpriteControls
+                    sceneConfig={sceneConfig}
+                    onSceneConfigChange={handleSceneConfigChange}
+                  />
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
