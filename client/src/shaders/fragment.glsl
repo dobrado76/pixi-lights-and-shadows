@@ -196,69 +196,6 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shado
   return 1.0; // Not in shadow
 }
 
-// Directional light shadow calculation using occluder map - specialized for parallel rays
-float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) {
-  if (!uShadowsEnabled) return 1.0;
-  
-  // For directional lights, cast ray backwards from pixel position in light direction
-  // This simulates parallel rays from infinite distance (sun/moon lighting)
-  vec2 rayDir = -normalize(lightDirection); // Ray direction opposite to light direction
-  
-  // Raycast backwards from the pixel position to find occluders
-  float stepSize = 2.0; // Pixel steps along the ray
-  float maxDistance = 500.0; // Reasonable maximum distance for occluder search
-  
-  // Use constant loop bounds for WebGL compatibility
-  for (int i = 1; i < 200; i++) {
-    float distance = float(i) * stepSize;
-    
-    // Break early if we've gone too far
-    if (distance >= maxDistance) {
-      break;
-    }
-    
-    vec2 samplePos = pixelPos + rayDir * distance;
-    
-    // Convert world position to UV coordinates
-    vec2 occluderUV = samplePos / uCanvasSize;
-    
-    // Check bounds
-    if (occluderUV.x < 0.0 || occluderUV.x > 1.0 || occluderUV.y < 0.0 || occluderUV.y > 1.0) {
-      continue;
-    }
-    
-    // Sample occluder map alpha
-    float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
-    
-    // If we hit an occluder, cast shadow with distance-based softness
-    if (occluderAlpha > 0.0) {
-      float shadowLength = distance; // Distance from occluder to receiver (pixel)
-      
-      // Limit shadow by actual shadow length
-      if (shadowLength > uShadowMaxLength) {
-        return 1.0; // Shadow is longer than max allowed
-      }
-      
-      // Gradual fade-out towards max shadow length to avoid hard cutoffs
-      float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
-      if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
-      
-      // Binary shadow detection - clean and artifact-free
-      float shadowValue = 1.0;
-      
-      // Calculate final shadow strength with distance-based softness
-      float normalizedDistance = shadowLength / uShadowMaxLength;
-      float distanceFade = exp(-normalizedDistance * 2.0);
-      
-      float finalShadowStrength = uShadowStrength * shadowValue * distanceFade * maxLengthFade;
-      
-      return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
-    }
-  }
-  
-  return 1.0; // Not in shadow
-}
-
 // Occluder map shadow calculation - raycasts through binary alpha texture
 float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
@@ -363,34 +300,6 @@ float calculateDirectionalShadow(vec4 caster, vec2 pixelPos, vec2 lightDirection
   }
   
   return 1.0; // Not in shadow
-}
-
-// Unified directional light shadow calculation with auto-switching
-float calculateDirectionalShadowUnified(vec2 lightDirection, vec2 pixelPos) {
-  if (!uShadowsEnabled) return 1.0;
-  
-  if (uUseOccluderMap) {
-    // Use unlimited occluder map approach for directional lights
-    return calculateDirectionalShadowOccluderMap(lightDirection, pixelPos);
-  } else {
-    // Use fast per-caster uniform approach (≤3 casters) with virtual light position
-    float infiniteDistance = 10000.0; // Very large distance
-    vec2 virtualLightPos = pixelPos + lightDirection * infiniteDistance;
-    
-    float shadowFactor = 1.0;
-    
-    if (uShadowCaster0Enabled) {
-      shadowFactor *= calculateShadow(virtualLightPos, pixelPos, uShadowCaster0, uShadowCaster0Texture);
-    }
-    if (uShadowCaster1Enabled) {
-      shadowFactor *= calculateShadow(virtualLightPos, pixelPos, uShadowCaster1, uShadowCaster1Texture);
-    }
-    if (uShadowCaster2Enabled) {
-      shadowFactor *= calculateShadow(virtualLightPos, pixelPos, uShadowCaster2, uShadowCaster2Texture);
-    }
-    
-    return shadowFactor;
-  }
 }
 
 // Unified shadow calculation with auto-switching
@@ -621,10 +530,12 @@ void main(void) {
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
     if (uDir0CastsShadows) {
-      // For directional lights: create virtual light position at large distance
-      // This makes shadow rays nearly parallel (simulating sun/moon)
-      float virtualDistance = 5000.0; // Large but not extreme distance
-      vec2 virtualLightPos = worldPos.xy - uDir0Direction.xy * virtualDistance;
+      // Compute virtual light position as if light comes from infinite distance
+      // This makes all shadow rays parallel, simulating sun/moon lighting
+      float infiniteDistance = 10000.0; // Very large distance
+      vec2 virtualLightPos = worldPos.xy + uDir0Direction.xy * infiniteDistance;
+      
+      // 🌟 AUTO-SWITCHING: Use same shadow system as point/spot lights (supports unlimited casters!)
       shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
     }
     
@@ -650,10 +561,12 @@ void main(void) {
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
     if (uDir1CastsShadows) {
-      // For directional lights: create virtual light position at large distance
-      // This makes shadow rays nearly parallel (simulating sun/moon)
-      float virtualDistance = 5000.0; // Large but not extreme distance
-      vec2 virtualLightPos = worldPos.xy - uDir1Direction.xy * virtualDistance;
+      // Compute virtual light position as if light comes from infinite distance
+      // This makes all shadow rays parallel, simulating sun/moon lighting
+      float infiniteDistance = 10000.0; // Very large distance
+      vec2 virtualLightPos = worldPos.xy + uDir1Direction.xy * infiniteDistance;
+      
+      // 🌟 AUTO-SWITCHING: Use same shadow system as point/spot lights (supports unlimited casters!)
       shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
     }
     
