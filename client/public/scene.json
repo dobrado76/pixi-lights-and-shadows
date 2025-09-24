@@ -27,7 +27,7 @@
       "scale": 1,
       "castsShadows": false,
       "receiveShadows": true,
-      "visible": false,
+      "visible": true,
       "useNormalMap": false
     },
     "ball": {
@@ -50,14 +50,14 @@
       "image": "/textures/test1.png",
       "normal": "/textures/test1Normal.png",
       "position": {
-        "x": 150,
-        "y": 280
+        "x": 82,
+        "y": 420
       },
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
       "receiveShadows": true,
-      "visible": false,
+      "visible": true,
       "useNormalMap": true
     },
     "test2": {
@@ -65,7 +65,7 @@
       "image": "/textures/test2.png",
       "normal": "/textures/test2Normal.png",
       "position": {
-        "x": 150,
+        "x": 82,
         "y": 280
       },
       "rotation": 0,
