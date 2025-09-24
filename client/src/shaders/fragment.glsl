@@ -395,6 +395,9 @@ float calculateDirectionalShadowUnified(vec2 lightDirection, vec2 pixelPos) {
 
 // Unified shadow calculation with auto-switching
 float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
+  // TEMPORARILY DISABLE ALL SHADOWS TO TEST LIGHTING
+  return 1.0;
+  
   if (!uShadowsEnabled) return 1.0;
   
   if (uUseOccluderMap) {
