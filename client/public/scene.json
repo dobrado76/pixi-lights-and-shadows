@@ -1,7 +1,6 @@
 {
   "scene": {
     "background": {
-      "type": "background",
       "image": "/textures/BGTextureTest.jpg",
       "normal": "/textures/BGTextureNORM.jpg",
       "position": {
@@ -10,12 +9,12 @@
       },
       "rotation": 0,
       "scale": 1,
+      "zOrder": -2,
       "castsShadows": false,
       "visible": false,
       "useNormalMap": true
     },
     "background2": {
-      "type": "background",
       "image": "/textures/white-fabric-texture-background.jpg",
       "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
       "position": {
@@ -24,12 +23,12 @@
       },
       "rotation": 0,
       "scale": 1,
+      "zOrder": -1,
       "castsShadows": false,
       "visible": true,
       "useNormalMap": false
     },
     "ball": {
-      "type": "sprite",
       "image": "/textures/ball.png",
       "normal": "/textures/ballN.png",
       "position": {
@@ -38,12 +37,12 @@
       },
       "rotation": 0,
       "scale": 1,
+      "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true
     },
     "ball2": {
-      "type": "sprite",
       "image": "/textures/ball.png",
       "normal": "/textures/ballN.png",
       "position": {
@@ -52,12 +51,12 @@
       },
       "rotation": 0,
       "scale": 1,
+      "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true
     },
     "test1": {
-      "type": "sprite",
       "image": "/textures/test1.png",
       "normal": "/textures/test1Normal.png",
       "position": {
@@ -66,12 +65,12 @@
       },
       "rotation": 0,
       "scale": 1,
+      "zOrder": 0,
       "castsShadows": true,
       "visible": false,
       "useNormalMap": true
     },
     "test2": {
-      "type": "sprite",
       "image": "/textures/test2.png",
       "normal": "/textures/test2Normal.png",
       "position": {
@@ -80,12 +79,12 @@
       },
       "rotation": 0,
       "scale": 1,
+      "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true
     },
     "test3": {
-      "type": "sprite",
       "image": "/textures/test3.png",
       "normal": "/textures/test3Normal.png",
       "position": {
@@ -94,13 +93,13 @@
       },
       "rotation": 0,
       "scale": 1,
+      "zOrder": 0,
       "castsShadows": true,
       "receiveShadows": false,
       "visible": false,
       "useNormalMap": true
     },
     "block": {
-      "type": "sprite",
       "image": "/textures/block.png",
       "normal": "/textures/blockNormalMap.jpg",
       "position": {
@@ -109,12 +108,12 @@
       },
       "rotation": 0,
       "scale": 1,
+      "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true
     },
     "block2": {
-      "type": "sprite",
       "image": "/textures/block2.png",
       "normal": "/textures/block2NormalMap.png",
       "position": {
@@ -123,6 +122,7 @@
       },
       "rotation": 0,
       "scale": 1,
+      "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true

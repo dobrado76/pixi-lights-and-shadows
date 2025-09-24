@@ -337,12 +337,14 @@ export class SceneManager {
   }
 
 
-  getBackground(): SceneSprite | undefined {
-    return this.getAllSprites().find(sprite => sprite.definition.type === 'background');
+  // Get sprites sorted by zOrder (lowest to highest = back to front)
+  getSpritesSortedByZOrder(): SceneSprite[] {
+    return this.getAllSprites().sort((a, b) => a.definition.zOrder - b.definition.zOrder);
   }
-
+  
+  // Legacy method kept for backward compatibility, now returns all sprites
   getSprites(): SceneSprite[] {
-    return this.getAllSprites().filter(sprite => sprite.definition.type === 'sprite');
+    return this.getAllSprites();
   }
 
   destroy(): void {
