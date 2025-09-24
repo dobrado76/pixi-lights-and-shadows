@@ -461,9 +461,17 @@ void main(void) {
   
   // Directional Light 0
   if (uDir0Enabled) {
-    // Directional lights provide UNIFORM illumination - no Lambert shading
-    // Only use direction for shadow calculations, not for lighting intensity
-    float intensity = uDir0Intensity;
+    // Directional lights: parallel rays from infinite distance with normal mapping
+    vec3 lightDir = normalize(-uDir0Direction); // Invert direction (light TO surface)
+    
+    // Normal mapping with safe validation
+    vec3 safeNormal = normal;
+    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
+      safeNormal = vec3(0.0, 0.0, 1.0); // Flat surface normal
+    }
+    
+    float normalDot = max(dot(safeNormal, lightDir), 0.0);
+    float intensity = normalDot * uDir0Intensity;
     
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
@@ -482,9 +490,17 @@ void main(void) {
   
   // Directional Light 1
   if (uDir1Enabled) {
-    // Directional lights provide UNIFORM illumination - no Lambert shading
-    // Only use direction for shadow calculations, not for lighting intensity
-    float intensity = uDir1Intensity;
+    // Directional lights: parallel rays from infinite distance with normal mapping
+    vec3 lightDir = normalize(-uDir1Direction); // Invert direction (light TO surface)
+    
+    // Normal mapping with safe validation
+    vec3 safeNormal = normal;
+    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
+      safeNormal = vec3(0.0, 0.0, 1.0); // Flat surface normal
+    }
+    
+    float normalDot = max(dot(safeNormal, lightDir), 0.0);
+    float intensity = normalDot * uDir1Intensity;
     
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
