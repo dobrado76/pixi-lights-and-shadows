@@ -66,8 +66,11 @@ function App() {
   const [sceneConfig, setSceneConfig] = useState<{ scene: Record<string, any> }>({ scene: {} });
   const [sceneLoaded, setSceneLoaded] = useState<boolean>(false);
   
-  // Renderer version toggle (easy revert system)
-  const [useDeferred, setUseDeferred] = useState<boolean>(false);
+  // Renderer version toggle (easy revert system) - with localStorage persistence
+  const [useDeferred, setUseDeferred] = useState<boolean>(() => {
+    const saved = localStorage.getItem('pixi-renderer-type');
+    return saved === 'deferred';
+  });
 
   // Auto-save system with debouncing to prevent excessive writes during UI manipulation
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -276,7 +279,11 @@ function App() {
                   <label className="text-sm font-medium text-muted-foreground">Renderer:</label>
                   <select 
                     value={useDeferred ? 'deferred' : 'forward'}
-                    onChange={(e) => setUseDeferred(e.target.value === 'deferred')}
+                    onChange={(e) => {
+                      const isDeferred = e.target.value === 'deferred';
+                      setUseDeferred(isDeferred);
+                      localStorage.setItem('pixi-renderer-type', e.target.value);
+                    }}
                     className="px-3 py-1 text-xs border rounded bg-background text-foreground"
                     data-testid="renderer-selector"
                   >
