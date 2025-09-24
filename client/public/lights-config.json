@@ -4,18 +4,18 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.2,
+      "brightness": 0.1,
       "color": "0xffffff"
     },
     {
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
-      "brightness": 0.5,
+      "brightness": 0.9,
       "color": "0xffffff",
       "x": 270,
       "y": 210,
-      "z": 90,
+      "z": 60,
       "followMouse": true,
       "castsShadows": true,
       "radius": 960
