@@ -315,9 +315,9 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
         shader.uniforms.uShadowMaxLength = 200.0; // Maximum shadow length
         shader.uniforms.uUseOccluderMap = true; // Always use occluder map in deferred renderer
         // Create and render occluder map for ray casting shadows
-        if (pixiApp && sceneManager) {
+        if (pixiApp && sceneManagerRef.current) {
           // Build occluder map from all visible sprites
-          const occluderMap = buildOccluderMap(pixiApp, sceneManager);
+          const occluderMap = buildOccluderMap(pixiApp, sceneManagerRef.current);
           if (occluderMap) {
             shader.uniforms.uOccluderMap = occluderMap;
           }
@@ -354,12 +354,12 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
   };
 
   /**
-   * Deferred renderer with proper lighting and shadows
+   * TRUE Deferred renderer: Geometry pass → Lighting pass
    */
   const renderDeferredPipeline = () => {
     if (!pixiApp || !sceneManagerRef.current) return;
     
-    console.log('🔄 Starting deferred rendering pipeline...');
+    console.log('🔄 Starting TRUE deferred rendering pipeline...');
     
     const sprites = sceneManagerRef.current.getSprites();
     if (sprites.length === 0) {
@@ -367,30 +367,22 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
       return;
     }
     
-    // Clear stage and create lighting container
-    pixiApp.stage.removeChildren();
+    // Initialize G-Buffers if needed
+    if (!gBufferAlbedoRef.current) {
+      initializeDeferredBuffers();
+    }
     
-    // Create a container for all lit sprites
-    const litContainer = new PIXI.Container();
-    pixiApp.stage.addChild(litContainer);
+    // Step 1: GEOMETRY PASS - Render all sprites to G-Buffers
+    renderGeometryPass();
     
-    let addedSprites = 0;
-    sprites.forEach((sprite, index) => {
-      // Only render visible sprites
-      if (!sprite.definition.visible) {
-        console.log(`Sprite ${index}: Skipped (not visible)`);
-        return;
-      }
-      
-      let displayObject;
-      
-      if (sprite.diffuseTexture) {
-        // Create mesh with deferred lighting shader
-        const geometry = new PIXI.PlaneGeometry(1, 1);
-        
-        // Prepare lighting data - separate by light type
-        const enabledLights = lightsConfig.filter(l => l.enabled);
-        const pointLights = enabledLights.filter(l => l.type === 'point').slice(0, 4);
+    // Step 2: LIGHTING PASS - Apply lighting to screen-size G-Buffer (like one giant sprite)
+    renderLightingPass();
+    
+    
+    console.log(`✅ TRUE deferred rendering complete - ${sprites.length} sprites rendered to G-Buffers with screen-space lighting`);
+  };
+
+  // Initialize PIXI Application (prevent double initialization)
         const directionalLights = enabledLights.filter(l => l.type === 'directional').slice(0, 2);
         const spotlights = enabledLights.filter(l => l.type === 'spotlight').slice(0, 4);
         
