@@ -16,7 +16,7 @@
       "x": 270,
       "y": 210,
       "z": 60,
-      "followMouse": false,
+      "followMouse": true,
       "castsShadows": true,
       "radius": 1040
     },
