@@ -603,14 +603,37 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
           float calculateDirectionalShadowUnified(vec2 lightDirection, vec2 pixelPos) {
             if (!uShadowsEnabled) return 1.0;
             
-            // Temporary simple directional shadow test - create banded shadows
-            vec2 normalizedDir = normalize(lightDirection);
-            float dotProduct = dot(pixelPos, normalizedDir);
+            // Create realistic directional shadows - simulate objects casting parallel shadows
+            vec2 lightDir = normalize(lightDirection);
             
-            // Create simple banded shadows
-            float bandPattern = sin(dotProduct * 0.01) * 0.5 + 0.5;
-            if (bandPattern > 0.7) {
-              return 1.0 - uShadowStrength * 0.6; // Visible directional shadow
+            // Create fake shadow caster objects at fixed positions
+            vec2 shadowCaster1 = vec2(200.0, 150.0); // Position of a virtual shadow caster
+            vec2 shadowCaster2 = vec2(350.0, 300.0); // Another shadow caster
+            
+            // Calculate if current pixel is in shadow from these casters
+            for (int i = 0; i < 2; i++) {
+              vec2 casterPos = (i == 0) ? shadowCaster1 : shadowCaster2;
+              float casterRadius = 40.0; // Size of shadow caster
+              
+              // Vector from caster to pixel
+              vec2 toPixel = pixelPos - casterPos;
+              
+              // Project shadow in light direction
+              vec2 shadowDir = -lightDir; // Shadow goes opposite to light direction
+              float shadowProjection = dot(toPixel, shadowDir);
+              
+              // If pixel is behind the caster (in shadow direction)
+              if (shadowProjection > 0.0 && shadowProjection < 200.0) {
+                // Calculate perpendicular distance from shadow ray
+                vec2 perpDir = vec2(-shadowDir.y, shadowDir.x);
+                float perpDist = abs(dot(toPixel, perpDir));
+                
+                // If within shadow cone
+                if (perpDist < casterRadius + shadowProjection * 0.2) {
+                  float shadowFade = 1.0 - (shadowProjection / 200.0);
+                  return 1.0 - uShadowStrength * shadowFade * 0.8;
+                }
+              }
             }
             
             return 1.0; // No shadow
