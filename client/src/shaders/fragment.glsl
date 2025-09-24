@@ -321,8 +321,8 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
       // shadowValue now contains the soft/sharp shadow information
       float finalShadowStrength = uShadowStrength * shadowRatio * distanceFade * maxLengthFade;
       
-      // Make this consistent with the working per-caster approach
-      return clamp(1.0 - finalShadowStrength, 0.0, 1.0);
+      // Match the working per-caster approach exactly
+      return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
     }
   }
   
