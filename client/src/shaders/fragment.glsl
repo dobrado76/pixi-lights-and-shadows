@@ -271,9 +271,8 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   rayDir /= rayLength; // Normalize
   
   // Simple raycast: check a few points along the ray from light to pixel
-  int numSamples = 20;
-  for (int i = 1; i < numSamples; i++) {
-    float t = float(i) / float(numSamples);
+  for (int i = 1; i < 20; i++) {
+    float t = float(i) / 20.0;
     vec2 samplePos = lightPos + rayDir * (rayLength * t);
     
     // Convert to occluder map UV coordinates
