@@ -443,6 +443,17 @@ void main(void) {
   vec4 diffuseColor = texture2D(uDiffuse, uv);
   vec3 normal = texture2D(uNormal, uv).rgb * 2.0 - 1.0;
   
+  // Rotate the normal vector to match sprite rotation
+  if (abs(uRotation) > 0.001) {
+    float cosRot = cos(uRotation);
+    float sinRot = sin(uRotation);
+    normal = vec3(
+      normal.x * cosRot - normal.y * sinRot,
+      normal.x * sinRot + normal.y * cosRot,
+      normal.z
+    );
+  }
+  
   // Calculate world position
   vec2 worldPos = uSpritePos + uv * uSpriteSize;
   vec3 worldPos3D = vec3(worldPos.x, worldPos.y, 0.0);
