@@ -733,6 +733,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uShadowCaster0Enabled: shadowCasters.length > 0,
         uShadowCaster1Enabled: shadowCasters.length > 1,
         uShadowCaster2Enabled: shadowCasters.length > 2,
+        // Switch to unlimited mode when more than 3 shadow casters
+        uUseOccluderMap: shadowCasters.length > 3,
         ...lightUniforms
       };
       
@@ -766,6 +768,13 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
 
       console.log('💡 Shadow casters created:', legacyShadowCasters);
+      
+      // IMMEDIATE CHECK: Should we use unlimited shadows?
+      if (shadowCasters.length > 3) {
+        console.log(`🌟 ENABLING UNLIMITED SHADOWS: ${shadowCasters.length} shadow casters detected!`);
+      } else {
+        console.log(`⚡ Using limited shadows: Only ${shadowCasters.length} shadow casters`);
+      }
 
       // Set shadow texture uniforms for all sprites
       const shadowTextureUniforms = {
@@ -891,6 +900,11 @@ const PixiDemo = (props: PixiDemoProps) => {
             shader.uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
             shader.uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
             shader.uniforms.uShadowCaster2Enabled = shadowCasters.length > 2;
+            // Enable unlimited shadow mode when more than 3 casters
+            shader.uniforms.uUseOccluderMap = shadowCasters.length > 3;
+            if (shadowCasters.length > 3) {
+              shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+            }
           }
         });
       }
@@ -960,8 +974,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
       uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
       
-      // Occluder map uniforms for unlimited shadow casters
-      uniforms.uUseOccluderMap = shadowCasters.length > 4;
+      // Occluder map uniforms for unlimited shadow casters (switch when >3 casters)
+      uniforms.uUseOccluderMap = shadowCasters.length > 3;
       uniforms.uOccluderMap = occluderRenderTargetRef.current || null;
       
       // Texture uniforms will be set after textures are loaded
@@ -1120,13 +1134,15 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Automatic mode selection: Multi-pass for >8 lights  
       const useMultiPass = lightCount > 8;
       
-      // Shadow system mode selection: Occluder map for >4 shadow casters
+      // Shadow system mode selection: Occluder map for >3 shadow casters
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
-      const useOccluderMap = shadowCasters.length > 4;
+      const useOccluderMap = shadowCasters.length > 3;
       
       if (useOccluderMap) {
-        // console.log(`🌑 OCCLUDER MAP: Using occluder map for ${shadowCasters.length} shadow casters`);
+        console.log(`🌑 UNLIMITED SHADOWS: Using occluder map for ${shadowCasters.length} shadow casters`);
+        console.log(`🔧 Building occluder map now...`);
         buildOccluderMap();
+        console.log(`✅ Occluder map built and applied to shaders`);
         
         // Update all shaders to use occluder map
         shadersRef.current.forEach(shader => {
@@ -1136,7 +1152,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           }
         });
       } else {
-        // console.log(`⚡ FAST SHADOWS: Using per-caster uniforms for ${shadowCasters.length} shadow casters`);
+        console.log(`⚡ FAST SHADOWS: Using per-caster uniforms for ${shadowCasters.length} shadow casters`);
         
         // Update all shaders to use per-caster uniforms
         shadersRef.current.forEach(shader => {
@@ -1179,6 +1195,28 @@ const PixiDemo = (props: PixiDemoProps) => {
     const ticker = () => {
       if (shadersRef.current.length > 0 && shadersRef.current[0].uniforms) {
         shadersRef.current[0].uniforms.uTime += 0.02;
+      }
+      
+      // Trigger shadow system check and render loop every frame
+      const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
+      if (shadowCasters.length > 3) {
+        console.log(`🌑 UNLIMITED SHADOWS: ${shadowCasters.length} casters detected`);
+        
+        // TRIGGER THE RENDER LOOP FOR UNLIMITED SHADOWS
+        const useOccluderMap = shadowCasters.length > 3;
+        if (useOccluderMap && occluderRenderTargetRef.current) {
+          console.log(`🔧 TRIGGERING Occluder map build from animation loop...`);
+          buildOccluderMap();
+          
+          // Update all shaders to use occluder map
+          shadersRef.current.forEach(shader => {
+            if (shader.uniforms) {
+              shader.uniforms.uUseOccluderMap = true;
+              shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+            }
+          });
+          console.log(`✅ Unlimited shadows applied from animation loop!`);
+        }
       }
     };
 
