@@ -126,7 +126,7 @@
       "zOrder": 0,
       "castsShadows": true,
       "receiveShadows": false,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
@@ -145,8 +145,13 @@
       "scale": 1,
       "zOrder": 0,
       "castsShadows": true,
-      "visible": true,
-      "useNormalMap": true
+      "visible": false,
+      "useNormalMap": true,
+      "pivot": {
+        "preset": "middle-center",
+        "offsetX": 0,
+        "offsetY": 0
+      }
     },
     "block2": {
       "image": "/textures/block2.png",
@@ -160,7 +165,12 @@
       "zOrder": 0,
       "castsShadows": true,
       "visible": true,
-      "useNormalMap": true
+      "useNormalMap": true,
+      "pivot": {
+        "preset": "middle-center",
+        "offsetX": 0,
+        "offsetY": 0
+      }
     }
   }
 }
