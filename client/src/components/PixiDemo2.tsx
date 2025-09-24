@@ -325,10 +325,11 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
         // Create mesh with deferred lighting shader
         const geometry = new PIXI.PlaneGeometry(1, 1);
         
-        // Prepare lighting data - separate point and directional lights
+        // Prepare lighting data - separate by light type
         const enabledLights = lightsConfig.filter(l => l.enabled);
         const pointLights = enabledLights.filter(l => l.type === 'point').slice(0, 4);
         const directionalLights = enabledLights.filter(l => l.type === 'directional').slice(0, 2);
+        const spotlights = enabledLights.filter(l => l.type === 'spotlight').slice(0, 4);
         
         // Point light data
         const lightPositions = new Float32Array(12); // 4 lights * 3 components
@@ -340,6 +341,15 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
         const dirLightDirections = new Float32Array(6); // 2 lights * 3 components
         const dirLightColors = new Float32Array(6);     // 2 lights * 3 components  
         const dirLightIntensities = new Float32Array(2);
+        
+        // Spotlight data (copy exact structure from original)
+        const spotLightPositions = new Float32Array(12);  // 4 lights * 3 components
+        const spotLightDirections = new Float32Array(12); // 4 lights * 3 components  
+        const spotLightColors = new Float32Array(12);     // 4 lights * 3 components  
+        const spotLightIntensities = new Float32Array(4);
+        const spotLightRadiuses = new Float32Array(4);
+        const spotLightConeAngles = new Float32Array(4);
+        const spotLightSoftnesses = new Float32Array(4);
         
         // Fill point light data
         pointLights.forEach((light, lightIndex) => {
@@ -371,6 +381,28 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
           dirLightIntensities[lightIndex] = light.intensity;
         });
         
+        // Fill spotlight data (copy exact uniforms from original)
+        spotlights.forEach((light, lightIndex) => {
+          const baseIndex = lightIndex * 3;
+          // Handle mouse-following spotlights
+          spotLightPositions[baseIndex] = light.followMouse ? mousePos.x : light.position.x;
+          spotLightPositions[baseIndex + 1] = light.followMouse ? mousePos.y : light.position.y;
+          spotLightPositions[baseIndex + 2] = light.position.z;
+          
+          spotLightDirections[baseIndex] = light.direction.x;
+          spotLightDirections[baseIndex + 1] = light.direction.y;
+          spotLightDirections[baseIndex + 2] = light.direction.z;
+          
+          spotLightColors[baseIndex] = light.color.r;
+          spotLightColors[baseIndex + 1] = light.color.g;
+          spotLightColors[baseIndex + 2] = light.color.b;
+          
+          spotLightIntensities[lightIndex] = light.intensity;
+          spotLightRadiuses[lightIndex] = light.radius || 150; // Default radius like original
+          spotLightConeAngles[lightIndex] = light.coneAngle || 30; // Default cone angle
+          spotLightSoftnesses[lightIndex] = light.softness || 0.5; // Default softness
+        });
+        
         const uniforms = {
           uSampler: sprite.diffuseTexture,
           uNormalMap: sprite.normalTexture || PIXI.Texture.WHITE,
@@ -392,6 +424,16 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
           uDirLightColors: dirLightColors,
           uDirLightIntensities: dirLightIntensities,
           uNumDirLights: directionalLights.length,
+          
+          // Spotlight uniforms (copy exact structure from original)
+          uSpotLightPositions: spotLightPositions,
+          uSpotLightDirections: spotLightDirections,
+          uSpotLightColors: spotLightColors,
+          uSpotLightIntensities: spotLightIntensities,
+          uSpotLightRadiuses: spotLightRadiuses,
+          uSpotLightConeAngles: spotLightConeAngles,
+          uSpotLightSoftnesses: spotLightSoftnesses,
+          uNumSpotLights: spotlights.length,
           
           // Material properties
           uNormalIntensity: shaderParams.normalMapIntensity,
@@ -443,6 +485,16 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
           uniform vec3 uDirLightColors[2];
           uniform float uDirLightIntensities[2];
           uniform int uNumDirLights;
+          
+          // Spotlight uniforms (copy from original fragment.glsl)
+          uniform vec3 uSpotLightPositions[4];
+          uniform vec3 uSpotLightDirections[4];
+          uniform vec3 uSpotLightColors[4];
+          uniform float uSpotLightIntensities[4];
+          uniform float uSpotLightRadiuses[4];
+          uniform float uSpotLightConeAngles[4];
+          uniform float uSpotLightSoftnesses[4];
+          uniform int uNumSpotLights;
           
           uniform float uNormalIntensity;
           uniform float uSpecularPower;
@@ -516,6 +568,48 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
               }
             }
             
+            // Spotlight calculations (copy exact math from original fragment.glsl)
+            for (int i = 0; i < 4; i++) {
+              if (i >= uNumSpotLights) break;
+              
+              vec3 spotPos = uSpotLightPositions[i];
+              vec3 spotDir = uSpotLightDirections[i];
+              vec3 spotColor = uSpotLightColors[i];
+              float spotIntensity = uSpotLightIntensities[i];
+              float spotRadius = uSpotLightRadiuses[i];
+              float spotConeAngle = uSpotLightConeAngles[i];
+              float spotSoftness = uSpotLightSoftnesses[i];
+              
+              // Light direction and distance
+              vec3 L = normalize(vec3(spotPos.xy - vWorldPos, spotPos.z));
+              float dist = length(vec3(spotPos.xy - vWorldPos, spotPos.z));
+              
+              // Distance attenuation with quadratic falloff (copy from original)
+              float atten = 1.0 - clamp(dist / spotRadius, 0.0, 1.0);
+              atten *= atten;
+              
+              // Convert spotlight direction from UI space (+Y down) to shader space
+              vec3 S = normalize(vec3(spotDir.x, -spotDir.y, spotDir.z));
+              
+              // Cone calculation with softness (copy exact math from original)
+              float cosAng = dot(-L, S);
+              float outer = cos(radians(spotConeAngle));
+              float inner = cos(radians(spotConeAngle * (1.0 - spotSoftness)));
+              float spotFactor = smoothstep(outer, inner, cosAng);
+              
+              // Diffuse lighting
+              float diffuse = max(dot(normal, L), 0.0);
+              
+              vec3 lightContrib = albedo.rgb * spotColor * diffuse * spotIntensity * atten * spotFactor;
+              finalColor += lightContrib;
+              
+              // Specular highlight for spotlight
+              vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
+              vec3 reflectDir = reflect(-L, normal);
+              float specular = pow(max(dot(viewDir, reflectDir), 0.0), uSpecularPower);
+              finalColor += spotColor * specular * uSpecularIntensity * spotIntensity * atten * spotFactor;
+            }
+            
             gl_FragColor = vec4(finalColor, albedo.a);
           }
         `;
@@ -523,7 +617,7 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
         const shader = PIXI.Shader.from(vertexShader, fragmentShader, uniforms);
         displayObject = new PIXI.Mesh(geometry, shader);
         
-        console.log(`Sprite ${index}: Using deferred lit mesh with ${pointLights.length} point lights, ${directionalLights.length} directional lights`);
+        console.log(`Sprite ${index}: Using deferred lit mesh with ${pointLights.length} point, ${directionalLights.length} directional, ${spotlights.length} spot lights`);
       } else {
         // Fallback to simple colored rectangle
         const graphics = new PIXI.Graphics();
