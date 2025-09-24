@@ -176,32 +176,36 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shado
             float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
             if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
             
-            // Real sharpness control: use edge sampling with variable blur
-            float shadowValue = 1.0; // Start with full shadow
+            // Fixed sharpness control: simple and effective
+            float shadowValue = 1.0; // Default: full shadow
             
-            // Sharpness controls edge blur: sharp = no blur, soft = blur edges
-            float blurRadius = mix(2.0, 0.0, uShadowSharpness); // 0=blur, 1=no blur
-            
-            if (blurRadius > 0.0) {
-              // Sample around the edge to create soft falloff
+            // Sharpness controls how many samples we take around the hit point
+            // Sharp (1.0) = single sample, Soft (0.0) = multiple samples with averaging
+            if (uShadowSharpness >= 0.95) {
+              // Very sharp: use the original hit (binary shadow)
+              shadowValue = 1.0;
+            } else {
+              // Soft shadows: sample in a small area around hit point
+              float sampleRadius = mix(1.5, 0.3, uShadowSharpness);
               float edgeSamples = 0.0;
               float totalSamples = 0.0;
               
+              // 3x3 sampling pattern for soft shadows
               for (int bx = -1; bx <= 1; bx++) {
                 for (int by = -1; by <= 1; by++) {
-                  vec2 blurOffset = vec2(float(bx), float(by)) * blurRadius;
-                  vec2 blurSamplePoint = samplePoint + blurOffset;
-                  vec2 blurMaskUV = (blurSamplePoint - casterMin) / (casterMax - casterMin);
+                  vec2 offset = vec2(float(bx), float(by)) * sampleRadius;
+                  vec2 testPoint = samplePoint + offset;
+                  vec2 testUV = (testPoint - casterMin) / (casterMax - casterMin);
                   
-                  if (blurMaskUV.x >= 0.0 && blurMaskUV.x <= 1.0 && blurMaskUV.y >= 0.0 && blurMaskUV.y <= 1.0) {
-                    float blurMaskValue = texture2D(shadowMask, blurMaskUV).a;
-                    edgeSamples += (blurMaskValue > 0.0) ? 1.0 : 0.0;
+                  if (testUV.x >= 0.0 && testUV.x <= 1.0 && testUV.y >= 0.0 && testUV.y <= 1.0) {
+                    float testAlpha = texture2D(shadowMask, testUV).a;
+                    edgeSamples += (testAlpha > 0.0) ? 1.0 : 0.0;
                     totalSamples += 1.0;
                   }
                 }
               }
               
-              shadowValue = (totalSamples > 0.0) ? edgeSamples / totalSamples : 1.0;
+              shadowValue = (totalSamples > 0.0) ? edgeSamples / totalSamples : 0.0;
             }
             
             float normalizedDistance = shadowLength / uShadowMaxLength;
@@ -269,33 +273,39 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
       float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
       if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
       
-      // Real sharpness control: use PCF (Percentage-Closer Filtering) with variable sampling
-      float shadowValue = 0.0;
-      float sampleCount = 0.0;
+      // Fixed sharpness control: clear and simple
+      float shadowValue = 1.0; // Default: full shadow when hit
       
-      // Sharpness controls sample radius: sharp = tight sampling, soft = wide sampling
-      float sampleRadius = mix(3.0, 0.5, uShadowSharpness); // 0=wide sampling, 1=tight sampling
-      int numSamples = int(mix(9.0, 1.0, uShadowSharpness)); // 0=many samples, 1=few samples
-      
-      // Simple PCF pattern around the hit point
-      for (int sx = -1; sx <= 1; sx++) {
-        for (int sy = -1; sy <= 1; sy++) {
-          if (int(sampleCount) >= numSamples) break;
-          
-          vec2 offset = vec2(float(sx), float(sy)) * sampleRadius;
-          vec2 samplePos = lightPos + rayDir * distance + offset;
-          vec2 sampleUV = samplePos / uCanvasSize;
-          
-          if (sampleUV.x >= 0.0 && sampleUV.x <= 1.0 && sampleUV.y >= 0.0 && sampleUV.y <= 1.0) {
-            float sampleAlpha = texture2D(uOccluderMap, sampleUV).a;
-            shadowValue += (sampleAlpha > 0.0) ? 1.0 : 0.0;
-            sampleCount += 1.0;
+      // Sharpness controls edge softness
+      if (uShadowSharpness >= 0.95) {
+        // Very sharp: binary shadow (no sampling)
+        shadowValue = 1.0;
+      } else {
+        // Soft shadows: sample around the hit point
+        float sampleRadius = mix(2.0, 0.5, uShadowSharpness);
+        float edgeSamples = 0.0;
+        float totalSamples = 0.0;
+        
+        // 3x3 sampling pattern
+        for (int sx = -1; sx <= 1; sx++) {
+          for (int sy = -1; sy <= 1; sy++) {
+            vec2 offset = vec2(float(sx), float(sy)) * sampleRadius;
+            vec2 testPos = lightPos + rayDir * distance + offset;
+            vec2 testUV = testPos / uCanvasSize;
+            
+            if (testUV.x >= 0.0 && testUV.x <= 1.0 && testUV.y >= 0.0 && testUV.y <= 1.0) {
+              float testAlpha = texture2D(uOccluderMap, testUV).a;
+              edgeSamples += (testAlpha > 0.0) ? 1.0 : 0.0;
+              totalSamples += 1.0;
+            }
           }
         }
+        
+        shadowValue = (totalSamples > 0.0) ? edgeSamples / totalSamples : 0.0;
       }
       
       // Calculate final shadow strength
-      float shadowRatio = (sampleCount > 0.0) ? shadowValue / sampleCount : 0.0;
+      float shadowRatio = shadowValue;
       float normalizedDistance = shadowLength / uShadowMaxLength;
       float distanceFade = exp(-normalizedDistance * 2.0);
       float finalShadowStrength = uShadowStrength * shadowRatio * distanceFade * maxLengthFade;
