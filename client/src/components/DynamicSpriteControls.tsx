@@ -105,7 +105,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
             <Collapsible key={spriteId} open={isExpanded} onOpenChange={() => toggleExpanded(spriteId)}>
               <Card className="border border-border/50 bg-card/50">
                 <CollapsibleTrigger asChild>
-                  <CardHeader className="pb-2 cursor-pointer hover:bg-accent/50 transition-colors">
+                  <CardHeader className="py-1 cursor-pointer hover:bg-accent/50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {sprite.visible ? (
@@ -113,13 +113,8 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
                         ) : (
                           <EyeOff className="h-4 w-4 text-red-500" />
                         )}
-                        <div>
-                          <div className="text-sm font-medium text-card-foreground">
-                            {spriteId}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            z:{sprite.zOrder} • x:{Math.round(sprite.position.x)} y:{Math.round(sprite.position.y)}
-                          </div>
+                        <div className="text-sm font-medium text-card-foreground">
+                          {spriteId}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -219,8 +214,8 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
                         </div>
 
                         {/* Pivot Control */}
-                        <div className="space-y-2">
-                          <Label className="text-xs font-medium text-muted-foreground">Pivot Point</Label>
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs font-medium text-muted-foreground min-w-fit">Pivot Point</Label>
                           <Select
                             value={sprite.pivot?.preset || 'middle-center'}
                             onValueChange={(value) => updateSpriteConfig(spriteId, {
@@ -310,8 +305,6 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
 
                         {/* Shadow & Rendering Controls */}
                         <div className="space-y-2 pt-2 border-t border-border/50">
-                          <Label className="text-xs font-medium text-muted-foreground">Rendering Options</Label>
-                          
                           <div className="flex items-center justify-between">
                             <Label className="text-xs text-card-foreground">Casts Shadows</Label>
                             <Switch
@@ -332,8 +325,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
                         </div>
 
                         {/* Texture Info */}
-                        <div className="space-y-2 pt-2 border-t border-border/50">
-                          <Label className="text-xs font-medium text-muted-foreground">Textures</Label>
+                        <div className="space-y-1 pt-2 border-t border-border/50">
                           <div className="text-xs text-muted-foreground break-all">
                             <div><span className="font-medium">Diffuse:</span> {sprite.image}</div>
                             {sprite.normal && (
