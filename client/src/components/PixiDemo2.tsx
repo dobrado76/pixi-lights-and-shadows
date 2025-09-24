@@ -325,14 +325,24 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
         // Create mesh with deferred lighting shader
         const geometry = new PIXI.PlaneGeometry(1, 1);
         
-        // Prepare lighting data
-        const enabledLights = lightsConfig.filter(l => l.enabled).slice(0, 4);
+        // Prepare lighting data - separate point and directional lights
+        const enabledLights = lightsConfig.filter(l => l.enabled);
+        const pointLights = enabledLights.filter(l => l.type === 'point').slice(0, 4);
+        const directionalLights = enabledLights.filter(l => l.type === 'directional').slice(0, 2);
+        
+        // Point light data
         const lightPositions = new Float32Array(12); // 4 lights * 3 components
         const lightColors = new Float32Array(12);    // 4 lights * 3 components  
         const lightIntensities = new Float32Array(4);
         const lightRadiuses = new Float32Array(4);   // Light radius for attenuation
         
-        enabledLights.forEach((light, lightIndex) => {
+        // Directional light data
+        const dirLightDirections = new Float32Array(6); // 2 lights * 3 components
+        const dirLightColors = new Float32Array(6);     // 2 lights * 3 components  
+        const dirLightIntensities = new Float32Array(2);
+        
+        // Fill point light data
+        pointLights.forEach((light, lightIndex) => {
           const baseIndex = lightIndex * 3;
           // Handle mouse-following lights
           lightPositions[baseIndex] = light.followMouse ? mousePos.x : light.position.x;
@@ -347,6 +357,20 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
           lightRadiuses[lightIndex] = light.radius || 200; // Default radius 200
         });
         
+        // Fill directional light data
+        directionalLights.forEach((light, lightIndex) => {
+          const baseIndex = lightIndex * 3;
+          dirLightDirections[baseIndex] = light.direction.x;
+          dirLightDirections[baseIndex + 1] = light.direction.y;
+          dirLightDirections[baseIndex + 2] = light.direction.z;
+          
+          dirLightColors[baseIndex] = light.color.r;
+          dirLightColors[baseIndex + 1] = light.color.g;
+          dirLightColors[baseIndex + 2] = light.color.b;
+          
+          dirLightIntensities[lightIndex] = light.intensity;
+        });
+        
         const uniforms = {
           uSampler: sprite.diffuseTexture,
           uNormalMap: sprite.normalTexture || PIXI.Texture.WHITE,
@@ -356,11 +380,18 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
                          ambientLight.color.g * ambientLight.intensity, 
                          ambientLight.color.b * ambientLight.intensity],
           
+          // Point light uniforms
           uLightPositions: lightPositions,
           uLightColors: lightColors,    
           uLightIntensities: lightIntensities,
           uLightRadiuses: lightRadiuses,
-          uNumLights: enabledLights.length,
+          uNumPointLights: pointLights.length,
+          
+          // Directional light uniforms
+          uDirLightDirections: dirLightDirections,
+          uDirLightColors: dirLightColors,
+          uDirLightIntensities: dirLightIntensities,
+          uNumDirLights: directionalLights.length,
           
           // Material properties
           uNormalIntensity: shaderParams.normalMapIntensity,
@@ -400,11 +431,18 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
           uniform sampler2D uNormalMap;
           
           uniform vec3 uAmbientLight;
+          // Point light uniforms
           uniform vec3 uLightPositions[4];
           uniform vec3 uLightColors[4];
           uniform float uLightIntensities[4];
           uniform float uLightRadiuses[4];
-          uniform int uNumLights;
+          uniform int uNumPointLights;
+          
+          // Directional light uniforms  
+          uniform vec3 uDirLightDirections[2];
+          uniform vec3 uDirLightColors[2];
+          uniform float uDirLightIntensities[2];
+          uniform int uNumDirLights;
           
           uniform float uNormalIntensity;
           uniform float uSpecularPower;
@@ -419,9 +457,9 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
             
             vec3 finalColor = albedo.rgb * uAmbientLight;
             
-            // Deferred lighting calculation for each light
+            // Point light calculations
             for (int i = 0; i < 4; i++) {
-              if (i >= uNumLights) break;
+              if (i >= uNumPointLights) break;
               
               vec3 lightPos = uLightPositions[i];
               vec3 lightColor = uLightColors[i];
@@ -451,6 +489,33 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
               finalColor *= shadow;
             }
             
+            // Directional light calculations
+            for (int i = 0; i < 2; i++) {
+              if (i >= uNumDirLights) break;
+              
+              vec3 lightDir = normalize(-uDirLightDirections[i]); // Negate direction for proper lighting
+              vec3 lightColor = uDirLightColors[i];
+              float lightIntensity = uDirLightIntensities[i];
+              
+              // Diffuse lighting for directional light
+              float diffuse = max(dot(normal, lightDir), 0.0);
+              
+              vec3 lightContrib = albedo.rgb * lightColor * diffuse * lightIntensity;
+              finalColor += lightContrib;
+              
+              // Specular highlight for directional light
+              vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
+              vec3 reflectDir = reflect(-lightDir, normal);
+              float specular = pow(max(dot(viewDir, reflectDir), 0.0), uSpecularPower);
+              finalColor += lightColor * specular * uSpecularIntensity * lightIntensity;
+              
+              // Directional shadows (simplified)
+              if (uShadowStrength > 0.0) {
+                float dirShadow = 1.0 - uShadowStrength * 0.2;
+                finalColor *= dirShadow;
+              }
+            }
+            
             gl_FragColor = vec4(finalColor, albedo.a);
           }
         `;
@@ -458,7 +523,7 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
         const shader = PIXI.Shader.from(vertexShader, fragmentShader, uniforms);
         displayObject = new PIXI.Mesh(geometry, shader);
         
-        console.log(`Sprite ${index}: Using deferred lit mesh with ${enabledLights.length} lights`);
+        console.log(`Sprite ${index}: Using deferred lit mesh with ${pointLights.length} point lights, ${directionalLights.length} directional lights`);
       } else {
         // Fallback to simple colored rectangle
         const graphics = new PIXI.Graphics();
@@ -484,7 +549,8 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
       addedSprites++;
     });
     
-    console.log(`✅ Deferred rendering complete - ${addedSprites} lit sprites with ${lightsConfig.filter(l => l.enabled).length} lights`);
+    const totalEnabledLights = lightsConfig.filter(l => l.enabled).length;
+    console.log(`✅ Deferred rendering complete - ${addedSprites} lit sprites with ${totalEnabledLights} total lights`);
     
     // Force a render
     pixiApp.render();
