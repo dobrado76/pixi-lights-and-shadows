@@ -259,7 +259,7 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
   return 1.0; // Not in shadow
 }
 
-// Occluder map shadow calculation - simplified to match working per-caster approach
+// Occluder map shadow calculation - raycasts through binary alpha texture
 float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
   
@@ -270,12 +270,22 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   
   rayDir /= rayLength; // Normalize
   
-  // Simple raycast: check a few points along the ray from light to pixel
-  for (int i = 1; i < 20; i++) {
-    float t = float(i) / 20.0;
-    vec2 samplePos = lightPos + rayDir * (rayLength * t);
+  // Raycast through the occluder map with fixed iteration count
+  float stepSize = 2.0; // Pixel steps along the ray
+  float maxDistance = rayLength; // Don't limit by uShadowMaxLength here - limit by shadow length instead
+  
+  // Use constant loop bounds for WebGL compatibility
+  for (int i = 1; i < 200; i++) {
+    float distance = float(i) * stepSize;
     
-    // Convert to occluder map UV coordinates
+    // Break early if we've gone past the ray length
+    if (distance >= maxDistance) {
+      break;
+    }
+    
+    vec2 samplePos = lightPos + rayDir * distance;
+    
+    // Convert world position to UV coordinates
     vec2 occluderUV = samplePos / uCanvasSize;
     
     // Check bounds
@@ -283,13 +293,35 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
       continue;
     }
     
-    // Sample occluder map - if we hit something solid, return shadow
+    // Sample occluder map alpha
     float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
     
-    if (occluderAlpha > 0.5) {
-      // Found an occluder - calculate shadow strength similar to per-caster approach
-      float shadowStrength = uShadowStrength * 0.8; // Basic shadow strength
-      return 1.0 - clamp(shadowStrength, 0.0, 1.0);
+    // If we hit an occluder, cast shadow with distance-based softness
+    if (occluderAlpha > 0.0) {
+      float hitDistance = distance; // Distance from light to occluder
+      float shadowLength = rayLength - hitDistance; // Actual shadow length (occluder to receiver)
+      
+      // Limit shadow by actual shadow length, not distance from light
+      if (shadowLength > uShadowMaxLength) {
+        return 1.0; // Shadow is longer than max allowed
+      }
+      
+      // Gradual fade-out towards max shadow length to avoid hard cutoffs
+      float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
+      if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
+      
+      // Binary shadow detection - clean and artifact-free
+      float shadowValue = 1.0;
+      
+      // Calculate final shadow strength
+      float shadowRatio = shadowValue;
+      float normalizedDistance = shadowLength / uShadowMaxLength;
+      float distanceFade = exp(-normalizedDistance * 2.0);
+      
+      // shadowValue now contains the soft/sharp shadow information
+      float finalShadowStrength = uShadowStrength * shadowRatio * distanceFade * maxLengthFade;
+      
+      return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
     }
   }
   
@@ -440,11 +472,19 @@ void main(void) {
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
-    // Restore original quadratic attenuation
+    // Restore quadratic attenuation
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    float normalDot = max(dot(normal, lightDir), 0.0);
+    // FIX: Handle severely corrupted normals only (preserve legitimate normal maps)
+    vec3 safeNormal = normal;
+    
+    // Only replace SEVERELY corrupted normals (much more lenient)
+    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
+      safeNormal = vec3(0.0, 0.0, 1.0); // Flat surface normal
+    }
+    
+    float normalDot = max(dot(safeNormal, lightDir), 0.0);
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
@@ -474,7 +514,7 @@ void main(void) {
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
-    // Restore original quadratic attenuation
+    // Removed Y-flip branch that was causing triangular light shapes
     float attenuation = 1.0 - clamp(lightDistance / uPoint1Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     float normalDot = max(dot(normal, lightDir), 0.0);
@@ -507,7 +547,7 @@ void main(void) {
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
-    // Restore original quadratic attenuation
+    // Removed Y-flip branch that was causing triangular light shapes
     float attenuation = 1.0 - clamp(lightDistance / uPoint2Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     float normalDot = max(dot(normal, lightDir), 0.0);
@@ -540,7 +580,7 @@ void main(void) {
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
-    // Restore original quadratic attenuation
+    // Removed Y-flip branch that was causing triangular light shapes
     float attenuation = 1.0 - clamp(lightDistance / uPoint3Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     float normalDot = max(dot(normal, lightDir), 0.0);
@@ -569,7 +609,13 @@ void main(void) {
     // Directional lights: parallel rays from infinite distance with normal mapping
     vec3 lightDir = normalize(-uDir0Direction); // Invert direction (light TO surface)
     
-    float normalDot = max(dot(normal, lightDir), 0.0);
+    // Normal mapping with safe validation
+    vec3 safeNormal = normal;
+    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
+      safeNormal = vec3(0.0, 0.0, 1.0); // Flat surface normal
+    }
+    
+    float normalDot = max(dot(safeNormal, lightDir), 0.0);
     float intensity = normalDot * uDir0Intensity;
     
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
@@ -592,7 +638,13 @@ void main(void) {
     // Directional lights: parallel rays from infinite distance with normal mapping
     vec3 lightDir = normalize(-uDir1Direction); // Invert direction (light TO surface)
     
-    float normalDot = max(dot(normal, lightDir), 0.0);
+    // Normal mapping with safe validation
+    vec3 safeNormal = normal;
+    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
+      safeNormal = vec3(0.0, 0.0, 1.0); // Flat surface normal
+    }
+    
+    float normalDot = max(dot(safeNormal, lightDir), 0.0);
     float intensity = normalDot * uDir1Intensity;
     
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
@@ -631,8 +683,12 @@ void main(void) {
     float inner = cos(radians(uSpot0ConeAngle * (1.0 - uSpot0Softness)));
     float spotFactor = smoothstep(outer, inner, cosAng);
     
-    // Lambert lighting with normal mapping
-    float lambert = max(dot(normal, L), 0.0);
+    // Lambert lighting with safe normal validation  
+    vec3 safeNormal = normal;
+    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
+      safeNormal = vec3(0.0, 0.0, 1.0);
+    }
+    float lambert = max(dot(safeNormal, L), 0.0);
     float intensity = lambert * uSpot0Intensity * atten * spotFactor;
     
     // Apply shadow calculation FIRST for spotlight
@@ -673,8 +729,12 @@ void main(void) {
     float inner = cos(radians(uSpot1ConeAngle * (1.0 - uSpot1Softness)));
     float spotFactor = smoothstep(outer, inner, cosAng);
     
-    // Lambert lighting with normal mapping
-    float lambert = max(dot(normal, L), 0.0);
+    // Lambert lighting with safe normal validation  
+    vec3 safeNormal = normal;
+    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
+      safeNormal = vec3(0.0, 0.0, 1.0);
+    }
+    float lambert = max(dot(safeNormal, L), 0.0);
     float intensity = lambert * uSpot1Intensity * atten * spotFactor;
     
     // Apply shadow calculation FIRST for spotlight
@@ -715,8 +775,12 @@ void main(void) {
     float inner = cos(radians(uSpot2ConeAngle * (1.0 - uSpot2Softness)));
     float spotFactor = smoothstep(outer, inner, cosAng);
     
-    // Lambert lighting with normal mapping
-    float lambert = max(dot(normal, L), 0.0);
+    // Lambert lighting with safe normal validation  
+    vec3 safeNormal = normal;
+    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
+      safeNormal = vec3(0.0, 0.0, 1.0);
+    }
+    float lambert = max(dot(safeNormal, L), 0.0);
     float intensity = lambert * uSpot2Intensity * atten * spotFactor;
     
     // Apply shadow calculation FIRST for spotlight
@@ -757,8 +821,12 @@ void main(void) {
     float inner = cos(radians(uSpot3ConeAngle * (1.0 - uSpot3Softness)));
     float spotFactor = smoothstep(outer, inner, cosAng);
     
-    // Lambert lighting with normal mapping
-    float lambert = max(dot(normal, L), 0.0);
+    // Lambert lighting with safe normal validation  
+    vec3 safeNormal = normal;
+    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
+      safeNormal = vec3(0.0, 0.0, 1.0);
+    }
+    float lambert = max(dot(safeNormal, L), 0.0);
     float intensity = lambert * uSpot3Intensity * atten * spotFactor;
     
     // Apply shadow calculation FIRST for spotlight

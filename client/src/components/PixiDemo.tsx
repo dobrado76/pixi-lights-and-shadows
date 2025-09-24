@@ -737,7 +737,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uShadowCaster1Enabled: shadowCasters.length > 1,
         uShadowCaster2Enabled: shadowCasters.length > 2,
         // Switch to unlimited mode when more than 3 shadow casters
-        uUseOccluderMap: false, // shadowCasters.length > 3, // DISABLED
+        uUseOccluderMap: shadowCasters.length > 3,
         ...lightUniforms
       };
       
@@ -777,7 +777,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       console.log('💡 Shadow casters created:', legacyShadowCasters);
       
       // IMMEDIATE CHECK: Should we use unlimited shadows?
-      if (false && shadowCasters.length > 3) { // DISABLED
+      if (shadowCasters.length > 3) {
         console.log(`🌟 ENABLING UNLIMITED SHADOWS: ${shadowCasters.length} shadow casters detected!`);
       } else {
         console.log(`⚡ Using limited shadows: Only ${shadowCasters.length} shadow casters`);
@@ -948,8 +948,8 @@ const PixiDemo = (props: PixiDemoProps) => {
             Object.assign(shader.uniforms, shadowTextureUniforms);
             
             // Enable unlimited shadow mode when more than 3 casters
-            shader.uniforms.uUseOccluderMap = false; // shadowCasters.length > 3; // DISABLED
-            if (false && shadowCasters.length > 3) { // DISABLED
+            shader.uniforms.uUseOccluderMap = shadowCasters.length > 3;
+            if (shadowCasters.length > 3) {
               shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
             }
           }
@@ -1042,7 +1042,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
       
       // Occluder map uniforms for unlimited shadow casters (switch when >3 casters)
-      uniforms.uUseOccluderMap = false; // shadowCasters.length > 3; // DISABLED
+      uniforms.uUseOccluderMap = shadowCasters.length > 3;
       uniforms.uOccluderMap = occluderRenderTargetRef.current || null;
       
       // Texture uniforms will be set after textures are loaded
@@ -1209,9 +1209,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Automatic mode selection: Multi-pass for >8 lights  
       const useMultiPass = lightCount > 8;
       
-      // Shadow system mode selection: TEMPORARILY DISABLE occluder map (broken)
+      // Shadow system mode selection: Occluder map for >3 shadow casters
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
-      const useOccluderMap = false; // shadowCasters.length > 3; // DISABLED until fixed
+      const useOccluderMap = shadowCasters.length > 3;
       
       if (useOccluderMap) {
         console.log(`🌑 UNLIMITED SHADOWS: Using occluder map for ${shadowCasters.length} shadow casters`);
@@ -1282,11 +1282,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Trigger shadow system check and render loop every frame
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
-      if (false && shadowCasters.length > 3) { // DISABLED
+      if (shadowCasters.length > 3) {
         console.log(`🌑 UNLIMITED SHADOWS: ${shadowCasters.length} casters detected`);
         
         // TRIGGER THE RENDER LOOP FOR UNLIMITED SHADOWS
-        const useOccluderMap = false; // shadowCasters.length > 3; // DISABLED
+        const useOccluderMap = shadowCasters.length > 3;
         if (useOccluderMap && occluderRenderTargetRef.current) {
           console.log(`🔧 TRIGGERING Occluder map build from animation loop...`);
           buildOccluderMap();
