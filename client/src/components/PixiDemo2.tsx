@@ -518,8 +518,11 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
               float lightIntensity = uLightIntensities[i];
               float lightRadius = uLightRadiuses[i];
               
-              vec3 lightDir = normalize(vec3(lightPos.xy - vWorldPos, lightPos.z));
-              float distance = length(vec3(lightPos.xy - vWorldPos, lightPos.z));
+              // Copy exact Y-flip logic from original fragment.glsl  
+              vec3 lightDir3D = vec3(lightPos.xy - vWorldPos, lightPos.z);
+              lightDir3D.y = -lightDir3D.y; // Y-flip for coordinate system consistency
+              vec3 lightDir = normalize(lightDir3D);
+              float distance = length(lightDir3D);
               
               // Diffuse lighting
               float diffuse = max(dot(normal, lightDir), 0.0);
@@ -580,9 +583,11 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
               float spotConeAngle = uSpotLightConeAngles[i];
               float spotSoftness = uSpotLightSoftnesses[i];
               
-              // Light direction and distance
-              vec3 L = normalize(vec3(spotPos.xy - vWorldPos, spotPos.z));
-              float dist = length(vec3(spotPos.xy - vWorldPos, spotPos.z));
+              // Light direction and distance (copy Y-flip from original)
+              vec3 lightDir3D = vec3(spotPos.xy - vWorldPos, spotPos.z);
+              lightDir3D.y = -lightDir3D.y; // Y-flip for coordinate system consistency
+              vec3 L = normalize(lightDir3D);
+              float dist = length(lightDir3D);
               
               // Distance attenuation with quadratic falloff (copy from original)
               float atten = 1.0 - clamp(dist / spotRadius, 0.0, 1.0);
