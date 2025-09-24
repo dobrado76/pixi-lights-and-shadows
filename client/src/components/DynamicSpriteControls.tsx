@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 
 interface SpriteConfig {
@@ -19,6 +20,11 @@ interface SpriteConfig {
   castsShadows: boolean;
   visible: boolean;
   useNormalMap?: boolean;
+  pivot?: {
+    preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'offset';
+    offsetX?: number;
+    offsetY?: number;
+  };
 }
 
 interface SceneConfig {
@@ -45,32 +51,40 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
   };
 
   const updateSpriteConfig = (spriteId: string, updates: Partial<SpriteConfig>) => {
+    const currentSprite = sceneConfig.scene[spriteId];
     const newConfig = {
       ...sceneConfig,
       scene: {
         ...sceneConfig.scene,
         [spriteId]: {
-          ...sceneConfig.scene[spriteId],
-          ...updates
+          ...currentSprite,
+          ...updates,
+          // Ensure pivot has proper defaults
+          pivot: updates.pivot ? {
+            offsetX: 0,
+            offsetY: 0,
+            ...currentSprite.pivot,
+            ...updates.pivot
+          } : currentSprite.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 }
         }
       }
     };
     
+    console.log(`🎮 UI: ${spriteId} config changed:`, Object.keys(updates));
+    
     // Special handling for zOrder changes - bypass React state updates
     if (updates.zOrder !== undefined) {
-      const oldZOrder = sceneConfig.scene[spriteId]?.zOrder ?? 0;
+      const oldZOrder = currentSprite?.zOrder ?? 0;
       console.log(`🎮 UI: zOrder changed for ${spriteId}: ${oldZOrder} → ${updates.zOrder}`);
       
       // Call direct callback for immediate update
       if (onZOrderChange) {
         onZOrderChange(spriteId, oldZOrder, updates.zOrder);
       }
-      
-      // Also update the React state
-      onSceneConfigChange(newConfig);
-    } else {
-      onSceneConfigChange(newConfig);
     }
+    
+    // Always update the React state to trigger useEffect
+    onSceneConfigChange(newConfig);
   };
 
   const sprites = Object.entries(sceneConfig.scene || {});
@@ -202,6 +216,77 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
                             className="w-full"
                             data-testid={`slider-scale-${spriteId}`}
                           />
+                        </div>
+
+                        {/* Pivot Control */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-muted-foreground">Pivot Point</Label>
+                          <Select
+                            value={sprite.pivot?.preset || 'middle-center'}
+                            onValueChange={(value) => updateSpriteConfig(spriteId, {
+                              pivot: {
+                                ...sprite.pivot,
+                                preset: value as any,
+                                offsetX: value === 'offset' ? (sprite.pivot?.offsetX || 0) : 0,
+                                offsetY: value === 'offset' ? (sprite.pivot?.offsetY || 0) : 0
+                              }
+                            })}
+                          >
+                            <SelectTrigger className="h-7 text-xs" data-testid={`select-pivot-${spriteId}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="top-left">Top Left</SelectItem>
+                              <SelectItem value="top-center">Top Center</SelectItem>
+                              <SelectItem value="top-right">Top Right</SelectItem>
+                              <SelectItem value="middle-left">Middle Left</SelectItem>
+                              <SelectItem value="middle-center">Middle Center</SelectItem>
+                              <SelectItem value="middle-right">Middle Right</SelectItem>
+                              <SelectItem value="bottom-left">Bottom Left</SelectItem>
+                              <SelectItem value="bottom-center">Bottom Center</SelectItem>
+                              <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                              <SelectItem value="offset">Custom Offset</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          {sprite.pivot?.preset === 'offset' && (
+                            <div className="grid grid-cols-2 gap-2 pt-2">
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-xs text-muted-foreground">Offset X</Label>
+                                  <span className="text-xs text-muted-foreground">{Math.round(sprite.pivot?.offsetX || 0)}</span>
+                                </div>
+                                <Slider
+                                  value={[sprite.pivot?.offsetX || 0]}
+                                  onValueChange={([value]) => updateSpriteConfig(spriteId, {
+                                    pivot: { ...sprite.pivot, preset: 'offset', offsetX: value }
+                                  })}
+                                  min={-100}
+                                  max={100}
+                                  step={1}
+                                  className="h-4"
+                                  data-testid={`slider-pivot-offset-x-${spriteId}`}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-xs text-muted-foreground">Offset Y</Label>
+                                  <span className="text-xs text-muted-foreground">{Math.round(sprite.pivot?.offsetY || 0)}</span>
+                                </div>
+                                <Slider
+                                  value={[sprite.pivot?.offsetY || 0]}
+                                  onValueChange={([value]) => updateSpriteConfig(spriteId, {
+                                    pivot: { ...sprite.pivot, preset: 'offset', offsetY: value }
+                                  })}
+                                  min={-100}
+                                  max={100}
+                                  step={1}
+                                  className="h-4"
+                                  data-testid={`slider-pivot-offset-y-${spriteId}`}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {/* Z-Order Control */}
