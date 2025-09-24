@@ -224,9 +224,16 @@ function App() {
 
   // Handler for scene configuration changes
   const handleSceneConfigChange = useCallback((newSceneConfig: { scene: Record<string, any> }) => {
+    console.log('🔄 App: Scene config changed, triggering update...', Object.keys(newSceneConfig.scene));
     setSceneConfig(newSceneConfig);
     debouncedSceneSave(newSceneConfig);
   }, [debouncedSceneSave]);
+
+  // Handler for immediate z-order changes (bypass React state)
+  const handleZOrderChange = useCallback((spriteId: string, oldZOrder: number, newZOrder: number) => {
+    console.log(`🎭 App: Direct zOrder change for ${spriteId}: ${oldZOrder} → ${newZOrder}`);
+    // This will be handled by the useEffect in PixiDemo when sceneConfig updates
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -311,6 +318,7 @@ function App() {
                   <DynamicSpriteControls
                     sceneConfig={sceneConfig}
                     onSceneConfigChange={handleSceneConfigChange}
+                    onZOrderChange={handleZOrderChange}
                   />
                 )}
               </TabsContent>

@@ -32,7 +32,7 @@ interface DynamicSpriteControlsProps {
 }
 
 export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrderChange }: DynamicSpriteControlsProps) {
-  const [expandedSprites, setExpandedSprites] = useState<Set<string>>(new Set(['background', 'ball']));
+  const [expandedSprites, setExpandedSprites] = useState<Set<string>>(new Set());
 
   const toggleExpanded = (spriteId: string) => {
     const newExpanded = new Set(expandedSprites);
@@ -130,31 +130,41 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
                     {sprite.visible && (
                       <>
                         {/* Position Controls */}
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           <Label className="text-xs font-medium text-muted-foreground">Position</Label>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">X</Label>
-                              <Input
-                                type="number"
-                                value={sprite.position.x}
-                                onChange={(e) => updateSpriteConfig(spriteId, {
-                                  position: { ...sprite.position, x: Number(e.target.value) }
+                              <div className="flex items-center justify-between">
+                                <Label className="text-xs text-muted-foreground">X</Label>
+                                <span className="text-xs text-muted-foreground">{Math.round(sprite.position.x)}</span>
+                              </div>
+                              <Slider
+                                value={[sprite.position.x]}
+                                onValueChange={([value]) => updateSpriteConfig(spriteId, {
+                                  position: { ...sprite.position, x: value }
                                 })}
-                                className="h-7 text-xs"
-                                data-testid={`input-position-x-${spriteId}`}
+                                min={-200}
+                                max={800}
+                                step={1}
+                                className="h-4"
+                                data-testid={`slider-position-x-${spriteId}`}
                               />
                             </div>
                             <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">Y</Label>
-                              <Input
-                                type="number"
-                                value={sprite.position.y}
-                                onChange={(e) => updateSpriteConfig(spriteId, {
-                                  position: { ...sprite.position, y: Number(e.target.value) }
+                              <div className="flex items-center justify-between">
+                                <Label className="text-xs text-muted-foreground">Y</Label>
+                                <span className="text-xs text-muted-foreground">{Math.round(sprite.position.y)}</span>
+                              </div>
+                              <Slider
+                                value={[sprite.position.y]}
+                                onValueChange={([value]) => updateSpriteConfig(spriteId, {
+                                  position: { ...sprite.position, y: value }
                                 })}
-                                className="h-7 text-xs"
-                                data-testid={`input-position-y-${spriteId}`}
+                                min={-200}
+                                max={600}
+                                step={1}
+                                className="h-4"
+                                data-testid={`slider-position-y-${spriteId}`}
                               />
                             </div>
                           </div>
