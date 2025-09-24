@@ -6,70 +6,16 @@ import path from "path";
 export async function registerRoutes(app: Express): Promise<Server> {
   // PIXI.js demo API routes - only for loading/saving configuration files
 
-  // Debug endpoint to help troubleshoot Vercel deployment
-  app.get('/api/debug-paths', async (req, res) => {
-    try {
-      const possiblePaths = [
-        path.join(process.cwd(), 'client', 'public', 'scene.json'),
-        path.join(process.cwd(), 'dist', 'scene.json'),
-        path.join(process.cwd(), 'public', 'scene.json'),
-        path.join(process.cwd(), 'scene.json')
-      ];
-      
-      const pathResults = [];
-      
-      for (const testPath of possiblePaths) {
-        try {
-          await fs.access(testPath);
-          pathResults.push({ path: testPath, exists: true });
-        } catch {
-          pathResults.push({ path: testPath, exists: false });
-        }
-      }
-      
-      res.json({
-        cwd: process.cwd(),
-        nodeEnv: process.env.NODE_ENV,
-        pathResults,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
-
   // Load lights configuration from scene file
   app.get('/api/load-lights-config', async (req, res) => {
     try {
-      // Try multiple possible paths for different deployment environments
-      const possiblePaths = [
-        path.join(process.cwd(), 'client', 'public', 'scene.json'), // Development
-        path.join(process.cwd(), 'dist', 'scene.json'), // Production build
-        path.join(process.cwd(), 'public', 'scene.json'), // Alternative production
-        path.join(process.cwd(), 'scene.json') // Root fallback
-      ];
+      const configPath = path.join(process.cwd(), 'client', 'public', 'scene.json');
       
-      let configPath: string | null = null;
-      let sceneConfig: any = null;
-      
-      // Try each possible path until we find the file
-      for (const testPath of possiblePaths) {
-        try {
-          await fs.access(testPath);
-          configPath = testPath;
-          const configData = await fs.readFile(testPath, 'utf8');
-          sceneConfig = JSON.parse(configData);
-          console.log(`✅ Found scene.json at: ${testPath}`);
-          break;
-        } catch (err) {
-          console.log(`❌ Could not find scene.json at: ${testPath}`);
-          continue;
-        }
-      }
-      
-      // If no file found, return comprehensive default configuration
-      if (!sceneConfig) {
-        console.log('🚨 Using default lights configuration - scene.json not found');
+      // Check if file exists
+      try {
+        await fs.access(configPath);
+      } catch {
+        // File doesn't exist, return default configuration
         // Comprehensive default configuration with scene data
         const defaultConfig = {
           lights: [
@@ -128,14 +74,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(defaultConfig);
       }
       
-      // Extract lights and shadowConfig from the loaded scene file
+      // Read and return the lights configuration from scene file
+      const configData = await fs.readFile(configPath, 'utf8');
+      const sceneConfig = JSON.parse(configData);
+      
+      // Extract lights and shadowConfig from the scene file
       const config = {
         lights: sceneConfig.lights || [],
         shadowConfig: sceneConfig.shadowConfig || {
           enabled: true,
-          strength: 0.7,
-          maxLength: 200,
-          height: 10
+          strength: 0.5,
+          maxLength: 300,
+          height: 10,
+          sharpness: 1
         }
       };
       
@@ -155,10 +106,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const config = req.body;
       
-      // Path to the scene configuration file (fix for Vercel deployment)
-      const configPath = process.env.NODE_ENV === 'production' 
-        ? path.join(process.cwd(), 'dist', 'scene.json')
-        : path.join(process.cwd(), 'client', 'public', 'scene.json');
+      // Path to the scene configuration file
+      const configPath = path.join(process.cwd(), 'client', 'public', 'scene.json');
       
       // Read the existing scene configuration
       let sceneConfig: any = {};
@@ -190,33 +139,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Load scene configuration from file
   app.get('/api/load-scene-config', async (req, res) => {
     try {
-      // Try multiple possible paths for different deployment environments
-      const possiblePaths = [
-        path.join(process.cwd(), 'client', 'public', 'scene.json'), // Development
-        path.join(process.cwd(), 'dist', 'scene.json'), // Production build
-        path.join(process.cwd(), 'public', 'scene.json'), // Alternative production
-        path.join(process.cwd(), 'scene.json') // Root fallback
-      ];
+      const configPath = path.join(process.cwd(), 'client', 'public', 'scene.json');
       
-      let config: any = null;
-      
-      // Try each possible path until we find the file
-      for (const testPath of possiblePaths) {
-        try {
-          await fs.access(testPath);
-          const configData = await fs.readFile(testPath, 'utf8');
-          config = JSON.parse(configData);
-          console.log(`✅ Found scene.json at: ${testPath}`);
-          break;
-        } catch (err) {
-          console.log(`❌ Could not find scene.json at: ${testPath}`);
-          continue;
-        }
-      }
-      
-      // If no file found, return comprehensive default scene configuration
-      if (!config) {
-        console.log('🚨 Using default scene configuration - scene.json not found');
+      // Check if file exists
+      try {
+        await fs.access(configPath);
+      } catch {
+        // File doesn't exist, return default scene configuration
         const defaultScene = {
           scene: {
             background2: {
@@ -289,6 +218,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(defaultScene);
       }
       
+      // Read and return the saved scene configuration
+      const configData = await fs.readFile(configPath, 'utf8');
+      const config = JSON.parse(configData);
+      
       res.json(config);
     } catch (error) {
       console.error('Error loading scene configuration:', error);
@@ -304,10 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/save-scene-config', async (req, res) => {
     try {
       const config = req.body;
-      // Fix path resolution for Vercel deployment
-      const configPath = process.env.NODE_ENV === 'production' 
-        ? path.join(process.cwd(), 'dist', 'scene.json')
-        : path.join(process.cwd(), 'client', 'public', 'scene.json');
+      const configPath = path.join(process.cwd(), 'client', 'public', 'scene.json');
       
       // Ensure the directory exists
       const dir = path.dirname(configPath);
