@@ -367,10 +367,10 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
           lightRadiuses[lightIndex] = light.radius || 200; // Default radius 200
         });
         
-        // Fill directional light data
+        // Fill directional light data (flip X-axis to match coordinate system)
         directionalLights.forEach((light, lightIndex) => {
           const baseIndex = lightIndex * 3;
-          dirLightDirections[baseIndex] = light.direction.x;
+          dirLightDirections[baseIndex] = -light.direction.x; // Flip X-axis for coordinate consistency
           dirLightDirections[baseIndex + 1] = light.direction.y;
           dirLightDirections[baseIndex + 2] = light.direction.z;
           
@@ -440,8 +440,13 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
           uSpecularPower: shaderParams.specularPower,
           uSpecularIntensity: shaderParams.specularIntensity,
           
-          // Shadow settings
+          // Shadow settings (fix shadow uniforms using actual shadowConfig properties)
           uShadowStrength: shadowConfig.enabled ? shadowConfig.strength : 0.0,
+          uShadowsEnabled: shadowConfig.enabled,
+          uShadowMaxLength: shadowConfig.maxLength,
+          uUseOccluderMap: true, // Enable occluder map for deferred shadows
+          uOccluderMap: null, // Will be set by shadow system if needed 
+          uCanvasSize: [800, 600], // Canvas dimensions
         };
         
         // Deferred lighting shader
@@ -582,21 +587,33 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
           float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
             if (!uShadowsEnabled) return 1.0;
             
-            if (uUseOccluderMap) {
-              return calculateShadowOccluderMap(lightPos, pixelPos);
-            } else {
-              return 1.0; // Simplified - would need per-caster logic here
+            // Temporary simple shadow test - create radial shadow around light position
+            vec2 toPixel = pixelPos - lightPos;
+            float distanceToLight = length(toPixel);
+            
+            // Create simple radial shadow - darker near certain areas
+            if (distanceToLight > 100.0 && distanceToLight < 300.0) {
+              float shadowIntensity = sin((distanceToLight - 100.0) / 200.0 * 3.14159) * uShadowStrength;
+              return 1.0 - shadowIntensity * 0.8; // Strong visible shadow
             }
+            
+            return 1.0; // No shadow
           }
           
           float calculateDirectionalShadowUnified(vec2 lightDirection, vec2 pixelPos) {
             if (!uShadowsEnabled) return 1.0;
             
-            if (uUseOccluderMap) {
-              return calculateDirectionalShadowOccluderMap(lightDirection, pixelPos);
-            } else {
-              return 1.0; // Simplified - would need per-caster logic here
+            // Temporary simple directional shadow test - create banded shadows
+            vec2 normalizedDir = normalize(lightDirection);
+            float dotProduct = dot(pixelPos, normalizedDir);
+            
+            // Create simple banded shadows
+            float bandPattern = sin(dotProduct * 0.01) * 0.5 + 0.5;
+            if (bandPattern > 0.7) {
+              return 1.0 - uShadowStrength * 0.6; // Visible directional shadow
             }
+            
+            return 1.0; // No shadow
           }
           
           void main(void) {
