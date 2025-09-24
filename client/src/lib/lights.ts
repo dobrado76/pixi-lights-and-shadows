@@ -216,15 +216,19 @@ export const loadLightsConfig = async (configPath: string = '/api/load-lights-co
       if (!response.ok) throw new Error(`API failed: ${response.statusText}`);
     } catch (apiError) {
       // Fallback to static file
-      response = await fetch('/lights-config.json');
+      response = await fetch('/scene.json');
       if (!response.ok) throw new Error(`Static file failed: ${response.statusText}`);
     }
     
     const config = await response.json();
     
+    // Handle both API response format and scene.json format
+    const lightsConfig = config.lights || [];
+    const shadowConfig = config.shadowConfig;
+    
     // Always use the legacy converter since the API returns old format
     const lights: Light[] = [];
-    for (const lightConfig of config.lights) {
+    for (const lightConfig of lightsConfig) {
       if (lightConfig.type !== 'ambient') { // Skip ambient for now since it's handled separately
         lights.push(convertConfigToLight(lightConfig));
       }
@@ -232,7 +236,7 @@ export const loadLightsConfig = async (configPath: string = '/api/load-lights-co
     
     return {
       lights,
-      shadowConfig: config.shadowConfig
+      shadowConfig: shadowConfig
     };
   } catch (error) {
     console.error('Error loading lights configuration:', error);
@@ -257,12 +261,15 @@ export const loadAmbientLight = async (configPath: string = '/api/load-lights-co
       if (!response.ok) throw new Error(`API failed: ${response.statusText}`);
     } catch (apiError) {
       // Fallback to static file
-      response = await fetch('/lights-config.json');
+      response = await fetch('/scene.json');
       if (!response.ok) return { intensity: 0.3, color: { r: 0.4, g: 0.4, b: 0.4 } };
     }
     
     const config = await response.json();
-    const ambientLight = config.lights.find((light: any) => light.type === 'ambient');
+    
+    // Handle both API response format and scene.json format
+    const lightsConfig = config.lights || [];
+    const ambientLight = lightsConfig.find((light: any) => light.type === 'ambient');
     
     if (ambientLight) {
       const color = typeof ambientLight.color === 'string' 

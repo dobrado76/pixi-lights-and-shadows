@@ -6,10 +6,10 @@ import path from "path";
 export async function registerRoutes(app: Express): Promise<Server> {
   // PIXI.js demo API routes - only for loading/saving configuration files
 
-  // Load lights configuration from file
+  // Load lights configuration from scene file
   app.get('/api/load-lights-config', async (req, res) => {
     try {
-      const configPath = path.join(process.cwd(), 'client', 'public', 'lights-config.json');
+      const configPath = path.join(process.cwd(), 'client', 'public', 'scene.json');
       
       // Check if file exists
       try {
@@ -59,9 +59,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(defaultConfig);
       }
       
-      // Read and return the saved configuration
+      // Read and return the lights configuration from scene file
       const configData = await fs.readFile(configPath, 'utf8');
-      const config = JSON.parse(configData);
+      const sceneConfig = JSON.parse(configData);
+      
+      // Extract lights and shadowConfig from the scene file
+      const config = {
+        lights: sceneConfig.lights || [],
+        shadowConfig: sceneConfig.shadowConfig || {
+          enabled: true,
+          strength: 0.5,
+          maxLength: 300,
+          height: 10,
+          sharpness: 1
+        }
+      };
       
       res.json(config);
     } catch (error) {
@@ -74,16 +86,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Save lights configuration to file
+  // Save lights configuration to scene file
   app.post('/api/save-lights-config', async (req, res) => {
     try {
       const config = req.body;
       
-      // Path to save the configuration file
-      const configPath = path.join(process.cwd(), 'client', 'public', 'lights-config.json');
+      // Path to the scene configuration file
+      const configPath = path.join(process.cwd(), 'client', 'public', 'scene.json');
       
-      // Write the configuration to the JSON file
-      await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf8');
+      // Read the existing scene configuration
+      let sceneConfig: any = {};
+      try {
+        const existingData = await fs.readFile(configPath, 'utf8');
+        sceneConfig = JSON.parse(existingData);
+      } catch {
+        // If file doesn't exist or is invalid, start with empty config
+      }
+      
+      // Update the lights and shadowConfig in the scene configuration
+      sceneConfig.lights = config.lights;
+      sceneConfig.shadowConfig = config.shadowConfig;
+      
+      // Write the updated scene configuration back to the file
+      await fs.writeFile(configPath, JSON.stringify(sceneConfig, null, 2), 'utf8');
       
       res.json({ success: true, message: 'Configuration saved successfully' });
     } catch (error) {
