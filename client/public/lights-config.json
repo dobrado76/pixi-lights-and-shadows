@@ -34,14 +34,14 @@
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.4,
       "color": "0xf4f080",
       "x": 220,
-      "y": 210,
+      "y": 110,
       "z": 80,
-      "directionX": 1,
-      "directionY": 1,
+      "directionX": 0.1,
+      "directionY": 0.8,
       "directionZ": -1,
       "castsShadows": true,
       "radius": 2070,
@@ -103,7 +103,7 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.45,
+    "strength": 0.7,
     "maxLength": 330,
     "height": 8,
     "sharpness": 1
