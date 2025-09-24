@@ -106,6 +106,6 @@
     "strength": 0.75,
     "maxLength": 220,
     "height": 8,
-    "sharpness": 0
+    "sharpness": 0.45
   }
 }

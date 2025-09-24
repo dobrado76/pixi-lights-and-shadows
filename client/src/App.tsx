@@ -51,7 +51,8 @@ function App() {
     enabled: true,
     strength: 0.7,        // 70% shadow opacity
     maxLength: 200,       // Maximum shadow length in pixels
-    height: 10            // Shadow casting height
+    height: 10,           // Shadow casting height
+    sharpness: 0.5        // Shadow sharpness (0=soft, 1=sharp)
   });
   
 
