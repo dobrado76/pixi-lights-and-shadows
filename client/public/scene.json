@@ -87,7 +87,7 @@
       "scale": 1,
       "zOrder": 0,
       "castsShadows": true,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
@@ -99,11 +99,11 @@
       "image": "/textures/test2.png",
       "normal": "/textures/test2Normal.png",
       "position": {
-        "x": 95,
+        "x": 84,
         "y": 403
       },
       "rotation": 0,
-      "scale": 0.8,
+      "scale": 1,
       "zOrder": 1,
       "castsShadows": true,
       "visible": false,
@@ -126,7 +126,7 @@
       "zOrder": 0,
       "castsShadows": true,
       "receiveShadows": false,
-      "visible": false,
+      "visible": true,
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
