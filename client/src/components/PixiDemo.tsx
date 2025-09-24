@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import * as PIXI from 'pixi.js';
 import { useCustomGeometry } from '../hooks/useCustomGeometry';
-// Vertex shader will be loaded dynamically from .glsl file
-// Fragment shader will be loaded dynamically from .glsl file
+import vertexShaderSource from '../shaders/vertex.glsl?raw';
+import fragmentShaderSource from '../shaders/fragment.glsl?raw';
 import { ShaderParams } from '../App';
 import { Light, ShadowConfig } from '@shared/lights';
 import { SceneManager, SceneSprite } from './Sprite';
@@ -529,13 +529,12 @@ const PixiDemo = (props: PixiDemoProps) => {
     };
   }, []);
 
-  // Setup demo content when PIXI app is ready
+  // Setup demo content when PIXI app is ready - initial load only
   useEffect(() => {
     if (!pixiApp || !pixiApp.stage || !sceneConfig.scene || Object.keys(sceneConfig.scene).length === 0 || lightsConfig.length === 0) {
       return;
     }
 
-    console.log('Setting up PIXI demo with real textures...');
 
     const setupDemo = async () => {
       try {
@@ -546,7 +545,6 @@ const PixiDemo = (props: PixiDemoProps) => {
         sceneManagerRef.current = new SceneManager();
         await sceneManagerRef.current.loadScene(sceneData);
         
-        console.log('Scene loaded, creating geometries...');
 
         // Helper function to convert external lights config to shader uniforms
         const createLightUniforms = () => {
@@ -708,12 +706,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       onShaderUpdate?.('Normal-mapped lighting shader created for real textures');
       onMeshUpdate?.('PIXI.Mesh created with real textures and normal mapping');
 
-      // Load shaders from external files for better syntax highlighting
-      const vertexShaderResponse = await fetch('/vertex.glsl');
-      const vertexShaderSource = await vertexShaderResponse.text();
-      
-      const fragmentShaderResponse = await fetch('/fragment.glsl');
-      const spriteFragmentShader = await fragmentShaderResponse.text();
+      // Use imported shader sources
+      const spriteFragmentShader = fragmentShaderSource;
        
       // Create all scene sprites using scene manager
       const lightUniforms = createLightUniforms();
@@ -803,7 +797,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       console.log('🌑 Shadow system integrated into lighting shader');
       console.log('🌑 Shadow texture uniforms applied to all shaders');
 
-      console.log('PIXI demo setup completed successfully');
 
       } catch (error) {
         console.error('Error setting up PIXI demo:', error);
@@ -833,34 +826,37 @@ const PixiDemo = (props: PixiDemoProps) => {
     };
   }, [pixiApp, geometry, lightsConfig, ambientLight, shadowConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate]);
   
-  // Force auto-render when textures finish loading
+  // Handle sprite updates without full scene rebuild
+  useEffect(() => {
+    if (!sceneManagerRef.current || !sceneConfig.scene || !pixiApp) return;
+    
+    // Update individual sprite properties without rebuilding entire scene
+    try {
+      sceneManagerRef.current.updateFromConfig(sceneConfig);
+      // Trigger immediate render after sprite updates
+      pixiApp.render();
+      console.log('🎭 Sprites updated without scene rebuild');
+    } catch (error) {
+      console.log('Sprite update failed, may need scene rebuild:', error);
+    }
+  }, [sceneConfig, pixiApp]);
+  
+  // Simple render trigger when textures finish loading
   useEffect(() => {
     if (!pixiApp || meshesRef.current.length === 0) return;
     
-    // Trigger additional renders after texture loading completes
+    // Single immediate render when scene is ready
     const forceRender = () => {
       if (pixiApp && pixiApp.renderer) {
         pixiApp.render();
       }
     };
     
-    // Multiple render passes to catch any delayed texture loading
-    const renderInterval = setInterval(forceRender, 100);
-    const timeouts = [
-      setTimeout(forceRender, 200),
-      setTimeout(forceRender, 500),
-      setTimeout(forceRender, 1000),
-      setTimeout(() => clearInterval(renderInterval), 2000)
-    ];
-    
-    // Also force render when window gains focus (handles tab switching)
-    const handleFocus = () => forceRender();
-    window.addEventListener('focus', handleFocus);
+    // Just one render pass after a short delay to allow textures to load
+    const timeout = setTimeout(forceRender, 100);
     
     return () => {
-      clearInterval(renderInterval);
-      timeouts.forEach(timeout => clearTimeout(timeout));
-      window.removeEventListener('focus', handleFocus);
+      clearTimeout(timeout);
     };
   }, [pixiApp, meshesRef.current.length])
 
@@ -1113,86 +1109,6 @@ const PixiDemo = (props: PixiDemoProps) => {
     }
   }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig]);
 
-  // Dynamic sprite updates for real-time sprite changes without scene reload
-  useEffect(() => {
-    if (!sceneManagerRef.current || meshesRef.current.length === 0) return;
-    
-    console.log('🎭 Updating sprite properties without scene reload...');
-    
-    // Update each sprite's properties individually
-    const sprites = sceneManagerRef.current.getAllSprites();
-    const sceneSprites = sceneConfig.scene || {};
-    
-    sprites.forEach(sprite => {
-      const config = sceneSprites[sprite.id];
-      if (!config) return;
-      
-      // Update sprite mesh properties
-      if (sprite.mesh) {
-        // Update position
-        sprite.mesh.x = config.position.x;
-        sprite.mesh.y = config.position.y;
-        
-        // Update rotation
-        sprite.mesh.rotation = config.rotation;
-        
-        // Update scale
-        sprite.mesh.scale.set(config.scale, config.scale);
-        
-        // Update visibility
-        sprite.mesh.visible = config.visible;
-        
-        // Update sprite definition for shadow calculations
-        sprite.definition.position = config.position;
-        sprite.definition.rotation = config.rotation;
-        sprite.definition.scale = config.scale;
-        sprite.definition.visible = config.visible;
-        sprite.definition.castsShadows = config.castsShadows;
-        sprite.definition.useNormalMap = config.useNormalMap ?? true;
-        
-        // Update normal texture if useNormalMap changed
-        if (sprite.definition.useNormalMap && config.normal && config.normal !== '') {
-          // Load the actual normal map
-          const newNormalTexture = PIXI.Texture.from(config.normal);
-          if (sprite.normalTexture !== newNormalTexture) {
-            sprite.normalTexture = newNormalTexture;
-            if (sprite.shader) {
-              sprite.shader.uniforms.uNormalMap = sprite.normalTexture;
-            }
-          }
-        } else {
-          // Update sprite definition and reload texture through the existing loadTextures method
-          sprite.definition.normal = '';
-          sprite.definition.useNormalMap = config.useNormalMap ?? true;
-          sprite.loadTextures().then(() => {
-            if (sprite.shader) {
-              sprite.shader.uniforms.uNormalMap = sprite.normalTexture;
-            }
-          });
-        }
-      }
-    });
-    
-    // Update shadow caster data for shaders without recreating everything
-    const shadowCasters = sceneManagerRef.current.getShadowCasters();
-    shadersRef.current.forEach(shader => {
-      if (shader.uniforms) {
-        // Update shadow caster positions
-        shader.uniforms.uShadowCaster0 = shadowCasters[0] ? [shadowCasters[0].getBounds().x, shadowCasters[0].getBounds().y, shadowCasters[0].getBounds().width, shadowCasters[0].getBounds().height] : [0, 0, 0, 0];
-        shader.uniforms.uShadowCaster1 = shadowCasters[1] ? [shadowCasters[1].getBounds().x, shadowCasters[1].getBounds().y, shadowCasters[1].getBounds().width, shadowCasters[1].getBounds().height] : [0, 0, 0, 0];
-        shader.uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
-        shader.uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
-      }
-    });
-    
-    // Force a render to show changes
-    if (pixiApp && pixiApp.renderer) {
-      pixiApp.render();
-    }
-    
-    console.log('🎭 Sprite update completed without reload');
-    
-  }, [sceneConfig]);
 
   // Animation loop
   useEffect(() => {

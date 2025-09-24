@@ -292,6 +292,35 @@ export class SceneManager {
     return Array.from(this.sprites.values());
   }
 
+  /**
+   * Update existing sprites from new configuration without full rebuild
+   */
+  updateFromConfig(sceneData: any): void {
+    if (!sceneData.scene) return;
+    
+    // Update each sprite that exists in both old and new configs
+    for (const [key, newSpriteData] of Object.entries(sceneData.scene)) {
+      const existingSprite = this.sprites.get(key);
+      if (existingSprite) {
+        // Update the sprite's definition
+        const newDef = newSpriteData as SpriteDefinition;
+        existingSprite.definition = { ...existingSprite.definition, ...newDef };
+        
+        // Update transform if mesh exists
+        if (existingSprite.mesh) {
+          existingSprite.updateTransform({
+            position: newDef.position,
+            rotation: newDef.rotation,
+            scale: newDef.scale
+          });
+          
+          // Update visibility
+          existingSprite.mesh.visible = newDef.visible ?? true;
+        }
+      }
+    }
+  }
+
   // Filter sprites by shadow participation flags
   getShadowCasters(): SceneSprite[] {
     return this.getAllSprites().filter(sprite => 
