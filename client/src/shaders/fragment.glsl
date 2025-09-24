@@ -530,13 +530,21 @@ void main(void) {
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
     if (uDir0CastsShadows) {
+      // DIRECTIONAL LIGHTS: Always use per-caster approach (never occluder map)
       // Compute virtual light position as if light comes from infinite distance
-      // This makes all shadow rays parallel, simulating sun/moon lighting
       float infiniteDistance = 10000.0; // Very large distance
       vec2 virtualLightPos = worldPos.xy + uDir0Direction.xy * infiniteDistance;
       
-      // 🌟 AUTO-SWITCHING: Use same shadow system as point/spot lights (supports unlimited casters!)
-      shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
+      // Force per-caster shadow calculation for directional lights
+      if (uShadowCaster0Enabled) {
+        shadowFactor *= calculateShadow(virtualLightPos, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
+      }
+      if (uShadowCaster1Enabled) {
+        shadowFactor *= calculateShadow(virtualLightPos, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
+      }
+      if (uShadowCaster2Enabled) {
+        shadowFactor *= calculateShadow(virtualLightPos, worldPos.xy, uShadowCaster2, uShadowCaster2Texture);
+      }
     }
     
     intensity *= shadowFactor;
@@ -561,13 +569,21 @@ void main(void) {
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
     if (uDir1CastsShadows) {
+      // DIRECTIONAL LIGHTS: Always use per-caster approach (never occluder map)
       // Compute virtual light position as if light comes from infinite distance
-      // This makes all shadow rays parallel, simulating sun/moon lighting
       float infiniteDistance = 10000.0; // Very large distance
       vec2 virtualLightPos = worldPos.xy + uDir1Direction.xy * infiniteDistance;
       
-      // 🌟 AUTO-SWITCHING: Use same shadow system as point/spot lights (supports unlimited casters!)
-      shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
+      // Force per-caster shadow calculation for directional lights
+      if (uShadowCaster0Enabled) {
+        shadowFactor *= calculateShadow(virtualLightPos, worldPos.xy, uShadowCaster0, uShadowCaster0Texture);
+      }
+      if (uShadowCaster1Enabled) {
+        shadowFactor *= calculateShadow(virtualLightPos, worldPos.xy, uShadowCaster1, uShadowCaster1Texture);
+      }
+      if (uShadowCaster2Enabled) {
+        shadowFactor *= calculateShadow(virtualLightPos, worldPos.xy, uShadowCaster2, uShadowCaster2Texture);
+      }
     }
     
     intensity *= shadowFactor;

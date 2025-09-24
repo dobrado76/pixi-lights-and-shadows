@@ -927,13 +927,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       if (shadersRef.current.length > 0) {
         const shadowCasters = sceneManagerRef.current.getShadowCasters();
         
-        // 🔧 CRITICAL FIX: Update shadow caster TEXTURES when shadow casters change!
-        const shadowTextureUniforms = {
-          uShadowCaster0Texture: shadowCasters[0]?.diffuseTexture || PIXI.Texture.WHITE,
-          uShadowCaster1Texture: shadowCasters[1]?.diffuseTexture || PIXI.Texture.WHITE,
-          uShadowCaster2Texture: shadowCasters[2]?.diffuseTexture || PIXI.Texture.WHITE
-        };
-        
         // Update shadow uniforms for all shaders
         shadersRef.current.forEach(shader => {
           if (shader.uniforms) {
@@ -943,10 +936,6 @@ const PixiDemo = (props: PixiDemoProps) => {
             shader.uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
             shader.uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
             shader.uniforms.uShadowCaster2Enabled = shadowCasters.length > 2;
-            
-            // 🎯 UPDATE SHADOW CASTER TEXTURES (fixes mismatched masks!)
-            Object.assign(shader.uniforms, shadowTextureUniforms);
-            
             // Enable unlimited shadow mode when more than 3 casters
             shader.uniforms.uUseOccluderMap = shadowCasters.length > 3;
             if (shadowCasters.length > 3) {
@@ -954,8 +943,6 @@ const PixiDemo = (props: PixiDemoProps) => {
             }
           }
         });
-        
-        console.log('🔄 Shadow caster textures updated:', shadowCasters.map(sc => sc.id));
       }
       
       // Trigger immediate render after sprite updates

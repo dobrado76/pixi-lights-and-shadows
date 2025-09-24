@@ -87,7 +87,7 @@
       "scale": 1,
       "zOrder": 0,
       "castsShadows": true,
-      "visible": false,
+      "visible": true,
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
@@ -99,14 +99,14 @@
       "image": "/textures/test2.png",
       "normal": "/textures/test2Normal.png",
       "position": {
-        "x": 84,
+        "x": 95,
         "y": 403
       },
       "rotation": 0,
-      "scale": 1,
+      "scale": 0.8,
       "zOrder": 1,
       "castsShadows": true,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true,
       "pivot": {
         "offsetX": 0,
@@ -146,12 +146,7 @@
       "zOrder": 0,
       "castsShadows": true,
       "visible": true,
-      "useNormalMap": true,
-      "pivot": {
-        "preset": "middle-center",
-        "offsetX": 0,
-        "offsetY": 0
-      }
+      "useNormalMap": true
     },
     "block2": {
       "image": "/textures/block2.png",
@@ -165,12 +160,7 @@
       "zOrder": 0,
       "castsShadows": true,
       "visible": true,
-      "useNormalMap": true,
-      "pivot": {
-        "preset": "middle-center",
-        "offsetX": 0,
-        "offsetY": 0
-      }
+      "useNormalMap": true
     }
   }
 }

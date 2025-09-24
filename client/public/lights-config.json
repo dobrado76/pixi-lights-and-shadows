@@ -26,15 +26,15 @@
       "enabled": true,
       "brightness": 0.3,
       "color": "0xffffff",
-      "directionX": -0.5735764363510458,
-      "directionY": -0.819152044288992,
+      "directionX": -0.3420201433256687,
+      "directionY": -0.9396926207859084,
       "directionZ": -1,
       "castsShadows": true
     },
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.4,
       "color": "0xf4f080",
       "x": 220,
@@ -51,7 +51,7 @@
     {
       "id": "spotlight",
       "type": "spotlight",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.6,
       "color": "0xffffff",
       "x": 300,
@@ -68,7 +68,7 @@
     {
       "id": "point_copy_1758529441818",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.3,
       "color": "0xffffff",
       "x": 130,
@@ -90,7 +90,7 @@
     {
       "id": "point_1758536509084",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 1,
       "color": "0xe12323",
       "x": 260,
@@ -103,7 +103,7 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.4,
+    "strength": 1,
     "maxLength": 330,
     "height": 8,
     "sharpness": 1
