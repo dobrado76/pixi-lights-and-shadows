@@ -86,7 +86,7 @@
       "rotation": 0,
       "scale": 1,
       "zOrder": 0,
-      "castsShadows": false,
+      "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
       "pivot": {
@@ -106,7 +106,7 @@
       "scale": 0.8,
       "zOrder": 1,
       "castsShadows": true,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true,
       "pivot": {
         "offsetX": 0,
