@@ -48,7 +48,7 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
   const { shaderParams, lightsConfig, ambientLight, shadowConfig, sceneConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 200, y: 150 });
+  const [mousePos, setMousePos] = useState({ x: 400, y: 300 }); // Mouse position for followMouse lights
   
   // Deferred rendering G-Buffer render targets
   const gBufferAlbedoRef = useRef<PIXI.RenderTexture | null>(null);     // RGB: Albedo/Diffuse
@@ -330,11 +330,13 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
         const lightPositions = new Float32Array(12); // 4 lights * 3 components
         const lightColors = new Float32Array(12);    // 4 lights * 3 components  
         const lightIntensities = new Float32Array(4);
+        const lightRadiuses = new Float32Array(4);   // Light radius for attenuation
         
         enabledLights.forEach((light, lightIndex) => {
           const baseIndex = lightIndex * 3;
-          lightPositions[baseIndex] = light.position.x;
-          lightPositions[baseIndex + 1] = light.position.y;
+          // Handle mouse-following lights
+          lightPositions[baseIndex] = light.followMouse ? mousePos.x : light.position.x;
+          lightPositions[baseIndex + 1] = light.followMouse ? mousePos.y : light.position.y;
           lightPositions[baseIndex + 2] = light.position.z;
           
           lightColors[baseIndex] = light.color.r;
@@ -342,6 +344,7 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
           lightColors[baseIndex + 2] = light.color.b;
           
           lightIntensities[lightIndex] = light.intensity;
+          lightRadiuses[lightIndex] = light.radius || 200; // Default radius 200
         });
         
         const uniforms = {
@@ -356,6 +359,7 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
           uLightPositions: lightPositions,
           uLightColors: lightColors,    
           uLightIntensities: lightIntensities,
+          uLightRadiuses: lightRadiuses,
           uNumLights: enabledLights.length,
           
           // Material properties
@@ -399,6 +403,7 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
           uniform vec3 uLightPositions[4];
           uniform vec3 uLightColors[4];
           uniform float uLightIntensities[4];
+          uniform float uLightRadiuses[4];
           uniform int uNumLights;
           
           uniform float uNormalIntensity;
@@ -421,6 +426,7 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
               vec3 lightPos = uLightPositions[i];
               vec3 lightColor = uLightColors[i];
               float lightIntensity = uLightIntensities[i];
+              float lightRadius = uLightRadiuses[i];
               
               vec3 lightDir = normalize(vec3(lightPos.xy - vWorldPos, lightPos.z));
               float distance = length(vec3(lightPos.xy - vWorldPos, lightPos.z));
@@ -428,8 +434,8 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
               // Diffuse lighting
               float diffuse = max(dot(normal, lightDir), 0.0);
               
-              // Distance attenuation
-              float attenuation = 1.0 / (1.0 + distance * 0.001);
+              // Distance attenuation using actual light radius
+              float attenuation = 1.0 / (1.0 + distance * distance / (lightRadius * lightRadius));
               
               vec3 lightContrib = albedo.rgb * lightColor * diffuse * lightIntensity * attenuation;
               finalColor += lightContrib;
@@ -652,13 +658,33 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
     setupDeferredDemo();
   }, [pixiApp, sceneConfig, lightsConfig]);
 
+  // Mouse tracking for interactive lights
+  useEffect(() => {
+    if (!pixiApp || !pixiApp.view) return;
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const canvas = pixiApp.view as HTMLCanvasElement;
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      setMousePos({ x, y });
+    };
+
+    const canvas = pixiApp.view as HTMLCanvasElement;
+    canvas.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      canvas.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [pixiApp]);
+
   // Update pipeline when lights or parameters change
   useEffect(() => {
     if (!pixiApp || !sceneManagerRef.current) return;
     
     // Re-render pipeline when lights change  
     renderDeferredPipeline();
-  }, [lightsConfig, ambientLight, shadowConfig, shaderParams]);
+  }, [lightsConfig, ambientLight, shadowConfig, shaderParams, mousePos]); // Include mousePos
 
   // Mouse tracking for interactive lights
   useEffect(() => {
