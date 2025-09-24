@@ -265,6 +265,47 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   return 1.0; // No occlusion found
 }
 
+// Directional light shadow calculation - uses parallel rays for consistent shadows
+float calculateDirectionalShadow(vec4 caster, vec2 pixelPos, vec2 lightDirection) {
+  if (!uShadowsEnabled) return 1.0;
+  
+  vec2 casterPos = caster.xy;
+  vec2 casterSize = caster.zw;
+  
+  // For directional lights, create parallel shadow projection
+  // Project the pixel position in the opposite direction of the light
+  vec2 shadowDirection = normalize(-lightDirection);
+  
+  // Calculate if pixel is in shadow by checking if the caster blocks the parallel light ray
+  // Create a line from the pixel in the shadow direction and see if it intersects the caster
+  vec2 rayStart = pixelPos;
+  
+  // Extend ray to reasonable length for shadow projection
+  float maxShadowDistance = uShadowMaxLength;
+  vec2 rayEnd = rayStart + shadowDirection * maxShadowDistance;
+  
+  // Check intersection with caster rectangle
+  vec2 casterMin = casterPos;
+  vec2 casterMax = casterPos + casterSize;
+  
+  // Simple AABB ray intersection for directional shadows
+  vec2 t1 = (casterMin - rayStart) / shadowDirection;
+  vec2 t2 = (casterMax - rayStart) / shadowDirection;
+  
+  vec2 tMin = min(t1, t2);
+  vec2 tMax = max(t1, t2);
+  
+  float tNear = max(tMin.x, tMin.y);
+  float tFar = min(tMax.x, tMax.y);
+  
+  // If ray intersects caster and intersection is in shadow direction, pixel is in shadow
+  if (tNear <= tFar && tNear >= 0.0 && tNear <= maxShadowDistance) {
+    return uShadowStrength; // In shadow
+  }
+  
+  return 1.0; // Not in shadow
+}
+
 // Unified shadow calculation with auto-switching
 float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
@@ -490,19 +531,25 @@ void main(void) {
     float normalDot = max(dot(safeNormal, lightDir), 0.0);
     float intensity = normalDot * uDir0Intensity;
     
-    // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
+    // Apply shadow calculation for directional light (ALWAYS use per-caster approach - bypass occluder map)
     float shadowFactor = 1.0;
     if (uDir0CastsShadows) {
-      if (uUseOccluderMap) {
-        // For occluder map: use reasonable distance that works with raycast loop
-        float sceneDistance = 800.0; // Reasonable distance for 200-iteration raycast
-        vec2 virtualLightPos = worldPos.xy + normalize(uDir0Direction.xy) * sceneDistance;
-        shadowFactor *= calculateShadowOccluderMap(virtualLightPos, worldPos.xy);
-      } else {
-        // For per-caster uniforms: use the original infinite distance approach
-        float infiniteDistance = 10000.0; // Very large distance
-        vec2 virtualLightPos = worldPos.xy + uDir0Direction.xy * infiniteDistance;
-        shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
+      // Directional lights ALWAYS use per-caster shadow calculation (never occluder map)
+      // This ensures reliable directional shadows regardless of scene complexity
+      shadowFactor = 1.0;
+      
+      // Check against ALL shadow casters individually using geometric projection
+      if (uShadowCaster0Enabled) {
+        float casterShadow = calculateDirectionalShadow(uShadowCaster0, worldPos.xy, uDir0Direction.xy);
+        shadowFactor *= casterShadow;
+      }
+      if (uShadowCaster1Enabled) {
+        float casterShadow = calculateDirectionalShadow(uShadowCaster1, worldPos.xy, uDir0Direction.xy);
+        shadowFactor *= casterShadow;
+      }
+      if (uShadowCaster2Enabled) {
+        float casterShadow = calculateDirectionalShadow(uShadowCaster2, worldPos.xy, uDir0Direction.xy);
+        shadowFactor *= casterShadow;
       }
     }
     
@@ -525,19 +572,25 @@ void main(void) {
     float normalDot = max(dot(safeNormal, lightDir), 0.0);
     float intensity = normalDot * uDir1Intensity;
     
-    // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
+    // Apply shadow calculation for directional light (ALWAYS use per-caster approach - bypass occluder map)
     float shadowFactor = 1.0;
     if (uDir1CastsShadows) {
-      if (uUseOccluderMap) {
-        // For occluder map: use reasonable distance that works with raycast loop
-        float sceneDistance = 800.0; // Reasonable distance for 200-iteration raycast
-        vec2 virtualLightPos = worldPos.xy + normalize(uDir1Direction.xy) * sceneDistance;
-        shadowFactor *= calculateShadowOccluderMap(virtualLightPos, worldPos.xy);
-      } else {
-        // For per-caster uniforms: use the original infinite distance approach
-        float infiniteDistance = 10000.0; // Very large distance
-        vec2 virtualLightPos = worldPos.xy + uDir1Direction.xy * infiniteDistance;
-        shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
+      // Directional lights ALWAYS use per-caster shadow calculation (never occluder map)
+      // This ensures reliable directional shadows regardless of scene complexity
+      shadowFactor = 1.0;
+      
+      // Check against ALL shadow casters individually using geometric projection
+      if (uShadowCaster0Enabled) {
+        float casterShadow = calculateDirectionalShadow(uShadowCaster0, worldPos.xy, uDir1Direction.xy);
+        shadowFactor *= casterShadow;
+      }
+      if (uShadowCaster1Enabled) {
+        float casterShadow = calculateDirectionalShadow(uShadowCaster1, worldPos.xy, uDir1Direction.xy);
+        shadowFactor *= casterShadow;
+      }
+      if (uShadowCaster2Enabled) {
+        float casterShadow = calculateDirectionalShadow(uShadowCaster2, worldPos.xy, uDir1Direction.xy);
+        shadowFactor *= casterShadow;
       }
     }
     
