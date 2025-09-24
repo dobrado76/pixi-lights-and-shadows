@@ -791,9 +791,12 @@ const PixiDemo = (props: PixiDemoProps) => {
       shadersRef.current = spriteMeshes.map(mesh => mesh.shader!);
       shadowCastersRef.current = legacyShadowCasters;
 
-      // Add all sprite meshes to stage
-      spriteMeshes.forEach(mesh => {
-        sceneContainerRef.current!.addChild(mesh);
+      // Add only visible sprite meshes to stage
+      spriteMeshes.forEach((mesh, index) => {
+        const sprite = allSprites[index];
+        if (sprite.definition.visible) {
+          sceneContainerRef.current!.addChild(mesh);
+        }
       });
 
       // Apply shadow texture uniforms to all sprite shaders (already done above)
