@@ -13,7 +13,7 @@
     "background2": {
       "type": "background",
       "image": "/textures/white-fabric-texture-background.jpg",
-      "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
+      "normal-": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
       "position": {"x": 0, "y": 0},
       "rotation": 0,
       "scale": 1,
@@ -49,8 +49,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true,
-      "visible": true
+      "receiveShadows": true
     },
     "block2": {
       "type": "sprite", 
@@ -60,8 +59,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true,
-      "visible": true
+      "receiveShadows": true
     }
   }
 }
