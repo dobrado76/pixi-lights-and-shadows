@@ -896,6 +896,12 @@ const PixiDemo = (props: PixiDemoProps) => {
         }
       }
       
+      // Force PIXI container to re-sort after any sprite updates (including zOrder changes)
+      if (sceneContainerRef.current) {
+        sceneContainerRef.current.sortChildren();
+        console.log('🎭 PIXI container re-sorted after sprite updates');
+      }
+      
       // Update shadow casters immediately when sprite visibility changes
       if (shadersRef.current.length > 0) {
         const shadowCasters = sceneManagerRef.current.getShadowCasters();

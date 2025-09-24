@@ -322,6 +322,12 @@ export class SceneManager {
             scale: newDef.scale
           });
           
+          // Update zIndex for z-ordering (this triggers PIXI to re-sort children)
+          if (newDef.zOrder !== undefined && existingSprite.mesh.zIndex !== newDef.zOrder) {
+            existingSprite.mesh.zIndex = newDef.zOrder;
+            console.log(`🎭 Updated zIndex for ${existingSprite.id}: ${newDef.zOrder}`);
+          }
+          
           // Update visibility
           existingSprite.mesh.visible = isNowVisible;
         }
