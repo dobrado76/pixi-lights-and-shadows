@@ -6,6 +6,38 @@ import path from "path";
 export async function registerRoutes(app: Express): Promise<Server> {
   // PIXI.js demo API routes - only for loading/saving configuration files
 
+  // Debug endpoint to help troubleshoot Vercel deployment
+  app.get('/api/debug-paths', async (req, res) => {
+    try {
+      const possiblePaths = [
+        path.join(process.cwd(), 'client', 'public', 'scene.json'),
+        path.join(process.cwd(), 'dist', 'scene.json'),
+        path.join(process.cwd(), 'public', 'scene.json'),
+        path.join(process.cwd(), 'scene.json')
+      ];
+      
+      const pathResults = [];
+      
+      for (const testPath of possiblePaths) {
+        try {
+          await fs.access(testPath);
+          pathResults.push({ path: testPath, exists: true });
+        } catch {
+          pathResults.push({ path: testPath, exists: false });
+        }
+      }
+      
+      res.json({
+        cwd: process.cwd(),
+        nodeEnv: process.env.NODE_ENV,
+        pathResults,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
   // Load lights configuration from scene file
   app.get('/api/load-lights-config', async (req, res) => {
     try {
@@ -27,14 +59,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           configPath = testPath;
           const configData = await fs.readFile(testPath, 'utf8');
           sceneConfig = JSON.parse(configData);
+          console.log(`✅ Found scene.json at: ${testPath}`);
           break;
-        } catch {
+        } catch (err) {
+          console.log(`❌ Could not find scene.json at: ${testPath}`);
           continue;
         }
       }
       
       // If no file found, return comprehensive default configuration
       if (!sceneConfig) {
+        console.log('🚨 Using default lights configuration - scene.json not found');
         // Comprehensive default configuration with scene data
         const defaultConfig = {
           lights: [
@@ -171,14 +206,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await fs.access(testPath);
           const configData = await fs.readFile(testPath, 'utf8');
           config = JSON.parse(configData);
+          console.log(`✅ Found scene.json at: ${testPath}`);
           break;
-        } catch {
+        } catch (err) {
+          console.log(`❌ Could not find scene.json at: ${testPath}`);
           continue;
         }
       }
       
       // If no file found, return comprehensive default scene configuration
       if (!config) {
+        console.log('🚨 Using default scene configuration - scene.json not found');
         const defaultScene = {
           scene: {
             background2: {
