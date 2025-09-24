@@ -79,3 +79,12 @@ Preferred communication style: Simple, everyday language.
 - **date-fns**: Modern date utility library for timestamp handling
 - **@hookform/resolvers**: Form validation resolvers for React Hook Form
 - **connect-pg-simple**: PostgreSQL session store for Express sessions
+
+# Recent Changes: Latest modifications with dates
+
+## Code Cleanup & Data-Driven Architecture (Sept 2024)
+- **Legacy Component Removal**: Eliminated unused legacy components (ControlPanel.tsx, StatusPanel.tsx, CodeDisplay.tsx) to reduce codebase complexity
+- **Hardcoded Value Elimination**: Replaced all hardcoded shadow caster coordinates with data-driven values from scene.json configuration
+- **100% JSON-Driven System**: Achieved complete data-driven architecture where all sprite positions, lighting, and shadow configurations come from external JSON files
+- **Clean Architecture**: Removed specific references (ball, block) from shader comments and code to maintain generic, reusable system
+- **Comprehensive Code Documentation**: Added meaningful comments explaining complex logic, architectural decisions, and non-obvious interactions across all active components

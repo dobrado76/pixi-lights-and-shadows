@@ -51,9 +51,9 @@ uniform bool uSpot3HasMask; uniform sampler2D uSpot3Mask; uniform vec2 uSpot3Mas
 uniform bool uSpot0CastsShadows; uniform bool uSpot1CastsShadows; uniform bool uSpot2CastsShadows; uniform bool uSpot3CastsShadows;
 
 // Shadow Caster Uniforms - integrated shadow calculation
-uniform vec4 uShadowCaster0; // x, y, width, height of first shadow caster (ball)
-uniform vec4 uShadowCaster1; // x, y, width, height of second shadow caster (block)
-uniform vec4 uShadowCaster2; // x, y, width, height of third shadow caster (block2)
+uniform vec4 uShadowCaster0; // x, y, width, height of first shadow caster
+uniform vec4 uShadowCaster1; // x, y, width, height of second shadow caster  
+uniform vec4 uShadowCaster2; // x, y, width, height of third shadow caster
 uniform bool uShadowCaster0Enabled;
 uniform bool uShadowCaster1Enabled;
 uniform bool uShadowCaster2Enabled;

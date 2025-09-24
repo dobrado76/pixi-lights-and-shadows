@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import PixiDemo from './components/PixiDemo';
-import ControlPanel from './components/ControlPanel';
-import StatusPanel from './components/StatusPanel';
-import CodeDisplay from './components/CodeDisplay';
 import DynamicLightControls from './components/DynamicLightControls';
 import { Light, ShadowConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@shared/lights';
 
+/**
+ * Legacy shader parameters interface - maintained for backward compatibility.
+ * Currently unused in the main lighting system which uses external JSON configuration.
+ */
 export interface ShaderParams {
   colorR: number;
   colorG: number;
@@ -38,7 +39,8 @@ export interface ShaderParams {
 }
 
 function App() {
-  // External lights configuration
+  // External JSON-based lighting configuration system
+  // Lights are loaded from lights-config.json and auto-saved on changes
   const [lightsConfig, setLightsConfig] = useState<Light[]>([]);
   const [ambientLight, setAmbientLight] = useState<{intensity: number, color: {r: number, g: number, b: number}}>({
     intensity: 0.3,
@@ -47,16 +49,17 @@ function App() {
   const [lightsLoaded, setLightsLoaded] = useState<boolean>(false);
   
   // Shadow configuration state
+  // Global shadow configuration applied to all shadow-casting lights
   const [shadowConfig, setShadowConfig] = useState<ShadowConfig>({
     enabled: true,
-    strength: 0.7,        // 70% shadow opacity
-    maxLength: 200,       // Maximum shadow length in pixels
-    height: 10,           // Shadow casting height
-    // Removed shadow sharpness feature
+    strength: 0.7,        // 70% shadow opacity across all shadows
+    maxLength: 200,       // Maximum projection distance for shadow geometry
+    height: 10,           // Z-height used for shadow volume calculations
+    // Shadow sharpness removed - caused visual artifacts
   });
   
 
-  // Debounced save function to prevent excessive saves
+  // Auto-save system with debouncing to prevent excessive writes during UI manipulation
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const debouncedSave = useCallback((lights: Light[], ambient: {intensity: number, color: {r: number, g: number, b: number}}, shadows?: ShadowConfig) => {
@@ -75,12 +78,12 @@ function App() {
       } catch (error) {
         console.error('Error auto-saving configuration:', error);
       }
-    }, 500); // 500ms debounce
+    }, 500); // 500ms debounce prevents save spam during slider adjustments
     
     setSaveTimeout(timeout);
   }, [saveTimeout]);
 
-  // Load saved settings from localStorage or use defaults
+  // Legacy shader params system - loads from localStorage for backward compatibility
   const getInitialParams = (): ShaderParams => {
     const saved = localStorage.getItem('pixiShaderParams');
     if (saved) {
@@ -128,7 +131,7 @@ function App() {
   const [shaderStatus, setShaderStatus] = useState('Initializing...');
   const [meshStatus, setMeshStatus] = useState('Initializing...');
 
-  // Load lights configuration from external JSON
+  // Bootstrap: Load lighting configuration from external JSON files on app start
   useEffect(() => {
     const loadLights = async () => {
       try {
@@ -139,7 +142,7 @@ function App() {
         setLightsConfig(lightsResult.lights);
         setAmbientLight(ambientLightData);
         
-        // Load shadowConfig if available, otherwise keep defaults
+        // Merge saved shadow config with defaults - maintains backward compatibility
         if (lightsResult.shadowConfig) {
           setShadowConfig(lightsResult.shadowConfig);
         }

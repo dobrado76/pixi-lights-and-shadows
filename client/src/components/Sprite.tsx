@@ -1,21 +1,28 @@
 import * as PIXI from 'pixi.js';
 
+/**
+ * Scene and sprite management system for PIXI.js applications.
+ * Handles texture loading, geometry creation, shader compilation, and transform management.
+ * Supports normal mapping with automatic flat normal generation for sprites without normal maps.
+ */
+
+// External sprite configuration format (from scene.json)
 export interface SpriteDefinition {
   type: 'background' | 'sprite';
   image: string;
-  normal?: string;
+  normal?: string;                    // Optional normal map texture
   position?: { x: number; y: number };
-  rotation?: number;
+  rotation?: number;                  // Radians
   scale?: number;
-  castsShadows?: boolean;
-  receiveShadows?: boolean;
+  castsShadows?: boolean;             // Participates in shadow casting
+  receiveShadows?: boolean;           // Receives shadows from other sprites
 }
 
-// Internal interface with all fields required (after applying defaults)
+// Internal interface with defaults applied - all fields guaranteed to exist
 interface CompleteSpriteDefinition {
   type: 'background' | 'sprite';
   image: string;
-  normal: string;
+  normal: string;                     // Always present (empty string = auto-generate flat normal)
   position: { x: number; y: number };
   rotation: number;
   scale: number;
@@ -29,38 +36,46 @@ export interface SpriteTransform {
   scale: number;
 }
 
+/**
+ * Individual sprite with complete render pipeline management.
+ * Handles texture loading, geometry creation, shader compilation, and PIXI mesh creation.
+ */
 export class SceneSprite {
   public id: string;
   public definition: CompleteSpriteDefinition;
-  public mesh: PIXI.Mesh | null = null;
-  public shader: PIXI.Shader | null = null;
-  public geometry: PIXI.Geometry | null = null;
-  public diffuseTexture: PIXI.Texture | null = null;
-  public normalTexture: PIXI.Texture | null = null;
+  public mesh: PIXI.Mesh | null = null;           // Final rendered mesh
+  public shader: PIXI.Shader | null = null;       // Compiled shader program
+  public geometry: PIXI.Geometry | null = null;   // Vertex/UV/index buffers
+  public diffuseTexture: PIXI.Texture | null = null;  // Main color texture
+  public normalTexture: PIXI.Texture | null = null;   // Normal map or generated flat normal
 
   constructor(id: string, definition: SpriteDefinition) {
     this.id = id;
-    // Apply defaults for optional fields, ensuring all fields are set
+    // Normalize sprite definition by applying sensible defaults
     this.definition = {
       type: definition.type,
       image: definition.image,
-      normal: definition.normal || '', // Empty string as default
-      position: definition.position || { x: 0, y: 0 },
-      rotation: definition.rotation || 0,
-      scale: definition.scale || 1,
-      castsShadows: definition.castsShadows ?? true, // Default true
-      receiveShadows: definition.receiveShadows ?? true // Default true
+      normal: definition.normal || '',                 // Empty = generate flat normal
+      position: definition.position || { x: 0, y: 0 }, // Top-left origin
+      rotation: definition.rotation || 0,              // No rotation
+      scale: definition.scale || 1,                    // 1:1 pixel scale
+      castsShadows: definition.castsShadows ?? true,   // Most sprites cast shadows
+      receiveShadows: definition.receiveShadows ?? true // Most sprites receive shadows
     };
   }
 
+  /**
+   * Loads diffuse and normal textures asynchronously.
+   * Generates flat normal texture for sprites without normal maps.
+   */
   async loadTextures(): Promise<void> {
     this.diffuseTexture = PIXI.Texture.from(this.definition.image);
     
-    // Load normal texture only if provided, otherwise create proper flat normal
+    // Handle normal mapping: use provided texture or generate flat normal
     if (this.definition.normal && this.definition.normal !== '') {
       this.normalTexture = PIXI.Texture.from(this.definition.normal);
     } else {
-      // Create proper flat normal texture (RGB 128,128,255 = normal [0,0,1])
+      // Generate proper flat normal (RGB 128,128,255 = normal vector [0,0,1])
       this.normalTexture = this.createFlatNormalTexture();
     }
     
@@ -81,6 +96,10 @@ export class SceneSprite {
     await Promise.all(promises);
   }
 
+  /**
+   * Creates sprite quad geometry with proper transforms applied.
+   * Handles rotation, scaling, and positioning in vertex coordinates.
+   */
   createGeometry(): PIXI.Geometry {
     if (!this.diffuseTexture) throw new Error('Textures must be loaded before creating geometry');
 
@@ -88,14 +107,14 @@ export class SceneSprite {
     const width = this.diffuseTexture.width * this.definition.scale;
     const height = this.diffuseTexture.height * this.definition.scale;
 
-    // Create sprite geometry with proper positioning and scaling
+    // Build vertex buffer with transform matrix applied
     const geometry = new PIXI.Geometry();
     
-    // Apply rotation and scale transforms
+    // Manual transform matrix application for precise vertex positioning
     const cos = Math.cos(this.definition.rotation);
     const sin = Math.sin(this.definition.rotation);
     
-    // Calculate transformed corners
+    // Local space quad corners before transformation
     const corners = [
       { x: 0, y: 0 },           // Top-left
       { x: width, y: 0 },       // Top-right
@@ -103,7 +122,7 @@ export class SceneSprite {
       { x: 0, y: height }       // Bottom-left
     ];
 
-    // Apply rotation and translation
+    // Apply rotation matrix and translation to each corner
     const transformedCorners = corners.map(corner => ({
       x: x + corner.x * cos - corner.y * sin,
       y: y + corner.x * sin + corner.y * cos
@@ -171,7 +190,10 @@ export class SceneSprite {
     return this.mesh;
   }
 
-  // Get bounding box for shadow calculations
+  /**
+   * Returns sprite bounding box for shadow volume calculations.
+   * Note: Ignores rotation - returns axis-aligned bounding box.
+   */
   getBounds(): { x: number; y: number; width: number; height: number } {
     if (!this.diffuseTexture) throw new Error('Texture must be loaded to get bounds');
     
@@ -205,14 +227,17 @@ export class SceneSprite {
     }
   }
 
-  // Create a proper flat normal texture (RGB 128,128,255 = normal [0,0,1])
+  /**
+   * Generates 1x1 flat normal texture for sprites without normal maps.
+   * RGB(128,128,255) represents normal vector [0,0,1] pointing outward.
+   */
   private createFlatNormalTexture(): PIXI.Texture {
     const canvas = document.createElement('canvas');
     canvas.width = 1;
     canvas.height = 1;
     const ctx = canvas.getContext('2d')!;
     
-    // Set proper flat normal color: RGB(128, 128, 255) = normal vector [0, 0, 1]
+    // Standard flat normal: RGB(128,128,255) = normalized [0,0,1] normal vector
     ctx.fillStyle = 'rgb(128, 128, 255)';
     ctx.fillRect(0, 0, 1, 1);
     
@@ -232,14 +257,22 @@ export class SceneSprite {
   }
 }
 
+/**
+ * Scene management system for loading and organizing sprites.
+ * Handles scene.json parsing, sprite instantiation, and categorization.
+ */
 export class SceneManager {
   private sprites: Map<string, SceneSprite> = new Map();
   
+  /**
+   * Loads complete scene from JSON configuration.
+   * Instantiates all sprites and loads their textures asynchronously.
+   */
   async loadScene(sceneData: any): Promise<void> {
-    // Clear existing sprites
+    // Clean slate for new scene
     this.sprites.clear();
     
-    // Load all sprites from scene data
+    // Parallel sprite creation and texture loading
     for (const [key, spriteData] of Object.entries(sceneData.scene)) {
       const sprite = new SceneSprite(key, spriteData as SpriteDefinition);
       await sprite.loadTextures();
@@ -255,6 +288,7 @@ export class SceneManager {
     return Array.from(this.sprites.values());
   }
 
+  // Filter sprites by shadow participation flags
   getShadowCasters(): SceneSprite[] {
     return this.getAllSprites().filter(sprite => sprite.definition.castsShadows);
   }

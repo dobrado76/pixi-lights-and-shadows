@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react';
 import { Light, MaskConfig, ShadowConfig } from '@shared/lights';
 import { Plus, Trash2, Copy, Edit3, ImageIcon, Eye, EyeOff, Moon } from 'lucide-react';
 
+/**
+ * Dynamic lighting control panel supporting unlimited lights with real-time editing.
+ * Manages light creation, configuration, masking, and auto-save to external JSON.
+ * Handles all three light types: point, directional, and spotlight.
+ */
+
 interface DynamicLightControlsProps {
   lights: Light[];
   ambientLight: {intensity: number, color: {r: number, g: number, b: number}};
@@ -20,11 +26,11 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
   const [editingName, setEditingName] = useState<string>('');
   const [availableMasks, setAvailableMasks] = useState<string[]>([]);
 
-  // Load available mask files on component mount
+  // Bootstrap mask file list - in production this could be dynamically loaded
   useEffect(() => {
     const loadMasks = async () => {
       try {
-        // Get list of mask files from the light_masks directory
+        // Hardcoded mask inventory - could be replaced with dynamic directory scanning
         const maskFiles = [
           '00001-2446737535.png',
           '00003-1224130458.png', 
@@ -44,7 +50,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
     loadMasks();
   }, []);
 
-  // Update local state when props change
+  // Sync local state with external configuration changes
   useEffect(() => {
     setLocalLights(lights);
   }, [lights]);
@@ -57,7 +63,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
     setLocalShadowConfig(shadowConfig);
   }, [shadowConfig]);
 
-  // Helper to update a specific light
+  // Core light mutation function - triggers auto-save via parent callback
   const updateLight = (lightId: string, updates: Partial<Light>) => {
     const updatedLights = localLights.map(light => 
       light.id === lightId ? { ...light, ...updates } : light
@@ -73,12 +79,12 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
     onLightsChange(updatedLights);
   };
 
-  // Helper to duplicate a light
+  // Light duplication with timestamp-based unique naming
   const duplicateLight = (lightId: string) => {
     const originalLight = localLights.find(light => light.id === lightId);
     if (!originalLight) return;
 
-    // Create new light with unique name
+    // Generate unique ID using timestamp to prevent conflicts
     const timestamp = Date.now();
     const newLight: Light = {
       ...originalLight,
@@ -90,21 +96,21 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
     onLightsChange(updatedLights);
   };
 
-  // Helper to rename a light with validation
+  // Light renaming system with validation to prevent ID conflicts
   const startRename = (lightId: string, currentName: string) => {
     setEditingLightId(lightId);
     setEditingName(currentName);
   };
 
   const finishRename = (lightId: string) => {
-    // Validate: no whitespaces and not empty
+    // Validation: reject empty strings and whitespace (IDs must be clean)
     if (!editingName.trim() || /\s/.test(editingName)) {
       setEditingLightId(null);
       setEditingName('');
       return;
     }
 
-    // Check if name already exists
+    // Prevent duplicate IDs - each light must have unique identifier
     const nameExists = localLights.some(light => light.id === editingName && light.id !== lightId);
     if (nameExists) {
       setEditingLightId(null);
@@ -127,13 +133,13 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
     setEditingName('');
   };
 
-  // Helper to add mask to a light
+  // Mask creation with sensible defaults - only for point/spotlight types
   const addMask = (lightId: string) => {
     const defaultMask: MaskConfig = {
-      image: availableMasks[0] || '',
-      offset: { x: 0, y: 0 },
-      rotation: 0,
-      scale: 1
+      image: availableMasks[0] || '',  // Use first available mask
+      offset: { x: 0, y: 0 },          // Centered by default
+      rotation: 0,                     // No rotation
+      scale: 1                         // 1:1 pixel scale
     };
     updateLight(lightId, { mask: defaultMask });
   };
@@ -143,19 +149,19 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
     updateLight(lightId, { mask: undefined });
   };
 
-  // Helper to change mask for a light
+  // Mask texture switching while preserving transform properties
   const changeMask = (lightId: string, maskFile: string) => {
     const currentMask = localLights.find(l => l.id === lightId)?.mask;
     const newMask: MaskConfig = {
       image: maskFile,
-      offset: currentMask?.offset || { x: 0, y: 0 },
-      rotation: currentMask?.rotation || 0,
-      scale: currentMask?.scale || 1
+      offset: currentMask?.offset || { x: 0, y: 0 },    // Preserve position
+      rotation: currentMask?.rotation || 0,             // Preserve rotation
+      scale: currentMask?.scale || 1                    // Preserve scale
     };
     updateLight(lightId, { mask: newMask });
   };
 
-  // Helper to update mask properties
+  // Live mask property updates for real-time transformation feedback
   const updateMaskProperty = (lightId: string, property: keyof MaskConfig, value: any) => {
     const currentMask = localLights.find(l => l.id === lightId)?.mask;
     if (currentMask) {

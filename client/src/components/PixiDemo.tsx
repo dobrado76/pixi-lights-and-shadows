@@ -7,7 +7,13 @@ import { ShaderParams } from '../App';
 import { Light, ShadowConfig } from '@shared/lights';
 import { SceneManager, SceneSprite } from './Sprite';
 
-// Shadow casting sprite interface
+/**
+ * Core PIXI.js rendering component implementing advanced shadow casting system.
+ * Manages WebGL rendering, multi-pass lighting, and unlimited shadow casters using
+ * auto-switching architecture between per-caster uniforms and occluder maps.
+ */
+
+// Simplified shadow caster representation for shadow geometry calculations
 interface ShadowCaster {
   id: string;
   x: number;
@@ -32,20 +38,27 @@ const PixiDemo = (props: PixiDemoProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
   const [mousePos, setMousePos] = useState({ x: 200, y: 150 });
-  const meshesRef = useRef<PIXI.Mesh[]>([]);
-  const shadersRef = useRef<PIXI.Shader[]>([]);
-  const shadowMeshesRef = useRef<PIXI.Mesh[]>([]);
-  const shadowCastersRef = useRef<ShadowCaster[]>([]);
-  const sceneManagerRef = useRef<SceneManager | null>(null);
+  
+  // Core rendering references
+  const meshesRef = useRef<PIXI.Mesh[]>([]);           // Main sprite meshes with lighting shaders
+  const shadersRef = useRef<PIXI.Shader[]>([]);        // Compiled shader programs
+  const shadowMeshesRef = useRef<PIXI.Mesh[]>([]);     // Legacy shadow geometry meshes
+  const shadowCastersRef = useRef<ShadowCaster[]>([]);  // Simplified caster data for calculations
+  const sceneManagerRef = useRef<SceneManager | null>(null);  // Scene/sprite management system
+  
+  // Unlimited shadow caster system - uses render texture when >4 casters
   const occluderRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
   const occluderContainerRef = useRef<PIXI.Container | null>(null);
   const occluderSpritesRef = useRef<PIXI.Sprite[]>([]);
 
-  // Shadow geometry functions (moved to component level for reuse)
+  /**
+   * Creates shadow volume geometry by projecting caster corners away from light.
+   * Generates 4 shadow quads (one per rectangle edge) to form complete shadow volume.
+   */
   const createShadowGeometry = (caster: ShadowCaster, lightX: number, lightY: number, shadowLength: number = 100) => {
     if (!caster.castsShadows) return null;
     
-    // Get the four corners of the sprite rectangle
+    // Rectangle corners for shadow volume calculation
     const corners = [
       { x: caster.x, y: caster.y },                           // Top-left
       { x: caster.x + caster.width, y: caster.y },            // Top-right  
@@ -53,15 +66,15 @@ const PixiDemo = (props: PixiDemoProps) => {
       { x: caster.x, y: caster.y + caster.height }            // Bottom-left
     ];
 
-    // Project each corner away from the light
+    // Project corners away from light to create shadow volume endpoints
     const projectedCorners = corners.map(corner => {
       const dx = corner.x - lightX;
       const dy = corner.y - lightY;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      if (distance < 0.1) return corner; // Avoid division by zero
+      if (distance < 0.1) return corner; // Prevent division by zero for overlapping light/caster
       
-      // Normalize and project
+      // Normalize direction vector and project to shadow length
       const normalizedX = dx / distance;
       const normalizedY = dy / distance;
       
@@ -84,10 +97,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       vertices.push(corner.x, corner.y);
     });
 
-    // Create triangles to form shadow volume
-    // Shadow consists of 4 quads, one for each edge of the rectangle
+    // Create shadow volume triangles - 4 quads connecting original/projected edges
+    // Each rectangle edge generates one shadow quad (2 triangles)
     const shadowIndices = [
-      // Edge 0->1 (top edge)
+      // Edge 0->1 (top edge): original corners + projected corners
       0, 1, 5,  0, 5, 4,
       // Edge 1->2 (right edge)  
       1, 2, 6,  1, 6, 5,
@@ -104,7 +117,10 @@ const PixiDemo = (props: PixiDemoProps) => {
     return geometry;
   };
 
-  // Create shadow mesh with basic black color
+  /**
+   * Creates shadow mesh with simple black shader for legacy shadow system.
+   * Note: Modern system uses shader-based shadows instead of geometry meshes.
+   */
   const createShadowMesh = (geometry: PIXI.Geometry, alpha: number = 0.3) => {
     const shader = new PIXI.Shader(
       PIXI.Program.from(
@@ -843,16 +859,18 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uDir0CastsShadows = false; uniforms.uDir1CastsShadows = false;
       uniforms.uSpot0CastsShadows = false; uniforms.uSpot1CastsShadows = false; uniforms.uSpot2CastsShadows = false; uniforms.uSpot3CastsShadows = false;
 
-      // Add shadow system uniforms
+      // Add shadow system uniforms - fully data-driven from scene configuration
       uniforms.uShadowsEnabled = shadowConfig.enabled;
       uniforms.uShadowStrength = shadowConfig.strength || 0.5;
-      uniforms.uShadowCaster0 = [120, 80, 75, 75]; // Ball: x, y, width, height
-      uniforms.uShadowCaster1 = [280, 120, 120, 60]; // Block: x, y, width, height  
-      uniforms.uShadowCaster0Enabled = true;
-      uniforms.uShadowCaster1Enabled = true;
+      
+      // Shadow casters from scene data (not hardcoded)
+      const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
+      uniforms.uShadowCaster0 = shadowCasters[0] ? [shadowCasters[0].getBounds().x, shadowCasters[0].getBounds().y, shadowCasters[0].getBounds().width, shadowCasters[0].getBounds().height] : [0, 0, 0, 0];
+      uniforms.uShadowCaster1 = shadowCasters[1] ? [shadowCasters[1].getBounds().x, shadowCasters[1].getBounds().y, shadowCasters[1].getBounds().width, shadowCasters[1].getBounds().height] : [0, 0, 0, 0];
+      uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
+      uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
       
       // Occluder map uniforms for unlimited shadow casters
-      const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
       uniforms.uUseOccluderMap = shadowCasters.length > 4;
       uniforms.uOccluderMap = occluderRenderTargetRef.current || null;
       
