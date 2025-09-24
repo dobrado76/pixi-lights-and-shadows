@@ -388,7 +388,7 @@ export class SceneManager {
             }
             // Update shader uniform
             if (existingSprite.shader) {
-              existingSprite.shader.uniforms.uNormalMap = existingSprite.normalTexture;
+              existingSprite.shader.uniforms.uNormal = existingSprite.normalTexture;
             }
           }
           
