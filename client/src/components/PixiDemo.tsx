@@ -833,6 +833,24 @@ const PixiDemo = (props: PixiDemoProps) => {
     // Update individual sprite properties without rebuilding entire scene
     try {
       sceneManagerRef.current.updateFromConfig(sceneConfig);
+      
+      // Update shadow casters immediately when sprite visibility changes
+      if (shadersRef.current.length > 0) {
+        const shadowCasters = sceneManagerRef.current.getShadowCasters();
+        
+        // Update shadow uniforms for all shaders
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uShadowCaster0 = shadowCasters[0] ? [shadowCasters[0].getBounds().x, shadowCasters[0].getBounds().y, shadowCasters[0].getBounds().width, shadowCasters[0].getBounds().height] : [0, 0, 0, 0];
+            shader.uniforms.uShadowCaster1 = shadowCasters[1] ? [shadowCasters[1].getBounds().x, shadowCasters[1].getBounds().y, shadowCasters[1].getBounds().width, shadowCasters[1].getBounds().height] : [0, 0, 0, 0];
+            shader.uniforms.uShadowCaster2 = shadowCasters[2] ? [shadowCasters[2].getBounds().x, shadowCasters[2].getBounds().y, shadowCasters[2].getBounds().width, shadowCasters[2].getBounds().height] : [0, 0, 0, 0];
+            shader.uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
+            shader.uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
+            shader.uniforms.uShadowCaster2Enabled = shadowCasters.length > 2;
+          }
+        });
+      }
+      
       // Trigger immediate render after sprite updates
       pixiApp.render();
       console.log('🎭 Sprites updated without scene rebuild');
