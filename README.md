@@ -2,6 +2,10 @@
 
 A comprehensive React.js application showcasing advanced pseudo-3D shadow casting using PIXI.js primitives. Features a complete lighting system with unlimited sprite shadow casters, per-light shadow controls, performance optimization, and external JSON configuration management.
 
+![PIXI.js Shadow Casting System Overview](docs/images/pixi-shadow-system-overview.png)
+
+*Live demo showing multiple light types (point, directional, spotlight) with real-time shadow casting, normal mapping, and comprehensive lighting controls.*
+
 ## ✨ Key Features
 
 ### 🌑 Advanced Shadow Casting System
