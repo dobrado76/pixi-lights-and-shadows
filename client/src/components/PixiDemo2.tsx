@@ -129,81 +129,47 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
   };
 
   /**
-   * GEOMETRY PASS: Render all sprites to G-Buffer using dedicated geometry shader
-   * Outputs: Albedo, World-space normals, World positions
+   * GEOMETRY PASS: For now, just render sprites normally to albedo buffer
+   * TODO: Implement proper G-Buffer multi-render-target approach
    */
   const renderGeometryPass = () => {
-    if (!pixiApp || !gBufferAlbedoRef.current || !gBufferNormalRef.current || 
-        !gBufferPositionRef.current || !geometryPassContainerRef.current) return;
+    if (!pixiApp || !gBufferAlbedoRef.current || !geometryPassContainerRef.current) return;
     
-    // Clear all G-Buffer targets
+    // Clear albedo buffer
     pixiApp.renderer.render(new PIXI.Container(), { 
       renderTexture: gBufferAlbedoRef.current, 
       clear: true 
     });
-    pixiApp.renderer.render(new PIXI.Container(), { 
-      renderTexture: gBufferNormalRef.current, 
-      clear: true 
-    });
-    pixiApp.renderer.render(new PIXI.Container(), { 
-      renderTexture: gBufferPositionRef.current, 
-      clear: true 
-    });
     
-    // Render geometry data for all sprites using G-Buffer shaders
+    // For now, just render sprites as regular PIXI sprites to the albedo buffer
     const sprites = sceneManagerRef.current?.getSprites() || [];
     
+    // Clear and rebuild geometry container
+    geometryPassContainerRef.current.removeChildren();
+    
     sprites.forEach((sprite: SceneSprite, index: number) => {
-      // Create G-Buffer mesh for this scene sprite (if not exists)
-      if (!geometrySpritesRef.current[index]) {
-        const quad = geometry; // Use the custom geometry
-        
-        // Create geometry pass shader
-        const geometryShader = new PIXI.Shader(
-          PIXI.Program.from(vertexShaderSource, geometryPassShaderSource),
-          {
-            uDiffuse: sprite.diffuseTexture || PIXI.Texture.WHITE,
-            uNormal: sprite.normalTexture || PIXI.Texture.WHITE,
-            uSpritePos: [0, 0],
-            uSpriteSize: [100, 100],
-            uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
-            uRotation: 0
-          }
-        );
-        
-        const gBufferMesh = new PIXI.Mesh(quad, geometryShader as any);
-        geometrySpritesRef.current[index] = gBufferMesh;
-        geometryPassContainerRef.current!.addChild(gBufferMesh);
-        geometryPassShadersRef.current[index] = geometryShader;
-      }
+      if (!sprite.diffuseTexture) return;
       
-      const gMesh = geometrySpritesRef.current[index];
-      const gShader = geometryPassShadersRef.current[index];
-      
-      // Update mesh properties and uniforms
+      // Create simple PIXI sprite for geometry pass
+      const pixiSprite = new PIXI.Sprite(sprite.diffuseTexture);
       const bounds = sprite.getBounds();
-      gMesh.x = bounds.x;
-      gMesh.y = bounds.y;
-      gMesh.width = bounds.width;
-      gMesh.height = bounds.height;
       
-      // Update shader uniforms for G-Buffer output
-      if (gShader.uniforms) {
-        gShader.uniforms.uDiffuse = sprite.diffuseTexture || PIXI.Texture.WHITE;
-        gShader.uniforms.uNormal = sprite.normalTexture || PIXI.Texture.WHITE;
-        gShader.uniforms.uSpritePos = [bounds.x, bounds.y];
-        gShader.uniforms.uSpriteSize = [bounds.width, bounds.height];
-        gShader.uniforms.uRotation = sprite.rotation || 0;
-      }
+      pixiSprite.x = bounds.x;
+      pixiSprite.y = bounds.y;
+      pixiSprite.width = bounds.width;
+      pixiSprite.height = bounds.height;
+      pixiSprite.rotation = 0; // SceneSprite doesn't have rotation property yet
+      
+      geometryPassContainerRef.current!.addChild(pixiSprite);
     });
     
-    // Render to albedo buffer (main G-Buffer output)
+    // Render sprites to albedo buffer
     pixiApp.renderer.render(geometryPassContainerRef.current, { 
       renderTexture: gBufferAlbedoRef.current, 
       clear: false 
     });
     
-    console.log('📐 Geometry pass rendered to G-Buffer with proper shaders');
+    console.log('📐 Geometry pass rendered sprites to albedo buffer');
   };
 
   /**
@@ -233,24 +199,28 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
       const lightIntensities = enabledLights.map(light => light.intensity);
       const lightRadii = enabledLights.map(light => light.radius || 200);
       
-      // Create lighting pass shader
+      // For now, create a simple shader that just applies ambient light to the albedo
       const lightingShader = new PIXI.Shader(
-        PIXI.Program.from(vertexShaderSource, lightingPassShaderSource),
+        PIXI.Program.from(
+          vertexShaderSource,
+          `
+          precision mediump float;
+          varying vec2 vTextureCoord;
+          uniform sampler2D uAlbedo;
+          uniform vec3 uAmbientColor;
+          uniform float uAmbientLight;
+          
+          void main(void) {
+            vec3 albedo = texture2D(uAlbedo, vTextureCoord).rgb;
+            vec3 ambient = albedo * uAmbientColor * uAmbientLight;
+            gl_FragColor = vec4(ambient, 1.0);
+          }
+          `
+        ),
         {
-          uGBufferAlbedo: gBufferAlbedoRef.current,
-          uGBufferNormal: gBufferNormalRef.current,
-          uGBufferPosition: gBufferPositionRef.current,
-          uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
+          uAlbedo: gBufferAlbedoRef.current,
           uAmbientLight: ambientLight.intensity,
-          uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
-          uNumPointLights: enabledLights.length,
-          uPointLightPositions: lightPositions,
-          uPointLightColors: lightColors,
-          uPointLightIntensities: lightIntensities,
-          uPointLightRadii: lightRadii,
-          uShadowsEnabled: shadowConfig.enabled,
-          uShadowStrength: shadowConfig.strength,
-          uShadowMap: gBufferAlbedoRef.current // Use albedo as shadow map for now
+          uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b]
         }
       );
       
@@ -302,34 +272,22 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
   };
 
   /**
-   * FINAL COMPOSITION: Combine G-Buffer and lighting for final output
+   * FINAL COMPOSITION: Display the result on screen
    */
   const renderFinalComposite = () => {
-    if (!pixiApp || !finalCompositeRef.current || !finalCompositeContainerRef.current) return;
+    if (!pixiApp || !lightAccumulationRef.current) return;
     
-    // Create final composite sprite
-    const compositeSprite = new PIXI.Sprite(lightAccumulationRef.current || PIXI.Texture.WHITE);
-    compositeSprite.width = shaderParams.canvasWidth;
-    compositeSprite.height = shaderParams.canvasHeight;
-    
-    finalCompositeContainerRef.current.removeChildren();
-    finalCompositeContainerRef.current.addChild(compositeSprite);
-    
-    // Render to final composite buffer
-    pixiApp.renderer.render(finalCompositeContainerRef.current, { 
-      renderTexture: finalCompositeRef.current, 
-      clear: true 
-    });
-    
-    // Display final result on screen
-    const displaySprite = new PIXI.Sprite(finalCompositeRef.current);
+    // For now, just display the lighting result directly
+    const displaySprite = new PIXI.Sprite(lightAccumulationRef.current);
     displaySprite.width = shaderParams.canvasWidth;
     displaySprite.height = shaderParams.canvasHeight;
+    displaySprite.x = 0;
+    displaySprite.y = 0;
     
     pixiApp.stage.removeChildren();
     pixiApp.stage.addChild(displaySprite);
     
-    console.log('🎨 Final composite rendered');
+    console.log('🎨 Final composite - displaying lighting result');
   };
 
   /**
