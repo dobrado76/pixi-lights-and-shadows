@@ -501,6 +501,104 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
           uniform float uSpecularIntensity;
           uniform float uShadowStrength;
           
+          // Additional shadow uniforms (copy from original)
+          uniform bool uShadowsEnabled;
+          uniform float uShadowMaxLength;
+          uniform bool uUseOccluderMap;
+          uniform sampler2D uOccluderMap;
+          uniform vec2 uCanvasSize;
+          
+          // Shadow calculation functions (copy from original fragment.glsl)
+          float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
+            if (!uShadowsEnabled) return 1.0;
+            
+            vec2 rayDir = pixelPos - lightPos;
+            float rayLength = length(rayDir);
+            
+            if (rayLength < 0.001) return 1.0;
+            
+            float stepSize = 2.0; // Pixel step size in world units
+            float maxDistance = rayLength;
+            
+            for (int i = 1; i < 200; i++) {
+              float distance = float(i) * stepSize;
+              
+              if (distance >= maxDistance) break;
+              
+              vec2 samplePos = lightPos + rayDir * (distance / rayLength);
+              vec2 occluderUV = samplePos / uCanvasSize;
+              
+              if (occluderUV.x < 0.0 || occluderUV.x > 1.0 || occluderUV.y < 0.0 || occluderUV.y > 1.0) continue;
+              
+              float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
+              
+              if (occluderAlpha > 0.0) {
+                float hitDistance = distance;
+                float shadowLength = rayLength - hitDistance;
+                
+                if (shadowLength > uShadowMaxLength) return 1.0;
+                
+                float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
+                if (maxLengthFade <= 0.0) return 1.0;
+                
+                float shadowValue = 1.0;
+                float normalizedDistance = shadowLength / uShadowMaxLength;
+                float distanceFade = exp(-normalizedDistance * 2.0);
+                float finalShadowStrength = uShadowStrength * shadowValue * distanceFade * maxLengthFade;
+                
+                return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
+              }
+            }
+            
+            return 1.0;
+          }
+          
+          float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) {
+            if (!uShadowsEnabled) return 1.0;
+            
+            vec2 normalizedDir = normalize(lightDirection);
+            float rayLength = 1000.0; // Fixed length for directional shadows
+            float stepSize = 2.0;
+            
+            for (int i = 1; i < 200; i++) {
+              float distance = float(i) * stepSize;
+              if (distance >= rayLength) break;
+              
+              vec2 samplePos = pixelPos - normalizedDir * distance;
+              vec2 occluderUV = samplePos / uCanvasSize;
+              
+              if (occluderUV.x < 0.0 || occluderUV.x > 1.0 || occluderUV.y < 0.0 || occluderUV.y > 1.0) continue;
+              
+              float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
+              
+              if (occluderAlpha > 0.0) {
+                return 1.0 - uShadowStrength;
+              }
+            }
+            
+            return 1.0;
+          }
+          
+          float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
+            if (!uShadowsEnabled) return 1.0;
+            
+            if (uUseOccluderMap) {
+              return calculateShadowOccluderMap(lightPos, pixelPos);
+            } else {
+              return 1.0; // Simplified - would need per-caster logic here
+            }
+          }
+          
+          float calculateDirectionalShadowUnified(vec2 lightDirection, vec2 pixelPos) {
+            if (!uShadowsEnabled) return 1.0;
+            
+            if (uUseOccluderMap) {
+              return calculateDirectionalShadowOccluderMap(lightDirection, pixelPos);
+            } else {
+              return 1.0; // Simplified - would need per-caster logic here
+            }
+          }
+          
           void main(void) {
             vec4 albedo = texture2D(uSampler, vTextureCoord);
             vec3 normal = normalize(texture2D(uNormalMap, vTextureCoord).rgb * 2.0 - 1.0);
@@ -530,24 +628,24 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
               // Distance attenuation using actual light radius
               float attenuation = 1.0 / (1.0 + distance * distance / (lightRadius * lightRadius));
               
-              vec3 lightContrib = albedo.rgb * lightColor * diffuse * lightIntensity * attenuation;
+              // Add proper shadow calculation for point light
+              float shadowFactor = calculateShadowUnified(lightPos.xy, vWorldPos);
+              
+              vec3 lightContrib = albedo.rgb * lightColor * diffuse * lightIntensity * attenuation * shadowFactor;
               finalColor += lightContrib;
               
-              // Specular highlight
+              // Specular highlight (also affected by shadows)
               vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
               vec3 reflectDir = reflect(-lightDir, normal);
               float specular = pow(max(dot(viewDir, reflectDir), 0.0), uSpecularPower);
-              finalColor += lightColor * specular * uSpecularIntensity * lightIntensity * attenuation;
-              
-              // Simple shadow approximation based on distance
-              float shadow = 1.0 - (uShadowStrength * 0.3 * (1.0 - attenuation));
-              finalColor *= shadow;
+              finalColor += lightColor * specular * uSpecularIntensity * lightIntensity * attenuation * shadowFactor;
             }
             
             // Directional light calculations
             for (int i = 0; i < 2; i++) {
               if (i >= uNumDirLights) break;
               
+              // Copy exact directional light handling from original (no Y-flip for directional)
               vec3 lightDir = normalize(-uDirLightDirections[i]); // Negate direction for proper lighting
               vec3 lightColor = uDirLightColors[i];
               float lightIntensity = uDirLightIntensities[i];
@@ -555,20 +653,17 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
               // Diffuse lighting for directional light
               float diffuse = max(dot(normal, lightDir), 0.0);
               
-              vec3 lightContrib = albedo.rgb * lightColor * diffuse * lightIntensity;
+              // Add proper directional shadow calculation
+              float dirShadowFactor = calculateDirectionalShadowUnified(uDirLightDirections[i].xy, vWorldPos);
+              
+              vec3 lightContrib = albedo.rgb * lightColor * diffuse * lightIntensity * dirShadowFactor;
               finalColor += lightContrib;
               
-              // Specular highlight for directional light
+              // Specular highlight for directional light (also affected by shadows)
               vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
               vec3 reflectDir = reflect(-lightDir, normal);
               float specular = pow(max(dot(viewDir, reflectDir), 0.0), uSpecularPower);
-              finalColor += lightColor * specular * uSpecularIntensity * lightIntensity;
-              
-              // Directional shadows (simplified)
-              if (uShadowStrength > 0.0) {
-                float dirShadow = 1.0 - uShadowStrength * 0.2;
-                finalColor *= dirShadow;
-              }
+              finalColor += lightColor * specular * uSpecularIntensity * lightIntensity * dirShadowFactor;
             }
             
             // Spotlight calculations (copy exact math from original fragment.glsl)
@@ -605,14 +700,17 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
               // Diffuse lighting
               float diffuse = max(dot(normal, L), 0.0);
               
-              vec3 lightContrib = albedo.rgb * spotColor * diffuse * spotIntensity * atten * spotFactor;
+              // Add proper shadow calculation for spotlight
+              float spotShadowFactor = calculateShadowUnified(spotPos.xy, vWorldPos);
+              
+              vec3 lightContrib = albedo.rgb * spotColor * diffuse * spotIntensity * atten * spotFactor * spotShadowFactor;
               finalColor += lightContrib;
               
-              // Specular highlight for spotlight
+              // Specular highlight for spotlight (also affected by shadows)
               vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
               vec3 reflectDir = reflect(-L, normal);
               float specular = pow(max(dot(viewDir, reflectDir), 0.0), uSpecularPower);
-              finalColor += spotColor * specular * uSpecularIntensity * spotIntensity * atten * spotFactor;
+              finalColor += spotColor * specular * uSpecularIntensity * spotIntensity * atten * spotFactor * spotShadowFactor;
             }
             
             // Alpha test to eliminate transparent edge artifacts
