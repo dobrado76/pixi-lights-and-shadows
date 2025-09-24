@@ -4,17 +4,17 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.07,
+      "brightness": 0.01,
       "color": "0xffffff"
     },
     {
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
-      "brightness": 0.7,
+      "brightness": 0.9,
       "color": "0xffffff",
       "x": 270,
-      "y": 210,
+      "y": 300,
       "z": 60,
       "followMouse": true,
       "castsShadows": true,
@@ -26,15 +26,15 @@
       "enabled": true,
       "brightness": 0.4,
       "color": "0xffffff",
-      "directionX": -0.1736481776669303,
-      "directionY": -0.984807753012208,
+      "directionX": -0.42261826174069933,
+      "directionY": -0.90630778703665,
       "directionZ": -1,
       "castsShadows": true
     },
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.4,
       "color": "0xf4f080",
       "x": 220,
@@ -51,7 +51,7 @@
     {
       "id": "spotlight",
       "type": "spotlight",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.6,
       "color": "0xffffff",
       "x": 300,
@@ -90,7 +90,7 @@
     {
       "id": "point_1758536509084",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 1,
       "color": "0xe12323",
       "x": 250,
@@ -103,7 +103,7 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.8,
+    "strength": 0.5,
     "maxLength": 260,
     "height": 8,
     "sharpness": 1

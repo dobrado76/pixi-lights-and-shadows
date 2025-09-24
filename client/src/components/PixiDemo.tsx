@@ -4,7 +4,7 @@ import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import vertexShaderSource from '../shaders/vertex.glsl?raw';
 import fragmentShaderSource from '../shaders/fragment.glsl?raw';
 import { ShaderParams } from '../App';
-import { Light, ShadowConfig } from '@/lib/lights';
+import { Light, ShadowConfig } from '@shared/lights';
 import { SceneManager, SceneSprite } from './Sprite';
 
 /**
@@ -843,7 +843,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         sceneManagerRef.current = null;
       }
     };
-  }, [pixiApp, geometry, onGeometryUpdate, onShaderUpdate, onMeshUpdate]);
+  }, [pixiApp, geometry, lightsConfig, ambientLight, shadowConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate]);
   
   // Handle sprite updates without full scene rebuild
   useEffect(() => {
@@ -961,8 +961,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   // Dynamic shader uniform updates for real-time lighting changes
   useEffect(() => {
     if (shadersRef.current.length === 0) return;
-    
-    console.log('🔥 LIGHTING UPDATE TRIGGERED - updating shader uniforms in real-time');
 
     // Full light uniforms recreation - individual uniform approach
     const createLightUniforms = () => {
@@ -1207,14 +1205,6 @@ const PixiDemo = (props: PixiDemoProps) => {
           }
         });
         pixiApp.render();
-      }
-      
-      // Force immediate render after updating lighting uniforms
-      if (pixiApp && pixiApp.renderer) {
-        console.log('🎨 FORCING IMMEDIATE RENDER after lighting uniform updates');
-        pixiApp.render();
-      } else {
-        console.warn('⚠️ Cannot render - pixiApp or renderer not available');
       }
     }
   }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig]);

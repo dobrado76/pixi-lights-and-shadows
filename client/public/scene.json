@@ -12,12 +12,7 @@
       "zOrder": -2,
       "castsShadows": false,
       "visible": false,
-      "useNormalMap": true,
-      "pivot": {
-        "preset": "middle-center",
-        "offsetX": 0,
-        "offsetY": 0
-      }
+      "useNormalMap": true
     },
     "background2": {
       "image": "/textures/white-fabric-texture-background.jpg",
@@ -31,12 +26,7 @@
       "zOrder": -1,
       "castsShadows": false,
       "visible": true,
-      "useNormalMap": false,
-      "pivot": {
-        "preset": "middle-center",
-        "offsetX": 0,
-        "offsetY": 0
-      }
+      "useNormalMap": false
     },
     "ball": {
       "image": "/textures/ball.png",
@@ -50,12 +40,7 @@
       "zOrder": 0,
       "castsShadows": true,
       "visible": true,
-      "useNormalMap": true,
-      "pivot": {
-        "preset": "middle-center",
-        "offsetX": 0,
-        "offsetY": 0
-      }
+      "useNormalMap": true
     },
     "ball2": {
       "image": "/textures/ball.png",
@@ -64,7 +49,7 @@
         "x": 175,
         "y": 226
       },
-      "rotation": 0,
+      "rotation": 0.8203047484373349,
       "scale": 0.9,
       "zOrder": 0,
       "castsShadows": true,
