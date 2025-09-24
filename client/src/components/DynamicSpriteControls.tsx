@@ -10,13 +10,14 @@ import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 
 interface SpriteConfig {
   id: string;
+  type: 'background' | 'sprite';
   image: string;
   normal?: string;
   position: { x: number; y: number };
   rotation: number;
   scale: number;
-  zOrder: number;
   castsShadows: boolean;
+  receiveShadows: boolean;
   visible: boolean;
   useNormalMap?: boolean;
 }
@@ -28,10 +29,9 @@ interface SceneConfig {
 interface DynamicSpriteControlsProps {
   sceneConfig: SceneConfig;
   onSceneConfigChange: (newConfig: SceneConfig) => void;
-  onZOrderChange?: (spriteId: string, oldZOrder: number, newZOrder: number) => void;
 }
 
-export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrderChange }: DynamicSpriteControlsProps) {
+export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange }: DynamicSpriteControlsProps) {
   const [expandedSprites, setExpandedSprites] = useState<Set<string>>(new Set(['background', 'ball']));
 
   const toggleExpanded = (spriteId: string) => {
@@ -55,22 +55,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
         }
       }
     };
-    
-    // Special handling for zOrder changes - bypass React state updates
-    if (updates.zOrder !== undefined) {
-      const oldZOrder = sceneConfig.scene[spriteId]?.zOrder ?? 0;
-      console.log(`🎮 UI: zOrder changed for ${spriteId}: ${oldZOrder} → ${updates.zOrder}`);
-      
-      // Call direct callback for immediate update
-      if (onZOrderChange) {
-        onZOrderChange(spriteId, oldZOrder, updates.zOrder);
-      }
-      
-      // Also update the React state
-      onSceneConfigChange(newConfig);
-    } else {
-      onSceneConfigChange(newConfig);
-    }
+    onSceneConfigChange(newConfig);
   };
 
   const sprites = Object.entries(sceneConfig.scene || {});
@@ -104,7 +89,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
                             {spriteId}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            z:{sprite.zOrder} • x:{Math.round(sprite.position.x)} y:{Math.round(sprite.position.y)}
+                            {sprite.type} • x:{Math.round(sprite.position.x)} y:{Math.round(sprite.position.y)}
                           </div>
                         </div>
                       </div>
@@ -127,134 +112,113 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
                 
                 <CollapsibleContent>
                   <CardContent className="pt-0 space-y-4">
-                    {sprite.visible && (
-                      <>
-                        {/* Position Controls */}
-                        <div className="space-y-3">
-                          <Label className="text-xs font-medium text-muted-foreground">Position</Label>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">X</Label>
-                              <Input
-                                type="number"
-                                value={sprite.position.x}
-                                onChange={(e) => updateSpriteConfig(spriteId, {
-                                  position: { ...sprite.position, x: Number(e.target.value) }
-                                })}
-                                className="h-7 text-xs"
-                                data-testid={`input-position-x-${spriteId}`}
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">Y</Label>
-                              <Input
-                                type="number"
-                                value={sprite.position.y}
-                                onChange={(e) => updateSpriteConfig(spriteId, {
-                                  position: { ...sprite.position, y: Number(e.target.value) }
-                                })}
-                                className="h-7 text-xs"
-                                data-testid={`input-position-y-${spriteId}`}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Rotation Control */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label className="text-xs font-medium text-muted-foreground">Rotation</Label>
-                            <span className="text-xs text-muted-foreground">{Math.round(sprite.rotation * 180 / Math.PI)}°</span>
-                          </div>
-                          <Slider
-                            value={[sprite.rotation * 180 / Math.PI]}
-                            onValueChange={([value]) => updateSpriteConfig(spriteId, { rotation: value * Math.PI / 180 })}
-                            min={0}
-                            max={360}
-                            step={1}
-                            className="w-full"
-                            data-testid={`slider-rotation-${spriteId}`}
+                    {/* Position Controls */}
+                    <div className="space-y-3">
+                      <Label className="text-xs font-medium text-muted-foreground">Position</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">X</Label>
+                          <Input
+                            type="number"
+                            value={sprite.position.x}
+                            onChange={(e) => updateSpriteConfig(spriteId, {
+                              position: { ...sprite.position, x: Number(e.target.value) }
+                            })}
+                            className="h-7 text-xs"
+                            data-testid={`input-position-x-${spriteId}`}
                           />
                         </div>
-
-                        {/* Scale Control */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label className="text-xs font-medium text-muted-foreground">Scale</Label>
-                            <span className="text-xs text-muted-foreground">{sprite.scale.toFixed(2)}x</span>
-                          </div>
-                          <Slider
-                            value={[sprite.scale]}
-                            onValueChange={([value]) => updateSpriteConfig(spriteId, { scale: value })}
-                            min={0.1}
-                            max={3.0}
-                            step={0.1}
-                            className="w-full"
-                            data-testid={`slider-scale-${spriteId}`}
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Y</Label>
+                          <Input
+                            type="number"
+                            value={sprite.position.y}
+                            onChange={(e) => updateSpriteConfig(spriteId, {
+                              position: { ...sprite.position, y: Number(e.target.value) }
+                            })}
+                            className="h-7 text-xs"
+                            data-testid={`input-position-y-${spriteId}`}
                           />
                         </div>
-
-                        {/* Z-Order Control */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label className="text-xs font-medium text-muted-foreground">Z-Order (Depth)</Label>
-                            <span className="text-xs text-muted-foreground">
-                              z:{sprite.zOrder} • {sprite.zOrder < 0 ? 'Behind' : sprite.zOrder === 0 ? 'Default' : 'Front'}
-                            </span>
-                          </div>
-                          <Slider
-                            value={[sprite.zOrder]}
-                            onValueChange={([value]) => updateSpriteConfig(spriteId, { zOrder: value })}
-                            min={-10}
-                            max={10}
-                            step={1}
-                            className="w-full"
-                            data-testid={`slider-zorder-${spriteId}`}
-                          />
-                        </div>
-
-                        {/* Shadow & Rendering Controls */}
-                        <div className="space-y-3 pt-2 border-t border-border/50">
-                          <Label className="text-xs font-medium text-muted-foreground">Rendering Options</Label>
-                          
-                          <div className="flex items-center justify-between">
-                            <Label className="text-xs text-card-foreground">Casts Shadows</Label>
-                            <Switch
-                              checked={sprite.castsShadows}
-                              onCheckedChange={(checked) => updateSpriteConfig(spriteId, { castsShadows: checked })}
-                              data-testid={`switch-casts-shadows-${spriteId}`}
-                            />
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <Label className="text-xs text-card-foreground">Use Normal Map</Label>
-                            <Switch
-                              checked={sprite.useNormalMap ?? true}
-                              onCheckedChange={(checked) => updateSpriteConfig(spriteId, { useNormalMap: checked })}
-                              data-testid={`switch-use-normal-map-${spriteId}`}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Texture Info */}
-                        <div className="space-y-2 pt-2 border-t border-border/50">
-                          <Label className="text-xs font-medium text-muted-foreground">Textures</Label>
-                          <div className="text-xs text-muted-foreground break-all">
-                            <div><span className="font-medium">Diffuse:</span> {sprite.image}</div>
-                            {sprite.normal && (
-                              <div><span className="font-medium">Normal:</span> {sprite.normal}</div>
-                            )}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    
-                    {!sprite.visible && (
-                      <div className="text-center text-muted-foreground text-sm py-4">
-                        <EyeOff className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                        Sprite is hidden - enable visibility to access controls
                       </div>
-                    )}
+                    </div>
+
+                    {/* Rotation Control */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium text-muted-foreground">Rotation</Label>
+                        <span className="text-xs text-muted-foreground">{Math.round(sprite.rotation * 180 / Math.PI)}°</span>
+                      </div>
+                      <Slider
+                        value={[sprite.rotation * 180 / Math.PI]}
+                        onValueChange={([value]) => updateSpriteConfig(spriteId, { rotation: value * Math.PI / 180 })}
+                        min={0}
+                        max={360}
+                        step={1}
+                        className="w-full"
+                        data-testid={`slider-rotation-${spriteId}`}
+                      />
+                    </div>
+
+                    {/* Scale Control */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium text-muted-foreground">Scale</Label>
+                        <span className="text-xs text-muted-foreground">{sprite.scale.toFixed(2)}x</span>
+                      </div>
+                      <Slider
+                        value={[sprite.scale]}
+                        onValueChange={([value]) => updateSpriteConfig(spriteId, { scale: value })}
+                        min={0.1}
+                        max={3.0}
+                        step={0.1}
+                        className="w-full"
+                        data-testid={`slider-scale-${spriteId}`}
+                      />
+                    </div>
+
+                    {/* Shadow & Rendering Controls */}
+                    <div className="space-y-3 pt-2 border-t border-border/50">
+                      <Label className="text-xs font-medium text-muted-foreground">Rendering Options</Label>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-card-foreground">Casts Shadows</Label>
+                        <Switch
+                          checked={sprite.castsShadows}
+                          onCheckedChange={(checked) => updateSpriteConfig(spriteId, { castsShadows: checked })}
+                          data-testid={`switch-casts-shadows-${spriteId}`}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-card-foreground">Receives Shadows</Label>
+                        <Switch
+                          checked={sprite.receiveShadows}
+                          onCheckedChange={(checked) => updateSpriteConfig(spriteId, { receiveShadows: checked })}
+                          data-testid={`switch-receives-shadows-${spriteId}`}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-card-foreground">Use Normal Map</Label>
+                        <Switch
+                          checked={sprite.useNormalMap ?? true}
+                          onCheckedChange={(checked) => updateSpriteConfig(spriteId, { useNormalMap: checked })}
+                          data-testid={`switch-use-normal-map-${spriteId}`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Texture Info */}
+                    <div className="space-y-2 pt-2 border-t border-border/50">
+                      <Label className="text-xs font-medium text-muted-foreground">Textures</Label>
+                      <div className="text-xs text-muted-foreground break-all">
+                        <div><span className="font-medium">Diffuse:</span> {sprite.image}</div>
+                        {sprite.normal && (
+                          <div><span className="font-medium">Normal:</span> {sprite.normal}</div>
+                        )}
+                      </div>
+                    </div>
                   </CardContent>
                 </CollapsibleContent>
               </Card>

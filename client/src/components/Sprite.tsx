@@ -8,26 +8,28 @@ import * as PIXI from 'pixi.js';
 
 // External sprite configuration format (from scene.json)
 export interface SpriteDefinition {
+  type: 'background' | 'sprite';
   image: string;
   normal?: string;                    // Optional normal map texture
   position?: { x: number; y: number };
   rotation?: number;                  // Radians
   scale?: number;
-  zOrder?: number;                    // Z-order for rendering depth (lower = behind, higher = in front)
   castsShadows?: boolean;             // Participates in shadow casting
+  receiveShadows?: boolean;           // Receives shadows from other sprites
   visible?: boolean;                  // Controls sprite visibility without deletion
   useNormalMap?: boolean;             // Whether to use normal mapping for this sprite
 }
 
 // Internal interface with defaults applied - all fields guaranteed to exist
 interface CompleteSpriteDefinition {
+  type: 'background' | 'sprite';
   image: string;
   normal: string;                     // Always present (empty string = auto-generate flat normal)
   position: { x: number; y: number };
   rotation: number;
   scale: number;
-  zOrder: number;                     // Z-order for rendering depth
   castsShadows: boolean;
+  receiveShadows: boolean;
   visible: boolean;
   useNormalMap: boolean;
 }
@@ -50,19 +52,19 @@ export class SceneSprite {
   public geometry: PIXI.Geometry | null = null;   // Vertex/UV/index buffers
   public diffuseTexture: PIXI.Texture | null = null;  // Main color texture
   public normalTexture: PIXI.Texture | null = null;   // Normal map or generated flat normal
-  public needsMeshCreation: boolean = false;      // Flag indicating mesh needs to be created
 
   constructor(id: string, definition: SpriteDefinition) {
     this.id = id;
     // Normalize sprite definition by applying sensible defaults
     this.definition = {
+      type: definition.type,
       image: definition.image,
       normal: definition.normal || '',                 // Empty = generate flat normal
       position: definition.position || { x: 0, y: 0 }, // Top-left origin
       rotation: definition.rotation || 0,              // No rotation
       scale: definition.scale || 1,                    // 1:1 pixel scale
-      zOrder: definition.zOrder ?? 0,                  // Default z-order (middle layer)
       castsShadows: definition.castsShadows ?? true,   // Most sprites cast shadows
+      receiveShadows: definition.receiveShadows ?? true, // Most sprites receive shadows
       visible: definition.visible ?? true,             // Visible by default
       useNormalMap: definition.useNormalMap ?? true    // Use normal mapping by default
     };
@@ -70,17 +72,16 @@ export class SceneSprite {
 
   /**
    * Loads diffuse and normal textures asynchronously.
-   * Generates flat normal texture for sprites without normal maps or when useNormalMap is disabled.
+   * Generates flat normal texture for sprites without normal maps.
    */
   async loadTextures(): Promise<void> {
     this.diffuseTexture = PIXI.Texture.from(this.definition.image);
     
-    // Handle normal mapping: check if normal mapping is enabled and texture is provided
-    if (this.definition.useNormalMap && this.definition.normal && this.definition.normal !== '') {
+    // Handle normal mapping: use provided texture or generate flat normal
+    if (this.definition.normal && this.definition.normal !== '') {
       this.normalTexture = PIXI.Texture.from(this.definition.normal);
     } else {
       // Generate proper flat normal (RGB 128,128,255 = normal vector [0,0,1])
-      // Used when normal mapping is disabled or no normal texture is provided
       this.normalTexture = this.createFlatNormalTexture();
     }
     
@@ -90,8 +91,8 @@ export class SceneSprite {
       else this.diffuseTexture!.baseTexture.on('loaded', resolve);
     })];
     
-    // Only wait for normal texture if it's not the generated flat texture
-    if (this.definition.useNormalMap && this.definition.normal && this.definition.normal !== '') {
+    // Only wait for normal texture if it's not the default white texture
+    if (this.definition.normal && this.definition.normal !== '') {
       promises.push(new Promise(resolve => {
         if (this.normalTexture!.baseTexture.valid) resolve(true);
         else this.normalTexture!.baseTexture.on('loaded', resolve);
@@ -221,17 +222,14 @@ export class SceneSprite {
       this.definition.scale = transform.scale;
     }
 
-    // CRITICAL: Recreate geometry and update shader uniforms if mesh exists
+    // Recreate geometry and update shader uniforms if mesh exists
     if (this.mesh && this.shader) {
       const bounds = this.getBounds();
       this.shader.uniforms.uSpritePos = [bounds.x, bounds.y];
       this.shader.uniforms.uSpriteSize = [bounds.width, bounds.height];
       
-      // CRITICAL: Recreate geometry with new transform and apply to mesh
-      const newGeometry = this.createGeometry();
-      this.mesh.geometry = newGeometry;
-      
-      console.log(`🔄 Updated transform for ${this.id}: pos(${bounds.x},${bounds.y}) scale(${this.definition.scale}) rot(${this.definition.rotation})`);
+      // Recreate geometry with new transform
+      this.createGeometry();
     }
   }
 
@@ -271,7 +269,6 @@ export class SceneSprite {
  */
 export class SceneManager {
   private sprites: Map<string, SceneSprite> = new Map();
-  private pixiContainer: any = null;
   
   /**
    * Loads complete scene from JSON configuration.
@@ -297,93 +294,6 @@ export class SceneManager {
     return Array.from(this.sprites.values());
   }
 
-  // Set the PIXI container reference for direct updates
-  setPixiContainer(container: any): void {
-    this.pixiContainer = container;
-    console.log('🎭 SceneManager: PIXI container reference set');
-  }
-
-  /**
-   * Update existing sprites from new configuration without full rebuild
-   */
-  updateFromConfig(sceneData: any, pixiContainer?: any): void {
-    if (!sceneData.scene) return;
-    
-    let zOrderChanged = false;
-    
-    // Update each sprite that exists in both old and new configs
-    for (const [key, newSpriteData] of Object.entries(sceneData.scene)) {
-      const existingSprite = this.sprites.get(key);
-      if (existingSprite) {
-        // Update the sprite's definition
-        const newDef = newSpriteData as SpriteDefinition;
-        const wasVisible = existingSprite.definition.visible;
-        const oldZOrder = existingSprite.definition.zOrder;
-        existingSprite.definition = { ...existingSprite.definition, ...newDef };
-        
-        // Handle visibility changes that require mesh creation/destruction
-        const isNowVisible = newDef.visible ?? true;
-        
-        if (!wasVisible && isNowVisible && !existingSprite.mesh) {
-          // Sprite was invisible and now visible but has no mesh - flag for recreation
-          existingSprite.needsMeshCreation = true;
-        } else if (existingSprite.mesh) {
-          // Check what properties changed
-          const posChanged = JSON.stringify(newDef.position) !== JSON.stringify(existingSprite.definition.position);
-          const rotChanged = newDef.rotation !== existingSprite.definition.rotation;
-          const scaleChanged = newDef.scale !== existingSprite.definition.scale;
-          const normalMapChanged = newDef.useNormalMap !== existingSprite.definition.useNormalMap;
-          
-          // Update existing mesh
-          existingSprite.updateTransform({
-            position: newDef.position,
-            rotation: newDef.rotation,
-            scale: newDef.scale
-          });
-          
-          // Handle normal map changes by recreating textures
-          if (normalMapChanged) {
-            console.log(`🎨 Normal map changed for ${existingSprite.id}: ${existingSprite.definition.useNormalMap} → ${newDef.useNormalMap}`);
-            // Recreate normal texture based on new setting
-            if (newDef.useNormalMap && newDef.normal && newDef.normal !== '') {
-              existingSprite.normalTexture = PIXI.Texture.from(newDef.normal);
-            } else {
-              existingSprite.normalTexture = existingSprite.createFlatNormalTexture();
-            }
-            // Update shader uniform
-            if (existingSprite.shader) {
-              existingSprite.shader.uniforms.uNormalMap = existingSprite.normalTexture;
-            }
-          }
-          
-          // Update zIndex for z-ordering (this triggers PIXI to re-sort children)
-          if (newDef.zOrder !== undefined && existingSprite.mesh.zIndex !== newDef.zOrder) {
-            existingSprite.mesh.zIndex = newDef.zOrder;
-            zOrderChanged = true;
-            console.log(`🎭 Updated zIndex for ${existingSprite.id}: ${oldZOrder} → ${newDef.zOrder}`);
-          }
-          
-          // Update visibility
-          existingSprite.mesh.visible = isNowVisible;
-          
-          // Log all the changes
-          if (posChanged || rotChanged || scaleChanged || normalMapChanged) {
-            console.log(`🔄 Real-time update for ${existingSprite.id}: pos(${posChanged}) rot(${rotChanged}) scale(${scaleChanged}) normal(${normalMapChanged})`);
-          }
-        }
-      }
-    }
-    
-    // Force immediate re-sort if zOrder changed
-    const containerToUse = pixiContainer || this.pixiContainer;
-    if (zOrderChanged && containerToUse) {
-      containerToUse.sortChildren();
-      console.log('🎭 IMMEDIATE: PIXI container re-sorted after zOrder change!');
-    } else if (zOrderChanged) {
-      console.log('⚠️ zOrder changed but no PIXI container available for sorting!');
-    }
-  }
-
   // Filter sprites by shadow participation flags
   getShadowCasters(): SceneSprite[] {
     return this.getAllSprites().filter(sprite => 
@@ -391,15 +301,16 @@ export class SceneManager {
     );
   }
 
-
-  // Get sprites sorted by zOrder (lowest to highest = back to front)
-  getSpritesSortedByZOrder(): SceneSprite[] {
-    return this.getAllSprites().sort((a, b) => a.definition.zOrder - b.definition.zOrder);
+  getShadowReceivers(): SceneSprite[] {
+    return this.getAllSprites().filter(sprite => sprite.definition.receiveShadows);
   }
-  
-  // Legacy method kept for backward compatibility, now returns all sprites
+
+  getBackground(): SceneSprite | undefined {
+    return this.getAllSprites().find(sprite => sprite.definition.type === 'background');
+  }
+
   getSprites(): SceneSprite[] {
-    return this.getAllSprites();
+    return this.getAllSprites().filter(sprite => sprite.definition.type === 'sprite');
   }
 
   destroy(): void {

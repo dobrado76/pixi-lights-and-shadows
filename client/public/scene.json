@@ -1,129 +1,74 @@
 {
   "scene": {
     "background": {
+      "type": "background",
       "image": "/textures/BGTextureTest.jpg",
       "normal": "/textures/BGTextureNORM.jpg",
-      "position": {
-        "x": 0,
-        "y": 0
-      },
+      "position": {"x": 0, "y": 0},
       "rotation": 0,
       "scale": 1,
-      "zOrder": -2,
       "castsShadows": false,
-      "visible": false,
+      "receiveShadows": true,
+      "visible": true,
       "useNormalMap": true
     },
     "background2": {
+      "type": "background",
       "image": "/textures/white-fabric-texture-background.jpg",
       "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
-      "position": {
-        "x": 0,
-        "y": 0
-      },
+      "position": {"x": 0, "y": 0},
       "rotation": 0,
       "scale": 1,
-      "zOrder": -1,
       "castsShadows": false,
+      "receiveShadows": true,
       "visible": true,
-      "useNormalMap": false
+      "useNormalMap": true
     },
     "ball": {
+      "type": "sprite",
       "image": "/textures/ball.png",
       "normal": "/textures/ballN.png",
-      "position": {
-        "x": 120,
-        "y": 80
-      },
+      "position": {"x": 120, "y": 80},
       "rotation": 0,
       "scale": 1,
-      "zOrder": 0,
       "castsShadows": true,
+      "receiveShadows": true,
       "visible": true,
       "useNormalMap": true
     },
-    "ball2": {
-      "image": "/textures/ball.png",
-      "normal": "/textures/ballN.png",
-      "position": {
-        "x": 50,
-        "y": 280
-      },
+    "test": {
+      "type": "sprite",
+      "image": "/textures/test.png",
+      "normal": "/textures/testNormals.png",
+      "position": {"x": 150, "y": 280},
       "rotation": 0,
       "scale": 1,
-      "zOrder": 0,
       "castsShadows": true,
-      "visible": true,
-      "useNormalMap": true
-    },
-    "test1": {
-      "image": "/textures/test1.png",
-      "normal": "/textures/test1Normal.png",
-      "position": {
-        "x": 82,
-        "y": 420
-      },
-      "rotation": 0,
-      "scale": 1,
-      "zOrder": 0,
-      "castsShadows": true,
+      "receiveShadows": true,
       "visible": false,
       "useNormalMap": true
     },
-    "test2": {
-      "image": "/textures/test2.png",
-      "normal": "/textures/test2Normal.png",
-      "position": {
-        "x": 80,
-        "y": 403
-      },
-      "rotation": 0,
-      "scale": 1,
-      "zOrder": 0,
-      "castsShadows": true,
-      "visible": true,
-      "useNormalMap": true
-    },
-    "test3": {
-      "image": "/textures/test3.png",
-      "normal": "/textures/test3Normal.png",
-      "position": {
-        "x": 150,
-        "y": 350
-      },
-      "rotation": 0,
-      "scale": 1,
-      "zOrder": 0,
-      "castsShadows": true,
-      "receiveShadows": false,
-      "visible": true,
-      "useNormalMap": true
-    },
     "block": {
+      "type": "sprite", 
       "image": "/textures/block.png",
       "normal": "/textures/blockNormalMap.jpg",
-      "position": {
-        "x": 280,
-        "y": 120
-      },
+      "position": {"x": 280, "y": 120},
       "rotation": 0,
       "scale": 1,
-      "zOrder": 0,
       "castsShadows": true,
+      "receiveShadows": true,
       "visible": true,
       "useNormalMap": true
     },
     "block2": {
+      "type": "sprite", 
       "image": "/textures/block2.png",
       "normal": "/textures/block2NormalMap.png",
-      "position": {
-        "x": 200,
-        "y": 320
-      },
+      "position": {"x": 200, "y": 320},
       "rotation": 0,
       "scale": 1,
-      "zOrder": 0,
       "castsShadows": true,
+      "receiveShadows": true,
       "visible": true,
       "useNormalMap": true
     }
