@@ -49,7 +49,7 @@
       "scale": 1,
       "zOrder": 0,
       "castsShadows": true,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
@@ -87,7 +87,7 @@
       "scale": 1,
       "zOrder": 0,
       "castsShadows": true,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
@@ -126,7 +126,7 @@
       "zOrder": 0,
       "castsShadows": true,
       "receiveShadows": false,
-      "visible": false,
+      "visible": true,
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
@@ -145,7 +145,7 @@
       "scale": 1,
       "zOrder": 0,
       "castsShadows": true,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
@@ -164,7 +164,7 @@
       "scale": 1,
       "zOrder": 0,
       "castsShadows": true,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
