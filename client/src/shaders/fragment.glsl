@@ -472,7 +472,7 @@ void main(void) {
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
-    // Restore quadratic attenuation
+    // Restore original quadratic attenuation
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
@@ -509,7 +509,7 @@ void main(void) {
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
-    // Removed Y-flip branch that was causing triangular light shapes
+    // Restore original quadratic attenuation
     float attenuation = 1.0 - clamp(lightDistance / uPoint1Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     float normalDot = max(dot(normal, lightDir), 0.0);
@@ -542,7 +542,7 @@ void main(void) {
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
-    // Removed Y-flip branch that was causing triangular light shapes
+    // Restore original quadratic attenuation
     float attenuation = 1.0 - clamp(lightDistance / uPoint2Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     float normalDot = max(dot(normal, lightDir), 0.0);
@@ -575,7 +575,7 @@ void main(void) {
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
     
-    // Removed Y-flip branch that was causing triangular light shapes
+    // Restore original quadratic attenuation
     float attenuation = 1.0 - clamp(lightDistance / uPoint3Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     float normalDot = max(dot(normal, lightDir), 0.0);
