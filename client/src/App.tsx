@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import PixiDemo from './components/PixiDemo';
 import DynamicLightControls from './components/DynamicLightControls';
 import { DynamicSpriteControls } from './components/DynamicSpriteControls';
-import { Light, ShadowConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@shared/lights';
+import { Light, ShadowConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 /**
  * Legacy shader parameters interface - maintained for backward compatibility.
@@ -222,9 +224,16 @@ function App() {
 
   // Handler for scene configuration changes
   const handleSceneConfigChange = useCallback((newSceneConfig: { scene: Record<string, any> }) => {
+    console.log('🔄 App: Scene config changed, triggering update...', Object.keys(newSceneConfig.scene));
     setSceneConfig(newSceneConfig);
     debouncedSceneSave(newSceneConfig);
   }, [debouncedSceneSave]);
+
+  // Handler for immediate z-order changes (bypass React state)
+  const handleZOrderChange = useCallback((spriteId: string, oldZOrder: number, newZOrder: number) => {
+    console.log(`🎭 App: Direct zOrder change for ${spriteId}: ${oldZOrder} → ${newZOrder}`);
+    // This will be handled by the useEffect in PixiDemo when sceneConfig updates
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -263,12 +272,13 @@ function App() {
               </div>
 
               <div className="pixi-canvas rounded-lg overflow-hidden glow" data-testid="pixi-container">
-                {lightsLoaded && (
+                {lightsLoaded && sceneLoaded && (
                   <PixiDemo
                     shaderParams={shaderParams}
                     lightsConfig={lightsConfig}
                     ambientLight={ambientLight}
                     shadowConfig={shadowConfig}
+                    sceneConfig={sceneConfig}
                     onGeometryUpdate={setGeometryStatus}
                     onShaderUpdate={setShaderStatus}
                     onMeshUpdate={setMeshStatus}
@@ -278,28 +288,41 @@ function App() {
             </div>
           </div>
 
-          {/* Right Column - Controls and Code */}
-          <div className="space-y-6">
-            {/* Dynamic Light Controls */}
-            {lightsLoaded && (
-              <DynamicLightControls
-                lights={lightsConfig}
-                ambientLight={ambientLight}
-                shadowConfig={shadowConfig}
-                onLightsChange={handleLightsChange}
-                onAmbientChange={handleAmbientChange}
-                onShadowConfigChange={handleShadowConfigChange}
-              />
-            )}
-
-            {/* Dynamic Sprite Controls */}
-            {sceneLoaded && (
-              <DynamicSpriteControls
-                sceneConfig={sceneConfig}
-                onSceneConfigChange={handleSceneConfigChange}
-              />
-            )}
-
+          {/* Right Column - Tabbed Controls */}
+          <div>
+            <Tabs defaultValue="lights" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="lights" data-testid="tab-lights">
+                  💡 Lights ({lightsConfig.length})
+                </TabsTrigger>
+                <TabsTrigger value="sprites" data-testid="tab-sprites">
+                  🎭 Sprites ({Object.keys(sceneConfig.scene || {}).length})
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="lights" className="mt-4">
+                {lightsLoaded && (
+                  <DynamicLightControls
+                    lights={lightsConfig}
+                    ambientLight={ambientLight}
+                    shadowConfig={shadowConfig}
+                    onLightsChange={handleLightsChange}
+                    onAmbientChange={handleAmbientChange}
+                    onShadowConfigChange={handleShadowConfigChange}
+                  />
+                )}
+              </TabsContent>
+              
+              <TabsContent value="sprites" className="mt-4">
+                {sceneLoaded && (
+                  <DynamicSpriteControls
+                    sceneConfig={sceneConfig}
+                    onSceneConfigChange={handleSceneConfigChange}
+                    onZOrderChange={handleZOrderChange}
+                  />
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>

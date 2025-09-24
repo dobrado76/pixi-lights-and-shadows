@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import * as PIXI from 'pixi.js';
 import { useCustomGeometry } from '../hooks/useCustomGeometry';
-// Vertex shader will be loaded dynamically from .glsl file
-// Fragment shader will be loaded dynamically from .glsl file
+import vertexShaderSource from '../shaders/vertex.glsl?raw';
+import fragmentShaderSource from '../shaders/fragment.glsl?raw';
 import { ShaderParams } from '../App';
-import { Light, ShadowConfig } from '@shared/lights';
+import { Light, ShadowConfig } from '@/lib/lights';
 import { SceneManager, SceneSprite } from './Sprite';
 
 /**
@@ -28,13 +28,14 @@ interface PixiDemoProps {
   lightsConfig: Light[];
   ambientLight: {intensity: number, color: {r: number, g: number, b: number}};
   shadowConfig: ShadowConfig;
+  sceneConfig: { scene: Record<string, any> };
   onGeometryUpdate: (status: string) => void;
   onShaderUpdate: (status: string) => void;
   onMeshUpdate: (status: string) => void;
 }
 
 const PixiDemo = (props: PixiDemoProps) => {
-  const { shaderParams, lightsConfig, ambientLight, shadowConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate } = props;
+  const { shaderParams, lightsConfig, ambientLight, shadowConfig, sceneConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
   const [mousePos, setMousePos] = useState({ x: 200, y: 150 });
@@ -528,25 +529,25 @@ const PixiDemo = (props: PixiDemoProps) => {
     };
   }, []);
 
-  // Setup demo content when PIXI app is ready
+  // Setup demo content when PIXI app is ready - initial load only
   useEffect(() => {
-    if (!pixiApp || !pixiApp.stage) {
+    if (!pixiApp || !pixiApp.stage || !sceneConfig.scene || Object.keys(sceneConfig.scene).length === 0 || lightsConfig.length === 0) {
       return;
     }
 
-    console.log('Setting up PIXI demo with real textures...');
 
     const setupDemo = async () => {
       try {
-        // Load scene configuration from JSON
-        const sceneResponse = await fetch('/scene.json');
-        const sceneData = await sceneResponse.json();
+        // Use scene configuration from props instead of fetching
+        const sceneData = sceneConfig;
         
         // Initialize scene manager
         sceneManagerRef.current = new SceneManager();
         await sceneManagerRef.current.loadScene(sceneData);
         
-        console.log('Scene loaded, creating geometries...');
+        // Set PIXI container reference for direct updates
+        sceneManagerRef.current.setPixiContainer(sceneContainerRef.current);
+        
 
         // Helper function to convert external lights config to shader uniforms
         const createLightUniforms = () => {
@@ -708,12 +709,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       onShaderUpdate?.('Normal-mapped lighting shader created for real textures');
       onMeshUpdate?.('PIXI.Mesh created with real textures and normal mapping');
 
-      // Load shaders from external files for better syntax highlighting
-      const vertexShaderResponse = await fetch('/vertex.glsl');
-      const vertexShaderSource = await vertexShaderResponse.text();
-      
-      const fragmentShaderResponse = await fetch('/fragment.glsl');
-      const spriteFragmentShader = await fragmentShaderResponse.text();
+      // Use imported shader sources
+      const spriteFragmentShader = fragmentShaderSource;
        
       // Create all scene sprites using scene manager
       const lightUniforms = createLightUniforms();
@@ -739,16 +736,22 @@ const PixiDemo = (props: PixiDemoProps) => {
         uShadowCaster0Enabled: shadowCasters.length > 0,
         uShadowCaster1Enabled: shadowCasters.length > 1,
         uShadowCaster2Enabled: shadowCasters.length > 2,
+        // Switch to unlimited mode when more than 3 shadow casters
+        uUseOccluderMap: shadowCasters.length > 3,
         ...lightUniforms
       };
       
-      // Create meshes only for visible sprites
+      // Create meshes only for visible sprites, sorted by zOrder (back to front)
       const spriteMeshes: PIXI.Mesh[] = [];
-      const allSprites = sceneManagerRef.current!.getAllSprites();
+      const allSprites = sceneManagerRef.current!.getSpritesSortedByZOrder(); // Use z-ordered sprites
       const visibleSprites = allSprites.filter(sprite => sprite.definition.visible);
+      
+      console.log('🎭 Sprites z-order:', visibleSprites.map(s => `${s.id}(z:${s.definition.zOrder})`));
       
       for (const sprite of visibleSprites) {
         const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
+        // Set PIXI zIndex based on sprite's zOrder for proper layering
+        mesh.zIndex = sprite.definition.zOrder;
         spriteMeshes.push(mesh);
       }
 
@@ -772,6 +775,13 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
 
       console.log('💡 Shadow casters created:', legacyShadowCasters);
+      
+      // IMMEDIATE CHECK: Should we use unlimited shadows?
+      if (shadowCasters.length > 3) {
+        console.log(`🌟 ENABLING UNLIMITED SHADOWS: ${shadowCasters.length} shadow casters detected!`);
+      } else {
+        console.log(`⚡ Using limited shadows: Only ${shadowCasters.length} shadow casters`);
+      }
 
       // Set shadow texture uniforms for all sprites
       const shadowTextureUniforms = {
@@ -792,18 +802,34 @@ const PixiDemo = (props: PixiDemoProps) => {
       shadersRef.current = spriteMeshes.map(mesh => mesh.shader!);
       shadowCastersRef.current = legacyShadowCasters;
 
-      // Add all sprite meshes to stage (already filtered to visible sprites)
+      // Add all sprite meshes to stage (already filtered to visible sprites and z-ordered)
       spriteMeshes.forEach(mesh => {
         sceneContainerRef.current!.addChild(mesh);
       });
+      
+      // Enable depth sorting in PIXI for proper z-ordering
+      sceneContainerRef.current!.sortableChildren = true;
 
       // Apply shadow texture uniforms to all sprite shaders (already done above)
       console.log('All sprite shaders created with shadow texture uniforms');
 
+      // FORCE DIRECTIONAL LIGHT SHADOW SETUP AFTER SHADERS ARE CREATED
+      const directionalLight = lightsConfig.find(light => light.type === 'directional' && light.enabled);
+      if (directionalLight && directionalLight.castsShadows) {
+        console.log('🌞 SETTING UP DIRECTIONAL SHADOW after shaders created:', directionalLight.id);
+        
+        // Apply directional shadow uniforms to ALL created shaders
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uDir0CastsShadows = true;
+            console.log('🌞 Set uDir0CastsShadows=true on shader');
+          }
+        });
+      }
+
       console.log('🌑 Shadow system integrated into lighting shader');
       console.log('🌑 Shadow texture uniforms applied to all shaders');
 
-      console.log('PIXI demo setup completed successfully');
 
       } catch (error) {
         console.error('Error setting up PIXI demo:', error);
@@ -833,40 +859,143 @@ const PixiDemo = (props: PixiDemoProps) => {
     };
   }, [pixiApp, geometry, onGeometryUpdate, onShaderUpdate, onMeshUpdate]);
   
-  // Force auto-render when textures finish loading
+  // Handle sprite updates without full scene rebuild
+  useEffect(() => {
+    if (!sceneManagerRef.current || !sceneConfig.scene || !pixiApp) return;
+    
+    console.log('🔄 Scene config changed, updating sprites...', Date.now());
+    
+    // Update individual sprite properties without rebuilding entire scene
+    try {
+      sceneManagerRef.current.updateFromConfig(sceneConfig, sceneContainerRef.current);
+      
+      // Handle sprites that need mesh creation (were invisible, now visible)
+      const spritesNeedingMeshes = sceneManagerRef.current.getAllSprites().filter(sprite => sprite.needsMeshCreation);
+      if (spritesNeedingMeshes.length > 0) {
+        // Use already imported shader sources
+        const spriteFragmentShader = fragmentShaderSource;
+        
+        // Get current light uniforms for new meshes
+        const allPointLights = lightsConfig.filter(light => light.type === 'point');
+        const allDirectionalLights = lightsConfig.filter(light => light.type === 'directional');
+        const allSpotlights = lightsConfig.filter(light => light.type === 'spotlight');
+        
+        // Create light uniforms (simplified version)
+        const lightUniforms: any = {};
+        allPointLights.slice(0, 4).forEach((light, idx) => {
+          const prefix = `uPoint${idx}`;
+          lightUniforms[`${prefix}Enabled`] = true;
+          lightUniforms[`${prefix}Position`] = [light.position.x, light.position.y, light.position.z];
+          lightUniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
+          lightUniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0;
+          lightUniforms[`${prefix}Radius`] = light.radius || 200;
+        });
+        
+        // Create meshes for sprites that need them
+        for (const sprite of spritesNeedingMeshes) {
+          if (sprite.diffuseTexture && sprite.normalTexture) {
+            const commonUniforms = {
+              uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
+              uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
+              uAmbientLight: ambientLight.intensity,
+              uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
+              uShadowsEnabled: shadowConfig.enabled,
+              uShadowStrength: shadowConfig.strength || 0.5,
+              ...lightUniforms
+            };
+            
+            const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
+            // Set PIXI zIndex based on sprite's zOrder for proper layering
+            mesh.zIndex = sprite.definition.zOrder;
+            pixiApp.stage.addChild(mesh);
+            meshesRef.current.push(mesh);
+            shadersRef.current.push(mesh.shader as PIXI.Shader);
+            sprite.needsMeshCreation = false;
+          }
+        }
+      }
+      
+      // Force PIXI container to re-sort after any sprite updates (including zOrder changes)
+      if (sceneContainerRef.current) {
+        sceneContainerRef.current.sortChildren();
+        console.log('🎭 PIXI container re-sorted after sprite updates');
+      }
+      
+      console.log('✅ Sprite update complete');
+      
+      // Update shadow casters immediately when sprite visibility changes
+      if (shadersRef.current.length > 0) {
+        const shadowCasters = sceneManagerRef.current.getShadowCasters();
+        
+        // 🔧 CRITICAL FIX: Update shadow caster TEXTURES when shadow casters change!
+        const shadowTextureUniforms = {
+          uShadowCaster0Texture: shadowCasters[0]?.diffuseTexture || PIXI.Texture.WHITE,
+          uShadowCaster1Texture: shadowCasters[1]?.diffuseTexture || PIXI.Texture.WHITE,
+          uShadowCaster2Texture: shadowCasters[2]?.diffuseTexture || PIXI.Texture.WHITE
+        };
+        
+        // Update shadow uniforms for all shaders
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uShadowCaster0 = shadowCasters[0] ? [shadowCasters[0].getBounds().x, shadowCasters[0].getBounds().y, shadowCasters[0].getBounds().width, shadowCasters[0].getBounds().height] : [0, 0, 0, 0];
+            shader.uniforms.uShadowCaster1 = shadowCasters[1] ? [shadowCasters[1].getBounds().x, shadowCasters[1].getBounds().y, shadowCasters[1].getBounds().width, shadowCasters[1].getBounds().height] : [0, 0, 0, 0];
+            shader.uniforms.uShadowCaster2 = shadowCasters[2] ? [shadowCasters[2].getBounds().x, shadowCasters[2].getBounds().y, shadowCasters[2].getBounds().width, shadowCasters[2].getBounds().height] : [0, 0, 0, 0];
+            shader.uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
+            shader.uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
+            shader.uniforms.uShadowCaster2Enabled = shadowCasters.length > 2;
+            
+            // 🎯 UPDATE SHADOW CASTER TEXTURES (fixes mismatched masks!)
+            Object.assign(shader.uniforms, shadowTextureUniforms);
+            
+            // Enable unlimited shadow mode when more than 3 casters
+            shader.uniforms.uUseOccluderMap = shadowCasters.length > 3;
+            if (shadowCasters.length > 3) {
+              shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+            }
+          }
+        });
+        
+        console.log('🔄 Shadow caster textures updated:', shadowCasters.map(sc => sc.id));
+      }
+      
+      // Trigger immediate render after sprite updates
+      pixiApp.render();
+      console.log('🎭 Sprites updated without scene rebuild');
+    } catch (error) {
+      console.log('Sprite update failed, may need scene rebuild:', error);
+    }
+  }, [sceneConfig, pixiApp, JSON.stringify(sceneConfig.scene)]);
+  
+  // Simple render trigger when textures finish loading
   useEffect(() => {
     if (!pixiApp || meshesRef.current.length === 0) return;
     
-    // Trigger additional renders after texture loading completes
+    // Single immediate render when scene is ready
     const forceRender = () => {
       if (pixiApp && pixiApp.renderer) {
         pixiApp.render();
       }
     };
     
-    // Multiple render passes to catch any delayed texture loading
-    const renderInterval = setInterval(forceRender, 100);
-    const timeouts = [
-      setTimeout(forceRender, 200),
-      setTimeout(forceRender, 500),
-      setTimeout(forceRender, 1000),
-      setTimeout(() => clearInterval(renderInterval), 2000)
-    ];
-    
-    // Also force render when window gains focus (handles tab switching)
-    const handleFocus = () => forceRender();
-    window.addEventListener('focus', handleFocus);
+    // Just one render pass after a short delay to allow textures to load
+    const timeout = setTimeout(forceRender, 100);
     
     return () => {
-      clearInterval(renderInterval);
-      timeouts.forEach(timeout => clearTimeout(timeout));
-      window.removeEventListener('focus', handleFocus);
+      clearTimeout(timeout);
     };
   }, [pixiApp, meshesRef.current.length])
 
   // Dynamic shader uniform updates for real-time lighting changes
   useEffect(() => {
+    console.log('🚨 LIGHTING UPDATE USEEFFECT TRIGGERED!', {
+      shaderCount: shadersRef.current.length,
+      lightsCount: lightsConfig.length,
+      timestamp: Date.now()
+    });
+    
     if (shadersRef.current.length === 0) return;
+    
+    console.log('🔥 LIGHTING UPDATE TRIGGERED - updating shader uniforms in real-time');
 
     // Full light uniforms recreation - individual uniform approach
     const createLightUniforms = () => {
@@ -899,11 +1028,21 @@ const PixiDemo = (props: PixiDemoProps) => {
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
       uniforms.uShadowCaster0 = shadowCasters[0] ? [shadowCasters[0].getBounds().x, shadowCasters[0].getBounds().y, shadowCasters[0].getBounds().width, shadowCasters[0].getBounds().height] : [0, 0, 0, 0];
       uniforms.uShadowCaster1 = shadowCasters[1] ? [shadowCasters[1].getBounds().x, shadowCasters[1].getBounds().y, shadowCasters[1].getBounds().width, shadowCasters[1].getBounds().height] : [0, 0, 0, 0];
+      uniforms.uShadowCaster2 = shadowCasters[2] ? [shadowCasters[2].getBounds().x, shadowCasters[2].getBounds().y, shadowCasters[2].getBounds().width, shadowCasters[2].getBounds().height] : [0, 0, 0, 0];
       uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
       uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
+      uniforms.uShadowCaster2Enabled = shadowCasters.length > 2;
       
-      // Occluder map uniforms for unlimited shadow casters
-      uniforms.uUseOccluderMap = shadowCasters.length > 4;
+      console.log('🌑 DIRECTIONAL LIGHT SHADOW SETUP:', {
+        shadowCasters: shadowCasters.length,
+        caster0: uniforms.uShadowCaster0,
+        caster1: uniforms.uShadowCaster1,
+        caster2: uniforms.uShadowCaster2,
+        enabled: [uniforms.uShadowCaster0Enabled, uniforms.uShadowCaster1Enabled, uniforms.uShadowCaster2Enabled]
+      });
+      
+      // Occluder map uniforms for unlimited shadow casters (switch when >3 casters)
+      uniforms.uUseOccluderMap = shadowCasters.length > 3;
       uniforms.uOccluderMap = occluderRenderTargetRef.current || null;
       
       // Texture uniforms will be set after textures are loaded
@@ -1011,6 +1150,14 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uAmbientColor = [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b];
       uniforms.uCanvasSize = [shaderParams.canvasWidth, shaderParams.canvasHeight];
       
+      // FORCE DIRECTIONAL LIGHT SHADOW SETUP - BYPASS BROKEN useEffect
+      const directionalLight = lightsConfig.find(light => light.type === 'directional' && light.enabled);
+      if (directionalLight) {
+        console.log('🌞 FORCING DIRECTIONAL LIGHT SETUP:', directionalLight);
+        uniforms.uDir0CastsShadows = directionalLight.castsShadows || false;
+        console.log('🌞 Dir0 CastsShadows set to:', uniforms.uDir0CastsShadows);
+      }
+      
       // Global shadow properties
       uniforms.uShadowHeight = shadowConfig.height; // Height of sprites above ground plane for shadow projection
       uniforms.uShadowMaxLength = shadowConfig.maxLength; // Maximum shadow length to prevent extremely long shadows
@@ -1062,13 +1209,15 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Automatic mode selection: Multi-pass for >8 lights  
       const useMultiPass = lightCount > 8;
       
-      // Shadow system mode selection: Occluder map for >4 shadow casters
+      // Shadow system mode selection: Occluder map for >3 shadow casters
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
-      const useOccluderMap = shadowCasters.length > 4;
+      const useOccluderMap = shadowCasters.length > 3;
       
       if (useOccluderMap) {
-        // console.log(`🌑 OCCLUDER MAP: Using occluder map for ${shadowCasters.length} shadow casters`);
+        console.log(`🌑 UNLIMITED SHADOWS: Using occluder map for ${shadowCasters.length} shadow casters`);
+        console.log(`🔧 Building occluder map now...`);
         buildOccluderMap();
+        console.log(`✅ Occluder map built and applied to shaders`);
         
         // Update all shaders to use occluder map
         shadersRef.current.forEach(shader => {
@@ -1078,7 +1227,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           }
         });
       } else {
-        // console.log(`⚡ FAST SHADOWS: Using per-caster uniforms for ${shadowCasters.length} shadow casters`);
+        console.log(`⚡ FAST SHADOWS: Using per-caster uniforms for ${shadowCasters.length} shadow casters`);
         
         // Update all shaders to use per-caster uniforms
         shadersRef.current.forEach(shader => {
@@ -1110,8 +1259,17 @@ const PixiDemo = (props: PixiDemoProps) => {
         });
         pixiApp.render();
       }
+      
+      // Force immediate render after updating lighting uniforms
+      if (pixiApp && pixiApp.renderer) {
+        console.log('🎨 FORCING IMMEDIATE RENDER after lighting uniform updates');
+        pixiApp.render();
+      } else {
+        console.warn('⚠️ Cannot render - pixiApp or renderer not available');
+      }
     }
   }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig]);
+
 
   // Animation loop
   useEffect(() => {
@@ -1120,6 +1278,32 @@ const PixiDemo = (props: PixiDemoProps) => {
     const ticker = () => {
       if (shadersRef.current.length > 0 && shadersRef.current[0].uniforms) {
         shadersRef.current[0].uniforms.uTime += 0.02;
+      }
+      
+      // Trigger shadow system check and render loop every frame
+      const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
+      if (shadowCasters.length > 3) {
+        console.log(`🌑 UNLIMITED SHADOWS: ${shadowCasters.length} casters detected`);
+        
+        // TRIGGER THE RENDER LOOP FOR UNLIMITED SHADOWS
+        const useOccluderMap = shadowCasters.length > 3;
+        if (useOccluderMap && occluderRenderTargetRef.current) {
+          console.log(`🔧 TRIGGERING Occluder map build from animation loop...`);
+          buildOccluderMap();
+          
+          // Update all shaders to use occluder map
+          shadersRef.current.forEach(shader => {
+            if (shader.uniforms) {
+              shader.uniforms.uUseOccluderMap = true;
+              shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+              
+              // FORCE DIRECTIONAL SHADOW SETUP IN ANIMATION LOOP
+              shader.uniforms.uDir0CastsShadows = true;
+            }
+          });
+          console.log(`✅ Unlimited shadows applied from animation loop!`);
+          console.log(`🌞 DIRECTIONAL SHADOWS ENABLED in animation loop`);
+        }
       }
     };
 

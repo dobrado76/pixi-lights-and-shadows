@@ -1,90 +1,84 @@
-# Overview
+# PIXI.js 2.5D Advanced Light and Shadow System
 
-This is a PIXI.js demonstration application built with React that showcases the fundamental building blocks of PIXI.js: Geometry, Shader, and Mesh primitives. The application provides an interactive environment for experimenting with custom shaders, geometry creation, and mesh rendering. It's designed as a full-stack web application with Express.js backend and React frontend, featuring a modern UI built with shadcn/ui components and Tailwind CSS styling.
+## Overview
 
-# User Preferences
+This project is a comprehensive React.js application showcasing advanced pseudo-3D shadow casting using PIXI.js primitives. It features a complete lighting system with unlimited sprite shadow casters, real-time light controls, and advanced visual effects. The application demonstrates complex WebGL rendering techniques including multi-pass lighting, normal mapping, texture-based light masking, and distance-based soft shadows. It's designed as both a technical demonstration and an interactive playground for exploring 2.5D lighting effects.
+
+## User Preferences
 
 Preferred communication style: Simple, everyday language.
 
-# System Architecture
+## System Architecture
 
-## Frontend Architecture
-- **Framework**: React with TypeScript using Vite as the build tool
-- **PIXI.js Integration**: Custom React components using @pixi/react for WebGL rendering
-- **UI Components**: shadcn/ui component library with Radix UI primitives for consistent design
-- **Styling**: Tailwind CSS with custom design tokens and dark theme support
-- **State Management**: React hooks for local component state management
-- **Custom Hooks**: Modular hooks for PIXI geometry creation and canvas management
+### Frontend Architecture
 
-## Backend Architecture
-- **Server Framework**: Express.js with TypeScript for REST API endpoints
-- **Development Environment**: Hot module replacement with Vite integration in development mode
-- **Static File Serving**: Express serves static assets and the built React application
-- **Storage Layer**: Abstract storage interface with in-memory implementation for user management
+The application uses a modern React architecture with TypeScript, built on top of Vite for development and bundling. The frontend follows a component-based structure with clear separation between:
 
-## PIXI.js Graphics Pipeline
-- **Custom Geometry System**: Manual vertex, UV, and index buffer creation for fullscreen quads
-- **Shader System**: Custom vertex and fragment shaders with uniform parameter control
-- **Mesh Rendering**: Direct PIXI.Mesh creation combining geometry and shaders for post-processing effects
-- **Texture Management**: Asset loading and texture binding for complex material systems
-- **Interactive Controls**: Real-time shader parameter adjustment through React UI components
+- **Core PIXI.js Integration**: Custom React components wrap PIXI.js functionality, with the main rendering handled by `PixiDemo` component
+- **Real-time Controls**: Dynamic control panels (`DynamicLightControls`, `DynamicSpriteControls`) provide live editing of lighting and scene parameters
+- **Configuration Management**: External JSON-based configuration system for both scene setup (`scene.json`) and lighting configuration (`lights-config.json`)
+- **UI Framework**: Uses Radix UI components with Tailwind CSS for consistent, accessible interface elements
 
-## Database Schema
-- **User Management**: Simple user table with UUID primary keys, username, and password fields
-- **ORM**: Drizzle ORM for type-safe database operations with Zod schema validation
-- **Database**: Configured for PostgreSQL with environment-based connection strings
+The architecture supports unlimited lighting with automatic performance optimization through multi-pass rendering when needed.
 
-## Build and Development
-- **Module System**: ES modules throughout the application with proper TypeScript configuration
-- **Path Aliases**: Clean import statements using @ and @shared path mapping
-- **Asset Handling**: Public directory structure for PIXI.js textures and game assets
-- **Development Tools**: Runtime error overlay and source mapping for debugging
+### Backend Architecture
 
-# Configuration Files
+The backend is a minimal Express.js server that primarily serves as a bridge for configuration management:
 
-## Important File Locations
-- **lights-config.json**: Located in `/client/public/lights-config.json` - light configuration alongside scene assets
-- **scene.json**: Located in `/client/public/scene.json` - sprite and scene configuration for the frontend
-- **Light masks**: Located in `/client/public/light_masks/` - texture files for masked lighting effects
+- **Static File Serving**: Handles texture assets and configuration files
+- **Configuration API**: Provides endpoints for loading and saving lighting configurations
+- **Development Support**: Integrates with Vite for hot module replacement during development
 
-**Note**: All configuration files are now consolidated in `/client/public/` directory for better organization.
+The server includes basic error handling and request logging, with plans for database integration using Drizzle ORM.
 
-# External Dependencies
+### WebGL Rendering System
 
-## Core Runtime Dependencies
-- **@pixi/react**: React bindings for PIXI.js WebGL rendering engine
-- **pixi.js**: 2D WebGL rendering library for interactive graphics
-- **express**: Node.js web application framework for backend API
-- **drizzle-orm**: Type-safe ORM for database operations
-- **@neondatabase/serverless**: Serverless PostgreSQL database driver
+The core rendering system implements several advanced techniques:
 
-## UI and Styling
-- **@radix-ui/***: Comprehensive set of unstyled, accessible UI primitives
-- **tailwindcss**: Utility-first CSS framework for responsive design
-- **class-variance-authority**: Utility for creating type-safe component variants
-- **lucide-react**: Icon library with consistent SVG icons
+- **Auto-switching Shadow Architecture**: Seamlessly switches between per-caster uniforms (≤4 casters) and occluder map rendering (unlimited casters)
+- **Multi-pass Lighting**: Automatically batches lights into passes (4 point/spot lights or 2 directional lights per pass)
+- **Normal Mapping**: Supports both provided normal maps and auto-generated flat normals for sprites
+- **Texture-based Light Masking**: Allows complex lighting patterns through custom mask textures
+- **Distance-based Soft Shadows**: Configurable shadow softness with realistic falloff
 
-## Development and Build Tools
-- **vite**: Fast build tool and development server with HMR support
-- **typescript**: Static type checking for JavaScript
-- **@replit/vite-plugin-***: Replit-specific development plugins for enhanced debugging
-- **esbuild**: Fast JavaScript bundler for production builds
+### Configuration System
 
-## Data Management
-- **@tanstack/react-query**: Server state management and caching for React
-- **zod**: TypeScript-first schema validation library
-- **drizzle-zod**: Integration between Drizzle ORM and Zod validation
+The application uses an external JSON-based configuration approach for maximum flexibility:
 
-## Graphics and Game Assets
-- **date-fns**: Modern date utility library for timestamp handling
-- **@hookform/resolvers**: Form validation resolvers for React Hook Form
-- **connect-pg-simple**: PostgreSQL session store for Express sessions
+- **Scene Configuration**: Complete sprite setup including positions, textures, shadow participation, and normal mapping
+- **Lighting Configuration**: Comprehensive light setup with real-time auto-save functionality
+- **Hot-reload Support**: Live updates when configuration files change externally
+- **Import/Export**: Easy sharing of complete scene and lighting setups
 
-# Recent Changes: Latest modifications with dates
+### Data Management
 
-## Code Cleanup & Data-Driven Architecture (Sept 2024)
-- **Legacy Component Removal**: Eliminated unused legacy components (ControlPanel.tsx, StatusPanel.tsx, CodeDisplay.tsx) to reduce codebase complexity
-- **Hardcoded Value Elimination**: Replaced all hardcoded shadow caster coordinates with data-driven values from scene.json configuration
-- **100% JSON-Driven System**: Achieved complete data-driven architecture where all sprite positions, lighting, and shadow configurations come from external JSON files
-- **Clean Architecture**: Removed specific references (ball, block) from shader comments and code to maintain generic, reusable system
-- **Comprehensive Code Documentation**: Added meaningful comments explaining complex logic, architectural decisions, and non-obvious interactions across all active components
+The project uses a simple in-memory storage system for development, with Drizzle ORM configured for future PostgreSQL integration. Configuration persistence is handled through JSON files rather than database storage for easier sharing and version control.
+
+## External Dependencies
+
+### Core Frameworks
+- **React 18**: Frontend framework with TypeScript support
+- **PIXI.js**: WebGL rendering engine for advanced graphics
+- **Express.js**: Minimal backend server for development and configuration management
+- **Vite**: Build tool and development server with HMR support
+
+### UI Components
+- **Radix UI**: Comprehensive set of accessible, unstyled UI primitives
+- **Tailwind CSS**: Utility-first CSS framework for styling
+- **Lucide React**: Icon library for consistent iconography
+
+### Database & ORM
+- **Drizzle ORM**: TypeScript-first ORM configured for PostgreSQL
+- **@neondatabase/serverless**: Serverless PostgreSQL driver for production deployment
+
+### Development Tools
+- **TypeScript**: Static type checking across the entire application
+- **ESBuild**: Fast bundling for production builds
+- **PostCSS**: CSS processing with Tailwind integration
+
+### Graphics & Assets
+- **Custom Shaders**: GLSL shaders for advanced lighting effects and shadow casting
+- **Texture Assets**: Normal maps, diffuse textures, and light masks stored in public directory
+- **@pixi/react**: React integration layer for PIXI.js components
+
+The application is designed to be deployed on Vercel with minimal configuration, using the provided `vercel.json` for build and deployment settings.

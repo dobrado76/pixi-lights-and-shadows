@@ -6,20 +6,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 
 interface SpriteConfig {
   id: string;
-  type: 'background' | 'sprite';
   image: string;
   normal?: string;
   position: { x: number; y: number };
   rotation: number;
   scale: number;
+  zOrder: number;
   castsShadows: boolean;
-  receiveShadows: boolean;
   visible: boolean;
   useNormalMap?: boolean;
+  pivot?: {
+    preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'offset';
+    offsetX?: number;
+    offsetY?: number;
+  };
 }
 
 interface SceneConfig {
@@ -29,10 +34,11 @@ interface SceneConfig {
 interface DynamicSpriteControlsProps {
   sceneConfig: SceneConfig;
   onSceneConfigChange: (newConfig: SceneConfig) => void;
+  onZOrderChange?: (spriteId: string, oldZOrder: number, newZOrder: number) => void;
 }
 
-export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange }: DynamicSpriteControlsProps) {
-  const [expandedSprites, setExpandedSprites] = useState<Set<string>>(new Set(['background', 'ball']));
+export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrderChange }: DynamicSpriteControlsProps) {
+  const [expandedSprites, setExpandedSprites] = useState<Set<string>>(new Set());
 
   const toggleExpanded = (spriteId: string) => {
     const newExpanded = new Set(expandedSprites);
@@ -45,16 +51,39 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange }: Dyna
   };
 
   const updateSpriteConfig = (spriteId: string, updates: Partial<SpriteConfig>) => {
+    const currentSprite = sceneConfig.scene[spriteId];
     const newConfig = {
       ...sceneConfig,
       scene: {
         ...sceneConfig.scene,
         [spriteId]: {
-          ...sceneConfig.scene[spriteId],
-          ...updates
+          ...currentSprite,
+          ...updates,
+          // Ensure pivot has proper defaults
+          pivot: updates.pivot ? {
+            offsetX: 0,
+            offsetY: 0,
+            ...currentSprite.pivot,
+            ...updates.pivot
+          } : currentSprite.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 }
         }
       }
     };
+    
+    console.log(`🎮 UI: ${spriteId} config changed:`, Object.keys(updates));
+    
+    // Special handling for zOrder changes - bypass React state updates
+    if (updates.zOrder !== undefined) {
+      const oldZOrder = currentSprite?.zOrder ?? 0;
+      console.log(`🎮 UI: zOrder changed for ${spriteId}: ${oldZOrder} → ${updates.zOrder}`);
+      
+      // Call direct callback for immediate update
+      if (onZOrderChange) {
+        onZOrderChange(spriteId, oldZOrder, updates.zOrder);
+      }
+    }
+    
+    // Always update the React state to trigger useEffect
     onSceneConfigChange(newConfig);
   };
 
@@ -63,12 +92,12 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange }: Dyna
   return (
     <Card className="w-full max-w-md bg-card/95 backdrop-blur border-border">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold text-card-foreground flex items-center gap-2">
+        <CardTitle className="text-sm font-semibold text-card-foreground flex items-center gap-2">
           🎭 Scene Sprites
           <span className="text-xs text-muted-foreground">({sprites.length})</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 max-h-[600px] overflow-y-auto">
+      <CardContent className="space-y-2 max-h-[600px] overflow-y-auto">
         {sprites.map(([spriteId, sprite]) => {
           const isExpanded = expandedSprites.has(spriteId);
           
@@ -76,7 +105,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange }: Dyna
             <Collapsible key={spriteId} open={isExpanded} onOpenChange={() => toggleExpanded(spriteId)}>
               <Card className="border border-border/50 bg-card/50">
                 <CollapsibleTrigger asChild>
-                  <CardHeader className="pb-2 cursor-pointer hover:bg-accent/50 transition-colors">
+                  <CardHeader className="py-1 cursor-pointer hover:bg-accent/50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {sprite.visible ? (
@@ -84,13 +113,8 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange }: Dyna
                         ) : (
                           <EyeOff className="h-4 w-4 text-red-500" />
                         )}
-                        <div>
-                          <div className="text-sm font-medium text-card-foreground">
-                            {spriteId}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {sprite.type} • x:{Math.round(sprite.position.x)} y:{Math.round(sprite.position.y)}
-                          </div>
+                        <div className="text-sm font-medium text-card-foreground">
+                          {spriteId}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -111,114 +135,213 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange }: Dyna
                 </CollapsibleTrigger>
                 
                 <CollapsibleContent>
-                  <CardContent className="pt-0 space-y-4">
-                    {/* Position Controls */}
-                    <div className="space-y-3">
-                      <Label className="text-xs font-medium text-muted-foreground">Position</Label>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">X</Label>
-                          <Input
-                            type="number"
-                            value={sprite.position.x}
-                            onChange={(e) => updateSpriteConfig(spriteId, {
-                              position: { ...sprite.position, x: Number(e.target.value) }
-                            })}
-                            className="h-7 text-xs"
-                            data-testid={`input-position-x-${spriteId}`}
+                  <CardContent className="pt-0 space-y-2">
+                    {sprite.visible && (
+                      <>
+                        {/* Position Controls */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-muted-foreground">Position</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-xs text-muted-foreground">X</Label>
+                                <span className="text-xs text-muted-foreground">{Math.round(sprite.position.x)}</span>
+                              </div>
+                              <Slider
+                                value={[sprite.position.x]}
+                                onValueChange={([value]) => updateSpriteConfig(spriteId, {
+                                  position: { ...sprite.position, x: value }
+                                })}
+                                min={-200}
+                                max={800}
+                                step={1}
+                                className="h-4"
+                                data-testid={`slider-position-x-${spriteId}`}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-xs text-muted-foreground">Y</Label>
+                                <span className="text-xs text-muted-foreground">{Math.round(sprite.position.y)}</span>
+                              </div>
+                              <Slider
+                                value={[sprite.position.y]}
+                                onValueChange={([value]) => updateSpriteConfig(spriteId, {
+                                  position: { ...sprite.position, y: value }
+                                })}
+                                min={-200}
+                                max={600}
+                                step={1}
+                                className="h-4"
+                                data-testid={`slider-position-y-${spriteId}`}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Rotation Control */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-medium text-muted-foreground">Rotation</Label>
+                            <span className="text-xs text-muted-foreground">{Math.round(sprite.rotation * 180 / Math.PI)}°</span>
+                          </div>
+                          <Slider
+                            value={[sprite.rotation * 180 / Math.PI]}
+                            onValueChange={([value]) => updateSpriteConfig(spriteId, { rotation: value * Math.PI / 180 })}
+                            min={0}
+                            max={360}
+                            step={1}
+                            className="w-full"
+                            data-testid={`slider-rotation-${spriteId}`}
                           />
                         </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">Y</Label>
-                          <Input
-                            type="number"
-                            value={sprite.position.y}
-                            onChange={(e) => updateSpriteConfig(spriteId, {
-                              position: { ...sprite.position, y: Number(e.target.value) }
-                            })}
-                            className="h-7 text-xs"
-                            data-testid={`input-position-y-${spriteId}`}
+
+                        {/* Scale Control */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-medium text-muted-foreground">Scale</Label>
+                            <span className="text-xs text-muted-foreground">{sprite.scale.toFixed(2)}x</span>
+                          </div>
+                          <Slider
+                            value={[sprite.scale]}
+                            onValueChange={([value]) => updateSpriteConfig(spriteId, { scale: value })}
+                            min={0.1}
+                            max={3.0}
+                            step={0.1}
+                            className="w-full"
+                            data-testid={`slider-scale-${spriteId}`}
                           />
                         </div>
-                      </div>
-                    </div>
 
-                    {/* Rotation Control */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs font-medium text-muted-foreground">Rotation</Label>
-                        <span className="text-xs text-muted-foreground">{Math.round(sprite.rotation * 180 / Math.PI)}°</span>
-                      </div>
-                      <Slider
-                        value={[sprite.rotation * 180 / Math.PI]}
-                        onValueChange={([value]) => updateSpriteConfig(spriteId, { rotation: value * Math.PI / 180 })}
-                        min={0}
-                        max={360}
-                        step={1}
-                        className="w-full"
-                        data-testid={`slider-rotation-${spriteId}`}
-                      />
-                    </div>
+                        {/* Pivot Control */}
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs font-medium text-muted-foreground min-w-fit">Pivot Point</Label>
+                          <Select
+                            value={sprite.pivot?.preset || 'middle-center'}
+                            onValueChange={(value) => updateSpriteConfig(spriteId, {
+                              pivot: {
+                                ...sprite.pivot,
+                                preset: value as any,
+                                offsetX: value === 'offset' ? (sprite.pivot?.offsetX || 0) : 0,
+                                offsetY: value === 'offset' ? (sprite.pivot?.offsetY || 0) : 0
+                              }
+                            })}
+                          >
+                            <SelectTrigger className="h-6 text-xs bg-card/80 border-border text-card-foreground" data-testid={`select-pivot-${spriteId}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-card border-border text-card-foreground">
+                              <SelectItem value="top-left" className="text-xs hover:bg-accent hover:text-accent-foreground">Top Left</SelectItem>
+                              <SelectItem value="top-center" className="text-xs hover:bg-accent hover:text-accent-foreground">Top Center</SelectItem>
+                              <SelectItem value="top-right" className="text-xs hover:bg-accent hover:text-accent-foreground">Top Right</SelectItem>
+                              <SelectItem value="middle-left" className="text-xs hover:bg-accent hover:text-accent-foreground">Middle Left</SelectItem>
+                              <SelectItem value="middle-center" className="text-xs hover:bg-accent hover:text-accent-foreground">Middle Center</SelectItem>
+                              <SelectItem value="middle-right" className="text-xs hover:bg-accent hover:text-accent-foreground">Middle Right</SelectItem>
+                              <SelectItem value="bottom-left" className="text-xs hover:bg-accent hover:text-accent-foreground">Bottom Left</SelectItem>
+                              <SelectItem value="bottom-center" className="text-xs hover:bg-accent hover:text-accent-foreground">Bottom Center</SelectItem>
+                              <SelectItem value="bottom-right" className="text-xs hover:bg-accent hover:text-accent-foreground">Bottom Right</SelectItem>
+                              <SelectItem value="offset" className="text-xs hover:bg-accent hover:text-accent-foreground">Custom Offset</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          {sprite.pivot?.preset === 'offset' && (
+                            <div className="grid grid-cols-2 gap-2 pt-2">
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-xs text-muted-foreground">Offset X</Label>
+                                  <span className="text-xs text-muted-foreground">{Math.round(sprite.pivot?.offsetX || 0)}</span>
+                                </div>
+                                <Slider
+                                  value={[sprite.pivot?.offsetX || 0]}
+                                  onValueChange={([value]) => updateSpriteConfig(spriteId, {
+                                    pivot: { ...sprite.pivot, preset: 'offset', offsetX: value }
+                                  })}
+                                  min={-100}
+                                  max={100}
+                                  step={1}
+                                  className="h-4"
+                                  data-testid={`slider-pivot-offset-x-${spriteId}`}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-xs text-muted-foreground">Offset Y</Label>
+                                  <span className="text-xs text-muted-foreground">{Math.round(sprite.pivot?.offsetY || 0)}</span>
+                                </div>
+                                <Slider
+                                  value={[sprite.pivot?.offsetY || 0]}
+                                  onValueChange={([value]) => updateSpriteConfig(spriteId, {
+                                    pivot: { ...sprite.pivot, preset: 'offset', offsetY: value }
+                                  })}
+                                  min={-100}
+                                  max={100}
+                                  step={1}
+                                  className="h-4"
+                                  data-testid={`slider-pivot-offset-y-${spriteId}`}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
 
-                    {/* Scale Control */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs font-medium text-muted-foreground">Scale</Label>
-                        <span className="text-xs text-muted-foreground">{sprite.scale.toFixed(2)}x</span>
-                      </div>
-                      <Slider
-                        value={[sprite.scale]}
-                        onValueChange={([value]) => updateSpriteConfig(spriteId, { scale: value })}
-                        min={0.1}
-                        max={3.0}
-                        step={0.1}
-                        className="w-full"
-                        data-testid={`slider-scale-${spriteId}`}
-                      />
-                    </div>
+                        {/* Z-Order Control */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-medium text-muted-foreground">Z-Order (Depth)</Label>
+                            <span className="text-xs text-muted-foreground">
+                              z:{sprite.zOrder} • {sprite.zOrder < 0 ? 'Behind' : sprite.zOrder === 0 ? 'Default' : 'Front'}
+                            </span>
+                          </div>
+                          <Slider
+                            value={[sprite.zOrder]}
+                            onValueChange={([value]) => updateSpriteConfig(spriteId, { zOrder: value })}
+                            min={-10}
+                            max={10}
+                            step={1}
+                            className="w-full"
+                            data-testid={`slider-zorder-${spriteId}`}
+                          />
+                        </div>
 
-                    {/* Shadow & Rendering Controls */}
-                    <div className="space-y-3 pt-2 border-t border-border/50">
-                      <Label className="text-xs font-medium text-muted-foreground">Rendering Options</Label>
-                      
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs text-card-foreground">Casts Shadows</Label>
-                        <Switch
-                          checked={sprite.castsShadows}
-                          onCheckedChange={(checked) => updateSpriteConfig(spriteId, { castsShadows: checked })}
-                          data-testid={`switch-casts-shadows-${spriteId}`}
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs text-card-foreground">Receives Shadows</Label>
-                        <Switch
-                          checked={sprite.receiveShadows}
-                          onCheckedChange={(checked) => updateSpriteConfig(spriteId, { receiveShadows: checked })}
-                          data-testid={`switch-receives-shadows-${spriteId}`}
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs text-card-foreground">Use Normal Map</Label>
-                        <Switch
-                          checked={sprite.useNormalMap ?? true}
-                          onCheckedChange={(checked) => updateSpriteConfig(spriteId, { useNormalMap: checked })}
-                          data-testid={`switch-use-normal-map-${spriteId}`}
-                        />
-                      </div>
-                    </div>
+                        {/* Shadow & Rendering Controls */}
+                        <div className="space-y-2 pt-2 border-t border-border/50">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs text-card-foreground">Casts Shadows</Label>
+                            <Switch
+                              checked={sprite.castsShadows}
+                              onCheckedChange={(checked) => updateSpriteConfig(spriteId, { castsShadows: checked })}
+                              data-testid={`switch-casts-shadows-${spriteId}`}
+                            />
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs text-card-foreground">Use Normal Map</Label>
+                            <Switch
+                              checked={sprite.useNormalMap ?? true}
+                              onCheckedChange={(checked) => updateSpriteConfig(spriteId, { useNormalMap: checked })}
+                              data-testid={`switch-use-normal-map-${spriteId}`}
+                            />
+                          </div>
+                        </div>
 
-                    {/* Texture Info */}
-                    <div className="space-y-2 pt-2 border-t border-border/50">
-                      <Label className="text-xs font-medium text-muted-foreground">Textures</Label>
-                      <div className="text-xs text-muted-foreground break-all">
-                        <div><span className="font-medium">Diffuse:</span> {sprite.image}</div>
-                        {sprite.normal && (
-                          <div><span className="font-medium">Normal:</span> {sprite.normal}</div>
-                        )}
+                        {/* Texture Info */}
+                        <div className="space-y-1 pt-2 border-t border-border/50">
+                          <div className="text-xs text-muted-foreground break-all">
+                            <div><span className="font-medium">Diffuse:</span> {sprite.image}</div>
+                            {sprite.normal && (
+                              <div><span className="font-medium">Normal:</span> {sprite.normal}</div>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    
+                    {!sprite.visible && (
+                      <div className="text-center text-muted-foreground text-sm py-4">
+                        <EyeOff className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                        Sprite is hidden - enable visibility to access controls
                       </div>
-                    </div>
+                    )}
                   </CardContent>
                 </CollapsibleContent>
               </Card>
