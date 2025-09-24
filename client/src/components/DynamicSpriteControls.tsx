@@ -178,6 +178,25 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange }: Dyna
                           />
                         </div>
 
+                        {/* Z-Order Control */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-medium text-muted-foreground">Z-Order (Depth)</Label>
+                            <span className="text-xs text-muted-foreground">
+                              z:{sprite.zOrder} • {sprite.zOrder < 0 ? 'Behind' : sprite.zOrder === 0 ? 'Default' : 'Front'}
+                            </span>
+                          </div>
+                          <Slider
+                            value={[sprite.zOrder]}
+                            onValueChange={([value]) => updateSpriteConfig(spriteId, { zOrder: value })}
+                            min={-10}
+                            max={10}
+                            step={1}
+                            className="w-full"
+                            data-testid={`slider-zorder-${spriteId}`}
+                          />
+                        </div>
+
                         {/* Shadow & Rendering Controls */}
                         <div className="space-y-3 pt-2 border-t border-border/50">
                           <Label className="text-xs font-medium text-muted-foreground">Rendering Options</Label>
