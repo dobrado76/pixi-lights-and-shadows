@@ -284,12 +284,7 @@ function App() {
           {/* Right Column - Tabbed Controls */}
           <div className="space-y-6">
             <Card className="bg-card/95 backdrop-blur border-border">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-card-foreground">
-                  Control Panel
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <Tabs defaultValue="lights" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="lights" data-testid="tab-lights">
