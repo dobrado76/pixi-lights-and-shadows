@@ -114,57 +114,57 @@ export class SceneSprite {
     if (!this.diffuseTexture) throw new Error('Textures must be loaded before creating geometry');
 
     const { x, y } = this.definition.position;
-    
-    // Get base dimensions before scaling
-    const baseWidth = this.diffuseTexture.width;
-    const baseHeight = this.diffuseTexture.height;
-    const width = baseWidth * this.definition.scale;
-    const height = baseHeight * this.definition.scale;
+    const width = this.diffuseTexture.width * this.definition.scale;
+    const height = this.diffuseTexture.height * this.definition.scale;
 
-    // Build vertex buffer with ONLY scaling and pivot transform (NO rotation in geometry)
+    // Build vertex buffer with transform matrix applied
     const geometry = new PIXI.Geometry();
     
-    // Local space quad corners in UNSCALED dimensions (scaling happens around pivot)
+    // Manual transform matrix application for precise vertex positioning
+    const cos = Math.cos(this.definition.rotation);
+    const sin = Math.sin(this.definition.rotation);
+    
+    // Local space quad corners before transformation
     const corners = [
-      { x: 0, y: 0 },                      // Top-left
-      { x: baseWidth, y: 0 },              // Top-right
-      { x: baseWidth, y: baseHeight },     // Bottom-right
-      { x: 0, y: baseHeight }              // Bottom-left
+      { x: 0, y: 0 },           // Top-left
+      { x: width, y: 0 },       // Top-right
+      { x: width, y: height },  // Bottom-right
+      { x: 0, y: height }       // Bottom-left
     ];
 
-    // Calculate pivot point based on definition (pivot-aware scaling only)
+    // Calculate pivot point based on definition (pivot-aware rotation)
     const pivot = this.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
-    let basePivotX = 0, basePivotY = 0;
+    let pivotX = 0, pivotY = 0;
     
     switch (pivot.preset) {
-      case 'top-left': basePivotX = 0; basePivotY = 0; break;
-      case 'top-center': basePivotX = baseWidth / 2; basePivotY = 0; break;
-      case 'top-right': basePivotX = baseWidth; basePivotY = 0; break;
-      case 'middle-left': basePivotX = 0; basePivotY = baseHeight / 2; break;
-      case 'middle-center': basePivotX = baseWidth / 2; basePivotY = baseHeight / 2; break;
-      case 'middle-right': basePivotX = baseWidth; basePivotY = baseHeight / 2; break;
-      case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
-      case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
-      case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
+      case 'top-left': pivotX = 0; pivotY = 0; break;
+      case 'top-center': pivotX = width / 2; pivotY = 0; break;
+      case 'top-right': pivotX = width; pivotY = 0; break;
+      case 'middle-left': pivotX = 0; pivotY = height / 2; break;
+      case 'middle-center': pivotX = width / 2; pivotY = height / 2; break;
+      case 'middle-right': pivotX = width; pivotY = height / 2; break;
+      case 'bottom-left': pivotX = 0; pivotY = height; break;
+      case 'bottom-center': pivotX = width / 2; pivotY = height; break;
+      case 'bottom-right': pivotX = width; pivotY = height; break;
       case 'offset': 
-        basePivotX = baseWidth / 2 + (pivot.offsetX || 0);
-        basePivotY = baseHeight / 2 + (pivot.offsetY || 0);
+        pivotX = width / 2 + (pivot.offsetX || 0);
+        pivotY = height / 2 + (pivot.offsetY || 0);
         break;
     }
     
-    // Scale the pivot point
-    const scaledPivotX = basePivotX * this.definition.scale;
-    const scaledPivotY = basePivotY * this.definition.scale;
-    
-    // Apply ONLY pivot-aware scaling (rotation is handled in fragment shader)
+    // Apply rotation matrix and translation around pivot point
     const transformedCorners = corners.map(corner => {
-      // Apply scaling from pivot point (pivot stays stationary)
-      const scaledOffsetX = (corner.x - basePivotX) * this.definition.scale;
-      const scaledOffsetY = (corner.y - basePivotY) * this.definition.scale;
+      // Offset from pivot
+      const offsetX = corner.x - pivotX;
+      const offsetY = corner.y - pivotY;
+      
+      // Rotate around pivot
+      const rotatedX = offsetX * cos - offsetY * sin;
+      const rotatedY = offsetX * sin + offsetY * cos;
       
       return {
-        x: x + scaledPivotX + scaledOffsetX,
-        y: y + scaledPivotY + scaledOffsetY
+        x: x + pivotX + rotatedX,
+        y: y + pivotY + rotatedY
       };
     });
 
@@ -212,7 +212,6 @@ export class SceneSprite {
       uNormal: this.normalTexture,
       uSpritePos: [x, y],
       uSpriteSize: [width, height],
-      uRotation: this.definition.rotation, // Pass rotation to fragment shader
       ...uniforms
     };
 
