@@ -615,12 +615,20 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
               finalColor += spotColor * specular * uSpecularIntensity * spotIntensity * atten * spotFactor;
             }
             
+            // Alpha test to eliminate transparent edge artifacts
+            if (albedo.a < 0.01) {
+              discard;
+            }
+            
             gl_FragColor = vec4(finalColor, albedo.a);
           }
         `;
         
         const shader = PIXI.Shader.from(vertexShader, fragmentShader, uniforms);
         displayObject = new PIXI.Mesh(geometry, shader);
+        
+        // Set proper blend mode for transparency (copy from original)
+        displayObject.blendMode = PIXI.BLEND_MODES.NORMAL;
         
         console.log(`Sprite ${index}: Using deferred lit mesh with ${pointLights.length} point, ${directionalLights.length} directional, ${spotlights.length} spot lights`);
       } else {
