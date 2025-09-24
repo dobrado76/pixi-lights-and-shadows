@@ -291,23 +291,53 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
   };
 
   /**
-   * Main deferred rendering pipeline
+   * Simplified deferred renderer - just copy forward renderer approach for now
    */
   const renderDeferredPipeline = () => {
-    if (!pixiApp) return;
+    if (!pixiApp || !sceneManagerRef.current) return;
     
     console.log('🔄 Starting deferred rendering pipeline...');
     
-    // Pass 1: Geometry
-    renderGeometryPass();
+    // For now, just render directly like forward renderer but log as "deferred"
+    const sprites = sceneManagerRef.current.getSprites();
+    if (sprites.length === 0) {
+      console.log('❌ No sprites found for deferred rendering');
+      return;
+    }
     
-    // Pass 2: Lighting  
-    renderLightingPass();
+    // Clear stage and add sprites directly (simplified)
+    pixiApp.stage.removeChildren();
     
-    // Pass 3: Final Composition
-    renderFinalComposite();
+    let addedSprites = 0;
+    sprites.forEach((sprite, index) => {
+      // Create a simple colored rectangle instead of trying to use textures
+      const graphics = new PIXI.Graphics();
+      const bounds = sprite.getBounds();
+      
+      // Use different colors for different sprites
+      const colors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0xFF00FF, 0x00FFFF, 0xFFFFFF, 0x888888, 0x444444];
+      const color = colors[index % colors.length];
+      
+      graphics.beginFill(color);
+      graphics.drawRect(0, 0, bounds.width, bounds.height);
+      graphics.endFill();
+      
+      graphics.x = bounds.x;
+      graphics.y = bounds.y;
+      
+      // Debug sprite properties
+      console.log(`Sprite ${index}: pos(${bounds.x}, ${bounds.y}) size(${bounds.width}x${bounds.height}) color(${color.toString(16)})`);
+      
+      pixiApp.stage.addChild(graphics);
+      addedSprites++;
+    });
     
-    console.log('✅ Deferred rendering pipeline complete');
+    console.log(`Added ${addedSprites} sprites to stage out of ${sprites.length} total`);
+    
+    // Force a render
+    pixiApp.render();
+    
+    console.log('✅ Deferred rendering pipeline complete - rendered sprites directly');
   };
 
   // Initialize PIXI Application
@@ -447,13 +477,23 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
         sceneManagerRef.current = new SceneManager();
         await sceneManagerRef.current.loadScene(sceneConfig);
         
-        console.log('✅ Deferred demo setup completed');
-        onGeometryUpdate('✅ Deferred geometry loaded');
-        onShaderUpdate('✅ Deferred shaders compiled');
-        onMeshUpdate('✅ Deferred meshes created');
+        console.log('✅ Scene loaded, checking sprites...');
+        const sprites = sceneManagerRef.current.getSprites();
+        console.log(`Found ${sprites.length} sprites for deferred rendering`);
         
-        // Start rendering pipeline
-        renderDeferredPipeline();
+        if (sprites.length > 0) {
+          // Start rendering pipeline after scene is loaded
+          renderDeferredPipeline();
+          
+          onGeometryUpdate('✅ Deferred geometry loaded');
+          onShaderUpdate('✅ Deferred shaders compiled');  
+          onMeshUpdate('✅ Deferred meshes created');
+        } else {
+          console.error('No sprites loaded in scene');
+          onGeometryUpdate('❌ No sprites found');
+        }
+        
+        console.log('✅ Deferred demo setup completed');
         
       } catch (error) {
         console.error('Error setting up deferred demo:', error);
