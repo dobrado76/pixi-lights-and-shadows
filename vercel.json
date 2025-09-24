@@ -16,11 +16,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/server/index.ts"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/server/index"
     }
   ]
 }
