@@ -843,7 +843,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         sceneManagerRef.current = null;
       }
     };
-  }, [pixiApp, geometry, lightsConfig, ambientLight, shadowConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate]);
+  }, [pixiApp, geometry, onGeometryUpdate, onShaderUpdate, onMeshUpdate]);
   
   // Handle sprite updates without full scene rebuild
   useEffect(() => {
@@ -1217,7 +1217,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         console.warn('⚠️ Cannot render - pixiApp or renderer not available');
       }
     }
-  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, JSON.stringify(lightsConfig), JSON.stringify(ambientLight), JSON.stringify(shadowConfig)]);
+  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig]);
 
 
   // Animation loop
