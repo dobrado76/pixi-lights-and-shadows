@@ -10,8 +10,8 @@
     {
       "id": "mouse_light",
       "type": "point",
-      "enabled": false,
-      "brightness": 1.5,
+      "enabled": true,
+      "brightness": 1,
       "color": "0xffffff",
       "x": 270,
       "y": 300,
