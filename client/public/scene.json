@@ -49,12 +49,17 @@
         "x": 204,
         "y": 226
       },
-      "rotation": 0,
+      "rotation": 1.2217304763960306,
       "scale": 0.7,
       "zOrder": 1,
       "castsShadows": true,
       "visible": true,
-      "useNormalMap": true
+      "useNormalMap": true,
+      "pivot": {
+        "preset": "middle-center",
+        "offsetX": 0,
+        "offsetY": 0
+      }
     },
     "test1": {
       "image": "/textures/test1.png",

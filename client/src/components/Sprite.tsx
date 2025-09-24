@@ -30,6 +30,11 @@ interface CompleteSpriteDefinition {
   castsShadows: boolean;
   visible: boolean;
   useNormalMap: boolean;
+  pivot?: {
+    preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'offset';
+    offsetX?: number;
+    offsetY?: number;
+  };
 }
 
 export interface SpriteTransform {
