@@ -42,6 +42,20 @@
       "visible": true,
       "useNormalMap": true
     },
+    "ball2": {
+      "type": "sprite",
+      "image": "/textures/ball.png",
+      "normal": "/textures/ballN.png",
+      "position": {
+        "x": 50,
+        "y": 280
+      },
+      "rotation": 0,
+      "scale": 1,
+      "castsShadows": true,
+      "visible": true,
+      "useNormalMap": true
+    },
     "test1": {
       "type": "sprite",
       "image": "/textures/test1.png",
@@ -53,7 +67,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true
     },
     "test2": {
@@ -80,7 +94,7 @@
       },
       "rotation": 0,
       "scale": 1,
-      "castsShadows": false,
+      "castsShadows": true,
       "receiveShadows": false,
       "visible": true,
       "useNormalMap": true
