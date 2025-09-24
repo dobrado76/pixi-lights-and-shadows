@@ -40,7 +40,12 @@
       "zOrder": 0,
       "castsShadows": true,
       "visible": true,
-      "useNormalMap": true
+      "useNormalMap": true,
+      "pivot": {
+        "preset": "middle-center",
+        "offsetX": 0,
+        "offsetY": 0
+      }
     },
     "ball2": {
       "image": "/textures/ball.png",
@@ -49,7 +54,7 @@
         "x": 175,
         "y": 226
       },
-      "rotation": 0.8203047484373349,
+      "rotation": 0,
       "scale": 0.9,
       "zOrder": 0,
       "castsShadows": true,
