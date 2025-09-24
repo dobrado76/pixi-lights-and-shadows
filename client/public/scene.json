@@ -178,7 +178,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.1,
+      "brightness": 0.05,
       "color": "0xffffff"
     },
     {
@@ -187,8 +187,8 @@
       "enabled": true,
       "brightness": 0.9,
       "color": "0xffffff",
-      "x": 270,
-      "y": 210,
+      "x": 230,
+      "y": 220,
       "z": 60,
       "followMouse": true,
       "castsShadows": true,
