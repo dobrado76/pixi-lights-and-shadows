@@ -831,7 +831,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         sceneManagerRef.current = null;
       }
     };
-  }, [pixiApp, geometry, sceneConfig, lightsConfig, ambientLight, shadowConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate]);
+  }, [pixiApp, geometry, lightsConfig, ambientLight, shadowConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate]);
   
   // Force auto-render when textures finish loading
   useEffect(() => {
@@ -1112,6 +1112,87 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
     }
   }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig]);
+
+  // Dynamic sprite updates for real-time sprite changes without scene reload
+  useEffect(() => {
+    if (!sceneManagerRef.current || meshesRef.current.length === 0) return;
+    
+    console.log('🎭 Updating sprite properties without scene reload...');
+    
+    // Update each sprite's properties individually
+    const sprites = sceneManagerRef.current.getAllSprites();
+    const sceneSprites = sceneConfig.scene || {};
+    
+    sprites.forEach(sprite => {
+      const config = sceneSprites[sprite.id];
+      if (!config) return;
+      
+      // Update sprite mesh properties
+      if (sprite.mesh) {
+        // Update position
+        sprite.mesh.x = config.position.x;
+        sprite.mesh.y = config.position.y;
+        
+        // Update rotation
+        sprite.mesh.rotation = config.rotation;
+        
+        // Update scale
+        sprite.mesh.scale.set(config.scale, config.scale);
+        
+        // Update visibility
+        sprite.mesh.visible = config.visible;
+        
+        // Update sprite definition for shadow calculations
+        sprite.definition.position = config.position;
+        sprite.definition.rotation = config.rotation;
+        sprite.definition.scale = config.scale;
+        sprite.definition.visible = config.visible;
+        sprite.definition.castsShadows = config.castsShadows;
+        sprite.definition.useNormalMap = config.useNormalMap ?? true;
+        
+        // Update normal texture if useNormalMap changed
+        if (sprite.definition.useNormalMap && config.normal && config.normal !== '') {
+          // Load the actual normal map
+          const newNormalTexture = PIXI.Texture.from(config.normal);
+          if (sprite.normalTexture !== newNormalTexture) {
+            sprite.normalTexture = newNormalTexture;
+            if (sprite.shader) {
+              sprite.shader.uniforms.uNormalMap = sprite.normalTexture;
+            }
+          }
+        } else {
+          // Update sprite definition and reload texture through the existing loadTextures method
+          sprite.definition.normal = '';
+          sprite.definition.useNormalMap = config.useNormalMap ?? true;
+          sprite.loadTextures().then(() => {
+            if (sprite.shader) {
+              sprite.shader.uniforms.uNormalMap = sprite.normalTexture;
+            }
+          });
+        }
+      }
+    });
+    
+    // Update shadow caster data for shaders without recreating everything
+    const shadowCasters = sceneManagerRef.current.getShadowCasters();
+    shadersRef.current.forEach(shader => {
+      if (shader.uniforms) {
+        // Update shadow caster positions
+        shader.uniforms.uShadowCaster0 = shadowCasters[0] ? [shadowCasters[0].getBounds().x, shadowCasters[0].getBounds().y, shadowCasters[0].getBounds().width, shadowCasters[0].getBounds().height] : [0, 0, 0, 0];
+        shader.uniforms.uShadowCaster1 = shadowCasters[1] ? [shadowCasters[1].getBounds().x, shadowCasters[1].getBounds().y, shadowCasters[1].getBounds().width, shadowCasters[1].getBounds().height] : [0, 0, 0, 0];
+        shader.uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
+        shader.uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
+      }
+    });
+    
+    // Force a render to show changes
+    if (pixiApp && pixiApp.renderer) {
+      pixiApp.render();
+    }
+    
+    console.log('🎭 Sprite update completed without reload');
+    
+  }, [sceneConfig]);
 
   // Animation loop
   useEffect(() => {

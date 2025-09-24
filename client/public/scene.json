@@ -11,7 +11,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": false,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true
     },
     "background2": {
