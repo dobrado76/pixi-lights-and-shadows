@@ -20,7 +20,7 @@
       "position": {
         "x": 0,
         "y": 0
-      }, 
+      },
       "rotation": 0,
       "scale": 1,
       "zOrder": -1,
@@ -73,7 +73,12 @@
       "zOrder": 0,
       "castsShadows": false,
       "visible": true,
-      "useNormalMap": true
+      "useNormalMap": true,
+      "pivot": {
+        "preset": "middle-center",
+        "offsetX": 0,
+        "offsetY": 0
+      }
     },
     "test2": {
       "image": "/textures/test2.png",
@@ -83,15 +88,20 @@
         "y": 403
       },
       "rotation": 0,
-      "scale": 0.9,
+      "scale": 0.8,
       "zOrder": 1,
       "castsShadows": true,
       "visible": true,
-      "useNormalMap": true
+      "useNormalMap": true,
+      "pivot": {
+        "offsetX": 0,
+        "offsetY": 0,
+        "preset": "middle-center"
+      }
     },
     "test3": {
-      "image": "/textures/test2.png",
-      "normal": "/textures/test2Normal.png",
+      "image": "/textures/test3.png",
+      "normal": "/textures/test3Normal.png",
       "position": {
         "x": 150,
         "y": 350
@@ -99,13 +109,19 @@
       "rotation": 0,
       "scale": 1,
       "zOrder": 0,
-      "castsShadows": false,
+      "castsShadows": true,
+      "receiveShadows": false,
       "visible": false,
-      "useNormalMap": true
+      "useNormalMap": true,
+      "pivot": {
+        "preset": "middle-center",
+        "offsetX": 0,
+        "offsetY": 0
+      }
     },
     "block": {
       "image": "/textures/block.png",
-      "normal": "/textures/blockN.png",
+      "normal": "/textures/blockNormalMap.jpg",
       "position": {
         "x": 280,
         "y": 120
@@ -118,8 +134,8 @@
       "useNormalMap": true
     },
     "block2": {
-      "image": "/textures/block.png",
-      "normal": "/textures/blockN.png",
+      "image": "/textures/block2.png",
+      "normal": "/textures/block2NormalMap.png",
       "position": {
         "x": 200,
         "y": 320
