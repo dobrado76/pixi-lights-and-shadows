@@ -269,38 +269,34 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
 float calculateDirectionalShadow(vec4 caster, vec2 pixelPos, vec2 lightDirection) {
   if (!uShadowsEnabled) return 1.0;
   
+  // Simple directional shadow: check if pixel is "behind" the caster relative to light direction
   vec2 casterPos = caster.xy;
   vec2 casterSize = caster.zw;
+  vec2 casterCenter = casterPos + casterSize * 0.5;
   
-  // For directional lights, create parallel shadow projection
-  // Project the pixel position in the opposite direction of the light
-  vec2 shadowDirection = normalize(-lightDirection);
+  // Normalize light direction for consistent calculations
+  vec2 lightDir2D = normalize(lightDirection.xy);
   
-  // Calculate if pixel is in shadow by checking if the caster blocks the parallel light ray
-  // Create a line from the pixel in the shadow direction and see if it intersects the caster
-  vec2 rayStart = pixelPos;
+  // Check if pixel is in the shadow area cast by this caster
+  // For directional lights, shadows extend infinitely in the light direction
+  vec2 toPixel = pixelPos - casterCenter;
   
-  // Extend ray to reasonable length for shadow projection
-  float maxShadowDistance = uShadowMaxLength;
-  vec2 rayEnd = rayStart + shadowDirection * maxShadowDistance;
+  // Project pixel position onto light direction
+  float projectionOnLight = dot(toPixel, lightDir2D);
   
-  // Check intersection with caster rectangle
-  vec2 casterMin = casterPos;
-  vec2 casterMax = casterPos + casterSize;
-  
-  // Simple AABB ray intersection for directional shadows
-  vec2 t1 = (casterMin - rayStart) / shadowDirection;
-  vec2 t2 = (casterMax - rayStart) / shadowDirection;
-  
-  vec2 tMin = min(t1, t2);
-  vec2 tMax = max(t1, t2);
-  
-  float tNear = max(tMin.x, tMin.y);
-  float tFar = min(tMax.x, tMax.y);
-  
-  // If ray intersects caster and intersection is in shadow direction, pixel is in shadow
-  if (tNear <= tFar && tNear >= 0.0 && tNear <= maxShadowDistance) {
-    return uShadowStrength; // In shadow
+  // If pixel is "behind" the caster (in shadow direction), check if it's within shadow bounds
+  if (projectionOnLight > 0.0) {
+    // Get perpendicular distance from shadow ray
+    vec2 perpDir = vec2(-lightDir2D.y, lightDir2D.x);
+    float perpDistance = abs(dot(toPixel, perpDir));
+    
+    // Shadow width is based on caster size
+    float shadowWidth = max(casterSize.x, casterSize.y) * 0.5;
+    
+    // If within shadow cone, pixel is in shadow
+    if (perpDistance <= shadowWidth) {
+      return uShadowStrength; // In shadow
+    }
   }
   
   return 1.0; // Not in shadow

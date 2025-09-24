@@ -813,6 +813,20 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Apply shadow texture uniforms to all sprite shaders (already done above)
       console.log('All sprite shaders created with shadow texture uniforms');
 
+      // FORCE DIRECTIONAL LIGHT SHADOW SETUP AFTER SHADERS ARE CREATED
+      const directionalLight = lightsConfig.find(light => light.type === 'directional' && light.enabled);
+      if (directionalLight && directionalLight.castsShadows) {
+        console.log('🌞 SETTING UP DIRECTIONAL SHADOW after shaders created:', directionalLight.id);
+        
+        // Apply directional shadow uniforms to ALL created shaders
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uDir0CastsShadows = true;
+            console.log('🌞 Set uDir0CastsShadows=true on shader');
+          }
+        });
+      }
+
       console.log('🌑 Shadow system integrated into lighting shader');
       console.log('🌑 Shadow texture uniforms applied to all shaders');
 
@@ -960,6 +974,12 @@ const PixiDemo = (props: PixiDemoProps) => {
 
   // Dynamic shader uniform updates for real-time lighting changes
   useEffect(() => {
+    console.log('🚨 LIGHTING UPDATE USEEFFECT TRIGGERED!', {
+      shaderCount: shadersRef.current.length,
+      lightsCount: lightsConfig.length,
+      timestamp: Date.now()
+    });
+    
     if (shadersRef.current.length === 0) return;
     
     console.log('🔥 LIGHTING UPDATE TRIGGERED - updating shader uniforms in real-time');
@@ -995,8 +1015,18 @@ const PixiDemo = (props: PixiDemoProps) => {
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
       uniforms.uShadowCaster0 = shadowCasters[0] ? [shadowCasters[0].getBounds().x, shadowCasters[0].getBounds().y, shadowCasters[0].getBounds().width, shadowCasters[0].getBounds().height] : [0, 0, 0, 0];
       uniforms.uShadowCaster1 = shadowCasters[1] ? [shadowCasters[1].getBounds().x, shadowCasters[1].getBounds().y, shadowCasters[1].getBounds().width, shadowCasters[1].getBounds().height] : [0, 0, 0, 0];
+      uniforms.uShadowCaster2 = shadowCasters[2] ? [shadowCasters[2].getBounds().x, shadowCasters[2].getBounds().y, shadowCasters[2].getBounds().width, shadowCasters[2].getBounds().height] : [0, 0, 0, 0];
       uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
       uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
+      uniforms.uShadowCaster2Enabled = shadowCasters.length > 2;
+      
+      console.log('🌑 DIRECTIONAL LIGHT SHADOW SETUP:', {
+        shadowCasters: shadowCasters.length,
+        caster0: uniforms.uShadowCaster0,
+        caster1: uniforms.uShadowCaster1,
+        caster2: uniforms.uShadowCaster2,
+        enabled: [uniforms.uShadowCaster0Enabled, uniforms.uShadowCaster1Enabled, uniforms.uShadowCaster2Enabled]
+      });
       
       // Occluder map uniforms for unlimited shadow casters (switch when >3 casters)
       uniforms.uUseOccluderMap = shadowCasters.length > 3;
@@ -1106,6 +1136,14 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uAmbientLight = ambientLight.intensity;
       uniforms.uAmbientColor = [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b];
       uniforms.uCanvasSize = [shaderParams.canvasWidth, shaderParams.canvasHeight];
+      
+      // FORCE DIRECTIONAL LIGHT SHADOW SETUP - BYPASS BROKEN useEffect
+      const directionalLight = lightsConfig.find(light => light.type === 'directional' && light.enabled);
+      if (directionalLight) {
+        console.log('🌞 FORCING DIRECTIONAL LIGHT SETUP:', directionalLight);
+        uniforms.uDir0CastsShadows = directionalLight.castsShadows || false;
+        console.log('🌞 Dir0 CastsShadows set to:', uniforms.uDir0CastsShadows);
+      }
       
       // Global shadow properties
       uniforms.uShadowHeight = shadowConfig.height; // Height of sprites above ground plane for shadow projection
@@ -1245,9 +1283,13 @@ const PixiDemo = (props: PixiDemoProps) => {
             if (shader.uniforms) {
               shader.uniforms.uUseOccluderMap = true;
               shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+              
+              // FORCE DIRECTIONAL SHADOW SETUP IN ANIMATION LOOP
+              shader.uniforms.uDir0CastsShadows = true;
             }
           });
           console.log(`✅ Unlimited shadows applied from animation loop!`);
+          console.log(`🌞 DIRECTIONAL SHADOWS ENABLED in animation loop`);
         }
       }
     };
