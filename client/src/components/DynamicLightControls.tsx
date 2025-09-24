@@ -347,26 +347,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
               />
             </div>
             
-            <div className="flex items-center space-x-2 mb-1">
-              <label className="text-xs text-muted-foreground min-w-[80px]">
-                Sharpness: {(localShadowConfig.sharpness ?? 0.5).toFixed(2)}
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={localShadowConfig.sharpness ?? 0.5}
-                onChange={(e) => {
-                  const newSharpness = parseFloat(e.target.value);
-                  const newConfig = { ...localShadowConfig, sharpness: newSharpness };
-                  setLocalShadowConfig(newConfig);
-                  onShadowConfigChange(newConfig);
-                }}
-                className="flex-1"
-                data-testid="slider-shadow-sharpness"
-              />
-            </div>
+            {/* Removed shadow sharpness slider */}
             
           </>
         )}

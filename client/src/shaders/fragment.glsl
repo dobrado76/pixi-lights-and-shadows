@@ -63,7 +63,7 @@ uniform sampler2D uShadowCaster2Texture; // Diffuse texture for third caster
 uniform float uShadowStrength; // Global shadow strength
 uniform bool uShadowsEnabled;
 uniform float uShadowMaxLength; // Maximum shadow length to prevent extremely long shadows
-uniform float uShadowSharpness; // Shadow sharpness (0=soft, 1=sharp)
+// Removed shadow sharpness feature
 
 // Occluder Map System (for unlimited shadow casters)
 uniform bool uUseOccluderMap; // Switch between per-caster and occluder map
@@ -176,33 +176,8 @@ float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shado
             float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
             if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
             
-            // Real soft shadows: sample around the hit point for penumbra
+            // Binary shadow detection - clean and artifact-free
             float shadowValue = 1.0;
-            
-            // If we want soft shadows, sample around the hit point
-            if (uShadowSharpness < 0.95) {
-              float penumbraRadius = mix(3.0, 0.5, uShadowSharpness);
-              float shadowSamples = 0.0;
-              float totalSamples = 0.0;
-              
-              // Sample in a cross pattern around the hit point
-              for (int dx = -2; dx <= 2; dx++) {
-                for (int dy = -2; dy <= 2; dy++) {
-                  vec2 offset = vec2(float(dx), float(dy)) * penumbraRadius;
-                  vec2 testPoint = samplePoint + offset;
-                  vec2 testUV = (testPoint - casterMin) / (casterMax - casterMin);
-                  
-                  if (testUV.x >= 0.0 && testUV.x <= 1.0 && testUV.y >= 0.0 && testUV.y <= 1.0) {
-                    float testAlpha = texture2D(shadowMask, testUV).a;
-                    shadowSamples += (testAlpha > 0.0) ? 1.0 : 0.0;
-                    totalSamples += 1.0;
-                  }
-                }
-              }
-              
-              // Create soft falloff: full samples = full shadow, partial = soft
-              shadowValue = (totalSamples > 0.0) ? shadowSamples / totalSamples : 0.0;
-            }
             
             float normalizedDistance = shadowLength / uShadowMaxLength;
             float distanceFade = exp(-normalizedDistance * 2.0);
@@ -271,33 +246,8 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
       float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
       if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
       
-      // Real soft shadows: sample around the hit point for penumbra
+      // Binary shadow detection - clean and artifact-free
       float shadowValue = 1.0;
-      
-      // If we want soft shadows, sample around the hit point
-      if (uShadowSharpness < 0.95) {
-        float penumbraRadius = mix(4.0, 1.0, uShadowSharpness);
-        float shadowSamples = 0.0;
-        float totalSamples = 0.0;
-        
-        // Sample in a pattern around the original hit point
-        for (int dx = -2; dx <= 2; dx++) {
-          for (int dy = -2; dy <= 2; dy++) {
-            vec2 offset = vec2(float(dx), float(dy)) * penumbraRadius;
-            vec2 testPos = lightPos + rayDir * distance + offset;
-            vec2 testUV = testPos / uCanvasSize;
-            
-            if (testUV.x >= 0.0 && testUV.x <= 1.0 && testUV.y >= 0.0 && testUV.y <= 1.0) {
-              float testAlpha = texture2D(uOccluderMap, testUV).a;
-              shadowSamples += (testAlpha > 0.0) ? 1.0 : 0.0;
-              totalSamples += 1.0;
-            }
-          }
-        }
-        
-        // Create soft falloff: full samples = full shadow, partial = soft
-        shadowValue = (totalSamples > 0.0) ? shadowSamples / totalSamples : 0.0;
-      }
       
       // Calculate final shadow strength
       float shadowRatio = shadowValue;

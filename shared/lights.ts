@@ -45,7 +45,7 @@ export interface ShadowConfig {
   strength: number;          // Shadow opacity/darkness (0.0 - 1.0)  
   maxLength: number;         // Maximum shadow length (pixels)
   height: number;            // Shadow casting height (affects angle)
-  sharpness: number;         // Shadow sharpness (0=soft, 1=sharp)
+  // Removed shadow sharpness feature
 }
 
 // Internal runtime format
