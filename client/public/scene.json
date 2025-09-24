@@ -49,7 +49,8 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true
+      "receiveShadows": true,
+      "visible": true
     },
     "block2": {
       "type": "sprite", 
@@ -59,7 +60,8 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true
+      "receiveShadows": true,
+      "visible": true
     }
   }
 }

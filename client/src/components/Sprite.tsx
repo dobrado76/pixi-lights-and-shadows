@@ -293,7 +293,9 @@ export class SceneManager {
 
   // Filter sprites by shadow participation flags
   getShadowCasters(): SceneSprite[] {
-    return this.getAllSprites().filter(sprite => sprite.definition.castsShadows);
+    return this.getAllSprites().filter(sprite => 
+      sprite.definition.castsShadows && sprite.definition.visible
+    );
   }
 
   getShadowReceivers(): SceneSprite[] {

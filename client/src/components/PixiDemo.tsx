@@ -742,17 +742,18 @@ const PixiDemo = (props: PixiDemoProps) => {
         ...lightUniforms
       };
       
-      // Create all sprite meshes
+      // Create meshes only for visible sprites
       const spriteMeshes: PIXI.Mesh[] = [];
       const allSprites = sceneManagerRef.current!.getAllSprites();
+      const visibleSprites = allSprites.filter(sprite => sprite.definition.visible);
       
-      for (const sprite of allSprites) {
+      for (const sprite of visibleSprites) {
         const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
         spriteMeshes.push(mesh);
       }
 
-      // Log sprite information from scene
-      allSprites.forEach(sprite => {
+      // Log visible sprite information from scene
+      visibleSprites.forEach(sprite => {
         const bounds = sprite.getBounds();
         console.log(`${sprite.id} actual dimensions:`, bounds.width, bounds.height);
       });
@@ -791,12 +792,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       shadersRef.current = spriteMeshes.map(mesh => mesh.shader!);
       shadowCastersRef.current = legacyShadowCasters;
 
-      // Add only visible sprite meshes to stage
-      spriteMeshes.forEach((mesh, index) => {
-        const sprite = allSprites[index];
-        if (sprite.definition.visible) {
-          sceneContainerRef.current!.addChild(mesh);
-        }
+      // Add all sprite meshes to stage (already filtered to visible sprites)
+      spriteMeshes.forEach(mesh => {
+        sceneContainerRef.current!.addChild(mesh);
       });
 
       // Apply shadow texture uniforms to all sprite shaders (already done above)
