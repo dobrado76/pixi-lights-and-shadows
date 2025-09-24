@@ -185,14 +185,14 @@
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
-      "brightness": 0.9,
+      "brightness": 0.8,
       "color": "0xffffff",
-      "x": 230,
-      "y": 220,
+      "x": 120,
+      "y": 260,
       "z": 60,
       "followMouse": true,
       "castsShadows": true,
-      "radius": 960
+      "radius": 1280
     },
     {
       "id": "directional_light",
@@ -200,8 +200,8 @@
       "enabled": true,
       "brightness": 0.3,
       "color": "0xffffff",
-      "directionX": 0.42261826174069944,
-      "directionY": 0.9063077870366499,
+      "directionX": 0.9961946980917455,
+      "directionY": -0.08715574274765817,
       "directionZ": -1,
       "castsShadows": true
     },
@@ -218,7 +218,7 @@
       "directionY": 1,
       "directionZ": -1,
       "castsShadows": true,
-      "radius": 690,
+      "radius": 900,
       "coneAngle": 47,
       "softness": 0.2
     },
@@ -272,7 +272,7 @@
       "z": 50,
       "followMouse": false,
       "castsShadows": true,
-      "radius": 350
+      "radius": 900
     }
   ],
   "shadowConfig": {
