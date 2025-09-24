@@ -355,6 +355,14 @@ export class SceneManager {
         const newDef = newSpriteData as SpriteDefinition;
         const wasVisible = existingSprite.definition.visible;
         const oldZOrder = existingSprite.definition.zOrder;
+        
+        // Check what properties changed BEFORE updating the definition
+        const posChanged = JSON.stringify(newDef.position) !== JSON.stringify(existingSprite.definition.position);
+        const rotChanged = newDef.rotation !== existingSprite.definition.rotation;
+        const scaleChanged = newDef.scale !== existingSprite.definition.scale;
+        const normalMapChanged = newDef.useNormalMap !== existingSprite.definition.useNormalMap;
+        
+        // NOW update the definition
         existingSprite.definition = { ...existingSprite.definition, ...newDef };
         
         // Handle visibility changes that require mesh creation/destruction
@@ -364,11 +372,6 @@ export class SceneManager {
           // Sprite was invisible and now visible but has no mesh - flag for recreation
           existingSprite.needsMeshCreation = true;
         } else if (existingSprite.mesh) {
-          // Check what properties changed
-          const posChanged = JSON.stringify(newDef.position) !== JSON.stringify(existingSprite.definition.position);
-          const rotChanged = newDef.rotation !== existingSprite.definition.rotation;
-          const scaleChanged = newDef.scale !== existingSprite.definition.scale;
-          const normalMapChanged = newDef.useNormalMap !== existingSprite.definition.useNormalMap;
           
           // Update existing mesh
           existingSprite.updateTransform({
