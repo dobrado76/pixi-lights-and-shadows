@@ -209,9 +209,15 @@ export const convertConfigToLight = (config: LightConfig): Light => {
 // Load lights configuration from JSON
 export const loadLightsConfig = async (configPath: string = '/api/load-lights-config'): Promise<{lights: Light[], shadowConfig?: ShadowConfig}> => {
   try {
-    const response = await fetch(configPath);
-    if (!response.ok) {
-      throw new Error(`Failed to load lights config: ${response.statusText}`);
+    // Try API first, fallback to static file
+    let response;
+    try {
+      response = await fetch(configPath);
+      if (!response.ok) throw new Error(`API failed: ${response.statusText}`);
+    } catch (apiError) {
+      // Fallback to static file
+      response = await fetch('/lights-config.json');
+      if (!response.ok) throw new Error(`Static file failed: ${response.statusText}`);
     }
     
     const config = await response.json();
@@ -244,8 +250,16 @@ export const loadLightsConfig = async (configPath: string = '/api/load-lights-co
 // Get ambient light setting from config
 export const loadAmbientLight = async (configPath: string = '/api/load-lights-config'): Promise<{intensity: number, color: {r: number, g: number, b: number}}> => {
   try {
-    const response = await fetch(configPath);
-    if (!response.ok) return { intensity: 0.3, color: { r: 0.4, g: 0.4, b: 0.4 } };
+    // Try API first, fallback to static file
+    let response;
+    try {
+      response = await fetch(configPath);
+      if (!response.ok) throw new Error(`API failed: ${response.statusText}`);
+    } catch (apiError) {
+      // Fallback to static file
+      response = await fetch('/lights-config.json');
+      if (!response.ok) return { intensity: 0.3, color: { r: 0.4, g: 0.4, b: 0.4 } };
+    }
     
     const config = await response.json();
     const ambientLight = config.lights.find((light: any) => light.type === 'ambient');
@@ -311,28 +325,28 @@ export const convertLightToConfig = (light: Light): LightConfig => {
 
 // Save lights configuration to server
 export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity: number, color: {r: number, g: number, b: number}}, shadowConfig?: ShadowConfig): Promise<boolean> => {
+  // Convert lights back to config format
+  const lightConfigs = lights.map(convertLightToConfig);
+  
+  // Add ambient light with proper color conversion
+  const ambientConfig: LightConfig = {
+    id: 'ambient_light',
+    type: 'ambient',
+    enabled: true,
+    brightness: ambientLight.intensity,
+    color: rgbToHex(ambientLight.color.r, ambientLight.color.g, ambientLight.color.b)
+  };
+  
+  const config: any = {
+    lights: [ambientConfig, ...lightConfigs]
+  };
+
+  // Include shadow configuration if provided
+  if (shadowConfig) {
+    config.shadowConfig = shadowConfig;
+  }
+
   try {
-    // Convert lights back to config format
-    const lightConfigs = lights.map(convertLightToConfig);
-    
-    // Add ambient light with proper color conversion
-    const ambientConfig: LightConfig = {
-      id: 'ambient_light',
-      type: 'ambient',
-      enabled: true,
-      brightness: ambientLight.intensity,
-      color: rgbToHex(ambientLight.color.r, ambientLight.color.g, ambientLight.color.b)
-    };
-    
-    const config: any = {
-      lights: [ambientConfig, ...lightConfigs]
-    };
-
-    // Include shadow configuration if provided
-    if (shadowConfig) {
-      config.shadowConfig = shadowConfig;
-    }
-
     const response = await fetch('/api/save-lights-config', {
       method: 'POST',
       headers: {
@@ -343,7 +357,14 @@ export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity
 
     return response.ok;
   } catch (error) {
-    console.error('Error saving lights configuration:', error);
-    return false;
+    console.warn('Server save failed, saving to localStorage instead:', error);
+    // Fallback to localStorage for static deployment
+    try {
+      localStorage.setItem('lights-config', JSON.stringify(config));
+      return true;
+    } catch (localError) {
+      console.error('LocalStorage save also failed:', localError);
+      return false;
+    }
   }
 };
