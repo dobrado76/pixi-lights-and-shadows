@@ -11,7 +11,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": false,
-      "receiveShadows": true,
+
       "visible": true,
       "useNormalMap": true
     },
@@ -26,7 +26,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": false,
-      "receiveShadows": true,
+
       "visible": true,
       "useNormalMap": false
     },
@@ -41,7 +41,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true,
+
       "visible": true,
       "useNormalMap": true
     },
@@ -56,8 +56,8 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true,
-      "visible": true,
+
+      "visible": false,
       "useNormalMap": true
     },
     "test2": {
@@ -65,13 +65,13 @@
       "image": "/textures/test2.png",
       "normal": "/textures/test2Normal.png",
       "position": {
-        "x": 82,
-        "y": 280
+        "x": 80,
+        "y": 420
       },
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true,
+
       "visible": false,
       "useNormalMap": true
     },
@@ -81,13 +81,13 @@
       "normal": "/textures/test3Normal.png",
       "position": {
         "x": 150,
-        "y": 280
+        "y": 350
       },
       "rotation": 0,
       "scale": 1,
-      "castsShadows": true,
-      "receiveShadows": true,
-      "visible": false,
+      "castsShadows": false,
+      "receiveShadows": false,
+      "visible": true,
       "useNormalMap": true
     },
     "block": {
@@ -101,7 +101,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true,
+
       "visible": true,
       "useNormalMap": true
     },
@@ -116,7 +116,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true,
+
       "visible": true,
       "useNormalMap": true
     }

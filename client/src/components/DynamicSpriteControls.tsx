@@ -17,7 +17,6 @@ interface SpriteConfig {
   rotation: number;
   scale: number;
   castsShadows: boolean;
-  receiveShadows: boolean;
   visible: boolean;
   useNormalMap?: boolean;
 }
@@ -189,15 +188,6 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange }: Dyna
                               checked={sprite.castsShadows}
                               onCheckedChange={(checked) => updateSpriteConfig(spriteId, { castsShadows: checked })}
                               data-testid={`switch-casts-shadows-${spriteId}`}
-                            />
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <Label className="text-xs text-card-foreground">Receives Shadows</Label>
-                            <Switch
-                              checked={sprite.receiveShadows}
-                              onCheckedChange={(checked) => updateSpriteConfig(spriteId, { receiveShadows: checked })}
-                              data-testid={`switch-receives-shadows-${spriteId}`}
                             />
                           </div>
                           

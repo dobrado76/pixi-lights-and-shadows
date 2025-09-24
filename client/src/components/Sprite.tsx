@@ -15,7 +15,6 @@ export interface SpriteDefinition {
   rotation?: number;                  // Radians
   scale?: number;
   castsShadows?: boolean;             // Participates in shadow casting
-  receiveShadows?: boolean;           // Receives shadows from other sprites
   visible?: boolean;                  // Controls sprite visibility without deletion
   useNormalMap?: boolean;             // Whether to use normal mapping for this sprite
 }
@@ -29,7 +28,6 @@ interface CompleteSpriteDefinition {
   rotation: number;
   scale: number;
   castsShadows: boolean;
-  receiveShadows: boolean;
   visible: boolean;
   useNormalMap: boolean;
 }
@@ -64,7 +62,6 @@ export class SceneSprite {
       rotation: definition.rotation || 0,              // No rotation
       scale: definition.scale || 1,                    // 1:1 pixel scale
       castsShadows: definition.castsShadows ?? true,   // Most sprites cast shadows
-      receiveShadows: definition.receiveShadows ?? true, // Most sprites receive shadows
       visible: definition.visible ?? true,             // Visible by default
       useNormalMap: definition.useNormalMap ?? true    // Use normal mapping by default
     };
@@ -302,9 +299,6 @@ export class SceneManager {
     );
   }
 
-  getShadowReceivers(): SceneSprite[] {
-    return this.getAllSprites().filter(sprite => sprite.definition.receiveShadows);
-  }
 
   getBackground(): SceneSprite | undefined {
     return this.getAllSprites().find(sprite => sprite.definition.type === 'background');
