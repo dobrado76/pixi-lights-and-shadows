@@ -82,7 +82,7 @@
       "scale": 1,
       "castsShadows": false,
       "receiveShadows": false,
-      "visible": false,
+      "visible": true,
       "useNormalMap": true
     },
     "block": {
