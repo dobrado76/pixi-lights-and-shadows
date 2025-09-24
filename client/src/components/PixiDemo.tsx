@@ -4,7 +4,7 @@ import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import vertexShaderSource from '../shaders/vertex.glsl?raw';
 import fragmentShaderSource from '../shaders/fragment.glsl?raw';
 import { ShaderParams } from '../App';
-import { Light, ShadowConfig } from '@shared/lights';
+import { Light, ShadowConfig } from '@/lib/lights';
 import { SceneManager, SceneSprite } from './Sprite';
 
 /**

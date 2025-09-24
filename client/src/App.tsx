@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import PixiDemo from './components/PixiDemo';
 import DynamicLightControls from './components/DynamicLightControls';
 import { DynamicSpriteControls } from './components/DynamicSpriteControls';
-import { Light, ShadowConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@shared/lights';
+import { Light, ShadowConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 

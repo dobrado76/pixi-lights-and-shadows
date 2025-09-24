@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Light, MaskConfig, ShadowConfig } from '@shared/lights';
+import { Light, MaskConfig, ShadowConfig } from '@/lib/lights';
 import { Plus, Trash2, Copy, Edit3, ImageIcon, Eye, EyeOff, Moon } from 'lucide-react';
 
 /**
