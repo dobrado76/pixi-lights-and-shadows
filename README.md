@@ -12,11 +12,12 @@ A comprehensive React.js application showcasing advanced pseudo-3D shadow castin
 - **Distance-Based Soft Shadows**: Configurable shadow softness with distance-based edge controls
 - **Multiple Shadow Types**: Point light, spotlight, and directional light shadow casting
 
-### 🔦 Multi-Light Support
-- **Point Lights**: Up to 4 omnidirectional lights with customizable position, color, intensity, and radius
-- **Spotlights**: Up to 4 directional cone lights with adjustable angle, softness, and falloff
-- **Directional Lights**: Up to 2 infinite distant lights (like sunlight) with parallel ray shadow simulation
+### 🔦 Unlimited Multi-Light Support
+- **Point Lights**: Unlimited omnidirectional lights with multi-pass rendering (4 per pass for optimal performance)
+- **Spotlights**: Unlimited directional cone lights with adjustable angle, softness, and falloff (4 per pass)
+- **Directional Lights**: Unlimited infinite distant lights (like sunlight) with parallel ray shadow simulation (2 per pass)
 - **Ambient Lighting**: Global illumination controls with color tinting
+- **Multi-Pass Architecture**: Automatic switching to multi-pass rendering for >8 total enabled lights
 
 ### 🎭 Advanced Mask System
 - **Texture-Based Light Masking**: Apply custom mask textures to any light for complex lighting patterns
@@ -336,6 +337,13 @@ Defines all lighting setup including shadow configuration:
 
 ### Performance Optimization
 
+#### Multi-Pass Light Rendering
+- **Automatic Switching**: Single-pass for ≤8 lights, multi-pass for unlimited lights
+- **Per-Pass Limits**: 4 point lights + 4 spotlights + 2 directional lights per pass
+- **Optimal Batching**: Groups lights efficiently to minimize GPU state changes
+- **Pass Calculation**: `Math.max(pointPasses, spotPasses, dirPasses)` determines total passes
+
+#### General Optimizations
 - **Automatic LOD**: Shadow quality adapts to scene complexity
 - **Efficient Culling**: Disabled lights consume no GPU resources
 - **Smart Updates**: Only re-render when uniforms change
