@@ -88,7 +88,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange }: Dyna
                             {spriteId}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {sprite.type} • x:{Math.round(sprite.position.x)} y:{Math.round(sprite.position.y)}
+                            z:{sprite.zOrder} • x:{Math.round(sprite.position.x)} y:{Math.round(sprite.position.y)}
                           </div>
                         </div>
                       </div>
