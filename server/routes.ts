@@ -9,69 +9,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Load lights configuration from scene file
   app.get('/api/load-lights-config', async (req, res) => {
     try {
-      const configPath = path.join(process.cwd(), 'client', 'public', 'scene.json');
+      // Try multiple possible paths for different deployment environments
+      const possiblePaths = [
+        path.join(process.cwd(), 'client', 'public', 'scene.json'), // Development
+        path.join(process.cwd(), 'dist', 'scene.json'), // Production build
+        path.join(process.cwd(), 'public', 'scene.json'), // Alternative production
+        path.join(process.cwd(), 'scene.json') // Root fallback
+      ];
       
-      // Check if file exists
-      try {
-        await fs.access(configPath);
-      } catch {
-        // File doesn't exist, return default configuration
+      let configPath: string | null = null;
+      let sceneConfig: any = null;
+      
+      // Try each possible path until we find the file
+      for (const testPath of possiblePaths) {
+        try {
+          await fs.access(testPath);
+          configPath = testPath;
+          const configData = await fs.readFile(testPath, 'utf8');
+          sceneConfig = JSON.parse(configData);
+          break;
+        } catch {
+          continue;
+        }
+      }
+      
+      // If no file found, return comprehensive default configuration
+      if (!sceneConfig) {
+        // Comprehensive default configuration with scene data
         const defaultConfig = {
           lights: [
             {
               id: "mouse_light",
               type: "point",
               enabled: true,
-              position: { x: 200, y: 150, z: 0 },
-              direction: { x: 0, y: 0, z: -1 },
+              followMouse: true,
+              position: { x: 200, y: 150, z: 10 },
               color: { r: 1, g: 1, b: 1 },
               intensity: 1,
-              radius: 200
+              radius: 200,
+              castsShadows: false
             },
             {
               id: "directional_light", 
               type: "directional",
               enabled: true,
-              position: { x: 200, y: 150, z: 0 },
-              direction: { x: 1, y: 1, z: -1 },
+              position: { x: 0, y: 0, z: 0 },
+              direction: { x: 0.42261826174069944, y: 0.9063077870366499, z: -1 },
               color: { r: 1, g: 1, b: 1 },
-              intensity: 0.5
+              intensity: 0.3,
+              castsShadows: true
             },
             {
               id: "spotlight_1",
               type: "spotlight", 
-              enabled: true,
+              enabled: false,
               position: { x: 200, y: 150, z: 100 },
               direction: { x: 0, y: 0, z: -1 },
               color: { r: 1, g: 1, b: 1 },
               intensity: 2,
               radius: 150,
               coneAngle: 30,
-              softness: 0.5
+              softness: 0.5,
+              castsShadows: false
             },
             {
-              type: "ambient",
-              brightness: 0.3,
-              color: { r: 0.4, g: 0.4, b: 0.4 }
+              id: "point_light_2",
+              type: "point",
+              enabled: false,
+              position: { x: 400, y: 300, z: 10 },
+              color: { r: 0.2, g: 0.8, b: 1 },
+              intensity: 1.2,
+              radius: 250,
+              castsShadows: false
             }
-          ]
+          ],
+          shadowConfig: {
+            enabled: true,
+            strength: 0.7,
+            maxLength: 200,
+            height: 10
+          }
         };
         return res.json(defaultConfig);
       }
       
-      // Read and return the lights configuration from scene file
-      const configData = await fs.readFile(configPath, 'utf8');
-      const sceneConfig = JSON.parse(configData);
-      
-      // Extract lights and shadowConfig from the scene file
+      // Extract lights and shadowConfig from the loaded scene file
       const config = {
         lights: sceneConfig.lights || [],
         shadowConfig: sceneConfig.shadowConfig || {
           enabled: true,
-          strength: 0.5,
-          maxLength: 300,
-          height: 10,
-          sharpness: 1
+          strength: 0.7,
+          maxLength: 200,
+          height: 10
         }
       };
       
@@ -91,8 +120,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const config = req.body;
       
-      // Path to the scene configuration file
-      const configPath = path.join(process.cwd(), 'client', 'public', 'scene.json');
+      // Path to the scene configuration file (fix for Vercel deployment)
+      const configPath = process.env.NODE_ENV === 'production' 
+        ? path.join(process.cwd(), 'dist', 'scene.json')
+        : path.join(process.cwd(), 'client', 'public', 'scene.json');
       
       // Read the existing scene configuration
       let sceneConfig: any = {};
@@ -124,16 +155,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Load scene configuration from file
   app.get('/api/load-scene-config', async (req, res) => {
     try {
-      const configPath = path.join(process.cwd(), 'client', 'public', 'scene.json');
+      // Try multiple possible paths for different deployment environments
+      const possiblePaths = [
+        path.join(process.cwd(), 'client', 'public', 'scene.json'), // Development
+        path.join(process.cwd(), 'dist', 'scene.json'), // Production build
+        path.join(process.cwd(), 'public', 'scene.json'), // Alternative production
+        path.join(process.cwd(), 'scene.json') // Root fallback
+      ];
       
-      // Check if file exists
-      try {
-        await fs.access(configPath);
-      } catch {
-        // File doesn't exist, return default scene configuration
+      let config: any = null;
+      
+      // Try each possible path until we find the file
+      for (const testPath of possiblePaths) {
+        try {
+          await fs.access(testPath);
+          const configData = await fs.readFile(testPath, 'utf8');
+          config = JSON.parse(configData);
+          break;
+        } catch {
+          continue;
+        }
+      }
+      
+      // If no file found, return comprehensive default scene configuration
+      if (!config) {
         const defaultScene = {
           scene: {
-            background: {
+            background2: {
               type: "background",
               image: "/textures/BGTextureTest.jpg",
               normal: "/textures/BGTextureNORM.jpg",
@@ -143,16 +191,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
               castsShadows: false,
               receiveShadows: true,
               visible: true,
-              useNormalMap: true
+              useNormalMap: true,
+              zIndex: -1
+            },
+            ball: {
+              type: "sprite",
+              image: "/textures/ball.png", 
+              normal: "/textures/ballN.png",
+              position: { x: 120, y: 80 },
+              rotation: 0,
+              scale: 1,
+              castsShadows: true,
+              receiveShadows: true,
+              visible: true,
+              useNormalMap: true,
+              zIndex: 0
+            },
+            block: {
+              type: "sprite",
+              image: "/textures/block.png",
+              normal: "/textures/blockNormalMap.jpg", 
+              position: { x: 280, y: 120 },
+              rotation: 0,
+              scale: 1,
+              castsShadows: true,
+              receiveShadows: true,
+              visible: true,
+              useNormalMap: true,
+              zIndex: 0
+            },
+            block2: {
+              type: "sprite",
+              image: "/textures/block2.png",
+              normal: "/textures/block2NormalMap.png",
+              position: { x: 200, y: 320 },
+              rotation: 0,
+              scale: 1,
+              castsShadows: true,
+              receiveShadows: true,
+              visible: true,
+              useNormalMap: true,
+              zIndex: 0
+            },
+            test2: {
+              type: "sprite", 
+              image: "/textures/test2.png",
+              normal: "/textures/test2Normal.png",
+              position: { x: 84, y: 403 },
+              rotation: 0,
+              scale: 1,
+              castsShadows: true,
+              receiveShadows: true,
+              visible: true,
+              useNormalMap: true,
+              zIndex: 1
             }
           }
         };
         return res.json(defaultScene);
       }
-      
-      // Read and return the saved scene configuration
-      const configData = await fs.readFile(configPath, 'utf8');
-      const config = JSON.parse(configData);
       
       res.json(config);
     } catch (error) {
@@ -169,7 +266,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/save-scene-config', async (req, res) => {
     try {
       const config = req.body;
-      const configPath = path.join(process.cwd(), 'client', 'public', 'scene.json');
+      // Fix path resolution for Vercel deployment
+      const configPath = process.env.NODE_ENV === 'production' 
+        ? path.join(process.cwd(), 'dist', 'scene.json')
+        : path.join(process.cwd(), 'client', 'public', 'scene.json');
       
       // Ensure the directory exists
       const dir = path.dirname(configPath);
