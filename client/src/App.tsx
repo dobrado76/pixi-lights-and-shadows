@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import PixiDemo from './components/PixiDemo';
 import DynamicLightControls from './components/DynamicLightControls';
+import { DynamicSpriteControls } from './components/DynamicSpriteControls';
 import { Light, ShadowConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@shared/lights';
 
 /**
@@ -57,6 +58,10 @@ function App() {
     height: 10,           // Z-height used for shadow volume calculations
     // Shadow sharpness removed - caused visual artifacts
   });
+
+  // Scene configuration state - sprites loaded from scene.json
+  const [sceneConfig, setSceneConfig] = useState<{ scene: Record<string, any> }>({ scene: {} });
+  const [sceneLoaded, setSceneLoaded] = useState<boolean>(false);
   
 
   // Auto-save system with debouncing to prevent excessive writes during UI manipulation
@@ -71,17 +76,46 @@ function App() {
       try {
         const success = await saveLightsConfig(lights, ambient, shadows);
         if (success) {
-          console.log('Configuration auto-saved successfully');
+          console.log('Lights configuration auto-saved successfully');
         } else {
-          console.warn('Failed to auto-save configuration');
+          console.warn('Failed to auto-save lights configuration');
         }
       } catch (error) {
-        console.error('Error auto-saving configuration:', error);
+        console.error('Error auto-saving lights configuration:', error);
       }
     }, 500); // 500ms debounce prevents save spam during slider adjustments
     
     setSaveTimeout(timeout);
   }, [saveTimeout]);
+
+  // Auto-save system for scene configuration
+  const [sceneTimeout, setSceneTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  const debouncedSceneSave = useCallback((sceneData: { scene: Record<string, any> }) => {
+    if (sceneTimeout) {
+      clearTimeout(sceneTimeout);
+    }
+    
+    const timeout = setTimeout(async () => {
+      try {
+        const response = await fetch('/api/save-scene-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sceneData)
+        });
+        
+        if (response.ok) {
+          console.log('Scene configuration auto-saved successfully');
+        } else {
+          console.warn('Failed to auto-save scene configuration');
+        }
+      } catch (error) {
+        console.error('Error auto-saving scene configuration:', error);
+      }
+    }, 500); // 500ms debounce
+    
+    setSceneTimeout(timeout);
+  }, [sceneTimeout]);
 
   // Legacy shader params system - loads from localStorage for backward compatibility
   const getInitialParams = (): ShaderParams => {
@@ -131,16 +165,19 @@ function App() {
   const [shaderStatus, setShaderStatus] = useState('Initializing...');
   const [meshStatus, setMeshStatus] = useState('Initializing...');
 
-  // Bootstrap: Load lighting configuration from external JSON files on app start
+  // Bootstrap: Load lighting and scene configuration from external JSON files on app start
   useEffect(() => {
-    const loadLights = async () => {
+    const loadConfigurations = async () => {
       try {
-        const [lightsResult, ambientLightData] = await Promise.all([
+        const [lightsResult, ambientLightData, sceneResult] = await Promise.all([
           loadLightsConfig(),
-          loadAmbientLight()
+          loadAmbientLight(),
+          fetch('/api/load-scene-config').then(res => res.json())
         ]);
+        
         setLightsConfig(lightsResult.lights);
         setAmbientLight(ambientLightData);
+        setSceneConfig(sceneResult);
         
         // Merge saved shadow config with defaults - maintains backward compatibility
         if (lightsResult.shadowConfig) {
@@ -148,14 +185,16 @@ function App() {
         }
         
         setLightsLoaded(true);
-        console.log('Loaded lights configuration:', lightsResult);
+        setSceneLoaded(true);
+        console.log('Loaded configurations:', { lights: lightsResult, scene: sceneResult });
       } catch (error) {
-        console.error('Failed to load lights configuration:', error);
+        console.error('Failed to load configurations:', error);
         setLightsLoaded(true); // Still set to true to proceed with fallbacks
+        setSceneLoaded(true);
       }
     };
     
-    loadLights();
+    loadConfigurations();
   }, []);
 
   // Auto-save shader params to localStorage whenever they change
@@ -180,6 +219,12 @@ function App() {
     setShadowConfig(newShadowConfig);
     debouncedSave(lightsConfig, ambientLight, newShadowConfig);
   }, [lightsConfig, ambientLight, debouncedSave]);
+
+  // Handler for scene configuration changes
+  const handleSceneConfigChange = useCallback((newSceneConfig: { scene: Record<string, any> }) => {
+    setSceneConfig(newSceneConfig);
+    debouncedSceneSave(newSceneConfig);
+  }, [debouncedSceneSave]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -244,6 +289,14 @@ function App() {
                 onLightsChange={handleLightsChange}
                 onAmbientChange={handleAmbientChange}
                 onShadowConfigChange={handleShadowConfigChange}
+              />
+            )}
+
+            {/* Dynamic Sprite Controls */}
+            {sceneLoaded && (
+              <DynamicSpriteControls
+                sceneConfig={sceneConfig}
+                onSceneConfigChange={handleSceneConfigChange}
               />
             )}
 
