@@ -50,6 +50,58 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
   const [mousePos, setMousePos] = useState({ x: 400, y: 300 }); // Mouse position for followMouse lights
   
+  // Occluder map system for ray casting shadows
+  const occluderRenderTarget = useRef<PIXI.RenderTexture | null>(null);
+  const occluderContainer = useRef<PIXI.Container | null>(null);
+  const occluderSprites = useRef<PIXI.Sprite[]>([]);
+  
+  // Build occluder map from all visible sprites that cast shadows
+  const buildOccluderMap = (app: PIXI.Application, sceneManager: SceneManager): PIXI.RenderTexture | null => {
+    if (!occluderRenderTarget.current || !occluderContainer.current) return null;
+    
+    const shadowCasters = sceneManager.getShadowCasters();
+    
+    // Ensure we have enough pooled sprites
+    while (occluderSprites.current.length < shadowCasters.length) {
+      const sprite = new PIXI.Sprite();
+      occluderSprites.current.push(sprite);
+      occluderContainer.current.addChild(sprite);
+    }
+    
+    // Update existing sprites with current shadow caster data
+    shadowCasters.forEach((caster, index) => {
+      if (!caster.diffuseTexture) return;
+      
+      const occluderSprite = occluderSprites.current[index];
+      
+      // Update texture only if changed
+      if (occluderSprite.texture !== caster.diffuseTexture) {
+        occluderSprite.texture = caster.diffuseTexture;
+      }
+      
+      // Update position and scale to match the scene sprite
+      const bounds = caster.getBounds();
+      occluderSprite.x = bounds.x;
+      occluderSprite.y = bounds.y;
+      occluderSprite.width = bounds.width;
+      occluderSprite.height = bounds.height;
+      occluderSprite.visible = true;
+    });
+    
+    // Hide unused sprites
+    for (let i = shadowCasters.length; i < occluderSprites.current.length; i++) {
+      occluderSprites.current[i].visible = false;
+    }
+    
+    // Render to occluder texture
+    app.renderer.render(occluderContainer.current, { 
+      renderTexture: occluderRenderTarget.current, 
+      clear: true 
+    });
+    
+    return occluderRenderTarget.current;
+  };
+  
   // Deferred rendering G-Buffer render targets
   const gBufferAlbedoRef = useRef<PIXI.RenderTexture | null>(null);     // RGB: Albedo/Diffuse
   const gBufferNormalRef = useRef<PIXI.RenderTexture | null>(null);     // RGB: World-space normals
@@ -259,6 +311,17 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
         shader.uniforms.uPointLightRadii = lightRadii;
         shader.uniforms.uShadowsEnabled = shadowConfig.enabled;
         shader.uniforms.uShadowStrength = shadowConfig.strength;
+        shader.uniforms.uCanvasSize = [800, 600]; // Canvas dimensions
+        shader.uniforms.uShadowMaxLength = 200.0; // Maximum shadow length
+        shader.uniforms.uUseOccluderMap = true; // Always use occluder map in deferred renderer
+        // Create and render occluder map for ray casting shadows
+        if (pixiApp && sceneManager) {
+          // Build occluder map from all visible sprites
+          const occluderMap = buildOccluderMap(pixiApp, sceneManager);
+          if (occluderMap) {
+            shader.uniforms.uOccluderMap = occluderMap;
+          }
+        }
       }
     }
     
@@ -584,59 +647,136 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
             return 1.0;
           }
           
-          float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
+          // Occluder map shadow calculation - raycasts through binary alpha texture
+          float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
             if (!uShadowsEnabled) return 1.0;
             
-            // Temporary simple shadow test - create radial shadow around light position
-            vec2 toPixel = pixelPos - lightPos;
-            float distanceToLight = length(toPixel);
+            vec2 rayDir = pixelPos - lightPos;
+            float rayLength = length(rayDir);
             
-            // Create simple radial shadow - darker near certain areas
-            if (distanceToLight > 100.0 && distanceToLight < 300.0) {
-              float shadowIntensity = sin((distanceToLight - 100.0) / 200.0 * 3.14159) * uShadowStrength;
-              return 1.0 - shadowIntensity * 0.8; // Strong visible shadow
-            }
+            if (rayLength < 0.001) return 1.0;
             
-            return 1.0; // No shadow
-          }
-          
-          float calculateDirectionalShadowUnified(vec2 lightDirection, vec2 pixelPos) {
-            if (!uShadowsEnabled) return 1.0;
+            rayDir /= rayLength; // Normalize
             
-            // Create realistic directional shadows - simulate objects casting parallel shadows
-            vec2 lightDir = normalize(lightDirection);
+            // Raycast through the occluder map with fixed iteration count
+            float stepSize = 2.0; // Pixel steps along the ray
+            float maxDistance = rayLength; // Don't limit by uShadowMaxLength here - limit by shadow length instead
             
-            // Create fake shadow caster objects at fixed positions
-            vec2 shadowCaster1 = vec2(200.0, 150.0); // Position of a virtual shadow caster
-            vec2 shadowCaster2 = vec2(350.0, 300.0); // Another shadow caster
-            
-            // Calculate if current pixel is in shadow from these casters
-            for (int i = 0; i < 2; i++) {
-              vec2 casterPos = (i == 0) ? shadowCaster1 : shadowCaster2;
-              float casterRadius = 40.0; // Size of shadow caster
+            // Use constant loop bounds for WebGL compatibility
+            for (int i = 1; i < 200; i++) {
+              float distance = float(i) * stepSize;
               
-              // Vector from caster to pixel
-              vec2 toPixel = pixelPos - casterPos;
+              // Break early if we've gone past the ray length
+              if (distance >= maxDistance) {
+                break;
+              }
               
-              // Project shadow in light direction
-              vec2 shadowDir = -lightDir; // Shadow goes opposite to light direction
-              float shadowProjection = dot(toPixel, shadowDir);
+              vec2 samplePos = lightPos + rayDir * distance;
               
-              // If pixel is behind the caster (in shadow direction)
-              if (shadowProjection > 0.0 && shadowProjection < 200.0) {
-                // Calculate perpendicular distance from shadow ray
-                vec2 perpDir = vec2(-shadowDir.y, shadowDir.x);
-                float perpDist = abs(dot(toPixel, perpDir));
+              // Convert world position to UV coordinates
+              vec2 occluderUV = samplePos / uCanvasSize;
+              
+              // Check bounds
+              if (occluderUV.x < 0.0 || occluderUV.x > 1.0 || occluderUV.y < 0.0 || occluderUV.y > 1.0) {
+                continue;
+              }
+              
+              // Sample occluder map alpha
+              float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
+              
+              // If we hit an occluder, cast shadow with distance-based softness
+              if (occluderAlpha > 0.0) {
+                float hitDistance = distance; // Distance from light to occluder
+                float shadowLength = rayLength - hitDistance; // Actual shadow length (occluder to receiver)
                 
-                // If within shadow cone
-                if (perpDist < casterRadius + shadowProjection * 0.2) {
-                  float shadowFade = 1.0 - (shadowProjection / 200.0);
-                  return 1.0 - uShadowStrength * shadowFade * 0.8;
+                // Limit shadow by actual shadow length, not distance from light
+                if (shadowLength > uShadowMaxLength) {
+                  return 1.0; // Shadow is longer than max allowed
                 }
+                
+                // Gradual fade-out towards max shadow length to avoid hard cutoffs
+                float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
+                if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
+                
+                // Binary shadow detection - clean and artifact-free
+                float shadowValue = 1.0;
+                
+                // Calculate final shadow strength
+                float shadowRatio = shadowValue;
+                float normalizedDistance = shadowLength / uShadowMaxLength;
+                float distanceFade = exp(-normalizedDistance * 2.0);
+                
+                // shadowValue now contains the soft/sharp shadow information
+                float finalShadowStrength = uShadowStrength * shadowRatio * distanceFade * maxLengthFade;
+                
+                return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
               }
             }
             
-            return 1.0; // No shadow
+            return 1.0; // No occlusion found
+          }
+          
+          // Directional light shadow calculation using occluder map - specialized for parallel rays
+          float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) {
+            if (!uShadowsEnabled) return 1.0;
+            
+            // For directional lights, cast ray backwards from pixel position in light direction
+            // This simulates parallel rays from infinite distance (sun/moon lighting)
+            vec2 rayDir = -normalize(lightDirection); // Ray direction opposite to light direction
+            
+            // Raycast backwards from the pixel position to find occluders
+            float stepSize = 2.0; // Pixel steps along the ray
+            float maxDistance = 500.0; // Reasonable maximum distance for occluder search
+            
+            // Use constant loop bounds for WebGL compatibility
+            for (int i = 1; i < 200; i++) {
+              float distance = float(i) * stepSize;
+              
+              // Break early if we've gone too far
+              if (distance >= maxDistance) {
+                break;
+              }
+              
+              vec2 samplePos = pixelPos + rayDir * distance;
+              
+              // Convert world position to UV coordinates
+              vec2 occluderUV = samplePos / uCanvasSize;
+              
+              // Check bounds
+              if (occluderUV.x < 0.0 || occluderUV.x > 1.0 || occluderUV.y < 0.0 || occluderUV.y > 1.0) {
+                continue;
+              }
+              
+              // Sample occluder map alpha
+              float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
+              
+              // If we hit an occluder, cast shadow with distance-based softness
+              if (occluderAlpha > 0.0) {
+                float shadowLength = distance; // Distance from occluder to receiver (pixel)
+                
+                // Limit shadow by actual shadow length
+                if (shadowLength > uShadowMaxLength) {
+                  return 1.0; // Shadow is longer than max allowed
+                }
+                
+                // Gradual fade-out towards max shadow length to avoid hard cutoffs
+                float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
+                if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
+                
+                // Binary shadow detection - clean and artifact-free
+                float shadowValue = 1.0;
+                
+                // Calculate final shadow strength with distance-based softness
+                float normalizedDistance = shadowLength / uShadowMaxLength;
+                float distanceFade = exp(-normalizedDistance * 2.0);
+                
+                float finalShadowStrength = uShadowStrength * shadowValue * distanceFade * maxLengthFade;
+                
+                return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
+              }
+            }
+            
+            return 1.0; // Not in shadow
           }
           
           void main(void) {
@@ -669,7 +809,7 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
               float attenuation = 1.0 / (1.0 + distance * distance / (lightRadius * lightRadius));
               
               // Add proper shadow calculation for point light
-              float shadowFactor = calculateShadowUnified(lightPos.xy, vWorldPos);
+              float shadowFactor = calculateShadowOccluderMap(lightPos.xy, vWorldPos);
               
               vec3 lightContrib = albedo.rgb * lightColor * diffuse * lightIntensity * attenuation * shadowFactor;
               finalColor += lightContrib;
@@ -694,7 +834,7 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
               float diffuse = max(dot(normal, lightDir), 0.0);
               
               // Add proper directional shadow calculation
-              float dirShadowFactor = calculateDirectionalShadowUnified(uDirLightDirections[i].xy, vWorldPos);
+              float dirShadowFactor = calculateDirectionalShadowOccluderMap(uDirLightDirections[i].xy, vWorldPos);
               
               vec3 lightContrib = albedo.rgb * lightColor * diffuse * lightIntensity * dirShadowFactor;
               finalColor += lightContrib;
@@ -741,7 +881,7 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
               float diffuse = max(dot(normal, L), 0.0);
               
               // Add proper shadow calculation for spotlight
-              float spotShadowFactor = calculateShadowUnified(spotPos.xy, vWorldPos);
+              float spotShadowFactor = calculateShadowOccluderMap(spotPos.xy, vWorldPos);
               
               vec3 lightContrib = albedo.rgb * spotColor * diffuse * spotIntensity * atten * spotFactor * spotShadowFactor;
               finalColor += lightContrib;

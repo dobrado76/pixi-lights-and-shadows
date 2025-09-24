@@ -184,7 +184,7 @@
     {
       "id": "mouse_light",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.5,
       "color": "0xffffff",
       "x": 120,
@@ -208,7 +208,7 @@
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.4,
       "color": "0xf4f080",
       "x": 210,
