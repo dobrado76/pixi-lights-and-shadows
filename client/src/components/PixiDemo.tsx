@@ -1206,6 +1206,11 @@ const PixiDemo = (props: PixiDemoProps) => {
         });
         pixiApp.render();
       }
+      
+      // Force immediate render after updating lighting uniforms
+      if (pixiApp && pixiApp.renderer) {
+        pixiApp.render();
+      }
     }
   }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig]);
 
