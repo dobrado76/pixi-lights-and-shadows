@@ -259,7 +259,7 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
   return 1.0; // Not in shadow
 }
 
-// Occluder map shadow calculation - raycasts through binary alpha texture
+// Occluder map shadow calculation - simplified to match working per-caster approach
 float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
   
@@ -270,22 +270,13 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   
   rayDir /= rayLength; // Normalize
   
-  // Raycast through the occluder map with fixed iteration count
-  float stepSize = 2.0; // Pixel steps along the ray
-  float maxDistance = rayLength; // Don't limit by uShadowMaxLength here - limit by shadow length instead
-  
-  // Use constant loop bounds for WebGL compatibility
-  for (int i = 1; i < 200; i++) {
-    float distance = float(i) * stepSize;
+  // Simple raycast: check a few points along the ray from light to pixel
+  int numSamples = 20;
+  for (int i = 1; i < numSamples; i++) {
+    float t = float(i) / float(numSamples);
+    vec2 samplePos = lightPos + rayDir * (rayLength * t);
     
-    // Break early if we've gone past the ray length
-    if (distance >= maxDistance) {
-      break;
-    }
-    
-    vec2 samplePos = lightPos + rayDir * distance;
-    
-    // Convert world position to UV coordinates
+    // Convert to occluder map UV coordinates
     vec2 occluderUV = samplePos / uCanvasSize;
     
     // Check bounds
@@ -293,36 +284,13 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
       continue;
     }
     
-    // Sample occluder map alpha
+    // Sample occluder map - if we hit something solid, return shadow
     float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
     
-    // If we hit an occluder, cast shadow with distance-based softness
-    if (occluderAlpha > 0.0) {
-      float hitDistance = distance; // Distance from light to occluder
-      float shadowLength = rayLength - hitDistance; // Actual shadow length (occluder to receiver)
-      
-      // Limit shadow by actual shadow length, not distance from light
-      if (shadowLength > uShadowMaxLength) {
-        return 1.0; // Shadow is longer than max allowed
-      }
-      
-      // Gradual fade-out towards max shadow length to avoid hard cutoffs
-      float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
-      if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
-      
-      // Binary shadow detection - clean and artifact-free
-      float shadowValue = 1.0;
-      
-      // Calculate final shadow strength
-      float shadowRatio = shadowValue;
-      float normalizedDistance = shadowLength / uShadowMaxLength;
-      float distanceFade = exp(-normalizedDistance * 2.0);
-      
-      // shadowValue now contains the soft/sharp shadow information
-      float finalShadowStrength = uShadowStrength * shadowRatio * distanceFade * maxLengthFade;
-      
-      // Match the working per-caster approach exactly
-      return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
+    if (occluderAlpha > 0.5) {
+      // Found an occluder - calculate shadow strength similar to per-caster approach
+      float shadowStrength = uShadowStrength * 0.8; // Basic shadow strength
+      return 1.0 - clamp(shadowStrength, 0.0, 1.0);
     }
   }
   
