@@ -8,8 +8,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": false,
-      "receiveShadows": true,
-      "visible": true
+      "receiveShadows": true
     },
     "background2": {
       "type": "background",
@@ -19,8 +18,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": false,
-      "receiveShadows": true,
-      "visible": true
+      "receiveShadows": true
     },
     "ball": {
       "type": "sprite",
@@ -30,8 +28,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true,
-      "visible": true
+      "receiveShadows": true
     },
     "test": {
       "type": "sprite",
@@ -42,7 +39,7 @@
       "scale": 1,
       "castsShadows": true,
       "receiveShadows": true,
-      "visible": true
+      "visible": false 
     },
     "block": {
       "type": "sprite", 
@@ -52,8 +49,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true,
-      "visible": true
+      "receiveShadows": true
     },
     "block2": {
       "type": "sprite", 
@@ -63,8 +59,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true,
-      "visible": true
+      "receiveShadows": true
     }
   }
 }
