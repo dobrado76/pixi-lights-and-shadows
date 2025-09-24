@@ -28,13 +28,14 @@ interface PixiDemoProps {
   lightsConfig: Light[];
   ambientLight: {intensity: number, color: {r: number, g: number, b: number}};
   shadowConfig: ShadowConfig;
+  sceneConfig: { scene: Record<string, any> };
   onGeometryUpdate: (status: string) => void;
   onShaderUpdate: (status: string) => void;
   onMeshUpdate: (status: string) => void;
 }
 
 const PixiDemo = (props: PixiDemoProps) => {
-  const { shaderParams, lightsConfig, ambientLight, shadowConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate } = props;
+  const { shaderParams, lightsConfig, ambientLight, shadowConfig, sceneConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
   const [mousePos, setMousePos] = useState({ x: 200, y: 150 });
@@ -530,7 +531,7 @@ const PixiDemo = (props: PixiDemoProps) => {
 
   // Setup demo content when PIXI app is ready
   useEffect(() => {
-    if (!pixiApp || !pixiApp.stage) {
+    if (!pixiApp || !pixiApp.stage || !sceneConfig.scene || Object.keys(sceneConfig.scene).length === 0 || lightsConfig.length === 0) {
       return;
     }
 
@@ -538,9 +539,8 @@ const PixiDemo = (props: PixiDemoProps) => {
 
     const setupDemo = async () => {
       try {
-        // Load scene configuration from JSON
-        const sceneResponse = await fetch('/scene.json');
-        const sceneData = await sceneResponse.json();
+        // Use scene configuration from props instead of fetching
+        const sceneData = sceneConfig;
         
         // Initialize scene manager
         sceneManagerRef.current = new SceneManager();
@@ -831,7 +831,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         sceneManagerRef.current = null;
       }
     };
-  }, [pixiApp, geometry, onGeometryUpdate, onShaderUpdate, onMeshUpdate]);
+  }, [pixiApp, geometry, sceneConfig, lightsConfig, ambientLight, shadowConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate]);
   
   // Force auto-render when textures finish loading
   useEffect(() => {
