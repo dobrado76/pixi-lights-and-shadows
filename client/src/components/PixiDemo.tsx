@@ -273,6 +273,113 @@ const PixiDemo = (props: PixiDemoProps) => {
     console.log(`🎨 Unified normal buffer rebuilt with ${allSprites.length} sprite normal maps (with transformations)`);
   };
 
+  // Unified lighting system - applies lighting to the unified normal map buffer
+  const renderUnifiedLighting = (lights: Light[]) => {
+    if (!pixiApp || !renderTargetRef.current || !normalBufferRef.current) return;
+    
+    console.log('🌟 Rendering unified lighting system');
+    
+    // Step 1: Rebuild the unified normal map buffer with current sprite positions
+    buildUnifiedNormalBuffer();
+    
+    // Step 2: Create a simple full-screen quad for lighting
+    const geometry = new PIXI.Geometry()
+      .addAttribute('aVertexPosition', [
+        -1, -1,  // Bottom-left
+         1, -1,  // Bottom-right
+         1,  1,  // Top-right
+        -1,  1   // Top-left
+      ], 2)
+      .addAttribute('aTextureCoord', [
+        0, 1,    // Bottom-left UV
+        1, 1,    // Bottom-right UV
+        1, 0,    // Top-right UV
+        0, 0     // Top-left UV
+      ], 2)
+      .addIndex([0, 1, 2, 0, 2, 3]);
+
+    // Step 3: Create unified lighting shader
+    const unifiedShader = PIXI.Shader.from(
+      `
+      attribute vec2 aVertexPosition;
+      attribute vec2 aTextureCoord;
+      varying vec2 vTextureCoord;
+      
+      void main() {
+        vTextureCoord = aTextureCoord;
+        gl_Position = vec4(aVertexPosition, 0.0, 1.0);
+      }
+      `,
+      `
+      precision mediump float;
+      varying vec2 vTextureCoord;
+      uniform sampler2D uNormalBuffer;
+      uniform vec2 uCanvasSize;
+      uniform vec3 uAmbientColor;
+      uniform float uAmbientLight;
+      
+      // Simplified lighting (just mouse light for now)
+      uniform bool uMouseLightEnabled;
+      uniform vec3 uMouseLightPos;
+      uniform vec3 uMouseLightColor;
+      uniform float uMouseLightIntensity;
+      
+      void main() {
+        vec2 screenPos = vTextureCoord * uCanvasSize;
+        vec3 normal = texture2D(uNormalBuffer, vTextureCoord).rgb;
+        
+        // Convert normal from [0,1] to [-1,1] range
+        normal = normal * 2.0 - 1.0;
+        
+        // Base ambient lighting
+        vec3 lighting = uAmbientColor * uAmbientLight;
+        
+        // Mouse light calculation
+        if (uMouseLightEnabled && length(normal) > 0.1) {
+          vec3 lightDir = normalize(uMouseLightPos - vec3(screenPos, 0.0));
+          float lightDist = length(uMouseLightPos.xy - screenPos);
+          float attenuation = 1.0 / (1.0 + lightDist * 0.001);
+          float normalDot = max(0.0, dot(normal, lightDir));
+          
+          lighting += uMouseLightColor * uMouseLightIntensity * normalDot * attenuation;
+        }
+        
+        gl_FragColor = vec4(lighting, 1.0);
+      }
+      `,
+      {
+        uNormalBuffer: normalBufferRef.current,
+        uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
+        uAmbientColor: [0.2, 0.2, 0.3],
+        uAmbientLight: 0.3,
+        uMouseLightEnabled: false,
+        uMouseLightPos: [0, 0, 0],
+        uMouseLightColor: [1, 1, 1],
+        uMouseLightIntensity: 0.8
+      }
+    );
+
+    // Step 4: Update mouse light if enabled
+    const mouseLight = lights.find(light => light.followMouse && light.enabled);
+    if (mouseLight) {
+      unifiedShader.uniforms.uMouseLightEnabled = true;
+      unifiedShader.uniforms.uMouseLightPos = [mousePos.x, mousePos.y, mouseLight.position.z];
+      unifiedShader.uniforms.uMouseLightColor = [mouseLight.color.r, mouseLight.color.g, mouseLight.color.b];
+      unifiedShader.uniforms.uMouseLightIntensity = mouseLight.intensity;
+    }
+
+    // Step 5: Render the unified lighting to screen
+    const mesh = new PIXI.Mesh(geometry, unifiedShader);
+    
+    // Clear the screen and render the lighting
+    pixiApp.renderer.render(mesh, { 
+      renderTexture: renderTargetRef.current, 
+      clear: true 
+    });
+    
+    console.log('🌟 Unified lighting rendered to screen');
+  };
+
   // Multi-pass lighting composer
   const renderMultiPass = (lights: Light[]) => {
     if (!pixiApp || !renderTargetRef.current || !sceneContainerRef.current || !displaySpriteRef.current) return;
@@ -1062,31 +1169,23 @@ const PixiDemo = (props: PixiDemoProps) => {
     };
   }, [pixiApp, meshesRef.current.length])
 
-  // Dynamic shader uniform updates for real-time lighting changes
+  // Unified lighting system - replaces complex per-sprite lighting
   useEffect(() => {
-    console.log('🚨 LIGHTING UPDATE USEEFFECT TRIGGERED!', {
-      shaderCount: shadersRef.current.length,
+    console.log('🌟 UNIFIED LIGHTING UPDATE triggered!', {
       lightsCount: lightsConfig.length,
       timestamp: Date.now()
     });
     
-    if (shadersRef.current.length === 0) return;
+    if (!pixiApp || !normalBufferRef.current || !renderTargetRef.current) return;
     
-    console.log('🔥 LIGHTING UPDATE TRIGGERED - updating shader uniforms in real-time');
+    // Call the unified lighting system instead of complex per-sprite logic
+    renderUnifiedLighting(lightsConfig);
+    
+  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig]);
 
-    // Full light uniforms recreation - individual uniform approach
-    const createLightUniforms = () => {
-      const uniforms: any = {};
-      
-      // Get all lights by type (enabled and disabled - let shader handle via intensity)
-      const allPointLights = lightsConfig.filter(light => light.type === 'point');
-      const allDirectionalLights = lightsConfig.filter(light => light.type === 'directional');
-      const allSpotlights = lightsConfig.filter(light => light.type === 'spotlight');
-      
-      // Initialize all lights as disabled
-      uniforms.uPoint0Enabled = false; uniforms.uPoint1Enabled = false; uniforms.uPoint2Enabled = false; uniforms.uPoint3Enabled = false;
-      uniforms.uDir0Enabled = false; uniforms.uDir1Enabled = false;
-      uniforms.uSpot0Enabled = false; uniforms.uSpot1Enabled = false; uniforms.uSpot2Enabled = false; uniforms.uSpot3Enabled = false;
+  // Animation loop
+  useEffect(() => {
+    if (!pixiApp || !pixiApp.ticker) return;
       
       // Initialize all masks as disabled
       uniforms.uPoint0HasMask = false; uniforms.uPoint1HasMask = false; uniforms.uPoint2HasMask = false; uniforms.uPoint3HasMask = false;

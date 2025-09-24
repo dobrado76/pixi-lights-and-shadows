@@ -15,7 +15,7 @@
       "color": "0xffffff",
       "x": 270,
       "y": 210,
-      "z": 130,
+      "z": 60,
       "followMouse": true,
       "castsShadows": true,
       "radius": 960
