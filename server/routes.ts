@@ -1,15 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
 import { promises as fs } from "fs";
 import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
-
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  // PIXI.js demo API routes - only for loading/saving configuration files
 
   // Load lights configuration from file
   app.get('/api/load-lights-config', async (req, res) => {
