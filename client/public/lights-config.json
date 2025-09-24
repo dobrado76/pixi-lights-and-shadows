@@ -90,7 +90,7 @@
     {
       "id": "point_1758536509084",
       "type": "point",
-      "enabled": true,
+      "enabled": false,
       "brightness": 1,
       "color": "0xe12323",
       "x": 260,
@@ -103,7 +103,7 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 1,
+    "strength": 0.45,
     "maxLength": 330,
     "height": 8,
     "sharpness": 1

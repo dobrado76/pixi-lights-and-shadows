@@ -395,9 +395,6 @@ float calculateDirectionalShadowUnified(vec2 lightDirection, vec2 pixelPos) {
 
 // Unified shadow calculation with auto-switching
 float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
-  // TEMPORARILY DISABLE ALL SHADOWS TO TEST LIGHTING
-  return 1.0;
-  
   if (!uShadowsEnabled) return 1.0;
   
   if (uUseOccluderMap) {
@@ -623,10 +620,12 @@ void main(void) {
     
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
-    // TEMPORARILY DISABLE DIRECTIONAL SHADOWS FOR TESTING
-    if (false && uDir0CastsShadows) {
-      // 🌟 DIRECTIONAL SHADOWS: Auto-switching system with specialized directional shadow support
-      shadowFactor *= calculateDirectionalShadowUnified(uDir0Direction.xy, worldPos.xy);
+    if (uDir0CastsShadows) {
+      // For directional lights: create virtual light position at large distance
+      // This makes shadow rays nearly parallel (simulating sun/moon)
+      float virtualDistance = 5000.0; // Large but not extreme distance
+      vec2 virtualLightPos = worldPos.xy - uDir0Direction.xy * virtualDistance;
+      shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
     }
     
     intensity *= shadowFactor;
@@ -650,10 +649,12 @@ void main(void) {
     
     // Apply shadow calculation for directional light (simulates sun/moon from infinite distance)
     float shadowFactor = 1.0;
-    // TEMPORARILY DISABLE DIRECTIONAL SHADOWS FOR TESTING
-    if (false && uDir1CastsShadows) {
-      // 🌟 DIRECTIONAL SHADOWS: Auto-switching system with specialized directional shadow support
-      shadowFactor *= calculateDirectionalShadowUnified(uDir1Direction.xy, worldPos.xy);
+    if (uDir1CastsShadows) {
+      // For directional lights: create virtual light position at large distance
+      // This makes shadow rays nearly parallel (simulating sun/moon)
+      float virtualDistance = 5000.0; // Large but not extreme distance
+      vec2 virtualLightPos = worldPos.xy - uDir1Direction.xy * virtualDistance;
+      shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
     }
     
     intensity *= shadowFactor;
