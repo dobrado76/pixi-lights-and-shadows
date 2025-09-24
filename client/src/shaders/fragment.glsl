@@ -318,8 +318,7 @@ void main(void) {
   if (uPoint0Enabled) {
     vec3 lightPos3D = uPoint0Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
-    
-    // NO Y-FLIP - removed coordinate system hack that caused asymmetry
+    lightDir3D.y = -lightDir3D.y; // Y-flip for coordinate system consistency
     
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
@@ -361,8 +360,7 @@ void main(void) {
   if (uPoint1Enabled) {
     vec3 lightPos3D = uPoint1Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
-    
-    // NO Y-FLIP - removed coordinate system hack that caused asymmetry
+    lightDir3D.y = -lightDir3D.y; // Y-flip for coordinate system consistency
     
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
@@ -395,8 +393,7 @@ void main(void) {
   if (uPoint2Enabled) {
     vec3 lightPos3D = uPoint2Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
-    
-    // NO Y-FLIP - removed coordinate system hack that caused asymmetry
+    lightDir3D.y = -lightDir3D.y; // Y-flip for coordinate system consistency
     
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
@@ -429,8 +426,7 @@ void main(void) {
   if (uPoint3Enabled) {
     vec3 lightPos3D = uPoint3Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
-    
-    // NO Y-FLIP - removed coordinate system hack that caused asymmetry
+    lightDir3D.y = -lightDir3D.y; // Y-flip for coordinate system consistency
     
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
