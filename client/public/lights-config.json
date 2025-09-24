@@ -24,10 +24,10 @@
       "id": "directional_light",
       "type": "directional",
       "enabled": true,
-      "brightness": 0.2,
+      "brightness": 0.3,
       "color": "0xffffff",
-      "directionX": -0.9063077870366499,
-      "directionY": -0.4226182617406995,
+      "directionX": -0.5735764363510458,
+      "directionY": -0.819152044288992,
       "directionZ": -1,
       "castsShadows": true
     },
