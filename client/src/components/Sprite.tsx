@@ -8,12 +8,12 @@ import * as PIXI from 'pixi.js';
 
 // External sprite configuration format (from scene.json)
 export interface SpriteDefinition {
-  type: 'background' | 'sprite';
   image: string;
   normal?: string;                    // Optional normal map texture
   position?: { x: number; y: number };
   rotation?: number;                  // Radians
   scale?: number;
+  zOrder?: number;                    // Z-order for rendering depth (lower = behind, higher = in front)
   castsShadows?: boolean;             // Participates in shadow casting
   visible?: boolean;                  // Controls sprite visibility without deletion
   useNormalMap?: boolean;             // Whether to use normal mapping for this sprite
@@ -21,12 +21,12 @@ export interface SpriteDefinition {
 
 // Internal interface with defaults applied - all fields guaranteed to exist
 interface CompleteSpriteDefinition {
-  type: 'background' | 'sprite';
   image: string;
   normal: string;                     // Always present (empty string = auto-generate flat normal)
   position: { x: number; y: number };
   rotation: number;
   scale: number;
+  zOrder: number;                     // Z-order for rendering depth
   castsShadows: boolean;
   visible: boolean;
   useNormalMap: boolean;
@@ -56,12 +56,12 @@ export class SceneSprite {
     this.id = id;
     // Normalize sprite definition by applying sensible defaults
     this.definition = {
-      type: definition.type,
       image: definition.image,
       normal: definition.normal || '',                 // Empty = generate flat normal
       position: definition.position || { x: 0, y: 0 }, // Top-left origin
       rotation: definition.rotation || 0,              // No rotation
       scale: definition.scale || 1,                    // 1:1 pixel scale
+      zOrder: definition.zOrder ?? 0,                  // Default z-order (middle layer)
       castsShadows: definition.castsShadows ?? true,   // Most sprites cast shadows
       visible: definition.visible ?? true,             // Visible by default
       useNormalMap: definition.useNormalMap ?? true    // Use normal mapping by default

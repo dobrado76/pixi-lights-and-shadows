@@ -10,12 +10,12 @@ import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 
 interface SpriteConfig {
   id: string;
-  type: 'background' | 'sprite';
   image: string;
   normal?: string;
   position: { x: number; y: number };
   rotation: number;
   scale: number;
+  zOrder: number;
   castsShadows: boolean;
   visible: boolean;
   useNormalMap?: boolean;

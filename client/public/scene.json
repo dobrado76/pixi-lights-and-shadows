@@ -81,7 +81,7 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "visible": false,
+      "visible": true,
       "useNormalMap": true
     },
     "test3": {
@@ -96,7 +96,7 @@
       "scale": 1,
       "castsShadows": true,
       "receiveShadows": false,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true
     },
     "block": {
