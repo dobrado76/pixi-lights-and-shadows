@@ -1,4 +1,4 @@
-# PIXI.js Advanced Shadow Casting System
+# PIXI.js 2.5D Advanced Light and Shadow System
 
 A comprehensive React.js application showcasing advanced pseudo-3D shadow casting using PIXI.js primitives. Features a complete lighting system with unlimited sprite shadow casters, per-light shadow controls, performance optimization, and external JSON configuration management.
 

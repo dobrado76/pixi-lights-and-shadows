@@ -709,10 +709,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       onMeshUpdate?.('PIXI.Mesh created with real textures and normal mapping');
 
       // Load shaders from external files for better syntax highlighting
-      const vertexShaderResponse = await fetch('/src/shaders/vertex.glsl');
+      const vertexShaderResponse = await fetch('/vertex.glsl');
       const vertexShaderSource = await vertexShaderResponse.text();
       
-      const fragmentShaderResponse = await fetch('/src/shaders/fragment.glsl');
+      const fragmentShaderResponse = await fetch('/fragment.glsl');
       const spriteFragmentShader = await fragmentShaderResponse.text();
        
       // Create all scene sprites using scene manager
