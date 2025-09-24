@@ -738,13 +738,17 @@ const PixiDemo = (props: PixiDemoProps) => {
         ...lightUniforms
       };
       
-      // Create meshes only for visible sprites
+      // Create meshes only for visible sprites, sorted by zOrder (back to front)
       const spriteMeshes: PIXI.Mesh[] = [];
-      const allSprites = sceneManagerRef.current!.getAllSprites();
+      const allSprites = sceneManagerRef.current!.getSpritesSortedByZOrder(); // Use z-ordered sprites
       const visibleSprites = allSprites.filter(sprite => sprite.definition.visible);
+      
+      console.log('🎭 Sprites z-order:', visibleSprites.map(s => `${s.id}(z:${s.definition.zOrder})`));
       
       for (const sprite of visibleSprites) {
         const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
+        // Set PIXI zIndex based on sprite's zOrder for proper layering
+        mesh.zIndex = sprite.definition.zOrder;
         spriteMeshes.push(mesh);
       }
 
@@ -795,10 +799,13 @@ const PixiDemo = (props: PixiDemoProps) => {
       shadersRef.current = spriteMeshes.map(mesh => mesh.shader!);
       shadowCastersRef.current = legacyShadowCasters;
 
-      // Add all sprite meshes to stage (already filtered to visible sprites)
+      // Add all sprite meshes to stage (already filtered to visible sprites and z-ordered)
       spriteMeshes.forEach(mesh => {
         sceneContainerRef.current!.addChild(mesh);
       });
+      
+      // Enable depth sorting in PIXI for proper z-ordering
+      sceneContainerRef.current!.sortableChildren = true;
 
       // Apply shadow texture uniforms to all sprite shaders (already done above)
       console.log('All sprite shaders created with shadow texture uniforms');
@@ -879,6 +886,8 @@ const PixiDemo = (props: PixiDemoProps) => {
             };
             
             const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
+            // Set PIXI zIndex based on sprite's zOrder for proper layering
+            mesh.zIndex = sprite.definition.zOrder;
             pixiApp.stage.addChild(mesh);
             meshesRef.current.push(mesh);
             shadersRef.current.push(mesh.shader as PIXI.Shader);
