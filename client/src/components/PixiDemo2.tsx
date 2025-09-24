@@ -3,6 +3,8 @@ import * as PIXI from 'pixi.js';
 import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import vertexShaderSource from '../shaders/vertex.glsl?raw';
 import fragmentShaderSource from '../shaders/fragment2.glsl?raw';
+import geometryPassShaderSource from '../shaders/geometry-pass.glsl?raw';
+import lightingPassShaderSource from '../shaders/lighting-pass.glsl?raw';
 import { ShaderParams } from '../App';
 import { Light, ShadowConfig } from '@/lib/lights';
 import { SceneManager, SceneSprite } from './Sprite';
@@ -63,9 +65,13 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
   // Scene management
   const sceneManagerRef = useRef<SceneManager | null>(null);
   
+  // Shader collections for deferred rendering
+  const geometryPassShadersRef = useRef<PIXI.Shader[]>([]);
+  const lightingPassShaderRef = useRef<PIXI.Shader | null>(null);
+  
   // Sprite collections for deferred rendering
-  const geometrySpritesRef = useRef<PIXI.Sprite[]>([]);
-  const lightingSpritesRef = useRef<PIXI.Sprite[]>([]);
+  const geometrySpritesRef = useRef<PIXI.Mesh[]>([]);
+  const lightingQuadRef = useRef<PIXI.Mesh | null>(null);
   
   const geometry = useCustomGeometry(shaderParams.canvasWidth, shaderParams.canvasHeight);
 
@@ -123,7 +129,7 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
   };
 
   /**
-   * GEOMETRY PASS: Render all sprites to G-Buffer
+   * GEOMETRY PASS: Render all sprites to G-Buffer using dedicated geometry shader
    * Outputs: Albedo, World-space normals, World positions
    */
   const renderGeometryPass = () => {
@@ -144,40 +150,64 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
       clear: true 
     });
     
-    // Render geometry data for all sprites
+    // Render geometry data for all sprites using G-Buffer shaders
     const sprites = sceneManagerRef.current?.getSprites() || [];
     
     sprites.forEach((sprite: SceneSprite, index: number) => {
-      // Create G-Buffer sprite for this scene sprite (if not exists)
+      // Create G-Buffer mesh for this scene sprite (if not exists)
       if (!geometrySpritesRef.current[index]) {
-        const gBufferSprite = new PIXI.Sprite(sprite.diffuseTexture || PIXI.Texture.WHITE);
-        geometrySpritesRef.current[index] = gBufferSprite;
-        geometryPassContainerRef.current!.addChild(gBufferSprite);
+        const quad = geometry; // Use the custom geometry
+        
+        // Create geometry pass shader
+        const geometryShader = new PIXI.Shader(
+          PIXI.Program.from(vertexShaderSource, geometryPassShaderSource),
+          {
+            uDiffuse: sprite.diffuseTexture || PIXI.Texture.WHITE,
+            uNormal: sprite.normalTexture || PIXI.Texture.WHITE,
+            uSpritePos: [0, 0],
+            uSpriteSize: [100, 100],
+            uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
+            uRotation: 0
+          }
+        );
+        
+        const gBufferMesh = new PIXI.Mesh(quad, geometryShader as any);
+        geometrySpritesRef.current[index] = gBufferMesh;
+        geometryPassContainerRef.current!.addChild(gBufferMesh);
+        geometryPassShadersRef.current[index] = geometryShader;
       }
       
-      const gSprite = geometrySpritesRef.current[index];
+      const gMesh = geometrySpritesRef.current[index];
+      const gShader = geometryPassShadersRef.current[index];
       
-      // Update sprite properties
+      // Update mesh properties and uniforms
       const bounds = sprite.getBounds();
-      gSprite.x = bounds.x;
-      gSprite.y = bounds.y;
-      gSprite.width = bounds.width;
-      gSprite.height = bounds.height;
-      gSprite.texture = sprite.diffuseTexture || PIXI.Texture.WHITE;
+      gMesh.x = bounds.x;
+      gMesh.y = bounds.y;
+      gMesh.width = bounds.width;
+      gMesh.height = bounds.height;
+      
+      // Update shader uniforms for G-Buffer output
+      if (gShader.uniforms) {
+        gShader.uniforms.uDiffuse = sprite.diffuseTexture || PIXI.Texture.WHITE;
+        gShader.uniforms.uNormal = sprite.normalTexture || PIXI.Texture.WHITE;
+        gShader.uniforms.uSpritePos = [bounds.x, bounds.y];
+        gShader.uniforms.uSpriteSize = [bounds.width, bounds.height];
+        gShader.uniforms.uRotation = sprite.rotation || 0;
+      }
     });
     
-    // TODO: Create geometry pass shaders that output to different G-Buffer targets
-    // For now, just render basic albedo
+    // Render to albedo buffer (main G-Buffer output)
     pixiApp.renderer.render(geometryPassContainerRef.current, { 
       renderTexture: gBufferAlbedoRef.current, 
       clear: false 
     });
     
-    console.log('📐 Geometry pass rendered to G-Buffer');
+    console.log('📐 Geometry pass rendered to G-Buffer with proper shaders');
   };
 
   /**
-   * LIGHTING PASS: Apply all lights using screen-space techniques
+   * LIGHTING PASS: Apply all lights using screen-space techniques with dedicated lighting shader
    * Inputs: G-Buffer data (albedo, normals, positions)
    * Output: Accumulated lighting
    */
@@ -190,29 +220,85 @@ const PixiDemo2 = (props: PixiDemo2Props) => {
       clear: true 
     });
     
-    // Create fullscreen quad for lighting calculations
-    const fullscreenQuad = new PIXI.Sprite(PIXI.Texture.WHITE);
-    fullscreenQuad.width = shaderParams.canvasWidth;
-    fullscreenQuad.height = shaderParams.canvasHeight;
-    fullscreenQuad.x = 0;
-    fullscreenQuad.y = 0;
+    // Create or update fullscreen lighting quad
+    if (!lightingQuadRef.current) {
+      // Prepare light data for screen-space lighting
+      const enabledLights = lightsConfig.filter(light => light.enabled && light.type === 'point');
+      const lightPositions = enabledLights.map(light => [
+        light.followMouse ? mousePos.x : light.position.x,
+        light.followMouse ? mousePos.y : light.position.y,
+        light.position.z || 10
+      ]).flat();
+      const lightColors = enabledLights.map(light => [light.color.r, light.color.g, light.color.b]).flat();
+      const lightIntensities = enabledLights.map(light => light.intensity);
+      const lightRadii = enabledLights.map(light => light.radius || 200);
+      
+      // Create lighting pass shader
+      const lightingShader = new PIXI.Shader(
+        PIXI.Program.from(vertexShaderSource, lightingPassShaderSource),
+        {
+          uGBufferAlbedo: gBufferAlbedoRef.current,
+          uGBufferNormal: gBufferNormalRef.current,
+          uGBufferPosition: gBufferPositionRef.current,
+          uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
+          uAmbientLight: ambientLight.intensity,
+          uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
+          uNumPointLights: enabledLights.length,
+          uPointLightPositions: lightPositions,
+          uPointLightColors: lightColors,
+          uPointLightIntensities: lightIntensities,
+          uPointLightRadii: lightRadii,
+          uShadowsEnabled: shadowConfig.enabled,
+          uShadowStrength: shadowConfig.strength,
+          uShadowMap: gBufferAlbedoRef.current // Use albedo as shadow map for now
+        }
+      );
+      
+      const fullscreenQuad = new PIXI.Mesh(geometry, lightingShader as any);
+      fullscreenQuad.width = shaderParams.canvasWidth;
+      fullscreenQuad.height = shaderParams.canvasHeight;
+      fullscreenQuad.x = 0;
+      fullscreenQuad.y = 0;
+      
+      lightingQuadRef.current = fullscreenQuad;
+      lightingPassShaderRef.current = lightingShader;
+      lightingPassContainerRef.current.addChild(fullscreenQuad);
+    } else {
+      // Update existing lighting shader uniforms
+      const enabledLights = lightsConfig.filter(light => light.enabled && light.type === 'point');
+      const lightPositions = enabledLights.map(light => [
+        light.followMouse ? mousePos.x : light.position.x,
+        light.followMouse ? mousePos.y : light.position.y,
+        light.position.z || 10
+      ]).flat();
+      const lightColors = enabledLights.map(light => [light.color.r, light.color.g, light.color.b]).flat();
+      const lightIntensities = enabledLights.map(light => light.intensity);
+      const lightRadii = enabledLights.map(light => light.radius || 200);
+      
+      if (lightingPassShaderRef.current?.uniforms) {
+        const shader = lightingPassShaderRef.current;
+        shader.uniforms.uGBufferAlbedo = gBufferAlbedoRef.current;
+        shader.uniforms.uGBufferNormal = gBufferNormalRef.current;
+        shader.uniforms.uGBufferPosition = gBufferPositionRef.current;
+        shader.uniforms.uAmbientLight = ambientLight.intensity;
+        shader.uniforms.uAmbientColor = [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b];
+        shader.uniforms.uNumPointLights = enabledLights.length;
+        shader.uniforms.uPointLightPositions = lightPositions;
+        shader.uniforms.uPointLightColors = lightColors;
+        shader.uniforms.uPointLightIntensities = lightIntensities;
+        shader.uniforms.uPointLightRadii = lightRadii;
+        shader.uniforms.uShadowsEnabled = shadowConfig.enabled;
+        shader.uniforms.uShadowStrength = shadowConfig.strength;
+      }
+    }
     
-    // TODO: Create lighting shader that reads from G-Buffer and applies all lights
-    // This shader will:
-    // 1. Sample G-Buffer textures (albedo, normal, position)
-    // 2. Calculate lighting for all lights in screen space
-    // 3. Apply shadows using unified shadow mapping
-    // 4. Output final lit color
-    
-    lightingPassContainerRef.current.removeChildren();
-    lightingPassContainerRef.current.addChild(fullscreenQuad);
-    
+    // Render lighting pass to accumulation buffer
     pixiApp.renderer.render(lightingPassContainerRef.current, { 
       renderTexture: lightAccumulationRef.current, 
       clear: false 
     });
     
-    console.log('💡 Lighting pass completed');
+    console.log('💡 Lighting pass completed with screen-space calculations');
   };
 
   /**
