@@ -157,6 +157,10 @@ const PixiDemo = (props: PixiDemoProps) => {
   const displaySpriteRef = useRef<PIXI.Sprite | null>(null);
   const LIGHTS_PER_PASS = 8; // 4 point + 4 spot lights per pass
   
+  // Unified normal map buffer system (regenerated every frame)
+  const normalBufferRef = useRef<PIXI.RenderTexture | null>(null);
+  const normalContainerRef = useRef<PIXI.Container | null>(null);
+  
   const geometry = useCustomGeometry(shaderParams.canvasWidth, shaderParams.canvasHeight);
 
   // Occluder map builder for unlimited shadow casters - optimized to reuse sprites
@@ -445,6 +449,14 @@ const PixiDemo = (props: PixiDemoProps) => {
           width: shaderParams.canvasWidth, 
           height: shaderParams.canvasHeight 
         });
+        
+        // Initialize unified normal map buffer (regenerated every frame)
+        normalBufferRef.current = PIXI.RenderTexture.create({ 
+          width: shaderParams.canvasWidth, 
+          height: shaderParams.canvasHeight 
+        });
+        normalContainerRef.current = new PIXI.Container();
+        console.log('🎨 Unified normal map buffer initialized');
         
         sceneContainerRef.current = new PIXI.Container();
         
