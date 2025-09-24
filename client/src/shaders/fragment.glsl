@@ -494,6 +494,12 @@ void main(void) {
     
     intensity *= shadowFactor;
     
+    // DEBUG: Visualize shadow factor as color (remove this after debugging)
+    if (uPoint0CastsShadows && uPoint0Enabled) {
+      gl_FragColor = vec4(shadowFactor, shadowFactor, shadowFactor, diffuseColor.a);
+      return;
+    }
+    
     finalColor += diffuseColor.rgb * uPoint0Color * intensity;
   }
   
