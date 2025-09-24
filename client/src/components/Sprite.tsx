@@ -17,6 +17,7 @@ export interface SpriteDefinition {
   castsShadows?: boolean;             // Participates in shadow casting
   receiveShadows?: boolean;           // Receives shadows from other sprites
   visible?: boolean;                  // Controls sprite visibility without deletion
+  useNormalMap?: boolean;             // Whether to use normal mapping for this sprite
 }
 
 // Internal interface with defaults applied - all fields guaranteed to exist
@@ -30,6 +31,7 @@ interface CompleteSpriteDefinition {
   castsShadows: boolean;
   receiveShadows: boolean;
   visible: boolean;
+  useNormalMap: boolean;
 }
 
 export interface SpriteTransform {
@@ -63,7 +65,8 @@ export class SceneSprite {
       scale: definition.scale || 1,                    // 1:1 pixel scale
       castsShadows: definition.castsShadows ?? true,   // Most sprites cast shadows
       receiveShadows: definition.receiveShadows ?? true, // Most sprites receive shadows
-      visible: definition.visible ?? true              // Visible by default
+      visible: definition.visible ?? true,             // Visible by default
+      useNormalMap: definition.useNormalMap ?? true    // Use normal mapping by default
     };
   }
 

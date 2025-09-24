@@ -8,17 +8,21 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": false,
-      "receiveShadows": true
+      "receiveShadows": true,
+      "visible": true,
+      "useNormalMap": true
     },
     "background2": {
       "type": "background",
       "image": "/textures/white-fabric-texture-background.jpg",
-      "normal-": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
+      "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
       "position": {"x": 0, "y": 0},
       "rotation": 0,
       "scale": 1,
       "castsShadows": false,
-      "receiveShadows": true
+      "receiveShadows": true,
+      "visible": true,
+      "useNormalMap": true
     },
     "ball": {
       "type": "sprite",
@@ -28,7 +32,9 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true
+      "receiveShadows": true,
+      "visible": true,
+      "useNormalMap": true
     },
     "test": {
       "type": "sprite",
@@ -39,7 +45,8 @@
       "scale": 1,
       "castsShadows": true,
       "receiveShadows": true,
-      "visible": false 
+      "visible": false,
+      "useNormalMap": true
     },
     "block": {
       "type": "sprite", 
@@ -49,7 +56,9 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true
+      "receiveShadows": true,
+      "visible": true,
+      "useNormalMap": true
     },
     "block2": {
       "type": "sprite", 
@@ -59,7 +68,9 @@
       "rotation": 0,
       "scale": 1,
       "castsShadows": true,
-      "receiveShadows": true
+      "receiveShadows": true,
+      "visible": true,
+      "useNormalMap": true
     }
   }
 }
