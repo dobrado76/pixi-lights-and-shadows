@@ -545,6 +545,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         sceneManagerRef.current = new SceneManager();
         await sceneManagerRef.current.loadScene(sceneData);
         
+        // Set PIXI container reference for direct updates
+        sceneManagerRef.current.setPixiContainer(sceneContainerRef.current);
+        
 
         // Helper function to convert external lights config to shader uniforms
         const createLightUniforms = () => {
@@ -846,9 +849,11 @@ const PixiDemo = (props: PixiDemoProps) => {
   useEffect(() => {
     if (!sceneManagerRef.current || !sceneConfig.scene || !pixiApp) return;
     
+    console.log('🔄 Scene config changed, updating sprites...', Date.now());
+    
     // Update individual sprite properties without rebuilding entire scene
     try {
-      sceneManagerRef.current.updateFromConfig(sceneConfig);
+      sceneManagerRef.current.updateFromConfig(sceneConfig, sceneContainerRef.current);
       
       // Handle sprites that need mesh creation (were invisible, now visible)
       const spritesNeedingMeshes = sceneManagerRef.current.getAllSprites().filter(sprite => sprite.needsMeshCreation);
@@ -902,6 +907,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         console.log('🎭 PIXI container re-sorted after sprite updates');
       }
       
+      console.log('✅ Sprite update complete');
+      
       // Update shadow casters immediately when sprite visibility changes
       if (shadersRef.current.length > 0) {
         const shadowCasters = sceneManagerRef.current.getShadowCasters();
@@ -930,7 +937,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     } catch (error) {
       console.log('Sprite update failed, may need scene rebuild:', error);
     }
-  }, [sceneConfig, pixiApp]);
+  }, [sceneConfig, pixiApp, JSON.stringify(sceneConfig.scene)]);
   
   // Simple render trigger when textures finish loading
   useEffect(() => {

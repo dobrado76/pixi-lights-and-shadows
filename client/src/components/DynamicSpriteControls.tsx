@@ -28,9 +28,10 @@ interface SceneConfig {
 interface DynamicSpriteControlsProps {
   sceneConfig: SceneConfig;
   onSceneConfigChange: (newConfig: SceneConfig) => void;
+  onZOrderChange?: (spriteId: string, oldZOrder: number, newZOrder: number) => void;
 }
 
-export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange }: DynamicSpriteControlsProps) {
+export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrderChange }: DynamicSpriteControlsProps) {
   const [expandedSprites, setExpandedSprites] = useState<Set<string>>(new Set(['background', 'ball']));
 
   const toggleExpanded = (spriteId: string) => {
@@ -54,7 +55,22 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange }: Dyna
         }
       }
     };
-    onSceneConfigChange(newConfig);
+    
+    // Special handling for zOrder changes - bypass React state updates
+    if (updates.zOrder !== undefined) {
+      const oldZOrder = sceneConfig.scene[spriteId]?.zOrder ?? 0;
+      console.log(`🎮 UI: zOrder changed for ${spriteId}: ${oldZOrder} → ${updates.zOrder}`);
+      
+      // Call direct callback for immediate update
+      if (onZOrderChange) {
+        onZOrderChange(spriteId, oldZOrder, updates.zOrder);
+      }
+      
+      // Also update the React state
+      onSceneConfigChange(newConfig);
+    } else {
+      onSceneConfigChange(newConfig);
+    }
   };
 
   const sprites = Object.entries(sceneConfig.scene || {});

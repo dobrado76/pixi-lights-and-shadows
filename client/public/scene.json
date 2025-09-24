@@ -75,11 +75,11 @@
       "normal": "/textures/test2Normal.png",
       "position": {
         "x": 80,
-        "y": 420
+        "y": 403
       },
       "rotation": 0,
       "scale": 1,
-      "zOrder": 2,
+      "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true

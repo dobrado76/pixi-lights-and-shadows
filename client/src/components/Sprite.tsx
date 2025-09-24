@@ -221,14 +221,17 @@ export class SceneSprite {
       this.definition.scale = transform.scale;
     }
 
-    // Recreate geometry and update shader uniforms if mesh exists
+    // CRITICAL: Recreate geometry and update shader uniforms if mesh exists
     if (this.mesh && this.shader) {
       const bounds = this.getBounds();
       this.shader.uniforms.uSpritePos = [bounds.x, bounds.y];
       this.shader.uniforms.uSpriteSize = [bounds.width, bounds.height];
       
-      // Recreate geometry with new transform
-      this.createGeometry();
+      // CRITICAL: Recreate geometry with new transform and apply to mesh
+      const newGeometry = this.createGeometry();
+      this.mesh.geometry = newGeometry;
+      
+      console.log(`🔄 Updated transform for ${this.id}: pos(${bounds.x},${bounds.y}) scale(${this.definition.scale}) rot(${this.definition.rotation})`);
     }
   }
 
@@ -268,6 +271,7 @@ export class SceneSprite {
  */
 export class SceneManager {
   private sprites: Map<string, SceneSprite> = new Map();
+  private pixiContainer: any = null;
   
   /**
    * Loads complete scene from JSON configuration.
@@ -293,11 +297,19 @@ export class SceneManager {
     return Array.from(this.sprites.values());
   }
 
+  // Set the PIXI container reference for direct updates
+  setPixiContainer(container: any): void {
+    this.pixiContainer = container;
+    console.log('🎭 SceneManager: PIXI container reference set');
+  }
+
   /**
    * Update existing sprites from new configuration without full rebuild
    */
-  updateFromConfig(sceneData: any): void {
+  updateFromConfig(sceneData: any, pixiContainer?: any): void {
     if (!sceneData.scene) return;
+    
+    let zOrderChanged = false;
     
     // Update each sprite that exists in both old and new configs
     for (const [key, newSpriteData] of Object.entries(sceneData.scene)) {
@@ -306,6 +318,7 @@ export class SceneManager {
         // Update the sprite's definition
         const newDef = newSpriteData as SpriteDefinition;
         const wasVisible = existingSprite.definition.visible;
+        const oldZOrder = existingSprite.definition.zOrder;
         existingSprite.definition = { ...existingSprite.definition, ...newDef };
         
         // Handle visibility changes that require mesh creation/destruction
@@ -315,6 +328,12 @@ export class SceneManager {
           // Sprite was invisible and now visible but has no mesh - flag for recreation
           existingSprite.needsMeshCreation = true;
         } else if (existingSprite.mesh) {
+          // Check what properties changed
+          const posChanged = JSON.stringify(newDef.position) !== JSON.stringify(existingSprite.definition.position);
+          const rotChanged = newDef.rotation !== existingSprite.definition.rotation;
+          const scaleChanged = newDef.scale !== existingSprite.definition.scale;
+          const normalMapChanged = newDef.useNormalMap !== existingSprite.definition.useNormalMap;
+          
           // Update existing mesh
           existingSprite.updateTransform({
             position: newDef.position,
@@ -322,16 +341,46 @@ export class SceneManager {
             scale: newDef.scale
           });
           
+          // Handle normal map changes by recreating textures
+          if (normalMapChanged) {
+            console.log(`🎨 Normal map changed for ${existingSprite.id}: ${existingSprite.definition.useNormalMap} → ${newDef.useNormalMap}`);
+            // Recreate normal texture based on new setting
+            if (newDef.useNormalMap && newDef.normal && newDef.normal !== '') {
+              existingSprite.normalTexture = PIXI.Texture.from(newDef.normal);
+            } else {
+              existingSprite.normalTexture = existingSprite.createFlatNormalTexture();
+            }
+            // Update shader uniform
+            if (existingSprite.shader) {
+              existingSprite.shader.uniforms.uNormalMap = existingSprite.normalTexture;
+            }
+          }
+          
           // Update zIndex for z-ordering (this triggers PIXI to re-sort children)
           if (newDef.zOrder !== undefined && existingSprite.mesh.zIndex !== newDef.zOrder) {
             existingSprite.mesh.zIndex = newDef.zOrder;
-            console.log(`🎭 Updated zIndex for ${existingSprite.id}: ${newDef.zOrder}`);
+            zOrderChanged = true;
+            console.log(`🎭 Updated zIndex for ${existingSprite.id}: ${oldZOrder} → ${newDef.zOrder}`);
           }
           
           // Update visibility
           existingSprite.mesh.visible = isNowVisible;
+          
+          // Log all the changes
+          if (posChanged || rotChanged || scaleChanged || normalMapChanged) {
+            console.log(`🔄 Real-time update for ${existingSprite.id}: pos(${posChanged}) rot(${rotChanged}) scale(${scaleChanged}) normal(${normalMapChanged})`);
+          }
         }
       }
+    }
+    
+    // Force immediate re-sort if zOrder changed
+    const containerToUse = pixiContainer || this.pixiContainer;
+    if (zOrderChanged && containerToUse) {
+      containerToUse.sortChildren();
+      console.log('🎭 IMMEDIATE: PIXI container re-sorted after zOrder change!');
+    } else if (zOrderChanged) {
+      console.log('⚠️ zOrder changed but no PIXI container available for sorting!');
     }
   }
 
