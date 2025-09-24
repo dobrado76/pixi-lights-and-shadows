@@ -30,11 +30,6 @@ interface CompleteSpriteDefinition {
   castsShadows: boolean;
   visible: boolean;
   useNormalMap: boolean;
-  pivot?: {
-    preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'offset';
-    offsetX?: number;
-    offsetY?: number;
-  };
 }
 
 export interface SpriteTransform {
@@ -132,41 +127,11 @@ export class SceneSprite {
       { x: 0, y: height }       // Bottom-left
     ];
 
-    // Calculate pivot point based on definition (pivot-aware rotation)
-    const pivot = this.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
-    let pivotX = 0, pivotY = 0;
-    
-    switch (pivot.preset) {
-      case 'top-left': pivotX = 0; pivotY = 0; break;
-      case 'top-center': pivotX = width / 2; pivotY = 0; break;
-      case 'top-right': pivotX = width; pivotY = 0; break;
-      case 'middle-left': pivotX = 0; pivotY = height / 2; break;
-      case 'middle-center': pivotX = width / 2; pivotY = height / 2; break;
-      case 'middle-right': pivotX = width; pivotY = height / 2; break;
-      case 'bottom-left': pivotX = 0; pivotY = height; break;
-      case 'bottom-center': pivotX = width / 2; pivotY = height; break;
-      case 'bottom-right': pivotX = width; pivotY = height; break;
-      case 'offset': 
-        pivotX = width / 2 + (pivot.offsetX || 0);
-        pivotY = height / 2 + (pivot.offsetY || 0);
-        break;
-    }
-    
-    // Apply rotation matrix and translation around pivot point
-    const transformedCorners = corners.map(corner => {
-      // Offset from pivot
-      const offsetX = corner.x - pivotX;
-      const offsetY = corner.y - pivotY;
-      
-      // Rotate around pivot
-      const rotatedX = offsetX * cos - offsetY * sin;
-      const rotatedY = offsetX * sin + offsetY * cos;
-      
-      return {
-        x: x + pivotX + rotatedX,
-        y: y + pivotY + rotatedY
-      };
-    });
+    // Apply rotation matrix and translation to each corner
+    const transformedCorners = corners.map(corner => ({
+      x: x + corner.x * cos - corner.y * sin,
+      y: y + corner.x * sin + corner.y * cos
+    }));
 
     // Vertices (x, y for each corner)
     const vertices = new Float32Array([
@@ -383,7 +348,7 @@ export class SceneManager {
             if (newDef.useNormalMap && newDef.normal && newDef.normal !== '') {
               existingSprite.normalTexture = PIXI.Texture.from(newDef.normal);
             } else {
-              existingSprite.normalTexture = existingSprite['createFlatNormalTexture']();
+              existingSprite.normalTexture = existingSprite.createFlatNormalTexture();
             }
             // Update shader uniform
             if (existingSprite.shader) {

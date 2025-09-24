@@ -46,20 +46,15 @@
       "image": "/textures/ball.png",
       "normal": "/textures/ballN.png",
       "position": {
-        "x": 204,
-        "y": 226
+        "x": 50,
+        "y": 280
       },
-      "rotation": 0.9948376736367678,
-      "scale": 0.9,
+      "rotation": 0,
+      "scale": 1,
       "zOrder": 0,
       "castsShadows": true,
       "visible": true,
-      "useNormalMap": true,
-      "pivot": {
-        "preset": "middle-center",
-        "offsetX": 0,
-        "offsetY": 0
-      }
+      "useNormalMap": true
     },
     "test1": {
       "image": "/textures/test1.png",
@@ -71,33 +66,23 @@
       "rotation": 0,
       "scale": 1,
       "zOrder": 0,
-      "castsShadows": false,
-      "visible": true,
-      "useNormalMap": true,
-      "pivot": {
-        "preset": "middle-center",
-        "offsetX": 0,
-        "offsetY": 0
-      }
+      "castsShadows": true,
+      "visible": false,
+      "useNormalMap": true
     },
     "test2": {
       "image": "/textures/test2.png",
       "normal": "/textures/test2Normal.png",
       "position": {
-        "x": 95,
+        "x": 80,
         "y": 403
       },
       "rotation": 0,
-      "scale": 0.9,
-      "zOrder": 1,
+      "scale": 1,
+      "zOrder": 0,
       "castsShadows": true,
       "visible": true,
-      "useNormalMap": true,
-      "pivot": {
-        "offsetX": 0,
-        "offsetY": 0,
-        "preset": "middle-center"
-      }
+      "useNormalMap": true
     },
     "test3": {
       "image": "/textures/test3.png",
@@ -111,13 +96,8 @@
       "zOrder": 0,
       "castsShadows": true,
       "receiveShadows": false,
-      "visible": false,
-      "useNormalMap": true,
-      "pivot": {
-        "preset": "middle-center",
-        "offsetX": 0,
-        "offsetY": 0
-      }
+      "visible": true,
+      "useNormalMap": true
     },
     "block": {
       "image": "/textures/block.png",
