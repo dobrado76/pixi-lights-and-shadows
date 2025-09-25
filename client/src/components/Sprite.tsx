@@ -316,7 +316,17 @@ export class SceneSprite {
 export class SceneManager {
   private sprites: Map<string, SceneSprite> = new Map();
   private pixiContainer: any = null;
+  private canvasWidth: number = 800; // Default fallback
+  private canvasHeight: number = 600; // Default fallback
   
+  /**
+   * Set canvas dimensions for shadow buffer calculations
+   */
+  setCanvasDimensions(width: number, height: number): void {
+    this.canvasWidth = width;
+    this.canvasHeight = height;
+  }
+
   /**
    * Loads complete scene from JSON configuration.
    * Instantiates all sprites and loads their textures asynchronously.
@@ -429,9 +439,32 @@ export class SceneManager {
   }
 
   // Filter sprites by shadow participation flags and sort by zOrder
+  // Includes off-screen sprites that can cast shadows into visible area (expanded shadow buffer)
   getShadowCasters(): SceneSprite[] {
+    const SHADOW_BUFFER = 512; // Must match PixiDemo.tsx constant
+    
     return this.getAllSprites()
-      .filter(sprite => sprite.definition.castsShadows && sprite.definition.visible)
+      .filter(sprite => {
+        if (!sprite.definition.castsShadows) return false;
+        
+        // Always include visible sprites
+        if (sprite.definition.visible) return true;
+        
+        // For off-screen sprites, check if they're within shadow buffer range
+        const bounds = sprite.getBounds();
+        const spriteRight = bounds.x + bounds.width;
+        const spriteBottom = bounds.y + bounds.height;
+        
+        // Check if sprite is within expanded area (canvas + buffer on all sides)
+        const withinExpandedArea = (
+          spriteRight >= -SHADOW_BUFFER && // Sprite extends into left buffer
+          bounds.x <= this.canvasWidth + SHADOW_BUFFER && // Sprite extends into right buffer  
+          spriteBottom >= -SHADOW_BUFFER && // Sprite extends into top buffer
+          bounds.y <= this.canvasHeight + SHADOW_BUFFER // Sprite extends into bottom buffer
+        );
+        
+        return withinExpandedArea;
+      })
       .sort((a, b) => a.definition.zOrder - b.definition.zOrder);
   }
 

@@ -73,6 +73,7 @@ uniform float uShadowMaxLength; // Maximum shadow length to prevent extremely lo
 
 // Occluder Map System (for unlimited shadow casters)
 uniform bool uUseOccluderMap; // Switch between per-caster and occluder map
+uniform vec2 uOccluderMapOffset; // Offset for expanded occlusion map (buffer zone)
 uniform sampler2D uOccluderMap; // Binary alpha map of all shadow casters
 
 // Function to sample mask with transforms
@@ -232,8 +233,9 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
       continue;
     }
     
-    // Sample occluder map alpha
-    float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
+    // Sample occluder map alpha (adjust UV for expanded map offset)
+    vec2 adjustedUV = occluderUV + (uOccluderMapOffset / uCanvasSize);
+    float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     
     // If we hit an occluder, cast shadow with distance-based softness
     if (occluderAlpha > 0.0) {
@@ -331,8 +333,9 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
       continue;
     }
     
-    // Sample occluder map - if we hit an occluder, we're in shadow
-    float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
+    // Sample occluder map - if we hit an occluder, we're in shadow (adjust UV for expanded map offset)
+    vec2 adjustedUV = occluderUV + (uOccluderMapOffset / uCanvasSize);
+    float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     if (occluderAlpha > 0.5) {
       return 1.0 - uShadowStrength; // Apply shadow strength: 0=no shadow, 1=full shadow
     }

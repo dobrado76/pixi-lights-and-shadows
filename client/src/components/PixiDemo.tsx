@@ -158,6 +158,9 @@ const PixiDemo = (props: PixiDemoProps) => {
   const displaySpriteRef = useRef<PIXI.Sprite | null>(null);
   const LIGHTS_PER_PASS = 8; // 4 point + 4 spot lights per pass
   
+  // Buffer zone for off-screen shadow casting (sprites/lights outside frame can affect visible area)
+  const SHADOW_BUFFER = 512; // Pixels to extend occlusion map beyond canvas borders
+  
   const geometry = useCustomGeometry(shaderParams.canvasWidth, shaderParams.canvasHeight);
 
   // Occluder map builder for unlimited shadow casters - optimized to reuse sprites
@@ -185,9 +188,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
       
       // Update position and scale to match the scene sprite
+      // Offset coordinates to account for expanded occlusion map buffer
       const bounds = caster.getBounds();
-      occluderSprite.x = bounds.x;
-      occluderSprite.y = bounds.y;
+      occluderSprite.x = bounds.x + SHADOW_BUFFER;
+      occluderSprite.y = bounds.y + SHADOW_BUFFER;
       occluderSprite.width = bounds.width;
       occluderSprite.height = bounds.height;
       occluderSprite.visible = true;
@@ -450,9 +454,10 @@ const PixiDemo = (props: PixiDemoProps) => {
         console.log('🎯 Multi-pass render targets initialized');
       
       // Initialize occluder render target for unlimited shadow casters
+      // Extended size to include off-screen sprites that can cast shadows into visible area
       occluderRenderTargetRef.current = PIXI.RenderTexture.create({ 
-        width: shaderParams.canvasWidth, 
-        height: shaderParams.canvasHeight 
+        width: shaderParams.canvasWidth + (SHADOW_BUFFER * 2), 
+        height: shaderParams.canvasHeight + (SHADOW_BUFFER * 2) 
       });
       occluderContainerRef.current = new PIXI.Container();
       console.log('🌑 Occluder render target initialized for unlimited shadow casters');
@@ -538,6 +543,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Initialize scene manager
         sceneManagerRef.current = new SceneManager();
+        sceneManagerRef.current.setCanvasDimensions(shaderParams.canvasWidth, shaderParams.canvasHeight);
         await sceneManagerRef.current.loadScene(sceneData);
         
         // Set PIXI container reference for direct updates
@@ -825,6 +831,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uShadowCaster2Enabled: shadowCasters.length > 2,
         // Switch to unlimited mode when more than 3 shadow casters
         uUseOccluderMap: shadowCasters.length > 3,
+        uOccluderMapOffset: [SHADOW_BUFFER, SHADOW_BUFFER], // Offset for expanded occlusion map
         ...lightUniforms
       };
       
@@ -1032,6 +1039,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             // Enable unlimited shadow mode when more than 3 casters
             shader.uniforms.uUseOccluderMap = shadowCasters.length > 3;
+            shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
             if (shadowCasters.length > 3) {
               shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
             }
@@ -1112,6 +1120,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Occluder map uniforms for unlimited shadow casters (switch when >3 casters)
       uniforms.uUseOccluderMap = shadowCasters.length > 3;
+      uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
       uniforms.uOccluderMap = occluderRenderTargetRef.current || null;
       
       // Texture uniforms will be set after textures are loaded
@@ -1290,6 +1299,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         shadersRef.current.forEach(shader => {
           if (shader.uniforms) {
             shader.uniforms.uUseOccluderMap = true;
+            shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
             shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
           }
         });
@@ -1299,6 +1309,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         shadersRef.current.forEach(shader => {
           if (shader.uniforms) {
             shader.uniforms.uUseOccluderMap = false;
+            shader.uniforms.uOccluderMapOffset = [0, 0]; // No offset when not using occlusion map
             shader.uniforms.uOccluderMap = PIXI.Texture.EMPTY;
           }
         });
@@ -1361,6 +1372,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           shadersRef.current.forEach(shader => {
             if (shader.uniforms) {
               shader.uniforms.uUseOccluderMap = true;
+              shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
               shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
               
               // Only enable directional shadows if there are actually enabled directional lights
