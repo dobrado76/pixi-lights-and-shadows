@@ -31,7 +31,7 @@
       "zOrder": -2,
       "castsShadows": false,
       "visible": true,
-      "useNormalMap": true,
+      "useNormalMap": false,
       "pivot": {
         "preset": "middle-center",
         "offsetX": 0,
@@ -42,8 +42,8 @@
       "image": "/textures/ball.png",
       "normal": "/textures/ballN.png",
       "position": {
-        "x": 120,
-        "y": 80
+        "x": 0,
+        "y": 0
       },
       "rotation": 0,
       "scale": 1,
