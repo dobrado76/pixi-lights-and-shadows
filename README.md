@@ -16,11 +16,14 @@ Experience the full lighting and shadow system in action with interactive contro
 
 ### 🌑 Advanced Shadow Casting System
 - **Unlimited Shadow Casters**: Auto-switching architecture supports any number of sprite shadow casters
+- **Off-Screen Shadow Casting**: Sprites outside the visible frame can cast shadows into the visible area
+- **Expanded Canvas System**: 512px buffer zones eliminate shadow artifacts when sprites move out of view
 - **Per-Light Shadow Control**: Individual shadow casting flags for each light source
 - **Per-Sprite Shadow Participation**: Granular control over which sprites cast and receive shadows
 - **Performance Optimized**: Automatic switching between per-caster uniforms (≤4 casters) and occluder map approach (unlimited)
 - **Distance-Based Soft Shadows**: Configurable shadow softness with distance-based edge controls
 - **Multiple Shadow Types**: Point light, spotlight, and directional light shadow casting
+- **Realistic Shadow Behavior**: Shadows maintain consistent size and shape regardless of sprite visibility
 
 ### 🔦 Unlimited Multi-Light Support
 - **Point Lights**: Unlimited omnidirectional lights with multi-pass rendering (4 per pass for optimal performance)
@@ -279,6 +282,8 @@ Defines all lighting setup including shadow configuration:
 
 ### Shadow Casting Pipeline
 - **Multi-Pass Rendering**: Separate shadow calculation passes for complex scenes
+- **Expanded Occlusion Map System**: Canvas treated as "camera window" into larger rendered scene
+- **Off-Screen Shadow Integration**: 512px buffer zones capture off-screen sprites for realistic shadow casting
 - **Occluder Map Architecture**: Automatic switching for unlimited shadow casters
 - **Unified Shadow Calculation**: Single shader function handles all light types
 - **Distance-Based Softening**: Realistic shadow edge behavior
@@ -332,18 +337,31 @@ Defines all lighting setup including shadow configuration:
 
 #### Occluder Map (Unlimited shadow casters)
 - Render-to-texture approach for complex scenes
+- **Expanded Canvas System**: Renders sprites in 1824×1624 occlusion map for 800×600 canvas
+- **Off-Screen Shadow Casting**: Sprites outside visible area (within 512px buffer) cast shadows into frame
 - Supports unlimited number of shadow casters
 - Higher GPU memory usage but better scalability
-- Advanced shader sampling techniques
+- Advanced shader sampling techniques with extended UV bounds
 
 ### Shadow Calculation Process
 
-1. **Caster Detection**: Identify sprites with `castsShadows: true`
+1. **Caster Detection**: Identify sprites with `castsShadows: true` (includes off-screen sprites within buffer)
 2. **Architecture Selection**: Choose optimal rendering approach
-3. **Shadow Ray Casting**: Calculate shadow rays from light to fragment
-4. **Occlusion Testing**: Test intersection with shadow casting geometry
-5. **Distance Calculation**: Compute shadow factor based on occlusion
-6. **Final Compositing**: Blend shadows with lighting calculations
+3. **Expanded Map Rendering**: Render full sprites to enlarged occlusion map (canvas + 512px buffer zones)
+4. **Shadow Ray Casting**: Calculate shadow rays from light to fragment with extended bounds
+5. **Occlusion Testing**: Test intersection with shadow casting geometry using coordinate offset mapping
+6. **Distance Calculation**: Compute shadow factor based on occlusion
+7. **Final Compositing**: Blend shadows with lighting calculations
+
+### Off-Screen Shadow Casting
+
+The expanded shadow system treats the visible canvas as a "camera window" looking into a larger rendered scene:
+
+- **Buffer Zones**: 512px padding around all canvas edges captures off-screen sprites
+- **Consistent Shadows**: Sprites maintain full shadow size when moving out of view
+- **Realistic Behavior**: Eliminates shadow shrinking artifacts common in traditional systems
+- **Extended Sampling**: Shader can sample shadow data from expanded coordinate space
+- **Performance Efficient**: Only processes sprites within the extended buffer area
 
 ### Performance Optimization
 
@@ -381,6 +399,9 @@ uniform bool uShadowsEnabled;      // Global shadow toggle
 uniform float uShadowStrength;     // Shadow opacity
 uniform float uShadowHeight;       // Sprite height for projection
 uniform float uShadowMaxLength;    // Maximum shadow distance
+uniform bool uUseOccluderMap;      // Switch to expanded occlusion map mode
+uniform vec2 uOccluderMapOffset;   // Buffer offset for off-screen shadow casting
+uniform sampler2D uOccluderMap;    // Expanded occlusion map texture
 
 // Per-light uniforms (example for point light 0)
 uniform bool uPoint0Enabled;       // Light active state
