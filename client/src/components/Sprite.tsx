@@ -213,6 +213,9 @@ export class SceneSprite {
       uSpritePos: [x, y],
       uSpriteSize: [width, height],
       uRotation: this.definition.rotation, // Pass rotation to fragment shader
+      // Self-shadow avoidance bounds for occluder map
+      uReceiverMin: [x, y],
+      uReceiverMax: [x + width, y + height],
       ...uniforms
     };
 
@@ -262,6 +265,9 @@ export class SceneSprite {
       const bounds = this.getBounds();
       this.shader.uniforms.uSpritePos = [bounds.x, bounds.y];
       this.shader.uniforms.uSpriteSize = [bounds.width, bounds.height];
+      // Update self-shadow avoidance bounds
+      this.shader.uniforms.uReceiverMin = [bounds.x, bounds.y];
+      this.shader.uniforms.uReceiverMax = [bounds.x + bounds.width, bounds.y + bounds.height];
       
       // CRITICAL: Recreate geometry with new transform and apply to mesh
       const newGeometry = this.createGeometry();

@@ -5,6 +5,9 @@ uniform sampler2D uDiffuse;
 uniform sampler2D uNormal;
 uniform vec2 uSpritePos;
 uniform vec2 uSpriteSize;
+// Self-shadow avoidance for occluder map
+uniform vec2 uReceiverMin; // AABB min bounds of current sprite
+uniform vec2 uReceiverMax; // AABB max bounds of current sprite
 uniform vec2 uCanvasSize;
 uniform vec3 uColor;
 uniform float uAmbientLight;
@@ -260,7 +263,7 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
   return 1.0; // Not in shadow
 }
 
-// Occluder map shadow calculation - simple ray marching from light to pixel
+// Occluder map shadow calculation - with proper self-shadow avoidance
 float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
   
@@ -271,19 +274,37 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   
   rayDir /= rayLength; // Normalize
   
-  // Simple ray marching - check for ANY occlusion between light and pixel
-  float stepSize = 1.0; // Sample every pixel
-  int maxSteps = int(rayLength / stepSize);
+  // Calculate self-interval: where ray intersects current sprite's AABB
+  vec2 invDir = vec2(
+    abs(rayDir.x) > 0.0001 ? 1.0 / rayDir.x : 1000000.0,
+    abs(rayDir.y) > 0.0001 ? 1.0 / rayDir.y : 1000000.0
+  );
   
-  // SELF-SHADOW AVOIDANCE: Skip the last few steps to avoid hitting the receiving pixel itself
-  int avoidanceSteps = 3; // Skip last 3 pixels to avoid self-occlusion
-  int actualMaxSteps = maxSteps - avoidanceSteps;
-  if (actualMaxSteps < 1) actualMaxSteps = 1; // Ensure minimum of 1 step
+  vec2 t1 = (uReceiverMin - lightPos) * invDir;
+  vec2 t2 = (uReceiverMax - lightPos) * invDir;
+  
+  vec2 tNear = min(t1, t2);
+  vec2 tFar = max(t1, t2);
+  
+  float tEnterSelf = max(max(tNear.x, tNear.y), 0.0);
+  float tExitSelf = min(min(tFar.x, tFar.y), rayLength);
+  
+  // Ray marching with self-shadow avoidance
+  float stepSize = 1.0; // Sample every pixel
+  float eps = 1.5; // Small epsilon for edge cases
   
   for (int i = 1; i < 500; i++) {
-    if (i >= actualMaxSteps) break; // Stop before reaching the receiving pixel
+    float distance = float(i) * stepSize;
     
-    vec2 samplePos = lightPos + rayDir * (float(i) * stepSize);
+    // Stop when we reach the pixel
+    if (distance >= rayLength - eps) break;
+    
+    // Skip samples within self-interval (avoid self-occlusion)
+    if (distance > tEnterSelf - eps && distance < tExitSelf + eps) {
+      continue;
+    }
+    
+    vec2 samplePos = lightPos + rayDir * distance;
     vec2 occluderUV = samplePos / uCanvasSize;
     
     // Skip out of bounds samples
