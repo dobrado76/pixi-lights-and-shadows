@@ -410,8 +410,8 @@ void main(void) {
   vec4 diffuseColor = texture2D(uDiffuse, uv);
   vec3 normal = texture2D(uNormal, uv).rgb * 2.0 - 1.0;
   
-  // Calculate world position
-  vec2 worldPos = uSpritePos + uv * uSpriteSize;
+  // DEBUG: Force world position to center of screen for testing
+  vec2 worldPos = vec2(400.0, 300.0); // Force to screen center 
   vec3 worldPos3D = vec3(worldPos.x, worldPos.y, 0.0);
   
   // Debug: Log world position for first point light (if enabled)
@@ -442,12 +442,27 @@ void main(void) {
   
   // Point Light 0
   if (uPoint0Enabled) {
+    // DEBUG: Test if point light uniforms are being received correctly
+    // If uPoint0Position is (0,0,0), then uniforms aren't being set properly
+    if (length(uPoint0Position) < 1.0) {
+      // Point light position is essentially zero - uniforms not set
+      finalColor = vec3(1.0, 0.0, 0.0); // Red = no point light uniforms
+      return;
+    }
+    
     vec3 lightPos3D = uPoint0Position;
     vec3 lightDir3D = lightPos3D - worldPos3D;
     lightDir3D.y = -lightDir3D.y; // Y-flip for coordinate system consistency
     
     float lightDistance = length(lightDir3D);
     vec3 lightDir = normalize(lightDir3D);
+    
+    // DEBUG: Check if distance calculation is reasonable
+    // For a point light with radius 530, distances should be well within range
+    if (lightDistance > 1000.0) {
+      // Distance is too large - likely coordinate issue
+      lightDistance = 100.0; // Force reasonable distance for debugging
+    }
     
     // Restore quadratic attenuation
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
