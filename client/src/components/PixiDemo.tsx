@@ -165,20 +165,26 @@ const PixiDemo = (props: PixiDemoProps) => {
   const geometry = useCustomGeometry(shaderParams.canvasWidth, shaderParams.canvasHeight);
 
   // Occluder map builder with zOrder hierarchy support
-  const buildOccluderMap = () => {
+  // Builds occluder map containing only shadow casters that should affect the given sprite  
+  const buildOccluderMapForSprite = (currentSpriteZOrder: number) => {
     if (!pixiApp || !occluderRenderTargetRef.current || !occluderContainerRef.current) return;
     
-    const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
+    const allShadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
+    
+    // Filter shadow casters based on zOrder hierarchy - only include casters at same level or above
+    const relevantShadowCasters = allShadowCasters.filter(caster => 
+      caster.definition.zOrder >= currentSpriteZOrder
+    );
     
     // Ensure we have enough pooled sprites
-    while (occluderSpritesRef.current.length < shadowCasters.length) {
+    while (occluderSpritesRef.current.length < allShadowCasters.length) {
       const sprite = new PIXI.Sprite();
       occluderSpritesRef.current.push(sprite);
       occluderContainerRef.current.addChild(sprite);
     }
     
-    // Update existing sprites with current shadow caster data
-    shadowCasters.forEach((caster, index) => {
+    // Update sprites with relevant shadow caster data
+    relevantShadowCasters.forEach((caster, index) => {
       if (!caster.diffuseTexture) return;
       
       const occluderSprite = occluderSpritesRef.current[index];
@@ -189,7 +195,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
       
       // Update position and scale to match the scene sprite
-      // Use FULL sprite dimensions, not just visible bounds, to avoid shadow artifacts
       const spritePos = caster.definition.position;
       const spriteScale = caster.definition.scale || 1;
       const textureWidth = caster.diffuseTexture.width;
@@ -201,16 +206,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       occluderSprite.width = textureWidth * spriteScale;
       occluderSprite.height = textureHeight * spriteScale;
       occluderSprite.visible = true;
-      
-      // ZORDER ENCODING: Encode zOrder in red channel for hierarchy filtering
-      // Normalize zOrder to 0-1 range (assuming zOrder range -10 to +20)
-      const normalizedZOrder = Math.max(0, Math.min(1, (caster.definition.zOrder + 10) / 30));
-      occluderSprite.tint = (Math.floor(normalizedZOrder * 255) << 16) | 0x00FF00; // Red=zOrder, Green=255 (opaque), Blue=0
-      
+      occluderSprite.tint = 0xFFFFFF; // White tint (no color modification)
     });
     
-    // Hide unused sprites
-    for (let i = shadowCasters.length; i < occluderSpritesRef.current.length; i++) {
+    // Hide unused sprites (all sprites beyond relevant casters)
+    for (let i = relevantShadowCasters.length; i < occluderSpritesRef.current.length; i++) {
       occluderSpritesRef.current[i].visible = false;
     }
     
@@ -219,6 +219,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       renderTexture: occluderRenderTargetRef.current, 
       clear: true 
     });
+  };
+  
+  // Legacy buildOccluderMap function for backwards compatibility (all shadow casters)
+  const buildOccluderMap = () => {
+    buildOccluderMapForSprite(-999); // Use very low zOrder to include all shadow casters
   };
 
   // Multi-pass lighting composer

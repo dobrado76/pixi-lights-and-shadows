@@ -343,19 +343,11 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
       continue;
     }
     
-    // Sample occluder map with zOrder hierarchy filtering
+    // Sample occluder map - if we hit an occluder, we're in shadow (adjust UV for expanded map offset)
     vec2 adjustedUV = (occluderUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
-    vec4 occluderPixel = texture2D(uOccluderMap, adjustedUV);
-    float occluderAlpha = occluderPixel.a;
-    
+    float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     if (occluderAlpha > 0.5) {
-      // Extract zOrder from red channel (encoded as 0-1 range, decode back to -10 to +20)
-      float occluderZOrder = occluderPixel.r * 30.0 - 10.0;
-      
-      // Only apply shadow if the occluder is at same zOrder level or above (higher zOrder)
-      if (occluderZOrder >= uCurrentSpriteZOrder) {
-        return 1.0 - uShadowStrength; // Apply shadow strength: 0=no shadow, 1=full shadow
-      }
+      return 1.0 - uShadowStrength; // Apply shadow strength: 0=no shadow, 1=full shadow
     }
   }
   
