@@ -184,7 +184,7 @@
     {
       "id": "mouse_light",
       "type": "point",
-      "enabled": true,
+      "enabled": false,
       "brightness": 1,
       "color": "0xffffff",
       "x": 250,
@@ -197,11 +197,11 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": false,
-      "brightness": 0.5,
+      "enabled": true,
+      "brightness": 0.6,
       "color": "0xffffff",
-      "directionX": 6.123233995736766e-17,
-      "directionY": -1,
+      "directionX": -1,
+      "directionY": -1.2246467991473532e-16,
       "directionZ": -1,
       "castsShadows": true
     },
