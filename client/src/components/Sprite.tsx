@@ -361,7 +361,26 @@ export class SceneManager {
         const newDef = newSpriteData as SpriteDefinition;
         const wasVisible = existingSprite.definition.visible;
         const oldZOrder = existingSprite.definition.zOrder;
-        existingSprite.definition = { ...existingSprite.definition, ...newDef };
+        
+        // GUARD: Don't override immediate zOrder changes from userData
+        const hasImmediateZOrder = existingSprite.mesh && (existingSprite.mesh as any).userData?.__immediateZOrder !== undefined;
+        const hasImmediateNormalMap = existingSprite.shader && (existingSprite.shader as any).userData?.__immediateNormalMap !== undefined;
+        
+        let finalDef = { ...existingSprite.definition, ...newDef };
+        
+        // Preserve immediate zOrder changes
+        if (hasImmediateZOrder) {
+          finalDef.zOrder = (existingSprite.mesh as any).userData.__immediateZOrder;
+          console.log(`🛡️ Preserving immediate zOrder for ${existingSprite.id}: ${finalDef.zOrder}`);
+        }
+        
+        // Preserve immediate Normal Map changes  
+        if (hasImmediateNormalMap) {
+          finalDef.useNormalMap = (existingSprite.shader as any).userData.__immediateNormalMap;
+          console.log(`🛡️ Preserving immediate normal map for ${existingSprite.id}: ${finalDef.useNormalMap}`);
+        }
+        
+        existingSprite.definition = finalDef;
         
         // Handle visibility changes that require mesh creation/destruction
         const isNowVisible = newDef.visible ?? true;
@@ -384,11 +403,19 @@ export class SceneManager {
           });
           
           // Handle normal map changes by recreating textures
-          if (normalMapChanged) {
-            console.log(`🎨 Normal map changed for ${existingSprite.id}: ${existingSprite.definition.useNormalMap} → ${newDef.useNormalMap}`);
+          // GUARD: Check if immediate Normal Map change should be applied instead
+          const actualNormalMapChanged = hasImmediateNormalMap ? 
+            (existingSprite.shader as any).userData.__immediateNormalMap !== existingSprite.definition.useNormalMap :
+            normalMapChanged;
+          
+          if (actualNormalMapChanged) {
+            const finalUseNormalMap = hasImmediateNormalMap ? (existingSprite.shader as any).userData.__immediateNormalMap : finalDef.useNormalMap;
+            const changeType = hasImmediateNormalMap ? "🛡️ IMMEDIATE" : "🎨 NORMAL";
+            console.log(`${changeType} Normal map changed for ${existingSprite.id}: ${existingSprite.definition.useNormalMap} → ${finalUseNormalMap}`);
+            
             // Recreate normal texture based on new setting
-            if (newDef.useNormalMap && newDef.normal && newDef.normal !== '') {
-              existingSprite.normalTexture = PIXI.Texture.from(newDef.normal);
+            if (finalUseNormalMap && finalDef.normal && finalDef.normal !== '') {
+              existingSprite.normalTexture = PIXI.Texture.from(finalDef.normal);
             } else {
               existingSprite.normalTexture = existingSprite['createFlatNormalTexture']();
             }
@@ -399,10 +426,13 @@ export class SceneManager {
           }
           
           // Update zIndex for z-ordering (this triggers PIXI to re-sort children)
-          if (newDef.zOrder !== undefined && existingSprite.mesh.zIndex !== newDef.zOrder) {
-            existingSprite.mesh.zIndex = newDef.zOrder;
+          // GUARD: Don't override immediate zOrder changes
+          const finalZOrder = hasImmediateZOrder ? (existingSprite.mesh as any).userData.__immediateZOrder : finalDef.zOrder;
+          if (finalZOrder !== undefined && existingSprite.mesh.zIndex !== finalZOrder) {
+            existingSprite.mesh.zIndex = finalZOrder;
             zOrderChanged = true;
-            console.log(`🎭 Updated zIndex for ${existingSprite.id}: ${oldZOrder} → ${newDef.zOrder}`);
+            const changeType = hasImmediateZOrder ? "🛡️ IMMEDIATE" : "🎭 NORMAL";
+            console.log(`${changeType} Updated zIndex for ${existingSprite.id}: ${oldZOrder} → ${finalZOrder}`);
           }
           
           // Update visibility
