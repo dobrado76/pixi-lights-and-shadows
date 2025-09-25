@@ -198,10 +198,10 @@
       "id": "directional_light",
       "type": "directional",
       "enabled": true,
-      "brightness": 0.2,
+      "brightness": 0.5,
       "color": "0xffffff",
-      "directionX": -0.08715574274765824,
-      "directionY": 0.9961946980917455,
+      "directionX": -0.5735764363510458,
+      "directionY": -0.819152044288992,
       "directionZ": -1,
       "castsShadows": true
     },
@@ -242,7 +242,7 @@
     {
       "id": "point_copy_1758529441818",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.5,
       "color": "0xffffff",
       "x": 130,
