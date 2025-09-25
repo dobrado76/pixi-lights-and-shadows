@@ -387,7 +387,7 @@ float calculateDirectionalShadowUnified(vec2 lightDirection, vec2 pixelPos) {
   } else {
     // Use fast per-caster uniform approach (≤3 casters) with virtual light position
     float infiniteDistance = 10000.0; // Very large distance
-    vec2 virtualLightPos = pixelPos + lightDirection * infiniteDistance;
+    vec2 virtualLightPos = pixelPos - lightDirection * infiniteDistance;
     
     float shadowFactor = 1.0;
     
