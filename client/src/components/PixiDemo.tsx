@@ -21,6 +21,7 @@ interface ShadowCaster {
   width: number;
   height: number;
   castsShadows: boolean;
+  zOrder: number; // Z-order for shadow hierarchy - sprites only receive shadows from same/higher zOrder
 }
 
 interface PixiDemoProps {
@@ -845,6 +846,10 @@ const PixiDemo = (props: PixiDemoProps) => {
         uShadowCaster0Enabled: shadowCasters.length > 0,
         uShadowCaster1Enabled: shadowCasters.length > 1,
         uShadowCaster2Enabled: shadowCasters.length > 2,
+        // Add zOrder uniforms for shadow hierarchy
+        uShadowCaster0ZOrder: shadowCasters[0] ? shadowCasters[0].definition.zOrder : 0,
+        uShadowCaster1ZOrder: shadowCasters[1] ? shadowCasters[1].definition.zOrder : 0,
+        uShadowCaster2ZOrder: shadowCasters[2] ? shadowCasters[2].definition.zOrder : 0,
         // Switch to unlimited mode when more than 3 shadow casters
         uUseOccluderMap: shadowCasters.length > 3,
         uOccluderMapOffset: [SHADOW_BUFFER, SHADOW_BUFFER], // Offset for expanded occlusion map
@@ -856,7 +861,12 @@ const PixiDemo = (props: PixiDemoProps) => {
       const allSprites = sceneManagerRef.current!.getSpritesSortedByZOrder(); // Use z-ordered sprites
       
       for (const sprite of allSprites) {
-        const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
+        // Create sprite-specific uniforms including zOrder for shadow hierarchy
+        const spriteUniforms = {
+          ...commonUniforms,
+          uCurrentSpriteZOrder: sprite.definition.zOrder // Add current sprite's zOrder for shadow comparison
+        };
+        const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, spriteUniforms);
         // Set PIXI zIndex based on sprite's zOrder for proper layering
         mesh.zIndex = sprite.definition.zOrder;
         // Control visibility through PIXI, not by excluding from creation
@@ -879,7 +889,8 @@ const PixiDemo = (props: PixiDemoProps) => {
           y: bounds.y,
           width: bounds.width,
           height: bounds.height,
-          castsShadows: sprite.definition.castsShadows
+          castsShadows: sprite.definition.castsShadows,
+          zOrder: sprite.definition.zOrder // Add zOrder for shadow hierarchy
         };
       });
 
@@ -1132,6 +1143,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
       uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
       uniforms.uShadowCaster2Enabled = shadowCasters.length > 2;
+      // Add zOrder uniforms for shadow hierarchy
+      uniforms.uShadowCaster0ZOrder = shadowCasters[0] ? shadowCasters[0].definition.zOrder : 0;
+      uniforms.uShadowCaster1ZOrder = shadowCasters[1] ? shadowCasters[1].definition.zOrder : 0;
+      uniforms.uShadowCaster2ZOrder = shadowCasters[2] ? shadowCasters[2].definition.zOrder : 0;
       
       
       // Occluder map uniforms for unlimited shadow casters (switch when >3 casters)

@@ -56,19 +56,23 @@ uniform bool uSpot3HasMask; uniform sampler2D uSpot3Mask; uniform vec2 uSpot3Mas
 // Spotlight Shadow Casting Flags
 uniform bool uSpot0CastsShadows; uniform bool uSpot1CastsShadows; uniform bool uSpot2CastsShadows; uniform bool uSpot3CastsShadows;
 
-// Shadow Caster Uniforms - integrated shadow calculation
+// Shadow Caster Uniforms - integrated shadow calculation with zOrder hierarchy
 uniform vec4 uShadowCaster0; // x, y, width, height of first shadow caster
 uniform vec4 uShadowCaster1; // x, y, width, height of second shadow caster  
 uniform vec4 uShadowCaster2; // x, y, width, height of third shadow caster
 uniform bool uShadowCaster0Enabled;
 uniform bool uShadowCaster1Enabled;
 uniform bool uShadowCaster2Enabled;
+uniform float uShadowCaster0ZOrder; // Z-order of first shadow caster
+uniform float uShadowCaster1ZOrder; // Z-order of second shadow caster
+uniform float uShadowCaster2ZOrder; // Z-order of third shadow caster
 uniform sampler2D uShadowCaster0Texture; // Diffuse texture for first caster
 uniform sampler2D uShadowCaster1Texture; // Diffuse texture for second caster
 uniform sampler2D uShadowCaster2Texture; // Diffuse texture for third caster
 uniform float uShadowStrength; // Global shadow strength
 uniform bool uShadowsEnabled;
 uniform float uShadowMaxLength; // Maximum shadow length to prevent extremely long shadows
+uniform float uCurrentSpriteZOrder; // Z-order of current sprite being rendered
 // Removed shadow sharpness feature
 
 // Occluder Map System (for unlimited shadow casters)
@@ -401,13 +405,14 @@ float calculateDirectionalShadowUnified(vec2 lightDirection, vec2 pixelPos) {
     
     float shadowFactor = 1.0;
     
-    if (uShadowCaster0Enabled) {
+    // Only apply shadows from casters at same zOrder level or above (higher zOrder values)
+    if (uShadowCaster0Enabled && uShadowCaster0ZOrder >= uCurrentSpriteZOrder) {
       shadowFactor *= calculateShadow(virtualLightPos, pixelPos, uShadowCaster0, uShadowCaster0Texture);
     }
-    if (uShadowCaster1Enabled) {
+    if (uShadowCaster1Enabled && uShadowCaster1ZOrder >= uCurrentSpriteZOrder) {
       shadowFactor *= calculateShadow(virtualLightPos, pixelPos, uShadowCaster1, uShadowCaster1Texture);
     }
-    if (uShadowCaster2Enabled) {
+    if (uShadowCaster2Enabled && uShadowCaster2ZOrder >= uCurrentSpriteZOrder) {
       shadowFactor *= calculateShadow(virtualLightPos, pixelPos, uShadowCaster2, uShadowCaster2Texture);
     }
     
@@ -423,16 +428,17 @@ float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
     // Use unlimited occluder map approach
     return calculateShadowOccluderMap(lightPos, pixelPos);
   } else {
-    // Use fast per-caster uniform approach (≤4 casters)
+    // Use fast per-caster uniform approach (≤4 casters) with zOrder hierarchy
     float shadowFactor = 1.0;
     
-    if (uShadowCaster0Enabled) {
+    // Only apply shadows from casters at same zOrder level or above (higher zOrder values)
+    if (uShadowCaster0Enabled && uShadowCaster0ZOrder >= uCurrentSpriteZOrder) {
       shadowFactor *= calculateShadow(lightPos, pixelPos, uShadowCaster0, uShadowCaster0Texture);
     }
-    if (uShadowCaster1Enabled) {
+    if (uShadowCaster1Enabled && uShadowCaster1ZOrder >= uCurrentSpriteZOrder) {
       shadowFactor *= calculateShadow(lightPos, pixelPos, uShadowCaster1, uShadowCaster1Texture);
     }
-    if (uShadowCaster2Enabled) {
+    if (uShadowCaster2Enabled && uShadowCaster2ZOrder >= uCurrentSpriteZOrder) {
       shadowFactor *= calculateShadow(lightPos, pixelPos, uShadowCaster2, uShadowCaster2Texture);
     }
     
