@@ -58,13 +58,28 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
     
     console.log(`🎮 UI: ${spriteId} config changed:`, Object.keys(updates));
     
-    // IMMEDIATE UPDATE for ALL sprite controls - bypass React state for instant feedback
+    // IMMEDIATE UPDATE for critical controls - bypass React state completely
     if (onImmediateSpriteChange) {
       onImmediateSpriteChange(spriteId, updates);
     }
     
-    // Always update React state for UI controls to work properly
-    onSceneConfigChange(newConfig);
+    // For zOrder/normalMap: ONLY update PIXI, don't trigger React rebuilds
+    if (updates.zOrder !== undefined || updates.useNormalMap !== undefined) {
+      // Save to backend directly without React state update
+      const saveData = { scene: newConfig.scene };
+      fetch('/api/save-scene-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(saveData)
+      }).then(response => {
+        if (response.ok) {
+          console.log('🛡️ Immediate change saved without rebuild');
+        }
+      });
+    } else {
+      // Normal React state update for non-critical changes
+      onSceneConfigChange(newConfig);
+    }
   };
 
   const sprites = Object.entries(sceneConfig.scene || {});
