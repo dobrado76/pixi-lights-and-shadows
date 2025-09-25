@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project is a comprehensive React.js application showcasing advanced pseudo-3D shadow casting using PIXI.js primitives. It features a complete lighting system with unlimited sprite shadow casters, real-time light controls, and advanced visual effects. The application demonstrates complex WebGL rendering techniques including multi-pass lighting, normal mapping, texture-based light masking, and distance-based soft shadows. It's designed as both a technical demonstration and an interactive playground for exploring 2.5D lighting effects.
+This project is a comprehensive React.js application showcasing advanced pseudo-3D shadow casting using PIXI.js primitives. It features a complete lighting system with unlimited sprite shadow casters, real-time light controls, and advanced visual effects. The application demonstrates complex WebGL rendering techniques including multi-pass lighting, normal mapping, texture-based light masking, and distance-based soft shadows. The focus is on lighting effects and shadow casting demonstrations rather than full sprite manipulation features.
 
 ## User Preferences
 

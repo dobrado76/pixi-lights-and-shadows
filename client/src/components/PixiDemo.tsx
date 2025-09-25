@@ -551,15 +551,17 @@ const PixiDemo = (props: PixiDemoProps) => {
             if (sprite && sprite.mesh) {
               let needsReSort = false;
               
-              // Handle zOrder changes
+              // Handle zOrder changes - Mark as immediate to prevent React override
               if (updates.zOrder !== undefined) {
                 sprite.definition.zOrder = updates.zOrder;
                 sprite.mesh.zIndex = updates.zOrder;
+                sprite.mesh.userData = sprite.mesh.userData || {};
+                sprite.mesh.userData.__immediateZOrder = updates.zOrder; // Mark as immediate
                 needsReSort = true;
                 console.log(`⚡ Immediate zOrder: ${spriteId} → ${updates.zOrder}`);
               }
               
-              // Handle normal map changes
+              // Handle normal map changes - Mark as immediate to prevent React override
               if (updates.useNormalMap !== undefined) {
                 sprite.definition.useNormalMap = updates.useNormalMap;
                 if (updates.useNormalMap && sprite.definition.normal) {
@@ -569,18 +571,20 @@ const PixiDemo = (props: PixiDemoProps) => {
                 }
                 if (sprite.shader) {
                   sprite.shader.uniforms.uNormalMap = sprite.normalTexture;
+                  sprite.shader.userData = sprite.shader.userData || {};
+                  sprite.shader.userData.__immediateNormalMap = updates.useNormalMap; // Mark as immediate
                 }
                 console.log(`⚡ Immediate normal map: ${spriteId} → ${updates.useNormalMap}`);
               }
               
-              // Handle position/transform changes
-              if (updates.position || updates.rotation || updates.scale) {
+              // Handle position changes
+              if (updates.position) {
                 sprite.updateTransform({
-                  position: updates.position || sprite.definition.position,
-                  rotation: updates.rotation ?? sprite.definition.rotation,
-                  scale: updates.scale ?? sprite.definition.scale
+                  position: updates.position,
+                  rotation: sprite.definition.rotation || 0,
+                  scale: sprite.definition.scale || 1
                 });
-                console.log(`⚡ Immediate transform: ${spriteId}`);
+                console.log(`⚡ Immediate position: ${spriteId}`);
               }
               
               // Handle visibility changes
