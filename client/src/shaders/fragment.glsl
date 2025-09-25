@@ -458,9 +458,25 @@ void main(void) {
     gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
     return;
   } else {
-    // Lighting pass: start with ambient light (for single-pass) or zero (for multi-pass incremental)
-    // Single-pass mode needs ambient + dynamic lights combined
-    finalColor = diffuseColor.rgb * uAmbientLight * uAmbientColor;
+    // Lighting pass: calculate GLOBAL shadow factor first - affects everything including ambient
+    float globalShadowFactor = 1.0;
+    
+    // Check shadows from all shadow-casting lights to get global shadow factor
+    if (uPoint0Enabled && uPoint0CastsShadows) {
+      globalShadowFactor *= calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
+    }
+    if (uPoint1Enabled && uPoint1CastsShadows) {
+      globalShadowFactor *= calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
+    }
+    if (uPoint2Enabled && uPoint2CastsShadows) {
+      globalShadowFactor *= calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
+    }
+    if (uPoint3Enabled && uPoint3CastsShadows) {
+      globalShadowFactor *= calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
+    }
+    
+    // Apply shadows to ambient light too - this fixes bright shadow issue!
+    finalColor = diffuseColor.rgb * uAmbientLight * uAmbientColor * globalShadowFactor;
   }
   
   // Point Light 0
@@ -488,7 +504,7 @@ void main(void) {
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
-    // Apply shadow calculation FIRST - blocks light completely in shadowed areas
+    // Apply shadow calculation for this specific light
     float shadowFactor = 1.0;
     if (uPoint0CastsShadows) {
       shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
