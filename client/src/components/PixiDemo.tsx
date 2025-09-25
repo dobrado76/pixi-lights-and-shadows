@@ -209,7 +209,6 @@ const PixiDemo = (props: PixiDemoProps) => {
     if (!pixiApp || !renderTargetRef.current || !sceneContainerRef.current || !displaySpriteRef.current) return;
 
     const enabledLights = lights.filter(light => light.enabled && light.type !== 'ambient');
-    console.log(`🎨 MULTI-PASS: Rendering ${enabledLights.length} lights`);
 
     // Clear accumulation buffer
     pixiApp.renderer.render(new PIXI.Container(), { renderTexture: renderTargetRef.current, clear: true });
@@ -255,10 +254,6 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     const totalPasses = Math.max(pointPasses, spotPasses, dirPasses);
     
-    console.log(`🔄 RENDERING ${totalPasses} lighting passes:`);
-    console.log(`   Point lights: ${pointLights.length} (${pointPasses} passes)`);
-    console.log(`   Spotlights: ${spotlights.length} (${spotPasses} passes)`);
-    console.log(`   Directional: ${directionalLights.length} (${dirPasses} passes)`);
 
     // Render each lighting pass
     for (let pass = 0; pass < totalPasses; pass++) {
@@ -270,7 +265,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Skip empty passes
       if (passPointLights.length === 0 && passSpotlights.length === 0 && passDirLights.length === 0) continue;
 
-      console.log(`   Pass ${pass + 1}: ${passPointLights.length} points, ${passSpotlights.length} spots, ${passDirLights.length} dir`);
 
       // Set up uniforms for this pass
       shadersRef.current.forEach(shader => {
@@ -568,11 +562,10 @@ const PixiDemo = (props: PixiDemoProps) => {
           uniforms.uSpot0HasMask = false; uniforms.uSpot1HasMask = false; uniforms.uSpot2HasMask = false; uniforms.uSpot3HasMask = false;
           
           // Point Lights (up to 4) - pass ALL lights with stable slot assignment
-          console.log(`🔍 PROCESSING ${allPointLights.length} POINT LIGHTS (all):`, allPointLights.map(l => `${l.id}(${l.enabled ? 'ON' : 'OFF'})`));
           
           allPointLights.slice(0, 4).forEach((light, slotIdx) => {
             const prefix = `uPoint${slotIdx}`;
-            console.log(`   Setting ${prefix} for light: ${light.id} (slot ${slotIdx}, enabled: ${light.enabled})`);
+
             
             // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
             uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
@@ -619,11 +612,10 @@ const PixiDemo = (props: PixiDemoProps) => {
           });
           
           // Directional Lights (up to 2) - pass ALL lights with stable slot assignment
-          console.log(`🔍 PROCESSING ${allDirectionalLights.length} DIRECTIONAL LIGHTS (all):`, allDirectionalLights.map(l => `${l.id}(${l.enabled ? 'ON' : 'OFF'})`));
           
           allDirectionalLights.slice(0, 2).forEach((light, slotIdx) => {
             const prefix = `uDir${slotIdx}`;
-            console.log(`   Setting ${prefix} for light: ${light.id} (slot ${slotIdx}, enabled: ${light.enabled})`);
+
             
             // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
             uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
@@ -633,11 +625,10 @@ const PixiDemo = (props: PixiDemoProps) => {
           });
           
           // Spotlights (up to 4) - pass ALL lights with stable slot assignment
-          console.log(`🔍 PROCESSING ${allSpotlights.length} SPOTLIGHTS (all):`, allSpotlights.map(l => `${l.id}(${l.enabled ? 'ON' : 'OFF'})`));
           
           allSpotlights.slice(0, 4).forEach((light, slotIdx) => {
             const prefix = `uSpot${slotIdx}`;
-            console.log(`   Setting ${prefix} for light: ${light.id} (slot ${slotIdx}, enabled: ${light.enabled})`);
+
             
             // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
             uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
@@ -746,7 +737,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       const allSprites = sceneManagerRef.current!.getSpritesSortedByZOrder(); // Use z-ordered sprites
       const visibleSprites = allSprites.filter(sprite => sprite.definition.visible);
       
-      console.log('🎭 Sprites z-order:', visibleSprites.map(s => `${s.id}(z:${s.definition.zOrder})`));
       
       for (const sprite of visibleSprites) {
         const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
@@ -774,13 +764,10 @@ const PixiDemo = (props: PixiDemoProps) => {
         };
       });
 
-      console.log('💡 Shadow casters created:', legacyShadowCasters);
       
       // IMMEDIATE CHECK: Should we use unlimited shadows?
       if (shadowCasters.length > 3) {
-        console.log(`🌟 ENABLING UNLIMITED SHADOWS: ${shadowCasters.length} shadow casters detected!`);
       } else {
-        console.log(`⚡ Using limited shadows: Only ${shadowCasters.length} shadow casters`);
       }
 
       // Set shadow texture uniforms for all sprites
@@ -811,24 +798,19 @@ const PixiDemo = (props: PixiDemoProps) => {
       sceneContainerRef.current!.sortableChildren = true;
 
       // Apply shadow texture uniforms to all sprite shaders (already done above)
-      console.log('All sprite shaders created with shadow texture uniforms');
 
       // FORCE DIRECTIONAL LIGHT SHADOW SETUP AFTER SHADERS ARE CREATED
       const directionalLight = lightsConfig.find(light => light.type === 'directional' && light.enabled);
       if (directionalLight && directionalLight.castsShadows) {
-        console.log('🌞 SETTING UP DIRECTIONAL SHADOW after shaders created:', directionalLight.id);
         
         // Apply directional shadow uniforms to ALL created shaders
         shadersRef.current.forEach(shader => {
           if (shader.uniforms) {
             shader.uniforms.uDir0CastsShadows = true;
-            console.log('🌞 Set uDir0CastsShadows=true on shader');
           }
         });
       }
 
-      console.log('🌑 Shadow system integrated into lighting shader');
-      console.log('🌑 Shadow texture uniforms applied to all shaders');
 
 
       } catch (error) {
@@ -863,7 +845,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   useEffect(() => {
     if (!sceneManagerRef.current || !sceneConfig.scene || !pixiApp) return;
     
-    console.log('🔄 Scene config changed, updating sprites...', Date.now());
     
     // Update individual sprite properties without rebuilding entire scene
     try {
@@ -918,10 +899,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Force PIXI container to re-sort after any sprite updates (including zOrder changes)
       if (sceneContainerRef.current) {
         sceneContainerRef.current.sortChildren();
-        console.log('🎭 PIXI container re-sorted after sprite updates');
       }
       
-      console.log('✅ Sprite update complete');
       
       // Update shadow casters immediately when sprite visibility changes
       if (shadersRef.current.length > 0) {
@@ -955,14 +934,11 @@ const PixiDemo = (props: PixiDemoProps) => {
           }
         });
         
-        console.log('🔄 Shadow caster textures updated:', shadowCasters.map(sc => sc.id));
       }
       
       // Trigger immediate render after sprite updates
       pixiApp.render();
-      console.log('🎭 Sprites updated without scene rebuild');
     } catch (error) {
-      console.log('Sprite update failed, may need scene rebuild:', error);
     }
   }, [sceneConfig, pixiApp, JSON.stringify(sceneConfig.scene)]);
   
@@ -1029,13 +1005,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
       uniforms.uShadowCaster2Enabled = shadowCasters.length > 2;
       
-      console.log('🌑 DIRECTIONAL LIGHT SHADOW SETUP:', {
-        shadowCasters: shadowCasters.length,
-        caster0: uniforms.uShadowCaster0,
-        caster1: uniforms.uShadowCaster1,
-        caster2: uniforms.uShadowCaster2,
-        enabled: [uniforms.uShadowCaster0Enabled, uniforms.uShadowCaster1Enabled, uniforms.uShadowCaster2Enabled]
-      });
       
       // Occluder map uniforms for unlimited shadow casters (switch when >3 casters)
       uniforms.uUseOccluderMap = shadowCasters.length > 3;
@@ -1152,9 +1121,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       // FORCE DIRECTIONAL LIGHT SHADOW SETUP - BYPASS BROKEN useEffect
       const directionalLight = lightsConfig.find(light => light.type === 'directional' && light.enabled);
       if (directionalLight) {
-        console.log('🌞 FORCING DIRECTIONAL LIGHT SETUP:', directionalLight);
         uniforms.uDir0CastsShadows = directionalLight.castsShadows || false;
-        console.log('🌞 Dir0 CastsShadows set to:', uniforms.uDir0CastsShadows);
       }
       
       // Global shadow properties
@@ -1213,10 +1180,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       const useOccluderMap = shadowCasters.length > 3;
       
       if (useOccluderMap) {
-        console.log(`🌑 UNLIMITED SHADOWS: Using occluder map for ${shadowCasters.length} shadow casters`);
-        console.log(`🔧 Building occluder map now...`);
         buildOccluderMap();
-        console.log(`✅ Occluder map built and applied to shaders`);
         
         // Update all shaders to use occluder map
         shadersRef.current.forEach(shader => {
@@ -1226,7 +1190,6 @@ const PixiDemo = (props: PixiDemoProps) => {
           }
         });
       } else {
-        console.log(`⚡ FAST SHADOWS: Using per-caster uniforms for ${shadowCasters.length} shadow casters`);
         
         // Update all shaders to use per-caster uniforms
         shadersRef.current.forEach(shader => {
