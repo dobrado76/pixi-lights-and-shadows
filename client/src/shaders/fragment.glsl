@@ -516,7 +516,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    intensity *= shadowFactor;
+    // Apply BOTH the light's own shadows AND global shadows from all other lights
+    intensity *= shadowFactor * globalShadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint0Color * intensity;
   }
@@ -549,7 +550,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    intensity *= shadowFactor;
+    // Apply BOTH the light's own shadows AND global shadows from all other lights
+    intensity *= shadowFactor * globalShadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint1Color * intensity;
   }
@@ -582,7 +584,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    intensity *= shadowFactor;
+    // Apply BOTH the light's own shadows AND global shadows from all other lights
+    intensity *= shadowFactor * globalShadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint2Color * intensity;
   }
@@ -615,7 +618,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    intensity *= shadowFactor;
+    // Apply BOTH the light's own shadows AND global shadows from all other lights  
+    intensity *= shadowFactor * globalShadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint3Color * intensity;
   }
