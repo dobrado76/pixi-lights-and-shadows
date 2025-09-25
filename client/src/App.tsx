@@ -69,7 +69,7 @@ function App() {
   // Renderer version toggle (easy revert system) - with localStorage persistence
   const [useDeferred, setUseDeferred] = useState<boolean>(() => {
     const saved = localStorage.getItem('pixi-renderer-type');
-    return saved === 'deferred';
+    return false; // Force forward renderer for now
   });
 
   // Auto-save system with debouncing to prevent excessive writes during UI manipulation
