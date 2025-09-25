@@ -449,6 +449,11 @@ vec2 rotateUV(vec2 uv, float rotation) {
   return rotated + 0.5;
 }
 
+// Helper functions for directional lighting coordinate system
+// uDirNDirection represents light→scene direction
+vec2 dirToLight(vec3 dir) { return normalize(-dir.xy); } // from pixel to light (for lighting)
+vec2 dirFromLight(vec3 dir) { return normalize(dir.xy); } // light travel direction (for shadows)
+
 void main(void) {
   // Apply rotation to UV coordinates BEFORE texture sampling (physically correct)
   vec2 uv = rotateUV(vTextureCoord, uRotation);
@@ -633,11 +638,6 @@ void main(void) {
     finalColor += diffuseColor.rgb * uPoint3Color * intensity;
   }
   
-  // Helper functions for directional lighting coordinate system
-  // uDirNDirection represents light→scene direction
-  vec2 dirToLight(vec3 dir) { return normalize(-dir.xy); } // from pixel to light (for lighting)
-  vec2 dirFromLight(vec3 dir) { return normalize(dir.xy); } // light travel direction (for shadows)
-
   // Directional Light 0
   if (uDir0Enabled) {
     // Directional lights: parallel rays from infinite distance with normal mapping
