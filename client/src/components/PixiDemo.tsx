@@ -595,10 +595,32 @@ const PixiDemo = (props: PixiDemoProps) => {
                 console.log(`⚡ Immediate castsShadows: ${spriteId} → ${updates.castsShadows}`);
               }
               
-              // Force re-sort if needed
+              // Force re-sort if needed and update shadow caster uniforms
               if (needsReSort) {
                 sceneContainerRef.current.sortChildren();
                 console.log(`⚡ Container re-sorted after immediate update`);
+                
+                // Update shadow caster uniforms since order may have changed
+                const shadowCasters = sceneManagerRef.current.getShadowCasters();
+                const shadowCaster0 = shadowCasters[0]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
+                const shadowCaster1 = shadowCasters[1]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
+                const shadowCaster2 = shadowCasters[2]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
+                
+                // Update all shader uniforms
+                shadersRef.current?.forEach(shader => {
+                  if (shader && shader.uniforms) {
+                    shader.uniforms.uShadowCaster0 = [shadowCaster0.x, shadowCaster0.y, shadowCaster0.width, shadowCaster0.height];
+                    shader.uniforms.uShadowCaster1 = [shadowCaster1.x, shadowCaster1.y, shadowCaster1.width, shadowCaster1.height];
+                    shader.uniforms.uShadowCaster2 = [shadowCaster2.x, shadowCaster2.y, shadowCaster2.width, shadowCaster2.height];
+                    shader.uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
+                    shader.uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
+                    shader.uniforms.uShadowCaster2Enabled = shadowCasters.length > 2;
+                    shader.uniforms.uShadowCaster0Texture = shadowCasters[0]?.diffuseTexture || PIXI.Texture.WHITE;
+                    shader.uniforms.uShadowCaster1Texture = shadowCasters[1]?.diffuseTexture || PIXI.Texture.WHITE;
+                    shader.uniforms.uShadowCaster2Texture = shadowCasters[2]?.diffuseTexture || PIXI.Texture.WHITE;
+                  }
+                });
+                console.log(`⚡ Shadow caster uniforms updated after zOrder change`);
               }
               
               // Force a render to ensure immediate visual feedback

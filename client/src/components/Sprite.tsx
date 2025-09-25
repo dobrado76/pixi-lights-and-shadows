@@ -428,11 +428,11 @@ export class SceneManager {
     }
   }
 
-  // Filter sprites by shadow participation flags
+  // Filter sprites by shadow participation flags and sort by zOrder
   getShadowCasters(): SceneSprite[] {
-    return this.getAllSprites().filter(sprite => 
-      sprite.definition.castsShadows && sprite.definition.visible
-    );
+    return this.getAllSprites()
+      .filter(sprite => sprite.definition.castsShadows && sprite.definition.visible)
+      .sort((a, b) => a.definition.zOrder - b.definition.zOrder);
   }
 
 
