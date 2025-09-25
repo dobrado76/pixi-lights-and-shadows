@@ -548,6 +548,29 @@ const PixiDemo = (props: PixiDemoProps) => {
         // CRITICAL: Skip ALL rebuilds when we have immediate changes in progress
         if (sceneManagerRef.current && sceneManagerRef.current.getAllSprites().length > 0) {
           console.log('🛡️ SKIPPING setupDemo - scene already initialized, immediate changes handle updates');
+          
+          // BUT ensure all sprites have correct immediate states applied
+          Object.keys(sceneConfig.scene).forEach(spriteId => {
+            const sprite = sceneManagerRef.current!.getSprite(spriteId);
+            if (sprite?.shader && (sprite.shader as any).userData) {
+              // Re-apply any immediate normal map changes that might have been lost
+              const immediateNormalMap = (sprite.shader as any).userData.__immediateNormalMap;
+              if (immediateNormalMap !== undefined) {
+                sprite.definition.useNormalMap = immediateNormalMap;
+                if (immediateNormalMap && sprite.definition.normal) {
+                  sprite.normalTexture = PIXI.Texture.from(sprite.definition.normal);
+                } else {
+                  sprite.normalTexture = sprite['createFlatNormalTexture']();
+                }
+                sprite.shader.uniforms.uNormalMap = sprite.normalTexture;
+                if (sprite.mesh?.material?.uniforms) {
+                  sprite.mesh.material.uniforms.uNormalMap = sprite.normalTexture;
+                }
+                console.log(`🛡️ Re-applied immediate normal map for ${spriteId}: ${immediateNormalMap}`);
+              }
+            }
+          });
+          
           return;
         }
         
