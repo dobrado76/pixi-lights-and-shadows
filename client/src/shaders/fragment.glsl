@@ -410,10 +410,10 @@ void main(void) {
   vec4 diffuseColor = texture2D(uDiffuse, uv);
   vec3 normal = texture2D(uNormal, uv).rgb * 2.0 - 1.0;
   
-  // DEBUG: Test if sprite size affects lighting by normalizing scale  
-  // Small sprites get tiny worldPos variations - this could be the issue
-  vec2 effectiveSize = max(uSpriteSize, vec2(200.0, 200.0)); // Minimum effective size for lighting
-  vec2 worldPos = uSpritePos + uv * effectiveSize;
+  // PROPER FIX: Use sprite center for base distance, UV for surface variation
+  vec2 spriteCenter = uSpritePos + uSpriteSize * 0.5;
+  vec2 uvOffset = (uv - 0.5) * min(uSpriteSize, vec2(100.0, 100.0)); // Limit surface variation
+  vec2 worldPos = spriteCenter + uvOffset;
   vec3 worldPos3D = vec3(worldPos.x, worldPos.y, 0.0);
   
   // Debug: Log world position for first point light (if enabled)
