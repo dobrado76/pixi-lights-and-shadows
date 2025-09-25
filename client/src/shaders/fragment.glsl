@@ -259,73 +259,40 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
   return 1.0; // Not in shadow
 }
 
-// Occluder map shadow calculation - raycasts through binary alpha texture
+// Occluder map shadow calculation - simple ray marching from light to pixel
 float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
   
   vec2 rayDir = pixelPos - lightPos;
   float rayLength = length(rayDir);
   
-  if (rayLength < 0.001) return 1.0;
+  if (rayLength < 0.001) return 1.0; // Same position as light
   
   rayDir /= rayLength; // Normalize
   
-  // Raycast through the occluder map with fixed iteration count
-  float stepSize = 2.0; // Pixel steps along the ray
-  float maxDistance = rayLength; // Don't limit by uShadowMaxLength here - limit by shadow length instead
+  // Simple ray marching - check for ANY occlusion between light and pixel
+  float stepSize = 1.0; // Sample every pixel
+  int maxSteps = int(rayLength / stepSize);
   
-  // Use constant loop bounds for WebGL compatibility
-  for (int i = 1; i < 200; i++) {
-    float distance = float(i) * stepSize;
+  for (int i = 1; i < 500; i++) {
+    if (i >= maxSteps) break;
     
-    // Break early if we've gone past the ray length
-    if (distance >= maxDistance) {
-      break;
-    }
-    
-    vec2 samplePos = lightPos + rayDir * distance;
-    
-    // Convert world position to UV coordinates
+    vec2 samplePos = lightPos + rayDir * (float(i) * stepSize);
     vec2 occluderUV = samplePos / uCanvasSize;
     
-    // Check bounds
+    // Skip out of bounds samples
     if (occluderUV.x < 0.0 || occluderUV.x > 1.0 || occluderUV.y < 0.0 || occluderUV.y > 1.0) {
       continue;
     }
     
-    // Sample occluder map alpha
+    // Sample occluder map - if we hit an occluder, we're in shadow
     float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
-    
-    // If we hit an occluder, cast shadow with distance-based softness
-    if (occluderAlpha > 0.0) {
-      float hitDistance = distance; // Distance from light to occluder
-      float shadowLength = rayLength - hitDistance; // Actual shadow length (occluder to receiver)
-      
-      // Limit shadow by actual shadow length, not distance from light
-      if (shadowLength > uShadowMaxLength) {
-        return 1.0; // Shadow is longer than max allowed
-      }
-      
-      // Gradual fade-out towards max shadow length to avoid hard cutoffs
-      float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
-      if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
-      
-      // Binary shadow detection - clean and artifact-free
-      float shadowValue = 1.0;
-      
-      // Calculate final shadow strength
-      float shadowRatio = shadowValue;
-      float normalizedDistance = shadowLength / uShadowMaxLength;
-      float distanceFade = exp(-normalizedDistance * 2.0);
-      
-      // shadowValue now contains the soft/sharp shadow information
-      float finalShadowStrength = uShadowStrength * shadowRatio * distanceFade * maxLengthFade;
-      
-      return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
+    if (occluderAlpha > 0.5) {
+      return 0.0; // BINARY SHADOW: In shadow
     }
   }
   
-  return 1.0; // No occlusion found
+  return 1.0; // Not in shadow
 }
 
 // Directional light shadow calculation - uses parallel rays for consistent shadows
@@ -462,40 +429,8 @@ void main(void) {
     return;
   } else {
     
-    // Calculate global shadows from all shadow-casting lights (unified functions handle occluder map automatically)
-    if (uPoint0Enabled && uPoint0CastsShadows && uPoint0Intensity > 0.0) {
-      globalShadowFactor *= calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
-    }
-    if (uPoint1Enabled && uPoint1CastsShadows && uPoint1Intensity > 0.0) {
-      globalShadowFactor *= calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
-    }
-    if (uPoint2Enabled && uPoint2CastsShadows && uPoint2Intensity > 0.0) {
-      globalShadowFactor *= calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
-    }
-    if (uPoint3Enabled && uPoint3CastsShadows && uPoint3Intensity > 0.0) {
-      globalShadowFactor *= calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
-    }
-    if (uDir0Enabled && uDir0CastsShadows && uDir0Intensity > 0.0) {
-      globalShadowFactor *= calculateDirectionalShadowUnified(uDir0Direction.xy, worldPos.xy);
-    }
-    if (uDir1Enabled && uDir1CastsShadows && uDir1Intensity > 0.0) {
-      globalShadowFactor *= calculateDirectionalShadowUnified(uDir1Direction.xy, worldPos.xy);
-    }
-    if (uSpot0Enabled && uSpot0CastsShadows && uSpot0Intensity > 0.0) {
-      globalShadowFactor *= calculateShadowUnified(uSpot0Position.xy, worldPos.xy);
-    }
-    if (uSpot1Enabled && uSpot1CastsShadows && uSpot1Intensity > 0.0) {
-      globalShadowFactor *= calculateShadowUnified(uSpot1Position.xy, worldPos.xy);
-    }
-    if (uSpot2Enabled && uSpot2CastsShadows && uSpot2Intensity > 0.0) {
-      globalShadowFactor *= calculateShadowUnified(uSpot2Position.xy, worldPos.xy);
-    }
-    if (uSpot3Enabled && uSpot3CastsShadows && uSpot3Intensity > 0.0) {
-      globalShadowFactor *= calculateShadowUnified(uSpot3Position.xy, worldPos.xy);
-    }
-    
-    // Apply shadows to ambient light - shadows now darken everything properly
-    finalColor = diffuseColor.rgb * uAmbientLight * uAmbientColor * globalShadowFactor;
+    // Start with ambient light only (no global shadow system)
+    finalColor = diffuseColor.rgb * uAmbientLight * uAmbientColor;
   }
   
   // Point Light 0
@@ -523,8 +458,11 @@ void main(void) {
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
-    // No individual shadows needed - global shadows handle everything
+    // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
+    if (uPoint0CastsShadows && intensity > 0.0) {
+      shadowFactor = calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
+    }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint0HasMask && shadowFactor >= 0.99) {
@@ -532,8 +470,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // Apply global shadows (includes occluder map or per-light calculations)
-    intensity *= globalShadowFactor;
+    // Apply THIS light's shadow
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint0Color * intensity;
   }
@@ -554,9 +492,11 @@ void main(void) {
     
     float intensity = normalDot * uPoint1Intensity * attenuation;
     
-    // Apply shadow calculation FIRST - blocks light completely in shadowed areas
+    // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
-    // No individual shadows needed - global shadows handle everything
+    if (uPoint1CastsShadows && intensity > 0.0) {
+      shadowFactor = calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
+    }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint1HasMask && shadowFactor >= 0.99) {
@@ -564,8 +504,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // Apply global shadows (includes occluder map or per-light calculations)
-    intensity *= globalShadowFactor;
+    // Apply THIS light's shadow
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint1Color * intensity;
   }
@@ -586,9 +526,11 @@ void main(void) {
     
     float intensity = normalDot * uPoint2Intensity * attenuation;
     
-    // Apply shadow calculation FIRST - blocks light completely in shadowed areas
+    // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
-    // No individual shadows needed - global shadows handle everything
+    if (uPoint2CastsShadows && intensity > 0.0) {
+      shadowFactor = calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
+    }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint2HasMask && shadowFactor >= 0.99) {
@@ -596,8 +538,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // Apply global shadows (includes occluder map or per-light calculations)
-    intensity *= globalShadowFactor;
+    // Apply THIS light's shadow
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint2Color * intensity;
   }
@@ -618,9 +560,11 @@ void main(void) {
     
     float intensity = normalDot * uPoint3Intensity * attenuation;
     
-    // Apply shadow calculation FIRST - blocks light completely in shadowed areas
+    // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
-    // No individual shadows needed - global shadows handle everything
+    if (uPoint3CastsShadows && intensity > 0.0) {
+      shadowFactor = calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
+    }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint3HasMask && shadowFactor >= 0.99) {
@@ -628,8 +572,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // Apply global shadows (includes occluder map or per-light calculations)
-    intensity *= globalShadowFactor;
+    // Apply THIS light's shadow
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint3Color * intensity;
   }
@@ -648,11 +592,14 @@ void main(void) {
     float normalDot = max(dot(safeNormal, lightDir), 0.0);
     float intensity = normalDot * uDir0Intensity;
     
-    // No individual shadows needed - global shadows handle everything
+    // Calculate shadow ONLY if this light has intensity > 0 (directional lights have infinite range)
     float shadowFactor = 1.0;
+    if (uDir0CastsShadows && intensity > 0.0) {
+      shadowFactor = calculateDirectionalShadowUnified(uDir0Direction.xy, worldPos.xy);
+    }
     
-    // Apply global shadows (includes occluder map or per-light calculations)
-    intensity *= globalShadowFactor;
+    // Apply THIS light's shadow
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uDir0Color * intensity;
   }
@@ -671,11 +618,14 @@ void main(void) {
     float normalDot = max(dot(safeNormal, lightDir), 0.0);
     float intensity = normalDot * uDir1Intensity;
     
-    // No individual shadows needed - global shadows handle everything
+    // Calculate shadow ONLY if this light has intensity > 0 (directional lights have infinite range)
     float shadowFactor = 1.0;
+    if (uDir1CastsShadows && intensity > 0.0) {
+      shadowFactor = calculateDirectionalShadowUnified(uDir1Direction.xy, worldPos.xy);
+    }
     
-    // Apply global shadows (includes occluder map or per-light calculations)
-    intensity *= globalShadowFactor;
+    // Apply THIS light's shadow
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uDir1Color * intensity;
   }
@@ -709,9 +659,11 @@ void main(void) {
     float lambert = max(dot(safeNormal, L), 0.0);
     float intensity = lambert * uSpot0Intensity * atten * spotFactor;
     
-    // Apply shadow calculation FIRST for spotlight
+    // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
-    // No individual shadows needed - global shadows handle everything
+    if (uSpot0CastsShadows && intensity > 0.0) {
+      shadowFactor = calculateShadowUnified(uSpot0Position.xy, worldPos.xy);
+    }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uSpot0HasMask && shadowFactor >= 0.99) {
@@ -719,8 +671,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // Apply global shadows (includes occluder map or per-light calculations)
-    intensity *= globalShadowFactor;
+    // Apply THIS light's shadow
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uSpot0Color * intensity;
   }
@@ -754,9 +706,11 @@ void main(void) {
     float lambert = max(dot(safeNormal, L), 0.0);
     float intensity = lambert * uSpot1Intensity * atten * spotFactor;
     
-    // Apply shadow calculation FIRST for spotlight
+    // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
-    // No individual shadows needed - global shadows handle everything
+    if (uSpot1CastsShadows && intensity > 0.0) {
+      shadowFactor = calculateShadowUnified(uSpot1Position.xy, worldPos.xy);
+    }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uSpot1HasMask && shadowFactor >= 0.99) {
@@ -764,8 +718,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // Apply global shadows (includes occluder map or per-light calculations)
-    intensity *= globalShadowFactor;
+    // Apply THIS light's shadow
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uSpot1Color * intensity;
   }
@@ -799,9 +753,11 @@ void main(void) {
     float lambert = max(dot(safeNormal, L), 0.0);
     float intensity = lambert * uSpot2Intensity * atten * spotFactor;
     
-    // Apply shadow calculation FIRST for spotlight
+    // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
-    // No individual shadows needed - global shadows handle everything
+    if (uSpot1CastsShadows && intensity > 0.0) {
+      shadowFactor = calculateShadowUnified(uSpot1Position.xy, worldPos.xy);
+    }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uSpot2HasMask && shadowFactor >= 0.99) {
@@ -809,8 +765,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // Apply global shadows (includes occluder map or per-light calculations)
-    intensity *= globalShadowFactor;
+    // Apply THIS light's shadow
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uSpot2Color * intensity;
   }
@@ -844,9 +800,11 @@ void main(void) {
     float lambert = max(dot(safeNormal, L), 0.0);
     float intensity = lambert * uSpot3Intensity * atten * spotFactor;
     
-    // Apply shadow calculation FIRST for spotlight
+    // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
-    // No individual shadows needed - global shadows handle everything
+    if (uSpot1CastsShadows && intensity > 0.0) {
+      shadowFactor = calculateShadowUnified(uSpot1Position.xy, worldPos.xy);
+    }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uSpot3HasMask && shadowFactor >= 0.99) {
@@ -854,8 +812,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // Apply global shadows (includes occluder map or per-light calculations)
-    intensity *= globalShadowFactor;
+    // Apply THIS light's shadow
+    intensity *= shadowFactor;
     
     finalColor += diffuseColor.rgb * uSpot3Color * intensity;
   }

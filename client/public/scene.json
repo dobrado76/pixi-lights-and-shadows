@@ -190,14 +190,14 @@
       "x": 250,
       "y": 420,
       "z": 80,
-      "followMouse": true,
+      "followMouse": false,
       "castsShadows": true,
       "radius": 530
     },
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.9,
       "color": "0xffffff",
       "directionX": -1,
@@ -208,7 +208,7 @@
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.4,
       "color": "0xf4f080",
       "x": 220,
@@ -225,7 +225,7 @@
     {
       "id": "spotlight",
       "type": "spotlight",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.6,
       "color": "0xffffff",
       "x": 220,
@@ -264,7 +264,7 @@
     {
       "id": "point_1758536509084",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.5,
       "color": "0xe12323",
       "x": 210,
