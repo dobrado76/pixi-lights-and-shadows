@@ -815,7 +815,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       for (const sprite of visibleSprites) {
         const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
         // Set PIXI zIndex based on sprite's zOrder for proper layering
-        mesh.zIndex = sprite.definition.zOrder;
+        // Check for immediate zOrder updates first, then fall back to definition
+        const immediateZOrder = sprite.mesh && (sprite.mesh as any).userData?.__immediateZOrder;
+        mesh.zIndex = immediateZOrder !== undefined ? immediateZOrder : sprite.definition.zOrder;
         spriteMeshes.push(mesh);
       }
 
@@ -961,7 +963,9 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
             // Set PIXI zIndex based on sprite's zOrder for proper layering
-            mesh.zIndex = sprite.definition.zOrder;
+            // Check for immediate zOrder updates first, then fall back to definition
+            const immediateZOrder = sprite.mesh && (sprite.mesh as any).userData?.__immediateZOrder;
+            mesh.zIndex = immediateZOrder !== undefined ? immediateZOrder : sprite.definition.zOrder;
             pixiApp.stage.addChild(mesh);
             meshesRef.current.push(mesh);
             shadersRef.current.push(mesh.shader as PIXI.Shader);

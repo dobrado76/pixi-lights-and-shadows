@@ -30,7 +30,7 @@
       "scale": 1,
       "zOrder": -2,
       "castsShadows": false,
-      "visible": false,
+      "visible": true,
       "useNormalMap": false,
       "pivot": {
         "preset": "middle-center",
