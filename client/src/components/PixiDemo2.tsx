@@ -174,7 +174,7 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
     
     sprites.forEach((sprite: SceneSprite, index: number) => {
       // Skip disabled sprites - this is critical for proper deferred rendering
-      if (!sprite.isEnabled() || !sprite.diffuseTexture) return;
+      if (!sprite.definition.visible || !sprite.diffuseTexture) return;
       
       // Create simple PIXI sprite for geometry pass
       const pixiSprite = new PIXI.Sprite(sprite.diffuseTexture);
@@ -226,8 +226,62 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
       }
     `;
     
-    // Load the lighting-pass.glsl fragment shader
-    const lightingFragmentShader = await fetch('/src/shaders/lighting-pass.glsl').then(r => r.text());
+    // Use the lighting-pass shader content directly (no fetch needed)
+    const lightingFragmentShader = `
+      precision mediump float;
+      varying vec2 vTextureCoord;
+      
+      // G-Buffer inputs
+      uniform sampler2D uGBufferAlbedo;
+      uniform sampler2D uGBufferNormal;
+      uniform sampler2D uGBufferPosition;
+      
+      // Scene parameters
+      uniform vec2 uCanvasSize;
+      uniform float uAmbientLight;
+      uniform vec3 uAmbientColor;
+      
+      // Light arrays for screen-space lighting
+      uniform int uNumPointLights;
+      uniform vec3 uPointLightPositions[8];
+      uniform vec3 uPointLightColors[8]; 
+      uniform float uPointLightIntensities[8];
+      uniform float uPointLightRadii[8];
+      
+      // Shadow system
+      uniform bool uShadowsEnabled;
+      uniform float uShadowStrength;
+      uniform sampler2D uShadowMap;
+      
+      void main(void) {
+        vec2 screenUV = vTextureCoord;
+        
+        // Sample G-Buffer data - for now just use albedo
+        vec3 albedo = texture2D(uGBufferAlbedo, screenUV).rgb;
+        
+        // Start with ambient lighting
+        vec3 finalColor = albedo * uAmbientLight * uAmbientColor;
+        
+        // Add simple point light contribution
+        if (uNumPointLights > 0) {
+          vec3 lightPos = uPointLightPositions[0];
+          vec3 lightColor = uPointLightColors[0];
+          float intensity = uPointLightIntensities[0];
+          float radius = uPointLightRadii[0];
+          
+          // Simple screen-space distance calculation
+          vec2 worldPos = screenUV * uCanvasSize;
+          float distance = length(lightPos.xy - worldPos);
+          
+          if (distance < radius) {
+            float attenuation = 1.0 - clamp(distance / radius, 0.0, 1.0);
+            finalColor += albedo * lightColor * intensity * attenuation;
+          }
+        }
+        
+        gl_FragColor = vec4(finalColor, 1.0);
+      }
+    `;
     
     const shader = PIXI.Shader.from(lightingVertexShader, lightingFragmentShader, {
       // G-Buffer inputs
