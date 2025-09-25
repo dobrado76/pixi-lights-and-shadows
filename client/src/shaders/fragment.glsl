@@ -317,8 +317,8 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
     // Stop when we reach the pixel
     if (distance >= rayLength - eps) break;
     
-    // Skip samples within self-interval (avoid self-occlusion)
-    if (distance > tEnterSelf - eps && distance < tExitSelf + eps) {
+    // Skip samples within self-interval (avoid self-occlusion) - but NOT for background sprites
+    if (!isBackgroundSprite && distance > tEnterSelf - eps && distance < tExitSelf + eps) {
       continue;
     }
     
