@@ -200,6 +200,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       occluderSprite.width = textureWidth * spriteScale;
       occluderSprite.height = textureHeight * spriteScale;
       occluderSprite.visible = true;
+      
     });
     
     // Hide unused sprites
@@ -465,6 +466,16 @@ const PixiDemo = (props: PixiDemoProps) => {
         height: shaderParams.canvasHeight + (SHADOW_BUFFER * 2) 
       });
       occluderContainerRef.current = new PIXI.Container();
+      
+      // Disable culling to ensure off-screen sprites are rendered to occlusion map
+      occluderContainerRef.current.cullable = false;
+      occluderContainerRef.current.cullArea = new PIXI.Rectangle(
+        -SHADOW_BUFFER, 
+        -SHADOW_BUFFER, 
+        shaderParams.canvasWidth + (SHADOW_BUFFER * 2),
+        shaderParams.canvasHeight + (SHADOW_BUFFER * 2)
+      );
+      
       console.log('🌑 Occluder render target initialized for unlimited shadow casters');
       } else {
         throw new Error('Canvas element not found');
