@@ -187,10 +187,10 @@
       "enabled": true,
       "brightness": 1,
       "color": "0xffffff",
-      "x": 290,
+      "x": 250,
       "y": 170,
       "z": 20,
-      "followMouse": true,
+      "followMouse": false,
       "castsShadows": true,
       "radius": 350
     },
@@ -200,8 +200,8 @@
       "enabled": true,
       "brightness": 0.5,
       "color": "0xffffff",
-      "directionX": -0.5735764363510458,
-      "directionY": -0.819152044288992,
+      "directionX": 0.9063077870366499,
+      "directionY": 0.42261826174069944,
       "directionZ": -1,
       "castsShadows": true
     },

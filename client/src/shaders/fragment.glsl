@@ -634,7 +634,7 @@ void main(void) {
   // Directional Light 0
   if (uDir0Enabled) {
     // Directional lights: parallel rays from infinite distance with normal mapping
-    vec3 lightDir = normalize(-uDir0Direction); // Invert direction (light TO surface)
+    vec3 lightDir = normalize(vec3(uDir0Direction.x, -uDir0Direction.y, -uDir0Direction.z)); // Fix X-axis direction
     
     // Normal mapping with safe validation
     vec3 safeNormal = normal;
@@ -660,7 +660,7 @@ void main(void) {
   // Directional Light 1
   if (uDir1Enabled) {
     // Directional lights: parallel rays from infinite distance with normal mapping
-    vec3 lightDir = normalize(-uDir1Direction); // Invert direction (light TO surface)
+    vec3 lightDir = normalize(vec3(uDir1Direction.x, -uDir1Direction.y, -uDir1Direction.z)); // Fix X-axis direction
     
     // Normal mapping with safe validation
     vec3 safeNormal = normal;
