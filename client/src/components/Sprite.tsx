@@ -80,12 +80,13 @@ export class SceneSprite {
   async loadTextures(): Promise<void> {
     this.diffuseTexture = PIXI.Texture.from(this.definition.image);
     
-    // Handle normal mapping: check if normal mapping is enabled and texture is provided
-    if (this.definition.useNormalMap && this.definition.normal && this.definition.normal !== '') {
+    // Always load normal map texture if specified, regardless of useNormalMap flag
+    // The shader will decide whether to use it based on the uUseNormalMap uniform
+    if (this.definition.normal && this.definition.normal !== '') {
       this.normalTexture = PIXI.Texture.from(this.definition.normal);
     } else {
       // Generate proper flat normal (RGB 128,128,255 = normal vector [0,0,1])
-      // Used when normal mapping is disabled or no normal texture is provided
+      // Used when no normal texture is provided in sprite definition
       this.normalTexture = this.createFlatNormalTexture();
     }
     
@@ -95,8 +96,8 @@ export class SceneSprite {
       else this.diffuseTexture!.baseTexture.on('loaded', resolve);
     })];
     
-    // Only wait for normal texture if it's not the generated flat texture
-    if (this.definition.useNormalMap && this.definition.normal && this.definition.normal !== '') {
+    // Wait for normal texture if it was loaded from file
+    if (this.definition.normal && this.definition.normal !== '') {
       promises.push(new Promise(resolve => {
         if (this.normalTexture!.baseTexture.valid) resolve(true);
         else this.normalTexture!.baseTexture.on('loaded', resolve);
