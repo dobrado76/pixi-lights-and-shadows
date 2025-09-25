@@ -277,7 +277,8 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   
   // SELF-SHADOW AVOIDANCE: Skip the last few steps to avoid hitting the receiving pixel itself
   int avoidanceSteps = 3; // Skip last 3 pixels to avoid self-occlusion
-  int actualMaxSteps = max(maxSteps - avoidanceSteps, 1);
+  int actualMaxSteps = maxSteps - avoidanceSteps;
+  if (actualMaxSteps < 1) actualMaxSteps = 1; // Ensure minimum of 1 step
   
   for (int i = 1; i < 500; i++) {
     if (i >= actualMaxSteps) break; // Stop before reaching the receiving pixel
