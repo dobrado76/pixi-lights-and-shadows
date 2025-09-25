@@ -118,12 +118,12 @@
       "image": "/textures/test3.png",
       "normal": "/textures/test3Normal.png",
       "position": {
-        "x": -200,
-        "y": 327
+        "x": 133,
+        "y": 312
       },
       "rotation": 0,
       "scale": 1.1,
-      "zOrder": 2,
+      "zOrder": 1,
       "castsShadows": true,
       "receiveShadows": false,
       "visible": true,
