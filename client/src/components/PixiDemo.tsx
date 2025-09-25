@@ -814,11 +814,22 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       for (const sprite of visibleSprites) {
         const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
-        // Set PIXI zIndex based on sprite's zOrder for proper layering
-        // Check for immediate zOrder updates first, then fall back to definition
-        const immediateZOrder = sprite.mesh && (sprite.mesh as any).userData?.__immediateZOrder;
-        mesh.zIndex = immediateZOrder !== undefined ? immediateZOrder : sprite.definition.zOrder;
+        
+        // PRESERVE immediate changes from old mesh
+        const oldMesh = sprite.mesh;
+        if (oldMesh && (oldMesh as any).userData?.__immediateZOrder !== undefined) {
+          mesh.zIndex = (oldMesh as any).userData.__immediateZOrder;
+          (mesh as any).userData = (mesh as any).userData || {};
+          (mesh as any).userData.__immediateZOrder = (oldMesh as any).userData.__immediateZOrder;
+          console.log(`🔄 Preserved immediate zOrder ${sprite.id}: ${mesh.zIndex}`);
+        } else {
+          mesh.zIndex = sprite.definition.zOrder;
+        }
+        
         spriteMeshes.push(mesh);
+        
+        // Update sprite's mesh reference to the new mesh
+        sprite.mesh = mesh;
       }
 
       // Log visible sprite information from scene
@@ -962,10 +973,17 @@ const PixiDemo = (props: PixiDemoProps) => {
             };
             
             const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
-            // Set PIXI zIndex based on sprite's zOrder for proper layering
-            // Check for immediate zOrder updates first, then fall back to definition
-            const immediateZOrder = sprite.mesh && (sprite.mesh as any).userData?.__immediateZOrder;
-            mesh.zIndex = immediateZOrder !== undefined ? immediateZOrder : sprite.definition.zOrder;
+            
+            // PRESERVE immediate changes from old mesh
+            const oldMesh = sprite.mesh;
+            if (oldMesh && (oldMesh as any).userData?.__immediateZOrder !== undefined) {
+              mesh.zIndex = (oldMesh as any).userData.__immediateZOrder;
+              (mesh as any).userData = (mesh as any).userData || {};
+              (mesh as any).userData.__immediateZOrder = (oldMesh as any).userData.__immediateZOrder;
+              console.log(`🔄 Preserved immediate zOrder ${sprite.id}: ${mesh.zIndex}`);
+            } else {
+              mesh.zIndex = sprite.definition.zOrder;
+            }
             pixiApp.stage.addChild(mesh);
             meshesRef.current.push(mesh);
             shadersRef.current.push(mesh.shader as PIXI.Shader);
