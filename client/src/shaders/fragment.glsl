@@ -465,8 +465,8 @@ void main(void) {
     // When using occluder map, sample it once directly. Otherwise combine shadows from all lights.
     if (uUseOccluderMap) {
       // With occluder map: sample directly from the map (all shadow casters already included)
-      vec2 screenCoord = worldPos / vec2(800.0, 600.0);
-      globalShadowFactor = texture2D(uOccluderMap, screenCoord).a;
+      vec2 occluderUV = worldPos / uCanvasSize;
+      globalShadowFactor = texture2D(uOccluderMap, occluderUV).a;
     } else {
       // Without occluder map: combine shadows from all individual lights
       if (uPoint0Enabled && uPoint0CastsShadows && uPoint0Intensity > 0.0) {
