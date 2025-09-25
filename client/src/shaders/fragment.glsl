@@ -414,6 +414,13 @@ void main(void) {
   vec2 worldPos = uSpritePos + uv * uSpriteSize;
   vec3 worldPos3D = vec3(worldPos.x, worldPos.y, 0.0);
   
+  // Debug: Log world position for first point light (if enabled)
+  #ifdef DEBUG_POSITIONS
+  if (gl_FragCoord.x < 50.0 && gl_FragCoord.y < 50.0) {
+    // This would need console output, but WebGL doesn't support it directly
+  }
+  #endif
+  
   // Multi-pass rendering: handle base vs lighting passes
   vec3 finalColor;
   
@@ -458,9 +465,9 @@ void main(void) {
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
-    // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
+    // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
-    if (uPoint0CastsShadows && intensity > 0.0) {
+    if (uPoint0CastsShadows) {
       shadowFactor = calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
     }
     
@@ -492,9 +499,9 @@ void main(void) {
     
     float intensity = normalDot * uPoint1Intensity * attenuation;
     
-    // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
+    // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
-    if (uPoint1CastsShadows && intensity > 0.0) {
+    if (uPoint1CastsShadows) {
       shadowFactor = calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
     }
     
@@ -659,9 +666,9 @@ void main(void) {
     float lambert = max(dot(safeNormal, L), 0.0);
     float intensity = lambert * uSpot0Intensity * atten * spotFactor;
     
-    // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
+    // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
-    if (uSpot0CastsShadows && intensity > 0.0) {
+    if (uSpot0CastsShadows) {
       shadowFactor = calculateShadowUnified(uSpot0Position.xy, worldPos.xy);
     }
     
