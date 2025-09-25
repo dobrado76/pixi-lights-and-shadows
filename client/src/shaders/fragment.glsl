@@ -475,8 +475,18 @@ void main(void) {
       globalShadowFactor *= calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
     }
     
-    // Apply shadows to ambient light too - this fixes bright shadow issue!
-    finalColor = diffuseColor.rgb * uAmbientLight * uAmbientColor * globalShadowFactor;
+    // DEBUG: Visualize shadow factor as red/green
+    if (globalShadowFactor < 0.9) {
+      // In shadow - show as red tint
+      finalColor = vec3(1.0, 0.0, 0.0) * 0.8; // Bright red for shadows
+    } else {
+      // Not in shadow - show as green tint  
+      finalColor = vec3(0.0, 1.0, 0.0) * 0.8; // Bright green for lit areas
+    }
+    
+    // Skip normal lighting calculation for debugging
+    gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
+    return;
   }
   
   // Point Light 0
