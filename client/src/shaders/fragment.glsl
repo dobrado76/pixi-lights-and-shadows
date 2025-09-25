@@ -410,15 +410,9 @@ void main(void) {
   vec4 diffuseColor = texture2D(uDiffuse, uv);
   vec3 normal = texture2D(uNormal, uv).rgb * 2.0 - 1.0;
   
-  // Calculate world position (KEEP ORIGINAL FOR SHADOWS)
+  // Calculate world position (PROPER - no artificial scaling)
   vec2 worldPos = uSpritePos + uv * uSpriteSize;
   vec3 worldPos3D = vec3(worldPos.x, worldPos.y, 0.0);
-  
-  // SEPARATE lighting position to fix small sprite illumination
-  vec2 spriteCenter = uSpritePos + uSpriteSize * 0.5;
-  vec2 uvOffset = (uv - 0.5) * min(uSpriteSize, vec2(100.0, 100.0));
-  vec2 lightingPos = spriteCenter + uvOffset;
-  vec3 lightingPos3D = vec3(lightingPos.x, lightingPos.y, 0.0);
   
   // Debug: Log world position for first point light (if enabled)
   #ifdef DEBUG_POSITIONS
@@ -449,7 +443,7 @@ void main(void) {
   // Point Light 0
   if (uPoint0Enabled) {
     vec3 lightPos3D = uPoint0Position;
-    vec3 lightDir3D = lightPos3D - lightingPos3D;
+    vec3 lightDir3D = lightPos3D - worldPos3D;
     lightDir3D.y = -lightDir3D.y; // Y-flip for coordinate system consistency
     
     float lightDistance = length(lightDir3D);
@@ -493,7 +487,7 @@ void main(void) {
   // Point Light 1
   if (uPoint1Enabled) {
     vec3 lightPos3D = uPoint1Position;
-    vec3 lightDir3D = lightPos3D - lightingPos3D;
+    vec3 lightDir3D = lightPos3D - worldPos3D;
     lightDir3D.y = -lightDir3D.y; // Y-flip for coordinate system consistency
     
     float lightDistance = length(lightDir3D);
@@ -527,7 +521,7 @@ void main(void) {
   // Point Light 2
   if (uPoint2Enabled) {
     vec3 lightPos3D = uPoint2Position;
-    vec3 lightDir3D = lightPos3D - lightingPos3D;
+    vec3 lightDir3D = lightPos3D - worldPos3D;
     lightDir3D.y = -lightDir3D.y; // Y-flip for coordinate system consistency
     
     float lightDistance = length(lightDir3D);
@@ -561,7 +555,7 @@ void main(void) {
   // Point Light 3
   if (uPoint3Enabled) {
     vec3 lightPos3D = uPoint3Position;
-    vec3 lightDir3D = lightPos3D - lightingPos3D;
+    vec3 lightDir3D = lightPos3D - worldPos3D;
     lightDir3D.y = -lightDir3D.y; // Y-flip for coordinate system consistency
     
     float lightDistance = length(lightDir3D);
@@ -647,7 +641,7 @@ void main(void) {
   // Spotlight 0
   if (uSpot0Enabled) {
     // Calculate light-to-fragment vector with Y-flip for coordinate system
-    vec3 L3 = uSpot0Position - lightingPos3D;
+    vec3 L3 = uSpot0Position - worldPos3D;
     L3.y = -L3.y;
     float dist = length(L3);
     vec3 L = normalize(L3);
@@ -694,7 +688,7 @@ void main(void) {
   // Spotlight 1
   if (uSpot1Enabled) {
     // Calculate light-to-fragment vector with Y-flip for coordinate system
-    vec3 L3 = uSpot1Position - lightingPos3D;
+    vec3 L3 = uSpot1Position - worldPos3D;
     L3.y = -L3.y;
     float dist = length(L3);
     vec3 L = normalize(L3);
@@ -741,7 +735,7 @@ void main(void) {
   // Spotlight 2
   if (uSpot2Enabled) {
     // Calculate light-to-fragment vector with Y-flip for coordinate system
-    vec3 L3 = uSpot2Position - lightingPos3D;
+    vec3 L3 = uSpot2Position - worldPos3D;
     L3.y = -L3.y;
     float dist = length(L3);
     vec3 L = normalize(L3);
@@ -788,7 +782,7 @@ void main(void) {
   // Spotlight 3
   if (uSpot3Enabled) {
     // Calculate light-to-fragment vector with Y-flip for coordinate system
-    vec3 L3 = uSpot3Position - lightingPos3D;
+    vec3 L3 = uSpot3Position - worldPos3D;
     L3.y = -L3.y;
     float dist = length(L3);
     vec3 L = normalize(L3);

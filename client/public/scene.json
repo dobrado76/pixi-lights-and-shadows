@@ -50,7 +50,7 @@
       "zOrder": -1,
       "castsShadows": true,
       "visible": true,
-      "useNormalMap": true,
+      "useNormalMap": false,
       "pivot": {
         "preset": "middle-center",
         "offsetX": 0,
@@ -189,7 +189,7 @@
       "color": "0xffffff",
       "x": 250,
       "y": 420,
-      "z": 60,
+      "z": 40,
       "followMouse": true,
       "castsShadows": true,
       "radius": 530
