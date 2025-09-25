@@ -333,7 +333,7 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
     // Sample occluder map - if we hit an occluder, we're in shadow
     float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
     if (occluderAlpha > 0.5) {
-      return 0.0; // BINARY SHADOW: In shadow
+      return 1.0 - uShadowStrength; // Apply shadow strength: 0=no shadow, 1=full shadow
     }
   }
   

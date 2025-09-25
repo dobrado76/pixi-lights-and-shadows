@@ -16,7 +16,7 @@
       "x": 270,
       "y": 300,
       "z": 60,
-      "followMouse": true,
+      "followMouse": false,
       "castsShadows": true,
       "radius": 470
     },
@@ -24,7 +24,7 @@
       "id": "directional_light",
       "type": "directional",
       "enabled": true,
-      "brightness": 0.4,
+      "brightness": 0.3,
       "color": "0xffffff",
       "directionX": -0.5735764363510458,
       "directionY": -0.819152044288992,
@@ -103,7 +103,7 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0,
+    "strength": 0.5,
     "maxLength": 260,
     "height": 8,
     "sharpness": 1
