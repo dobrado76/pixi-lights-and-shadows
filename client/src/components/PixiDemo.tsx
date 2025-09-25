@@ -605,7 +605,7 @@ const PixiDemo = (props: PixiDemoProps) => {
                     // Method 2: Force material/shader update - CORRECT PIXI.js way
                     if (mesh.material && mesh.material.uniforms) {
                       mesh.material.uniforms.uNormalMap = sprite.normalTexture; // Direct uniform update
-                      (mesh.material as any).update();
+                      // No .update() needed - PIXI handles this automatically
                     }
                     
                     // Method 3: Force render (removed shader method - not accessible)

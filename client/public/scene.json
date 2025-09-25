@@ -118,16 +118,16 @@
       "image": "/textures/test3.png",
       "normal": "/textures/test3Normal.png",
       "position": {
-        "x": 126,
+        "x": 159,
         "y": 298
       },
       "rotation": 0,
       "scale": 1,
-      "zOrder": 1,
+      "zOrder": 2,
       "castsShadows": true,
       "receiveShadows": false,
       "visible": true,
-      "useNormalMap": true,
+      "useNormalMap": false,
       "pivot": {
         "preset": "middle-center",
         "offsetX": 0,
