@@ -123,10 +123,10 @@
       },
       "rotation": 0,
       "scale": 1,
-      "zOrder": 0,
+      "zOrder": 1,
       "castsShadows": true,
       "receiveShadows": false,
-      "visible": false,
+      "visible": true,
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
