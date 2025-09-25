@@ -228,13 +228,15 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
     // Convert world position to UV coordinates
     vec2 occluderUV = samplePos / uCanvasSize;
     
-    // Check bounds
-    if (occluderUV.x < 0.0 || occluderUV.x > 1.0 || occluderUV.y < 0.0 || occluderUV.y > 1.0) {
+    // Check bounds - allow expanded area for off-screen shadow casting
+    vec2 expandedMapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
+    vec2 bufferUV = uOccluderMapOffset / uCanvasSize;
+    if (occluderUV.x < -bufferUV.x || occluderUV.x > 1.0 + bufferUV.x || 
+        occluderUV.y < -bufferUV.y || occluderUV.y > 1.0 + bufferUV.y) {
       continue;
     }
     
     // Sample occluder map alpha (adjust UV for expanded map offset)
-    vec2 expandedMapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
     vec2 adjustedUV = (occluderUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
     float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     
@@ -329,13 +331,15 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
     vec2 samplePos = lightPos + rayDir * distance;
     vec2 occluderUV = samplePos / uCanvasSize;
     
-    // Skip out of bounds samples
-    if (occluderUV.x < 0.0 || occluderUV.x > 1.0 || occluderUV.y < 0.0 || occluderUV.y > 1.0) {
+    // Skip out of bounds samples - allow expanded area for off-screen shadow casting
+    vec2 expandedMapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
+    vec2 bufferUV = uOccluderMapOffset / uCanvasSize;
+    if (occluderUV.x < -bufferUV.x || occluderUV.x > 1.0 + bufferUV.x || 
+        occluderUV.y < -bufferUV.y || occluderUV.y > 1.0 + bufferUV.y) {
       continue;
     }
     
     // Sample occluder map - if we hit an occluder, we're in shadow (adjust UV for expanded map offset)
-    vec2 expandedMapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
     vec2 adjustedUV = (occluderUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
     float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     if (occluderAlpha > 0.5) {
