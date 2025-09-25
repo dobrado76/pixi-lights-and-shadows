@@ -63,15 +63,8 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
       onImmediateSpriteChange(spriteId, updates);
     }
     
-    // For zOrder/normalMap: Update UI but delay React state to prevent rebuilds
-    if (updates.zOrder !== undefined || updates.useNormalMap !== undefined) {
-      // Update React state immediately for UI controls to move
-      onSceneConfigChange(newConfig);
-      console.log('🛡️ Immediate change - UI updated, PIXI handles visual');
-    } else {
-      // Normal React state update for non-critical changes
-      onSceneConfigChange(newConfig);
-    }
+    // Normal React state update for non-critical changes
+    onSceneConfigChange(newConfig);
   };
 
   const sprites = Object.entries(sceneConfig.scene || {});
