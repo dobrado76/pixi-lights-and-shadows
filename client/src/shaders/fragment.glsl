@@ -3,6 +3,7 @@ varying vec2 vTextureCoord;
 varying vec2 vWorldPos; // Actual world position from vertex shader
 uniform sampler2D uDiffuse;
 uniform sampler2D uNormal;
+uniform bool uUseNormalMap; // Flag to control whether to use normal map or default flat normals
 uniform vec2 uSpritePos;
 uniform vec2 uSpriteSize;
 // Self-shadow avoidance for occluder map
@@ -453,7 +454,14 @@ void main(void) {
   
   // Sample textures with rotated UV coordinates (rotation affects lighting calculation)
   vec4 diffuseColor = texture2D(uDiffuse, uv);
-  vec3 normal = texture2D(uNormal, uv).rgb * 2.0 - 1.0;
+  
+  // Use normal map if enabled, otherwise use flat normal (0, 0, 1)
+  vec3 normal;
+  if (uUseNormalMap) {
+    normal = texture2D(uNormal, uv).rgb * 2.0 - 1.0; // Sample and decode normal map
+  } else {
+    normal = vec3(0.0, 0.0, 1.0); // Flat normal pointing outward
+  }
   
   // Use actual world position from vertex shader (includes container transforms)
   vec2 worldPos = vWorldPos;

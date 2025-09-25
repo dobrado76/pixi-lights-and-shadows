@@ -561,16 +561,11 @@ const PixiDemo = (props: PixiDemoProps) => {
                 console.log(`⚡ Immediate zOrder: ${spriteId} → ${updates.zOrder}`);
               }
               
-              // Handle normal map changes - Mark as immediate to prevent React override
+              // Handle normal map changes - Update shader uniform without reloading texture
               if (updates.useNormalMap !== undefined) {
                 sprite.definition.useNormalMap = updates.useNormalMap;
-                if (updates.useNormalMap && sprite.definition.normal) {
-                  sprite.normalTexture = PIXI.Texture.from(sprite.definition.normal);
-                } else {
-                  sprite.normalTexture = sprite['createFlatNormalTexture']();
-                }
                 if (sprite.shader) {
-                  sprite.shader.uniforms.uNormalMap = sprite.normalTexture;
+                  sprite.shader.uniforms.uUseNormalMap = updates.useNormalMap;
                   sprite.shader.userData = sprite.shader.userData || {};
                   sprite.shader.userData.__immediateNormalMap = updates.useNormalMap; // Mark as immediate
                 }
