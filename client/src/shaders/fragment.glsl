@@ -462,53 +462,42 @@ void main(void) {
     return;
   } else {
     
-    // Calculate shadows once from any shadow-casting light (they all use the same occluder map!)
-    bool hasShadowCastingLight = false;
-    vec2 sampleLightPos = vec2(0.0);
-    vec2 sampleLightDir = vec2(0.0);
-    bool isDirectionalSample = false;
-    
-    // Find the first enabled shadow-casting light to sample shadows once
-    if (uPoint0Enabled && uPoint0CastsShadows && uPoint0Intensity > 0.0) {
-      sampleLightPos = uPoint0Position.xy;
-      hasShadowCastingLight = true;
-    } else if (uPoint1Enabled && uPoint1CastsShadows && uPoint1Intensity > 0.0) {
-      sampleLightPos = uPoint1Position.xy;
-      hasShadowCastingLight = true;
-    } else if (uPoint2Enabled && uPoint2CastsShadows && uPoint2Intensity > 0.0) {
-      sampleLightPos = uPoint2Position.xy;
-      hasShadowCastingLight = true;
-    } else if (uPoint3Enabled && uPoint3CastsShadows && uPoint3Intensity > 0.0) {
-      sampleLightPos = uPoint3Position.xy;
-      hasShadowCastingLight = true;
-    } else if (uDir0Enabled && uDir0CastsShadows && uDir0Intensity > 0.0) {
-      sampleLightDir = uDir0Direction.xy;
-      hasShadowCastingLight = true;
-      isDirectionalSample = true;
-    } else if (uDir1Enabled && uDir1CastsShadows && uDir1Intensity > 0.0) {
-      sampleLightDir = uDir1Direction.xy;
-      hasShadowCastingLight = true;
-      isDirectionalSample = true;
-    } else if (uSpot0Enabled && uSpot0CastsShadows && uSpot0Intensity > 0.0) {
-      sampleLightPos = uSpot0Position.xy;
-      hasShadowCastingLight = true;
-    } else if (uSpot1Enabled && uSpot1CastsShadows && uSpot1Intensity > 0.0) {
-      sampleLightPos = uSpot1Position.xy;
-      hasShadowCastingLight = true;
-    } else if (uSpot2Enabled && uSpot2CastsShadows && uSpot2Intensity > 0.0) {
-      sampleLightPos = uSpot2Position.xy;
-      hasShadowCastingLight = true;
-    } else if (uSpot3Enabled && uSpot3CastsShadows && uSpot3Intensity > 0.0) {
-      sampleLightPos = uSpot3Position.xy;
-      hasShadowCastingLight = true;
-    }
-    
-    // Sample shadows ONCE using the first available light
-    if (hasShadowCastingLight) {
-      if (isDirectionalSample) {
-        globalShadowFactor = calculateDirectionalShadowUnified(sampleLightDir, worldPos.xy);
-      } else {
-        globalShadowFactor = calculateShadowUnified(sampleLightPos, worldPos.xy);
+    // When using occluder map, sample it once directly. Otherwise combine shadows from all lights.
+    if (uUseOccluderMap) {
+      // With occluder map: sample directly from the map (all shadow casters already included)
+      vec2 screenCoord = worldPos / vec2(800.0, 600.0);
+      globalShadowFactor = texture2D(uOccluderMap, screenCoord).a;
+    } else {
+      // Without occluder map: combine shadows from all individual lights
+      if (uPoint0Enabled && uPoint0CastsShadows && uPoint0Intensity > 0.0) {
+        globalShadowFactor *= calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
+      }
+      if (uPoint1Enabled && uPoint1CastsShadows && uPoint1Intensity > 0.0) {
+        globalShadowFactor *= calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
+      }
+      if (uPoint2Enabled && uPoint2CastsShadows && uPoint2Intensity > 0.0) {
+        globalShadowFactor *= calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
+      }
+      if (uPoint3Enabled && uPoint3CastsShadows && uPoint3Intensity > 0.0) {
+        globalShadowFactor *= calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
+      }
+      if (uDir0Enabled && uDir0CastsShadows && uDir0Intensity > 0.0) {
+        globalShadowFactor *= calculateDirectionalShadowUnified(uDir0Direction.xy, worldPos.xy);
+      }
+      if (uDir1Enabled && uDir1CastsShadows && uDir1Intensity > 0.0) {
+        globalShadowFactor *= calculateDirectionalShadowUnified(uDir1Direction.xy, worldPos.xy);
+      }
+      if (uSpot0Enabled && uSpot0CastsShadows && uSpot0Intensity > 0.0) {
+        globalShadowFactor *= calculateShadowUnified(uSpot0Position.xy, worldPos.xy);
+      }
+      if (uSpot1Enabled && uSpot1CastsShadows && uSpot1Intensity > 0.0) {
+        globalShadowFactor *= calculateShadowUnified(uSpot1Position.xy, worldPos.xy);
+      }
+      if (uSpot2Enabled && uSpot2CastsShadows && uSpot2Intensity > 0.0) {
+        globalShadowFactor *= calculateShadowUnified(uSpot2Position.xy, worldPos.xy);
+      }
+      if (uSpot3Enabled && uSpot3CastsShadows && uSpot3Intensity > 0.0) {
+        globalShadowFactor *= calculateShadowUnified(uSpot3Position.xy, worldPos.xy);
       }
     }
     
