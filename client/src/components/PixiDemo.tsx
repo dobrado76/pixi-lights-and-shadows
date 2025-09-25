@@ -876,6 +876,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       shadersRef.current = spriteMeshes.map(mesh => mesh.shader!);
       shadowCastersRef.current = legacyShadowCasters;
 
+      // CLEAR old meshes first, then add new ones
+      sceneContainerRef.current!.removeChildren();
+      
       // Add all sprite meshes to stage (already filtered to visible sprites and z-ordered)
       spriteMeshes.forEach(mesh => {
         sceneContainerRef.current!.addChild(mesh);
