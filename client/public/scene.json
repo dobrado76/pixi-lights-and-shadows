@@ -189,10 +189,10 @@
       "color": "0xffffff",
       "x": 250,
       "y": 420,
-      "z": 40,
+      "z": 20,
       "followMouse": true,
       "castsShadows": true,
-      "radius": 530
+      "radius": 3310
     },
     {
       "id": "directional_light",
