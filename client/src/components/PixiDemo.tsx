@@ -987,15 +987,11 @@ const PixiDemo = (props: PixiDemoProps) => {
 
   // Dynamic shader uniform updates for real-time lighting changes
   useEffect(() => {
-    console.log('🚨 LIGHTING UPDATE USEEFFECT TRIGGERED!', {
-      shaderCount: shadersRef.current.length,
-      lightsCount: lightsConfig.length,
-      timestamp: Date.now()
-    });
+    // Lighting update effect - cleaned up for performance
     
     if (shadersRef.current.length === 0) return;
     
-    console.log('🔥 LIGHTING UPDATE TRIGGERED - updating shader uniforms in real-time');
+    // Updating shader uniforms in real-time
 
     // Full light uniforms recreation - individual uniform approach
     const createLightUniforms = () => {
@@ -1265,7 +1261,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Force immediate render after updating lighting uniforms
       if (pixiApp && pixiApp.renderer) {
-        console.log('🎨 FORCING IMMEDIATE RENDER after lighting uniform updates');
+        // Forcing immediate render after lighting uniform updates
         pixiApp.render();
       } else {
         console.warn('⚠️ Cannot render - pixiApp or renderer not available');
@@ -1286,12 +1282,12 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Trigger shadow system check and render loop every frame
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
       if (shadowCasters.length > 3) {
-        console.log(`🌑 UNLIMITED SHADOWS: ${shadowCasters.length} casters detected`);
+        // Unlimited shadows: ${shadowCasters.length} casters detected
         
         // TRIGGER THE RENDER LOOP FOR UNLIMITED SHADOWS
         const useOccluderMap = shadowCasters.length > 3;
         if (useOccluderMap && occluderRenderTargetRef.current) {
-          console.log(`🔧 TRIGGERING Occluder map build from animation loop...`);
+          // Triggering occluder map build from animation loop
           buildOccluderMap();
           
           // Update all shaders to use occluder map
@@ -1305,8 +1301,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               shader.uniforms.uDir0CastsShadows = enabledDirectionalLights.length > 0 && enabledDirectionalLights[0].castsShadows;
             }
           });
-          console.log(`✅ Unlimited shadows applied from animation loop!`);
-          console.log(`🌞 DIRECTIONAL SHADOWS ENABLED in animation loop`);
+          // Unlimited shadows applied from animation loop
         }
       }
     };

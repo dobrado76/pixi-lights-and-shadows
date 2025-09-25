@@ -450,6 +450,9 @@ void main(void) {
   // Multi-pass rendering: handle base vs lighting passes
   vec3 finalColor;
   
+  // Calculate global shadow factor - available to all lighting calculations
+  float globalShadowFactor = 1.0;
+  
   if (uPassMode == 0) {
     // Base pass: ambient lighting only
     finalColor = diffuseColor.rgb * uAmbientLight * uAmbientColor;
@@ -458,8 +461,6 @@ void main(void) {
     gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
     return;
   } else {
-    // Calculate global shadow factor - affects everything including ambient
-    float globalShadowFactor = 1.0;
     
     // Check shadows from lights that are enabled, cast shadows, AND have intensity > 0 (basic physics!)
     if (uPoint0Enabled && uPoint0CastsShadows && uPoint0Intensity > 0.0) {
