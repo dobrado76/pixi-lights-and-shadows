@@ -47,6 +47,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   const shadowMeshesRef = useRef<PIXI.Mesh[]>([]);     // Legacy shadow geometry meshes
   const shadowCastersRef = useRef<ShadowCaster[]>([]);  // Simplified caster data for calculations
   const sceneManagerRef = useRef<SceneManager | null>(null);  // Scene/sprite management system
+  const lastSceneConfigRef = useRef<string>(''); // Track last config to prevent unnecessary rebuilds
   
   // Unlimited shadow caster system - uses render texture when >4 casters
   const occluderRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
@@ -544,17 +545,13 @@ const PixiDemo = (props: PixiDemoProps) => {
 
     const setupDemo = async () => {
       try {
-        // CRITICAL FIX: Don't rebuild if we have immediate changes pending
-        if (sceneManagerRef.current) {
-          const hasImmediateChanges = sceneManagerRef.current.getAllSprites().some(sprite => 
-            sprite.mesh && ((sprite.mesh as any).userData?.__immediateZOrder !== undefined ||
-                          (sprite.mesh as any).userData?.__immediateNormalMap !== undefined)
-          );
-          if (hasImmediateChanges) {
-            console.log('🛡️ SKIPPING setupDemo - immediate changes pending');
-            return;
-          }
+        // Track last config to avoid rebuilds on immediate-only changes
+        const currentConfigKey = JSON.stringify(sceneConfig.scene);
+        if (lastSceneConfigRef.current === currentConfigKey) {
+          console.log('🛡️ SKIPPING setupDemo - config unchanged');
+          return;
         }
+        lastSceneConfigRef.current = currentConfigKey;
         
         // Use scene configuration from props instead of fetching
         const sceneData = sceneConfig;
