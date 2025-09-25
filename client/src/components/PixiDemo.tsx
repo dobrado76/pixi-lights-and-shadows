@@ -164,7 +164,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   
   const geometry = useCustomGeometry(shaderParams.canvasWidth, shaderParams.canvasHeight);
 
-  // Occluder map builder for unlimited shadow casters - optimized to reuse sprites
+  // Occluder map builder with zOrder hierarchy support
   const buildOccluderMap = () => {
     if (!pixiApp || !occluderRenderTargetRef.current || !occluderContainerRef.current) return;
     
@@ -201,6 +201,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       occluderSprite.width = textureWidth * spriteScale;
       occluderSprite.height = textureHeight * spriteScale;
       occluderSprite.visible = true;
+      
+      // ZORDER ENCODING: Encode zOrder in red channel for hierarchy filtering
+      // Normalize zOrder to 0-1 range (assuming zOrder range -10 to +20)
+      const normalizedZOrder = Math.max(0, Math.min(1, (caster.definition.zOrder + 10) / 30));
+      occluderSprite.tint = (Math.floor(normalizedZOrder * 255) << 16) | 0x00FF00; // Red=zOrder, Green=255 (opaque), Blue=0
       
     });
     
@@ -895,9 +900,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
 
       
-      // IMMEDIATE CHECK: Should we use unlimited shadows?
+      // DEBUG: Check which shadow system is being used
       if (shadowCasters.length > 3) {
+        console.log(`🌑 Using OCCLUDER MAP shadow system with ${shadowCasters.length} casters (>3)`);
       } else {
+        console.log(`🎯 Using PER-CASTER shadow system with ${shadowCasters.length} casters (≤3)`);
       }
 
       // Set shadow texture uniforms for all sprites
