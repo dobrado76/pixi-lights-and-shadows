@@ -173,7 +173,8 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
     geometryPassContainerRef.current.removeChildren();
     
     sprites.forEach((sprite: SceneSprite, index: number) => {
-      if (!sprite.diffuseTexture) return;
+      // Skip disabled sprites - this is critical for proper deferred rendering
+      if (!sprite.isEnabled() || !sprite.diffuseTexture) return;
       
       // Create simple PIXI sprite for geometry pass
       const pixiSprite = new PIXI.Sprite(sprite.diffuseTexture);
@@ -201,7 +202,7 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
    * LIGHTING PASS: Apply lighting calculations on screen-space G-Buffer data
    * This is where the deferred lighting magic happens - single pass for all lights
    */
-  const renderLightingPass = () => {
+  const renderLightingPass = async () => {
     if (!pixiApp || !gBufferAlbedoRef.current || !lightAccumulationRef.current) return;
     
     // Create full-screen quad that samples from G-Buffers and applies lighting
@@ -211,10 +212,8 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
     fullScreenQuad.x = 0;
     fullScreenQuad.y = 0;
     
-    // For now, just copy the albedo buffer - lighting shader will be added later
-    const shader = PIXI.Shader.from(
-      // Vertex shader
-      `
+    // Load the proper lighting-pass shader for screen-space lighting calculations
+    const lightingVertexShader = `
       precision mediump float;
       attribute vec2 aVertexPosition;
       attribute vec2 aTextureCoord;
@@ -225,20 +224,34 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
         vTextureCoord = aTextureCoord;
         gl_Position = vec4((projectionMatrix * translationMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
       }
-      `,
-      // Fragment shader - simple pass-through for now
-      `
-      precision mediump float;
-      varying vec2 vTextureCoord;
-      uniform sampler2D uSampler;
-      void main() {
-        gl_FragColor = texture2D(uSampler, vTextureCoord);
-      }
-      `,
-      {
-        uSampler: gBufferAlbedoRef.current
-      }
-    );
+    `;
+    
+    // Load the lighting-pass.glsl fragment shader
+    const lightingFragmentShader = await fetch('/src/shaders/lighting-pass.glsl').then(r => r.text());
+    
+    const shader = PIXI.Shader.from(lightingVertexShader, lightingFragmentShader, {
+      // G-Buffer inputs
+      uGBufferAlbedo: gBufferAlbedoRef.current,
+      uGBufferNormal: gBufferNormalRef.current || gBufferAlbedoRef.current, // Fallback if no normal buffer
+      uGBufferPosition: gBufferPositionRef.current || gBufferAlbedoRef.current, // Fallback if no position buffer
+      
+      // Scene parameters
+      uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
+      uAmbientLight: ambientLight,
+      uAmbientColor: [1.0, 1.0, 1.0], // White ambient
+      
+      // Lights - set up point lights from config
+      uNumPointLights: Math.min(lightsConfig.filter(l => l.enabled && l.type === 'point').length, 8),
+      uPointLightPositions: lightsConfig.filter(l => l.enabled && l.type === 'point').slice(0, 8).map(l => [l.position.x, l.position.y, l.position.z]).flat(),
+      uPointLightColors: lightsConfig.filter(l => l.enabled && l.type === 'point').slice(0, 8).map(l => [l.color.r, l.color.g, l.color.b]).flat(),
+      uPointLightIntensities: lightsConfig.filter(l => l.enabled && l.type === 'point').slice(0, 8).map(l => l.intensity),
+      uPointLightRadii: lightsConfig.filter(l => l.enabled && l.type === 'point').slice(0, 8).map(l => l.radius || 100),
+      
+      // Shadow system
+      uShadowsEnabled: shadowConfig.enabled,
+      uShadowStrength: shadowConfig.strength,
+      uShadowMap: gBufferAlbedoRef.current // Use albedo as shadow map for now
+    });
         
         shader.uniforms.uUseOccluderMap = true; // Always use occluder map in deferred renderer
         // Create and render occluder map for ray casting shadows
