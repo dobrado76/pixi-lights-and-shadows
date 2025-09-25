@@ -582,8 +582,11 @@ const PixiDemo = (props: PixiDemoProps) => {
                 console.log(`⚡ Immediate position: ${spriteId}`);
               }
               
-              // Handle visibility changes
+              // Handle visibility changes - Update mesh.visible instead of recreating
               if (updates.visible !== undefined) {
+                sprite.definition.visible = updates.visible;
+                sprite.mesh.visible = updates.visible;
+                console.log(`⚡ Immediate visibility: ${spriteId} → ${updates.visible}`);
                 sprite.mesh.visible = updates.visible;
                 console.log(`⚡ Immediate visibility: ${spriteId} → ${updates.visible}`);
               }
@@ -801,21 +804,21 @@ const PixiDemo = (props: PixiDemoProps) => {
         ...lightUniforms
       };
       
-      // Create meshes only for visible sprites, sorted by zOrder (back to front)
+      // Create meshes for ALL sprites (regardless of visibility), sorted by zOrder (back to front)
       const spriteMeshes: PIXI.Mesh[] = [];
       const allSprites = sceneManagerRef.current!.getSpritesSortedByZOrder(); // Use z-ordered sprites
-      const visibleSprites = allSprites.filter(sprite => sprite.definition.visible);
       
-      
-      for (const sprite of visibleSprites) {
+      for (const sprite of allSprites) {
         const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
         // Set PIXI zIndex based on sprite's zOrder for proper layering
         mesh.zIndex = sprite.definition.zOrder;
+        // Control visibility through PIXI, not by excluding from creation
+        mesh.visible = sprite.definition.visible;
         spriteMeshes.push(mesh);
       }
 
-      // Log visible sprite information from scene
-      visibleSprites.forEach(sprite => {
+      // Log all sprite information from scene (including invisible ones)
+      allSprites.forEach(sprite => {
         const bounds = sprite.getBounds();
         console.log(`${sprite.id} actual dimensions:`, bounds.width, bounds.height);
       });
@@ -858,7 +861,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       shadersRef.current = spriteMeshes.map(mesh => mesh.shader!);
       shadowCastersRef.current = legacyShadowCasters;
 
-      // Add all sprite meshes to stage (already filtered to visible sprites and z-ordered)
+      // Add all sprite meshes to stage (visibility controlled by mesh.visible property)
       spriteMeshes.forEach(mesh => {
         sceneContainerRef.current!.addChild(mesh);
       });
