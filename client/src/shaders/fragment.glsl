@@ -289,24 +289,22 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   float tEnterSelf = max(max(tNear.x, tNear.y), 0.0);
   float tExitSelf = min(min(tFar.x, tFar.y), rayLength);
   
-  // CONSERVATIVE SELF-SHADOW FIX: Only apply when light is very close to sprite center
-  // This preserves light contribution to other sprites while fixing severe self-shadowing
+  // Check if light is inside receiver sprite bounds
+  bool lightInsideReceiver = (lightPos.x >= uReceiverMin.x && lightPos.x <= uReceiverMax.x && 
+                             lightPos.y >= uReceiverMin.y && lightPos.y <= uReceiverMax.y);
+  
+  // SMART FIX: Only increase start distance for reasonably-sized sprites, not huge backgrounds
+  // This preserves shadow casting while fixing self-shadow issues
   float startDistance = 1.0; // Normal start distance for shadows
   
-  // Calculate sprite center and distance from light
-  vec2 spriteCenter = (uReceiverMin + uReceiverMax) * 0.5;
+  // Calculate sprite size to avoid applying fix to background sprites
   vec2 spriteSize = uReceiverMax - uReceiverMin;
-  float distanceToCenter = length(lightPos.xy - spriteCenter);
-  float spriteRadius = length(spriteSize) * 0.25; // Conservative radius (quarter of diagonal)
-  
-  // Only apply fix for non-background sprites when light is very close to center
   float spriteArea = spriteSize.x * spriteSize.y;
-  bool isBackgroundSprite = spriteArea > 400000.0;
-  bool lightVeryCloseToCenter = distanceToCenter < spriteRadius;
+  bool isBackgroundSprite = spriteArea > 400000.0; // Background is ~480,000 pixels
   
-  if (lightVeryCloseToCenter && !isBackgroundSprite) {
-    // Light is very close to sprite center - apply minimal fix to reduce self-shadowing
-    startDistance = 3.0; // Small increase to reduce self-shadow without breaking other shadows
+  if (lightInsideReceiver && !isBackgroundSprite) {
+    // Light is inside this regular-sized sprite - start ray marching from outside the sprite
+    startDistance = max(tExitSelf + 2.0, 2.0);
   }
   
   // Ray marching with self-shadow avoidance
@@ -351,8 +349,8 @@ float calculateDirectionalShadow(vec4 caster, vec2 pixelPos, vec2 lightDirection
   vec2 casterSize = caster.zw;
   vec2 casterCenter = casterPos + casterSize * 0.5;
   
-  // Normalize light direction for consistent calculations - use same convention as occluder map
-  vec2 lightDir2D = -normalize(lightDirection.xy); // Ray direction from light
+  // Normalize light direction for consistent calculations
+  vec2 lightDir2D = normalize(lightDirection.xy);
   
   // Check if pixel is in the shadow area cast by this caster
   // For directional lights, shadows extend infinitely in the light direction
@@ -448,11 +446,6 @@ vec2 rotateUV(vec2 uv, float rotation) {
   // Translate back
   return rotated + 0.5;
 }
-
-// Helper functions for directional lighting coordinate system
-// uDirNDirection represents light→scene direction
-vec2 dirToLight(vec3 dir) { return normalize(-dir.xy); } // from pixel to light (for lighting)
-vec2 dirFromLight(vec3 dir) { return normalize(dir.xy); } // light travel direction (for shadows)
 
 void main(void) {
   // Apply rotation to UV coordinates BEFORE texture sampling (physically correct)
@@ -641,7 +634,7 @@ void main(void) {
   // Directional Light 0
   if (uDir0Enabled) {
     // Directional lights: parallel rays from infinite distance with normal mapping
-    vec3 lightDir = vec3(dirToLight(uDir0Direction), uDir0Direction.z); // Vector from pixel to light
+    vec3 lightDir = normalize(-uDir0Direction); // Invert direction (light TO surface)
     
     // Normal mapping with safe validation
     vec3 safeNormal = normal;
@@ -667,7 +660,7 @@ void main(void) {
   // Directional Light 1
   if (uDir1Enabled) {
     // Directional lights: parallel rays from infinite distance with normal mapping
-    vec3 lightDir = vec3(dirToLight(uDir1Direction), uDir1Direction.z); // Vector from pixel to light
+    vec3 lightDir = normalize(-uDir1Direction); // Invert direction (light TO surface)
     
     // Normal mapping with safe validation
     vec3 safeNormal = normal;
