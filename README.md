@@ -38,12 +38,12 @@ Experience the full lighting and shadow system in action with interactive contro
 - **Real-Time Transforms**: Live adjustment of mask offset, rotation, and scale
 - **Shadow-Aware Masking**: Masks only apply in fully lit areas, shadows override masks
 
-### 📄 External JSON Configuration System
-- **Scene Configuration**: Complete scene setup via `scene.json` including sprites, positions, textures, and shadow participation
-- **Lighting Configuration**: Comprehensive lighting setup via `lights-config.json` with all light properties and shadow settings
-- **Auto-Save**: Automatic persistence of lighting configurations every 2-3 seconds
-- **Hot-Reload**: Live updates when configuration files change
-- **Easy Sharing**: Export and import complete scene and lighting setups
+### 📄 Unified JSON Configuration System
+- **Single Configuration File**: Everything stored in `scene.json` - sprites, lights, and shadow settings in one place
+- **Real-Time UI Editing**: All scene objects and lighting parameters editable through interactive controls
+- **Automatic State Management**: Configuration changes update immediately with visual feedback
+- **Development-Friendly**: Live editing with instant visual updates during development
+- **Easy Scene Sharing**: Complete scenes can be shared via single JSON file
 
 ### 🎮 Interactive Controls
 - **Real-Time Editing**: All lighting and shadow parameters update instantly
@@ -57,143 +57,145 @@ Experience the full lighting and shadow system in action with interactive contro
 - **Accessible Controls**: Keyboard navigation and screen reader support
 - **Mobile Responsive**: Works across desktop, tablet, and mobile devices
 
-## 📁 Configuration Files
+## 📁 Configuration System
 
-### Scene Configuration (`client/public/scene.json`)
+### Unified Configuration (`client/public/scene.json`)
 
-Defines the complete scene setup including sprites, backgrounds, and shadow participation:
+All scene, lighting, and shadow data is stored in a single JSON file with three main sections:
 
 ```json
 {
-  "background": {
-    "texture": "textures/background.png",
-    "normalMap": "textures/background_normal.png",
-    "width": 800,
-    "height": 600,
-    "zIndex": 0
-  },
-  "sprites": [
-    {
-      "id": "ball",
-      "texture": "textures/ball.png",
-      "normalMap": "textures/ball_normal.png",
-      "position": { "x": 120, "y": 80 },
-      "width": 75,
-      "height": 75,
-      "zIndex": 1,
-      "castsShadows": true,
-      "receivesShadows": true
+  "scene": {
+    "background": {
+      "image": "/textures/BGTextureTest.jpg",
+      "normal": "/textures/BGTextureNORM.jpg",
+      "position": { "x": 0, "y": 0 },
+      "rotation": 0,
+      "scale": 1,
+      "zOrder": -1,
+      "castsShadows": false,
+      "visible": true,
+      "useNormalMap": true,
+      "pivot": {
+        "preset": "middle-center",
+        "offsetX": 0,
+        "offsetY": 0
+      }
     },
-    {
-      "id": "block",
-      "texture": "textures/block.png", 
-      "normalMap": "textures/block_normal.png",
-      "position": { "x": 280, "y": 120 },
-      "width": 120,
-      "height": 60,
-      "zIndex": 1,
+    "ball": {
+      "image": "/textures/ball.png",
+      "normal": "/textures/ballN.png",
+      "position": { "x": 100, "y": 50 },
+      "rotation": 0,
+      "scale": 1,
+      "zOrder": 0,
       "castsShadows": true,
-      "receivesShadows": true
+      "visible": true,
+      "useNormalMap": true,
+      "pivot": {
+        "preset": "middle-center",
+        "offsetX": 0,
+        "offsetY": 0
+      }
     }
-  ]
-}
-```
-
-**Properties:**
-- **id**: Unique identifier for each sprite
-- **texture**: Path to diffuse texture (relative to public/)
-- **normalMap**: Path to normal map texture for surface detail
-- **position**: X,Y coordinates in screen space
-- **width/height**: Sprite dimensions in pixels
-- **zIndex**: Rendering order (lower values render first)
-- **castsShadows**: Whether sprite blocks light and casts shadows
-- **receivesShadows**: Whether sprite is affected by shadow calculations
-
-### Lighting Configuration (`client/public/lights-config.json`)
-
-Defines all lighting setup including shadow configuration:
-
-```json
-{
+  },
   "lights": [
     {
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
-      "position": { "x": 270, "y": 300, "z": 130 },
-      "color": { "r": 1, "g": 1, "b": 1 },
-      "intensity": 1.5,
-      "radius": 500,
+      "brightness": 1,
+      "color": "0xffffff",
+      "x": 250,
+      "y": 170,
+      "z": 40,
       "followMouse": true,
       "castsShadows": true,
-      "mask": {
-        "image": "00035-3934797537.png",
-        "offset": { "x": 15, "y": 5 },
-        "rotation": 0,
-        "scale": 1.4
-      }
+      "radius": 350
     },
     {
       "id": "directional_light",
-      "type": "directional", 
-      "enabled": false,
-      "direction": { "x": 0, "y": -1, "z": -1 },
-      "color": { "r": 1, "g": 1, "b": 1 },
-      "intensity": 0.2,
+      "type": "directional",
+      "enabled": true,
+      "brightness": 0.2,
+      "color": "0xffffff",
+      "directionX": 0.64,
+      "directionY": -0.77,
+      "directionZ": -1,
       "castsShadows": true
     },
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": false,
-      "position": { "x": 220, "y": 210, "z": 80 },
-      "direction": { "x": 0, "y": 1, "z": -1 },
-      "color": { "r": 0.96, "g": 0.94, "b": 0.50 },
-      "intensity": 1.2,
-      "radius": 690,
-      "coneAngle": 47,
+      "enabled": true,
+      "brightness": 0.4,
+      "color": "0xf4f080",
+      "x": 200,
+      "y": 210,
+      "z": 80,
+      "directionX": 0,
+      "directionY": 1,
+      "directionZ": -1,
+      "castsShadows": true,
+      "radius": 780,
+      "coneAngle": 49,
       "softness": 0.2,
-      "castsShadows": true
+      "mask": {
+        "image": "00035-3934797537.png",
+        "offset": { "x": 15, "y": 25 },
+        "rotation": 0,
+        "scale": 1.4
+      }
     }
   ],
-  "ambientLight": {
-    "color": { "r": 0.2, "g": 0.2, "b": 0.3 },
-    "intensity": 0.3
-  },
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.7,
-    "maxLength": 200,
-    "height": 10
+    "strength": 0.55,
+    "maxLength": 280,
+    "height": 8,
+    "sharpness": 1
   }
 }
 ```
 
-**Light Properties:**
+### Scene Object Properties
+- **image**: Path to diffuse texture (relative to public/)
+- **normal**: Path to normal map texture for surface detail
+- **position**: X,Y coordinates in screen space
+- **rotation**: Rotation angle in degrees
+- **scale**: Size multiplier (1.0 = original size)
+- **zOrder**: Rendering order (lower values render first)
+- **castsShadows**: Whether object blocks light and casts shadows
+- **visible**: Whether object is rendered
+- **useNormalMap**: Whether to apply normal mapping
+- **pivot**: Anchor point configuration with presets and custom offsets
+
+### Light Properties
 - **id**: Unique identifier for the light
-- **type**: Light type (`point`, `spotlight`, `directional`)
+- **type**: Light type (`point`, `spotlight`, `directional`, `ambient`)
 - **enabled**: Whether the light is active
-- **position**: 3D position (Z affects shadow projection height)
-- **direction**: Light direction vector (spotlight/directional only)
-- **color**: RGB color values (0.0 - 1.0)
-- **intensity**: Light strength multiplier
+- **brightness**: Light intensity multiplier
+- **color**: Hex color value (e.g., "0xffffff")
+- **x, y, z**: 3D position (point/spotlight only)
+- **directionX, directionY, directionZ**: Light direction (directional/spotlight only)
 - **radius**: Attenuation distance (point/spotlight only)
 - **coneAngle**: Spotlight cone angle in degrees
 - **softness**: Spotlight edge softness (0.0 - 1.0)
 - **followMouse**: Whether light tracks mouse cursor
 - **castsShadows**: Whether this light casts shadows
 
-**Mask Properties:**
+### Mask Properties
 - **image**: Filename in `/client/public/light_masks/` directory
 - **offset**: X,Y position adjustment relative to light
 - **rotation**: Rotation angle in degrees
 - **scale**: Size multiplier (1.0 = actual pixel size)
 
-**Shadow Configuration:**
+### Shadow Configuration
 - **enabled**: Global shadow system on/off
 - **strength**: Shadow opacity (0.0 - 1.0)
 - **maxLength**: Maximum shadow length in pixels
 - **height**: Shadow casting height (affects projection angle)
+- **sharpness**: Shadow edge sharpness (higher = sharper edges)
 
 ## 🚀 Quick Start
 
@@ -212,25 +214,26 @@ Defines all lighting setup including shadow configuration:
    Navigate to `http://localhost:5000` to see the demo
 
 3. **Modify configurations**
-   - Edit `client/public/scene.json` to change sprites and scene layout
-   - Edit `client/public/lights-config.json` to modify lighting setup
-   - Changes automatically reload in the browser
+   - Use the interactive UI controls to edit scene objects and lighting
+   - Manually edit `client/public/scene.json` for advanced configuration
+   - Changes update immediately with visual feedback
 
 ## 🎯 Usage Guide
 
-### Using the JSON Configuration System
+### Using the Configuration System
 
 #### Scene Setup
-1. **Edit `scene.json`**: Modify sprite positions, textures, and shadow participation
+1. **Interactive Editing**: Use the UI controls to position, scale, and configure all scene objects
 2. **Add Textures**: Place diffuse textures in `client/public/textures/`
-3. **Add Normal Maps**: Place normal maps with `_normal` suffix for surface detail
-4. **Configure Shadows**: Set `castsShadows` and `receivesShadows` per sprite
+3. **Add Normal Maps**: Place normal maps for surface detail
+4. **Configure Shadows**: Toggle shadow casting and receiving per object
+5. **Manual Editing**: Directly edit `scene.json` for precise control
 
 #### Lighting Setup  
-1. **Edit `lights-config.json`**: Configure all lights and shadow settings
+1. **Live Controls**: Use interactive panels to adjust all light properties
 2. **Add Masks**: Place mask textures in `client/public/light_masks/`
-3. **Live Editing**: Use UI controls to adjust lights (auto-saves to JSON)
-4. **Export/Import**: Copy JSON files to share lighting setups
+3. **Real-Time Preview**: All changes update instantly with visual feedback
+4. **Configuration Sharing**: Copy `scene.json` to share complete scenes
 
 ### Interactive Controls
 
@@ -446,34 +449,44 @@ Mask textures should be:
 
 ### Configuration Management
 
-The system automatically:
-- **Loads** configurations on startup
-- **Saves** changes every 2-3 seconds during editing
-- **Validates** JSON structure and provides error feedback
-- **Hot-reloads** when files change externally
+The system provides:
+- **Automatic Loading**: Configuration loaded on startup with fallback defaults
+- **Live State Management**: UI changes update immediately with visual feedback
+- **Development Persistence**: Changes persist during development session
+- **Manual Export/Import**: Copy configuration JSON for sharing scenes
+- **Validation**: Robust error handling for malformed configurations
 
 ## 📄 API Reference
 
 ### Configuration Endpoints
 
-#### Load Scene Configuration
+#### Load Complete Configuration
 ```
 GET /api/load-scene-config
-Returns: Scene configuration JSON
+Returns: Complete scene configuration (sprites, lights, shadows)
 ```
 
 #### Load Lighting Configuration  
 ```
 GET /api/load-lights-config
-Returns: Lighting configuration JSON with shadows
+Returns: Extracted lights and shadow configuration
+```
+
+#### Save Complete Configuration
+```
+POST /api/save-scene-config
+Body: Complete scene configuration
+Returns: Success/error status
 ```
 
 #### Save Lighting Configuration
 ```
 POST /api/save-lights-config
-Body: Complete lighting configuration
+Body: Lights and shadow configuration
 Returns: Success/error status
 ```
+
+**Note**: In serverless environments, file persistence may be limited. Consider using a database for production deployments.
 
 ## 🌟 Performance Guidelines
 
@@ -493,7 +506,7 @@ Returns: Success/error status
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Test with both JSON configuration systems
+3. Test configuration system and UI controls
 4. Commit your changes (`git commit -m 'Add amazing feature'`)
 5. Push to the branch (`git push origin feature/amazing-feature`)
 6. Open a Pull Request
@@ -502,7 +515,7 @@ Returns: Success/error status
 
 - Follow TypeScript strict mode
 - Test shadow system with various sprite configurations
-- Validate JSON schema changes
+- Validate configuration changes work correctly
 - Ensure cross-browser WebGL compatibility
 - Update documentation for configuration changes
 
