@@ -275,8 +275,12 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   float stepSize = 1.0; // Sample every pixel
   int maxSteps = int(rayLength / stepSize);
   
+  // SELF-SHADOW AVOIDANCE: Skip the last few steps to avoid hitting the receiving pixel itself
+  int avoidanceSteps = 3; // Skip last 3 pixels to avoid self-occlusion
+  int actualMaxSteps = max(maxSteps - avoidanceSteps, 1);
+  
   for (int i = 1; i < 500; i++) {
-    if (i >= maxSteps) break;
+    if (i >= actualMaxSteps) break; // Stop before reaching the receiving pixel
     
     vec2 samplePos = lightPos + rayDir * (float(i) * stepSize);
     vec2 occluderUV = samplePos / uCanvasSize;
