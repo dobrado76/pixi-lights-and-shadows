@@ -211,6 +211,7 @@ export class SceneSprite {
     const shaderUniforms = {
       uDiffuse: this.diffuseTexture,
       uNormal: this.normalTexture,
+      uUseNormalMap: this.definition.useNormalMap, // Flag to control normal map usage in shader
       uSpritePos: [x, y],
       uSpriteSize: [width, height],
       uRotation: this.definition.rotation, // Pass rotation to fragment shader
