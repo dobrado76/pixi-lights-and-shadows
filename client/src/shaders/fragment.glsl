@@ -462,26 +462,18 @@ void main(void) {
     return;
   } else {
     
-    // ONLY do individual shadow calculations when NOT using occluder map (to avoid double shadows!)
-    if (!uUseOccluderMap) {
-      // Check shadows from lights that are enabled, cast shadows, AND have intensity > 0 (basic physics!)
-      if (uPoint0Enabled && uPoint0CastsShadows && uPoint0Intensity > 0.0) {
-        globalShadowFactor *= calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
-      }
-      if (uPoint1Enabled && uPoint1CastsShadows && uPoint1Intensity > 0.0) {
-        globalShadowFactor *= calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
-      }
-      if (uPoint2Enabled && uPoint2CastsShadows && uPoint2Intensity > 0.0) {
-        globalShadowFactor *= calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
-      }
-      if (uPoint3Enabled && uPoint3CastsShadows && uPoint3Intensity > 0.0) {
-        globalShadowFactor *= calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
-      }
-    } else {
-      // When using occluder map, sample it directly for global shadows
-      vec2 screenCoord = worldPos / vec2(800.0, 600.0); // Convert to screen coordinates
-      float occluderSample = texture2D(uOccluderMap, screenCoord).r;
-      globalShadowFactor = occluderSample; // Use occluder map directly
+    // Use individual shadow calculations for global shadows (like spotlights that were working!)
+    if (uPoint0Enabled && uPoint0CastsShadows && uPoint0Intensity > 0.0) {
+      globalShadowFactor *= calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
+    }
+    if (uPoint1Enabled && uPoint1CastsShadows && uPoint1Intensity > 0.0) {
+      globalShadowFactor *= calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
+    }
+    if (uPoint2Enabled && uPoint2CastsShadows && uPoint2Intensity > 0.0) {
+      globalShadowFactor *= calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
+    }
+    if (uPoint3Enabled && uPoint3CastsShadows && uPoint3Intensity > 0.0) {
+      globalShadowFactor *= calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
     }
     
     // Apply shadows to ambient light - shadows now darken everything properly
