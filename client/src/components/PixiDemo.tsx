@@ -587,8 +587,6 @@ const PixiDemo = (props: PixiDemoProps) => {
                 sprite.definition.visible = updates.visible;
                 sprite.mesh.visible = updates.visible;
                 console.log(`⚡ Immediate visibility: ${spriteId} → ${updates.visible}`);
-                sprite.mesh.visible = updates.visible;
-                console.log(`⚡ Immediate visibility: ${spriteId} → ${updates.visible}`);
               }
               
               // Handle shadow casting changes

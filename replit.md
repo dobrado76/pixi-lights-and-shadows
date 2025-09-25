@@ -8,6 +8,12 @@ This project is a comprehensive React.js application showcasing advanced pseudo-
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+- **Fixed zOrder immediate updates** (2025-09-25): Resolved issue where zOrder changes required scene reload. Now all sprites get meshes created regardless of visibility, with visibility controlled via `mesh.visible` property instead of excluding from creation.
+- **Fixed Use Normal Map toggle** (2025-09-25): Normal map textures are now always loaded if specified, with `uUseNormalMap` shader uniform controlling usage. Toggle responds immediately without texture reloading.
+- **Unified immediate update system**: All sprite controls (zOrder, visibility, position, normal maps) now update instantly with delayed React state synchronization to prevent timing conflicts.
+
 ## System Architecture
 
 ### Frontend Architecture
