@@ -589,6 +589,12 @@ const PixiDemo = (props: PixiDemoProps) => {
                 console.log(`⚡ Immediate visibility: ${spriteId} → ${updates.visible}`);
               }
               
+              // Handle shadow casting changes
+              if (updates.castsShadows !== undefined) {
+                sprite.definition.castsShadows = updates.castsShadows;
+                console.log(`⚡ Immediate castsShadows: ${spriteId} → ${updates.castsShadows}`);
+              }
+              
               // Force re-sort if needed
               if (needsReSort) {
                 sceneContainerRef.current.sortChildren();

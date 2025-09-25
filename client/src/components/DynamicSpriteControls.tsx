@@ -77,8 +77,15 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
       onImmediateSpriteChange(spriteId, updates);
     }
     
-    // Always update the React state to trigger useEffect
-    onSceneConfigChange(newConfig);
+    // Delay React state update for visual-heavy changes to prevent override
+    if (updates.zOrder !== undefined || updates.useNormalMap !== undefined) {
+      setTimeout(() => {
+        onSceneConfigChange(newConfig);
+      }, 50); // Small delay to let immediate visual change settle
+    } else {
+      // Immediate React state update for simple property changes
+      onSceneConfigChange(newConfig);
+    }
   };
 
   const sprites = Object.entries(sceneConfig.scene || {});
