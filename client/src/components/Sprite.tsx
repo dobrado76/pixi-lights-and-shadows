@@ -447,23 +447,35 @@ export class SceneManager {
       .filter(sprite => {
         if (!sprite.definition.castsShadows) return false;
         
-        // Always include visible sprites
+        // Always include visible sprites (they cast shadows if within canvas)
         if (sprite.definition.visible) return true;
         
-        // For off-screen sprites, check if they're within shadow buffer range
+        // For invisible sprites, only include if they're OFF-SCREEN but within shadow buffer
         const bounds = sprite.getBounds();
         const spriteRight = bounds.x + bounds.width;
         const spriteBottom = bounds.y + bounds.height;
         
-        // Check if sprite is within expanded area (canvas + buffer on all sides)
-        const withinExpandedArea = (
-          spriteRight >= -SHADOW_BUFFER && // Sprite extends into left buffer
-          bounds.x <= this.canvasWidth + SHADOW_BUFFER && // Sprite extends into right buffer  
-          spriteBottom >= -SHADOW_BUFFER && // Sprite extends into top buffer
-          bounds.y <= this.canvasHeight + SHADOW_BUFFER // Sprite extends into bottom buffer
+        // Check if sprite is completely outside visible canvas
+        const outsideVisibleCanvas = (
+          spriteRight < 0 || // Completely to the left
+          bounds.x > this.canvasWidth || // Completely to the right
+          spriteBottom < 0 || // Completely above
+          bounds.y > this.canvasHeight // Completely below
         );
         
-        return withinExpandedArea;
+        // If invisible sprite is outside visible canvas, check if within shadow buffer
+        if (outsideVisibleCanvas) {
+          const withinShadowBuffer = (
+            spriteRight >= -SHADOW_BUFFER && // Within left buffer
+            bounds.x <= this.canvasWidth + SHADOW_BUFFER && // Within right buffer  
+            spriteBottom >= -SHADOW_BUFFER && // Within top buffer
+            bounds.y <= this.canvasHeight + SHADOW_BUFFER // Within bottom buffer
+          );
+          return withinShadowBuffer;
+        }
+        
+        // Invisible sprites within visible canvas should NOT cast shadows
+        return false;
       })
       .sort((a, b) => a.definition.zOrder - b.definition.zOrder);
   }

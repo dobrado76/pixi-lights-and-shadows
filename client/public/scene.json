@@ -126,7 +126,7 @@
       "zOrder": 2,
       "castsShadows": true,
       "receiveShadows": false,
-      "visible": false,
+      "visible": true,
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
