@@ -314,6 +314,7 @@ export class SceneSprite {
 export class SceneManager {
   private sprites: Map<string, SceneSprite> = new Map();
   private pixiContainer: any = null;
+  private pixiApp: PIXI.Application | null = null;
   
   /**
    * Loads complete scene from JSON configuration.
@@ -343,6 +344,11 @@ export class SceneManager {
   setPixiContainer(container: any): void {
     this.pixiContainer = container;
     console.log('🎭 SceneManager: PIXI container reference set');
+  }
+
+  setPixiApp(app: PIXI.Application): void {
+    this.pixiApp = app;
+    console.log('🎯 SceneManager: PIXI app reference set');
   }
 
   /**
@@ -462,6 +468,14 @@ export class SceneManager {
     if (zOrderChanged && containerToUse) {
       containerToUse.sortChildren();
       console.log('🎭 IMMEDIATE: PIXI container re-sorted after zOrder change!');
+      
+      // FORCE IMMEDIATE RENDER - trigger PIXI app to render the changes immediately
+      if (this.pixiApp) {
+        this.pixiApp.render();
+        console.log('🎯 FORCED immediate render after zOrder change');
+      } else {
+        console.log('🎯 Would force immediate render after zOrder change (pixiApp access needed)');
+      }
     } else if (zOrderChanged) {
       console.log('⚠️ zOrder changed but no PIXI container available for sorting!');
     }

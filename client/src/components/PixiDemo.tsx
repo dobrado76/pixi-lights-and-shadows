@@ -431,9 +431,18 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       if (canvas && canvasRef.current) {
         canvasRef.current.appendChild(canvas);
+        // AUTO-FOCUS: Make canvas focusable and focus it immediately
+        canvas.tabIndex = 0;
+        canvas.focus();
+        // FORCE initial render to ensure canvas displays immediately
+        app.render();
+        console.log('🎯 Canvas auto-focused and force-rendered on load');
+        
         setPixiApp(app);
         console.log('PIXI App initialized successfully');
         console.log('Renderer type:', app.renderer.type === PIXI.RENDERER_TYPE.WEBGL ? 'WebGL' : 'Canvas');
+        
+        // Store reference for scene manager that will be created later
         
         // Initialize render targets for multi-pass rendering
         renderTargetRef.current = PIXI.RenderTexture.create({ 
@@ -540,8 +549,11 @@ const PixiDemo = (props: PixiDemoProps) => {
         sceneManagerRef.current = new SceneManager();
         await sceneManagerRef.current.loadScene(sceneData);
         
-        // Set PIXI container reference for direct updates
+        // Set PIXI container and app references for direct updates
         sceneManagerRef.current.setPixiContainer(sceneContainerRef.current);
+        if (pixiApp) {
+          sceneManagerRef.current.setPixiApp(pixiApp);
+        }
         
         // UNIFIED IMMEDIATE UPDATE SYSTEM for ALL UI controls
         const immediateUpdateHandler = (spriteId: string, updates: any) => {
