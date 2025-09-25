@@ -545,23 +545,10 @@ const PixiDemo = (props: PixiDemoProps) => {
 
     const setupDemo = async () => {
       try {
-        // Skip rebuilds if only immediate properties (zOrder/normalMap) changed
-        if (sceneManagerRef.current) {
-          const hasOnlyImmediateChanges = Object.keys(sceneConfig.scene).every(spriteId => {
-            const sprite = sceneManagerRef.current!.getSprite(spriteId);
-            if (!sprite || !sprite.mesh) return true;
-            
-            const mesh = sprite.mesh as any;
-            const hasImmediateZOrder = mesh.userData?.__immediateZOrder !== undefined;
-            const hasImmediateNormal = mesh.userData?.__immediateNormalMap !== undefined;
-            
-            return hasImmediateZOrder || hasImmediateNormal;
-          });
-          
-          if (hasOnlyImmediateChanges) {
-            console.log('🛡️ SKIPPING setupDemo - only immediate changes detected');
-            return;
-          }
+        // CRITICAL: Skip ALL rebuilds when we have immediate changes in progress
+        if (sceneManagerRef.current && sceneManagerRef.current.getAllSprites().length > 0) {
+          console.log('🛡️ SKIPPING setupDemo - scene already initialized, immediate changes handle updates');
+          return;
         }
         
         // Use scene configuration from props instead of fetching
