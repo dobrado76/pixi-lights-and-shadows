@@ -905,12 +905,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
 
       
-      // DEBUG: Check which shadow system is being used
-      if (shadowCasters.length > 3) {
-        console.log(`🌑 Using OCCLUDER MAP shadow system with ${shadowCasters.length} casters (>3)`);
-      } else {
-        console.log(`🎯 Using PER-CASTER shadow system with ${shadowCasters.length} casters (≤3)`);
-      }
+      // Auto-switch between shadow systems based on caster count
+      const useOccluderMap = shadowCasters.length > 3;
 
       // Set shadow texture uniforms for all sprites
       const shadowTextureUniforms = {
