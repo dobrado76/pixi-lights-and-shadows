@@ -234,7 +234,8 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
     }
     
     // Sample occluder map alpha (adjust UV for expanded map offset)
-    vec2 adjustedUV = occluderUV + (uOccluderMapOffset / uCanvasSize);
+    vec2 expandedMapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
+    vec2 adjustedUV = (occluderUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
     float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     
     // If we hit an occluder, cast shadow with distance-based softness
@@ -334,7 +335,8 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
     }
     
     // Sample occluder map - if we hit an occluder, we're in shadow (adjust UV for expanded map offset)
-    vec2 adjustedUV = occluderUV + (uOccluderMapOffset / uCanvasSize);
+    vec2 expandedMapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
+    vec2 adjustedUV = (occluderUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
     float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     if (occluderAlpha > 0.5) {
       return 1.0 - uShadowStrength; // Apply shadow strength: 0=no shadow, 1=full shadow
