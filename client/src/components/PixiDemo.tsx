@@ -597,7 +597,11 @@ const PixiDemo = (props: PixiDemoProps) => {
               
               // Force re-sort if needed and update shadow caster uniforms
               if (needsReSort) {
+                // Sort both containers since meshes can be in either depending on rendering mode
                 sceneContainerRef.current.sortChildren();
+                if (pixiApp && pixiApp.stage) {
+                  pixiApp.stage.sortChildren();
+                }
                 console.log(`⚡ Container re-sorted after immediate update`);
                 
                 // Update shadow caster uniforms since order may have changed
@@ -888,6 +892,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Enable depth sorting in PIXI for proper z-ordering
       sceneContainerRef.current!.sortableChildren = true;
+      
+      // Also enable sorting on main stage for single-pass rendering
+      pixiApp.stage.sortableChildren = true;
 
       // Apply shadow texture uniforms to all sprite shaders (already done above)
 
@@ -991,6 +998,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Force PIXI container to re-sort after any sprite updates (including zOrder changes)
       if (sceneContainerRef.current) {
         sceneContainerRef.current.sortChildren();
+      }
+      
+      // Also sort main stage since meshes might be there in single-pass mode
+      if (pixiApp && pixiApp.stage) {
+        pixiApp.stage.sortChildren();
       }
       
       
