@@ -32,15 +32,15 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
       try {
         // Hardcoded mask inventory - could be replaced with dynamic directory scanning
         const maskFiles = [
-          '00001-2446737535.png',
-          '00003-1224130458.png', 
-          '00007-1224130462.png',
-          '00019-1224130474.png',
-          '00022-3934797524.png',
-          '00024-3934797526.png',
-          '00025-3934797527.png',
-          '00032-3934797534.png',
-          '00035-3934797537.png'
+          'corona.png',
+          'doughnut.png',
+          'focus.png',
+          'god-rays.png',
+          'ring.png',
+          'spot.png',
+          'stage-3.png',
+          'stage-6.png',
+          'sun.png'
         ];
         setAvailableMasks(maskFiles);
       } catch (error) {
