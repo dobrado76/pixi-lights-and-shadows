@@ -160,50 +160,19 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
   const renderGeometryPass = () => {
     if (!pixiApp || !gBufferAlbedoRef.current || !geometryPassContainerRef.current) return;
     
-    // Clear albedo buffer
-    pixiApp.renderer.render(new PIXI.Container(), { 
+    // DEBUG: Test render texture with bright color
+    const testGraphics = new PIXI.Graphics();
+    testGraphics.beginFill(0xFF00FF); // Bright magenta
+    testGraphics.drawRect(0, 0, shaderParams.canvasWidth, shaderParams.canvasHeight);
+    testGraphics.endFill();
+    
+    // Test if render texture works at all
+    pixiApp.renderer.render(testGraphics, { 
       renderTexture: gBufferAlbedoRef.current, 
       clear: true
     });
     
-    // For now, just render sprites as regular PIXI sprites to the albedo buffer
-    const sprites = sceneManagerRef.current?.getSprites() || [];
-    
-    // Clear and rebuild geometry container
-    geometryPassContainerRef.current.removeChildren();
-    
-    let visibleSpriteCount = 0;
-    sprites.forEach((sprite: SceneSprite, index: number) => {
-      // Skip disabled sprites - this is critical for proper deferred rendering
-      if (!sprite.definition.visible || !sprite.diffuseTexture) {
-        console.log(`⏭️ Skipping sprite ${sprite.id}: visible=${sprite.definition.visible}, hasTexture=${!!sprite.diffuseTexture}`);
-        return;
-      }
-      
-      // Create simple PIXI sprite for geometry pass
-      const pixiSprite = new PIXI.Sprite(sprite.diffuseTexture);
-      const bounds = sprite.getBounds();
-      
-      pixiSprite.x = bounds.x;
-      pixiSprite.y = bounds.y;
-      pixiSprite.width = bounds.width;
-      pixiSprite.height = bounds.height;
-      pixiSprite.rotation = 0; // SceneSprite doesn't have rotation property yet
-      
-      geometryPassContainerRef.current!.addChild(pixiSprite);
-      visibleSpriteCount++;
-      console.log(`✅ Added sprite ${sprite.id} at (${bounds.x}, ${bounds.y}) size ${bounds.width}x${bounds.height}`);
-    });
-    
-    console.log(`📊 Geometry pass: ${visibleSpriteCount} visible sprites added to container`);
-    
-    // Render sprites to albedo buffer
-    pixiApp.renderer.render(geometryPassContainerRef.current, { 
-      renderTexture: gBufferAlbedoRef.current, 
-      clear: false 
-    });
-    
-    console.log('📐 Geometry pass rendered sprites to albedo buffer');
+    console.log('🧪 DEBUG: Filled albedo buffer with bright magenta - testing render texture');
   };
 
   /**
@@ -307,6 +276,13 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
       }
     `;
     
+    // DEBUG: Log lighting setup
+    const pointLights = lightsConfig.filter(l => l.enabled && l.type === 'point');
+    console.log('🔍 Lighting Setup Debug:');
+    console.log('  Albedo Buffer:', !!gBufferAlbedoRef.current, gBufferAlbedoRef.current?.width + 'x' + gBufferAlbedoRef.current?.height);
+    console.log('  Point Lights:', pointLights.length);
+    console.log('  Ambient Light:', ambientLight);
+
     const shader = PIXI.Shader.from(lightingVertexShader, lightingFragmentShader, {
       // G-Buffer inputs
       uGBufferAlbedo: gBufferAlbedoRef.current,
@@ -319,11 +295,11 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
       uAmbientColor: [1.0, 1.0, 1.0], // White ambient
       
       // Lights - set up point lights from config
-      uNumPointLights: Math.min(lightsConfig.filter(l => l.enabled && l.type === 'point').length, 8),
-      uPointLightPositions: lightsConfig.filter(l => l.enabled && l.type === 'point').slice(0, 8).map(l => [l.position.x, l.position.y, l.position.z]).flat(),
-      uPointLightColors: lightsConfig.filter(l => l.enabled && l.type === 'point').slice(0, 8).map(l => [l.color.r, l.color.g, l.color.b]).flat(),
-      uPointLightIntensities: lightsConfig.filter(l => l.enabled && l.type === 'point').slice(0, 8).map(l => l.intensity),
-      uPointLightRadii: lightsConfig.filter(l => l.enabled && l.type === 'point').slice(0, 8).map(l => l.radius || 100),
+      uNumPointLights: Math.min(pointLights.length, 8),
+      uPointLightPositions: pointLights.slice(0, 8).map(l => [l.position.x, l.position.y, l.position.z]).flat(),
+      uPointLightColors: pointLights.slice(0, 8).map(l => [l.color.r, l.color.g, l.color.b]).flat(),
+      uPointLightIntensities: pointLights.slice(0, 8).map(l => l.intensity),
+      uPointLightRadii: pointLights.slice(0, 8).map(l => l.radius || 100),
       
       // Shadow system
       uShadowsEnabled: shadowConfig.enabled,
@@ -362,10 +338,10 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
    * FINAL COMPOSITION: Display the result on screen
    */
   const renderFinalComposite = () => {
-    if (!pixiApp || !lightAccumulationRef.current) return;
+    if (!pixiApp || !gBufferAlbedoRef.current) return;
     
-    // Apply the lighting result with a simple pass-through shader
-    const displaySprite = new PIXI.Sprite(lightAccumulationRef.current);
+    // TEST: Display the albedo buffer directly to see if sprites made it through G-Buffer
+    const displaySprite = new PIXI.Sprite(gBufferAlbedoRef.current);
     displaySprite.width = shaderParams.canvasWidth;
     displaySprite.height = shaderParams.canvasHeight;
     displaySprite.x = 0;
@@ -374,7 +350,7 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
     pixiApp.stage.removeChildren();
     pixiApp.stage.addChild(displaySprite);
     
-    console.log('🎨 Final composite - displaying lighting accumulation result');
+    console.log('🧪 DEBUG: Displaying albedo buffer directly to test G-Buffer pipeline');
   };
 
   /**
