@@ -61,8 +61,8 @@
       "image": "/textures/ball.png",
       "normal": "/textures/ballN.png",
       "position": {
-        "x": 100,
-        "y": 300
+        "x": 175,
+        "y": 226
       },
       "rotation": 0,
       "scale": 0.9,
@@ -197,18 +197,18 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.3,
       "color": "0xffffff",
-      "directionX": -0.8191520442889916,
-      "directionY": -0.5735764363510464,
+      "directionX": 6.123233995736766e-17,
+      "directionY": -1,
       "directionZ": -1,
       "castsShadows": true
     },
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.4,
       "color": "0xf4f080",
       "x": 220,
@@ -225,7 +225,7 @@
     {
       "id": "spotlight",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.6,
       "color": "0xffffff",
       "x": 300,
@@ -242,7 +242,7 @@
     {
       "id": "point_copy_1758529441818",
       "type": "point",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.5,
       "color": "0xffffff",
       "x": 130,
@@ -264,7 +264,7 @@
     {
       "id": "point_1758536509084",
       "type": "point",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.5,
       "color": "0xe12323",
       "x": 210,

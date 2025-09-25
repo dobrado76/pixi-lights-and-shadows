@@ -293,14 +293,19 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   bool lightInsideReceiver = (lightPos.x >= uReceiverMin.x && lightPos.x <= uReceiverMax.x && 
                              lightPos.y >= uReceiverMin.y && lightPos.y <= uReceiverMax.y);
   
-  // Calculate sprite size to identify background sprites for self-shadow logic
+  // SMART FIX: Only increase start distance for reasonably-sized sprites, not huge backgrounds
+  // This preserves shadow casting while fixing self-shadow issues
+  float startDistance = 1.0; // Normal start distance for shadows
+  
+  // Calculate sprite size to avoid applying fix to background sprites
   vec2 spriteSize = uReceiverMax - uReceiverMin;
   float spriteArea = spriteSize.x * spriteSize.y;
   bool isBackgroundSprite = spriteArea > 400000.0; // Background is ~480,000 pixels
   
-  // NEVER modify startDistance - it can skip nearby shadow casters
-  // Use ONLY interval skipping for self-shadow avoidance
-  float startDistance = 1.0;
+  if (lightInsideReceiver && !isBackgroundSprite) {
+    // Light is inside this regular-sized sprite - start ray marching from outside the sprite
+    startDistance = max(tExitSelf + 2.0, 2.0);
+  }
   
   // Ray marching with self-shadow avoidance
   float stepSize = 1.0; // Sample every pixel
@@ -312,10 +317,10 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
     // Stop when we reach the pixel
     if (distance >= rayLength - eps) break;
     
-    // TEMPORARILY DISABLED: Skip samples within self-interval (avoid self-occlusion) - but NOT for background sprites
-    // if (!isBackgroundSprite && distance > tEnterSelf - eps && distance < tExitSelf + eps) {
-    //   continue;
-    // }
+    // Skip samples within self-interval (avoid self-occlusion) - but NOT for background sprites
+    if (!isBackgroundSprite && distance > tEnterSelf - eps && distance < tExitSelf + eps) {
+      continue;
+    }
     
     vec2 samplePos = lightPos + rayDir * distance;
     vec2 occluderUV = samplePos / uCanvasSize;
