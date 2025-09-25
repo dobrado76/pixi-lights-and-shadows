@@ -293,19 +293,13 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   bool lightInsideReceiver = (lightPos.x >= uReceiverMin.x && lightPos.x <= uReceiverMax.x && 
                              lightPos.y >= uReceiverMin.y && lightPos.y <= uReceiverMax.y);
   
-  // SMART FIX: Only increase start distance for reasonably-sized sprites, not huge backgrounds
-  // This preserves shadow casting while fixing self-shadow issues
-  float startDistance = 1.0; // Normal start distance for shadows
-  
-  // Calculate sprite size to avoid applying fix to background sprites
+  // Calculate sprite size to identify background sprites for self-shadow logic
   vec2 spriteSize = uReceiverMax - uReceiverMin;
   float spriteArea = spriteSize.x * spriteSize.y;
   bool isBackgroundSprite = spriteArea > 400000.0; // Background is ~480,000 pixels
   
-  if (lightInsideReceiver && !isBackgroundSprite) {
-    // Light is inside this regular-sized sprite - start ray marching from outside the sprite
-    startDistance = max(tExitSelf + 2.0, 2.0);
-  }
+  // Always start ray marching from normal distance - self-shadow avoidance via interval skipping
+  float startDistance = 1.0;
   
   // Ray marching with self-shadow avoidance
   float stepSize = 1.0; // Sample every pixel
