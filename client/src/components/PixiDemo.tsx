@@ -555,8 +555,8 @@ const PixiDemo = (props: PixiDemoProps) => {
               if (updates.zOrder !== undefined) {
                 sprite.definition.zOrder = updates.zOrder;
                 sprite.mesh.zIndex = updates.zOrder;
-                sprite.mesh.userData = sprite.mesh.userData || {};
-                sprite.mesh.userData.__immediateZOrder = updates.zOrder; // Mark as immediate
+                (sprite.mesh as any).userData = (sprite.mesh as any).userData || {};
+                (sprite.mesh as any).userData.__immediateZOrder = updates.zOrder; // Mark as immediate
                 needsReSort = true;
                 console.log(`⚡ Immediate zOrder: ${spriteId} → ${updates.zOrder}`);
               }
@@ -566,8 +566,8 @@ const PixiDemo = (props: PixiDemoProps) => {
                 sprite.definition.useNormalMap = updates.useNormalMap;
                 if (sprite.shader) {
                   sprite.shader.uniforms.uUseNormalMap = updates.useNormalMap;
-                  sprite.shader.userData = sprite.shader.userData || {};
-                  sprite.shader.userData.__immediateNormalMap = updates.useNormalMap; // Mark as immediate
+                  (sprite.shader as any).userData = (sprite.shader as any).userData || {};
+                  (sprite.shader as any).userData.__immediateNormalMap = updates.useNormalMap; // Mark as immediate
                 }
                 console.log(`⚡ Immediate normal map: ${spriteId} → ${updates.useNormalMap}`);
               }
