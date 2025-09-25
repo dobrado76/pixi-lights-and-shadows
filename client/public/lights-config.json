@@ -18,16 +18,16 @@
       "z": 60,
       "followMouse": true,
       "castsShadows": true,
-      "radius": 1040
+      "radius": 470
     },
     {
       "id": "directional_light",
       "type": "directional",
       "enabled": true,
-      "brightness": 0.9,
+      "brightness": 0.4,
       "color": "0xffffff",
-      "directionX": -1,
-      "directionY": 1.2246467991473532e-16,
+      "directionX": -0.5735764363510458,
+      "directionY": -0.819152044288992,
       "directionZ": -1,
       "castsShadows": true
     },
@@ -103,7 +103,7 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.5,
+    "strength": 0,
     "maxLength": 260,
     "height": 8,
     "sharpness": 1
