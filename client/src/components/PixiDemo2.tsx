@@ -256,28 +256,44 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
       void main(void) {
         vec2 screenUV = vTextureCoord;
         
-        // Sample G-Buffer data - for now just use albedo
+        // Sample G-Buffer data
         vec3 albedo = texture2D(uGBufferAlbedo, screenUV).rgb;
         
-        // Start with ambient lighting
-        vec3 finalColor = albedo * uAmbientLight * uAmbientColor;
+        // Skip empty pixels (background)
+        if (albedo.r == 0.0 && albedo.g == 0.0 && albedo.b == 0.0) {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+          return;
+        }
         
-        // Add simple point light contribution
-        if (uNumPointLights > 0) {
-          vec3 lightPos = uPointLightPositions[0];
-          vec3 lightColor = uPointLightColors[0];
-          float intensity = uPointLightIntensities[0];
-          float radius = uPointLightRadii[0];
+        // Start with reasonable ambient lighting so sprites are visible
+        vec3 finalColor = albedo * (uAmbientLight * 0.8);
+        
+        // Add all enabled point lights with dramatic effect
+        for (int i = 0; i < 8; i++) {
+          if (i >= uNumPointLights) break;
           
-          // Simple screen-space distance calculation
+          vec3 lightPos = uPointLightPositions[i];
+          vec3 lightColor = uPointLightColors[i];
+          float intensity = uPointLightIntensities[i];
+          float radius = uPointLightRadii[i];
+          
+          // Screen-space distance calculation
           vec2 worldPos = screenUV * uCanvasSize;
           float distance = length(lightPos.xy - worldPos);
           
           if (distance < radius) {
-            float attenuation = 1.0 - clamp(distance / radius, 0.0, 1.0);
-            finalColor += albedo * lightColor * intensity * attenuation;
+            // Dramatic attenuation curve
+            float attenuation = 1.0 - pow(distance / radius, 2.0);
+            attenuation = clamp(attenuation, 0.0, 1.0);
+            
+            // Add dramatic lighting with boosted intensity
+            finalColor += albedo * lightColor * intensity * attenuation * 2.0;
           }
         }
+        
+        // Ensure adequate brightness for visibility
+        finalColor = finalColor * 2.0;
+        finalColor = clamp(finalColor, 0.0, 2.0); // Allow brighter values
         
         gl_FragColor = vec4(finalColor, 1.0);
       }
