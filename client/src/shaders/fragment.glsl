@@ -462,7 +462,7 @@ void main(void) {
     return;
   } else {
     
-    // Use individual shadow calculations for global shadows (like spotlights that were working!)
+    // Use unified shadow functions for global shadows (handles occluder map automatically!)
     if (uPoint0Enabled && uPoint0CastsShadows && uPoint0Intensity > 0.0) {
       globalShadowFactor *= calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
     }
@@ -505,11 +505,8 @@ void main(void) {
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
-    // Apply shadow calculation for this specific light (only when NOT using occluder map)
+    // No individual shadows needed - global shadows handle everything
     float shadowFactor = 1.0;
-    if (!uUseOccluderMap && uPoint0CastsShadows && uPoint0Intensity > 0.0) {
-      shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
-    }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint0HasMask && shadowFactor >= 0.99) {
@@ -517,12 +514,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // When using occluder map, only apply global shadows. Otherwise apply both.
-    if (uUseOccluderMap) {
-      intensity *= globalShadowFactor; // Only global shadows from occluder map
-    } else {
-      intensity *= shadowFactor * globalShadowFactor; // Both individual and global shadows
-    }
+    // Apply global shadows (includes occluder map or per-light calculations)
+    intensity *= globalShadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint0Color * intensity;
   }
@@ -545,9 +538,7 @@ void main(void) {
     
     // Apply shadow calculation FIRST - blocks light completely in shadowed areas
     float shadowFactor = 1.0;
-    if (!uUseOccluderMap && uPoint1CastsShadows && uPoint1Intensity > 0.0) {
-      shadowFactor *= calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
-    }
+    // No individual shadows needed - global shadows handle everything
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint1HasMask && shadowFactor >= 0.99) {
@@ -555,12 +546,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // When using occluder map, only apply global shadows. Otherwise apply both.
-    if (uUseOccluderMap) {
-      intensity *= globalShadowFactor; // Only global shadows from occluder map
-    } else {
-      intensity *= shadowFactor * globalShadowFactor; // Both individual and global shadows
-    }
+    // Apply global shadows (includes occluder map or per-light calculations)
+    intensity *= globalShadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint1Color * intensity;
   }
@@ -583,9 +570,7 @@ void main(void) {
     
     // Apply shadow calculation FIRST - blocks light completely in shadowed areas
     float shadowFactor = 1.0;
-    if (!uUseOccluderMap && uPoint2CastsShadows && uPoint2Intensity > 0.0) {
-      shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
-    }
+    // No individual shadows needed - global shadows handle everything
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint2HasMask && shadowFactor >= 0.99) {
@@ -593,12 +578,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // When using occluder map, only apply global shadows. Otherwise apply both.
-    if (uUseOccluderMap) {
-      intensity *= globalShadowFactor; // Only global shadows from occluder map
-    } else {
-      intensity *= shadowFactor * globalShadowFactor; // Both individual and global shadows
-    }
+    // Apply global shadows (includes occluder map or per-light calculations)
+    intensity *= globalShadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint2Color * intensity;
   }
@@ -621,9 +602,7 @@ void main(void) {
     
     // Apply shadow calculation FIRST - blocks light completely in shadowed areas
     float shadowFactor = 1.0;
-    if (!uUseOccluderMap && uPoint3CastsShadows && uPoint3Intensity > 0.0) {
-      shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
-    }
+    // No individual shadows needed - global shadows handle everything
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uPoint3HasMask && shadowFactor >= 0.99) {
@@ -631,12 +610,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // When using occluder map, only apply global shadows. Otherwise apply both.
-    if (uUseOccluderMap) {
-      intensity *= globalShadowFactor; // Only global shadows from occluder map
-    } else {
-      intensity *= shadowFactor * globalShadowFactor; // Both individual and global shadows
-    }
+    // Apply global shadows (includes occluder map or per-light calculations)
+    intensity *= globalShadowFactor;
     
     finalColor += diffuseColor.rgb * uPoint3Color * intensity;
   }
@@ -665,12 +640,8 @@ void main(void) {
       shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
     }
     
-    // When using occluder map, only apply global shadows. Otherwise apply both.
-    if (uUseOccluderMap) {
-      intensity *= globalShadowFactor; // Only global shadows from occluder map
-    } else {
-      intensity *= shadowFactor * globalShadowFactor; // Both individual and global shadows
-    }
+    // Apply global shadows (includes occluder map or per-light calculations)
+    intensity *= globalShadowFactor;
     
     finalColor += diffuseColor.rgb * uDir0Color * intensity;
   }
@@ -699,12 +670,8 @@ void main(void) {
       shadowFactor *= calculateShadowUnified(virtualLightPos, worldPos.xy);
     }
     
-    // When using occluder map, only apply global shadows. Otherwise apply both.
-    if (uUseOccluderMap) {
-      intensity *= globalShadowFactor; // Only global shadows from occluder map
-    } else {
-      intensity *= shadowFactor * globalShadowFactor; // Both individual and global shadows
-    }
+    // Apply global shadows (includes occluder map or per-light calculations)
+    intensity *= globalShadowFactor;
     
     finalColor += diffuseColor.rgb * uDir1Color * intensity;
   }
@@ -740,9 +707,7 @@ void main(void) {
     
     // Apply shadow calculation FIRST for spotlight
     float shadowFactor = 1.0;
-    if (!uUseOccluderMap && uSpot0CastsShadows) {
-      shadowFactor *= calculateShadowUnified(uSpot0Position.xy, worldPos.xy);
-    }
+    // No individual shadows needed - global shadows handle everything
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uSpot0HasMask && shadowFactor >= 0.99) {
@@ -750,12 +715,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // When using occluder map, only apply global shadows. Otherwise apply both.
-    if (uUseOccluderMap) {
-      intensity *= globalShadowFactor; // Only global shadows from occluder map
-    } else {
-      intensity *= shadowFactor * globalShadowFactor; // Both individual and global shadows
-    }
+    // Apply global shadows (includes occluder map or per-light calculations)
+    intensity *= globalShadowFactor;
     
     finalColor += diffuseColor.rgb * uSpot0Color * intensity;
   }
@@ -791,9 +752,7 @@ void main(void) {
     
     // Apply shadow calculation FIRST for spotlight
     float shadowFactor = 1.0;
-    if (!uUseOccluderMap && uSpot1CastsShadows) {
-      shadowFactor *= calculateShadowUnified(uSpot1Position.xy, worldPos.xy);
-    }
+    // No individual shadows needed - global shadows handle everything
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uSpot1HasMask && shadowFactor >= 0.99) {
@@ -801,12 +760,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // When using occluder map, only apply global shadows. Otherwise apply both.
-    if (uUseOccluderMap) {
-      intensity *= globalShadowFactor; // Only global shadows from occluder map
-    } else {
-      intensity *= shadowFactor * globalShadowFactor; // Both individual and global shadows
-    }
+    // Apply global shadows (includes occluder map or per-light calculations)
+    intensity *= globalShadowFactor;
     
     finalColor += diffuseColor.rgb * uSpot1Color * intensity;
   }
@@ -842,9 +797,7 @@ void main(void) {
     
     // Apply shadow calculation FIRST for spotlight
     float shadowFactor = 1.0;
-    if (!uUseOccluderMap && uSpot2CastsShadows) {
-      shadowFactor *= calculateShadowUnified(uSpot2Position.xy, worldPos.xy);
-    }
+    // No individual shadows needed - global shadows handle everything
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uSpot2HasMask && shadowFactor >= 0.99) {
@@ -852,12 +805,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // When using occluder map, only apply global shadows. Otherwise apply both.
-    if (uUseOccluderMap) {
-      intensity *= globalShadowFactor; // Only global shadows from occluder map
-    } else {
-      intensity *= shadowFactor * globalShadowFactor; // Both individual and global shadows
-    }
+    // Apply global shadows (includes occluder map or per-light calculations)
+    intensity *= globalShadowFactor;
     
     finalColor += diffuseColor.rgb * uSpot2Color * intensity;
   }
@@ -893,9 +842,7 @@ void main(void) {
     
     // Apply shadow calculation FIRST for spotlight
     float shadowFactor = 1.0;
-    if (!uUseOccluderMap && uSpot3CastsShadows) {
-      shadowFactor *= calculateShadowUnified(uSpot3Position.xy, worldPos.xy);
-    }
+    // No individual shadows needed - global shadows handle everything
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uSpot3HasMask && shadowFactor >= 0.99) {
@@ -903,12 +850,8 @@ void main(void) {
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // When using occluder map, only apply global shadows. Otherwise apply both.
-    if (uUseOccluderMap) {
-      intensity *= globalShadowFactor; // Only global shadows from occluder map
-    } else {
-      intensity *= shadowFactor * globalShadowFactor; // Both individual and global shadows
-    }
+    // Apply global shadows (includes occluder map or per-light calculations)
+    intensity *= globalShadowFactor;
     
     finalColor += diffuseColor.rgb * uSpot3Color * intensity;
   }
