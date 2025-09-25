@@ -184,7 +184,7 @@
     {
       "id": "mouse_light",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 3.3,
       "color": "0xffffff",
       "x": 250,
@@ -203,7 +203,7 @@
       "directionX": -0.4999999999999998,
       "directionY": -0.8660254037844387,
       "directionZ": -1,
-      "castsShadows": false
+      "castsShadows": true
     },
     {
       "id": "spotlight_1",
@@ -217,7 +217,7 @@
       "directionX": 0,
       "directionY": 1,
       "directionZ": -1,
-      "castsShadows": false,
+      "castsShadows": true,
       "radius": 780,
       "coneAngle": 49,
       "softness": 0.2
