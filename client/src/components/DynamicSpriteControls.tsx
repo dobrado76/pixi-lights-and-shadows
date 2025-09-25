@@ -63,14 +63,12 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
       onImmediateSpriteChange(spriteId, updates);
     }
     
-    // Always update React state, but delay for visual-heavy changes to prevent conflicts
+    // CRITICAL FIX: Don't update React state for immediate changes to prevent scene rebuilds
     if (updates.zOrder !== undefined || updates.useNormalMap !== undefined) {
-      // Delay React state update to let immediate visual change settle
-      setTimeout(() => {
-        onSceneConfigChange(newConfig);
-      }, 100); // Short delay to avoid overriding immediate changes
+      // Skip React state update - immediate visual change is sufficient
+      console.log(`🛡️ Skipping React state update for immediate ${Object.keys(updates)} change`);
     } else {
-      // Immediate React state update for other changes
+      // Immediate React state update for non-immediate changes
       onSceneConfigChange(newConfig);
     }
   };
