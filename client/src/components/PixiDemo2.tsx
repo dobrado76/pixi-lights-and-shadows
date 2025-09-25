@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import * as PIXI from 'pixi.js';
-import { Light, ShadowConfig, ShaderParams } from '@/lib/lights';
+import { Light, ShadowConfig } from '@/lib/lights';
+import { ShaderParams } from '@/App';
 import { useCustomGeometry } from '@/hooks/useCustomGeometry';
 import { SceneManager, SceneSprite } from '@/components/Sprite';
 
@@ -304,6 +305,8 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
     // Step 2: LIGHTING PASS - Apply lighting to screen-size G-Buffer (like one giant sprite)
     renderLightingPass();
     
+    // Step 3: FINAL COMPOSITE - Display the final result to screen
+    renderFinalComposite();
     
     console.log(`✅ TRUE deferred rendering complete - ${sprites.length} sprites rendered to G-Buffers with screen-space lighting`);
   };
