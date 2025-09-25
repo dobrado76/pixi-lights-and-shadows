@@ -47,10 +47,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   const shadowCastersRef = useRef<ShadowCaster[]>([]);  // Simplified caster data for calculations
   const sceneManagerRef = useRef<SceneManager | null>(null);  // Scene/sprite management system
   
-  // Unlimited shadow caster system - uses render texture when >4 casters
-  const occluderRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
-  const occluderContainerRef = useRef<PIXI.Container | null>(null);
-  const occluderSpritesRef = useRef<PIXI.Sprite[]>([]);
 
   /**
    * Creates shadow volume geometry by projecting caster corners away from light.
@@ -159,50 +155,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   
   const geometry = useCustomGeometry(shaderParams.canvasWidth, shaderParams.canvasHeight);
 
-  // Occluder map builder for unlimited shadow casters - optimized to reuse sprites
-  const buildOccluderMap = () => {
-    if (!pixiApp || !occluderRenderTargetRef.current || !occluderContainerRef.current) return;
-    
-    const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
-    
-    // Ensure we have enough pooled sprites
-    while (occluderSpritesRef.current.length < shadowCasters.length) {
-      const sprite = new PIXI.Sprite();
-      occluderSpritesRef.current.push(sprite);
-      occluderContainerRef.current.addChild(sprite);
-    }
-    
-    // Update existing sprites with current shadow caster data
-    shadowCasters.forEach((caster, index) => {
-      if (!caster.diffuseTexture) return;
-      
-      const occluderSprite = occluderSpritesRef.current[index];
-      
-      // Update texture only if changed
-      if (occluderSprite.texture !== caster.diffuseTexture) {
-        occluderSprite.texture = caster.diffuseTexture;
-      }
-      
-      // Update position and scale to match the scene sprite
-      const bounds = caster.getBounds();
-      occluderSprite.x = bounds.x;
-      occluderSprite.y = bounds.y;
-      occluderSprite.width = bounds.width;
-      occluderSprite.height = bounds.height;
-      occluderSprite.visible = true;
-    });
-    
-    // Hide unused sprites
-    for (let i = shadowCasters.length; i < occluderSpritesRef.current.length; i++) {
-      occluderSpritesRef.current[i].visible = false;
-    }
-    
-    // Render to occluder texture with optimized settings
-    pixiApp.renderer.render(occluderContainerRef.current, { 
-      renderTexture: occluderRenderTargetRef.current, 
-      clear: true 
-    });
-  };
 
   // Multi-pass lighting composer
   const renderMultiPass = (lights: Light[]) => {
