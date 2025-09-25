@@ -808,8 +808,8 @@ void main(void) {
     
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
-    if (uSpot1CastsShadows && intensity > 0.0) {
-      shadowFactor = calculateShadowUnified(uSpot1Position.xy, worldPos.xy);
+    if (uSpot2CastsShadows && intensity > 0.0) {
+      shadowFactor = calculateShadowUnified(uSpot2Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -855,8 +855,8 @@ void main(void) {
     
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
-    if (uSpot1CastsShadows && intensity > 0.0) {
-      shadowFactor = calculateShadowUnified(uSpot1Position.xy, worldPos.xy);
+    if (uSpot3CastsShadows && intensity > 0.0) {
+      shadowFactor = calculateShadowUnified(uSpot3Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
