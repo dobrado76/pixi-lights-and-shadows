@@ -402,19 +402,27 @@ export class SceneManager {
             scale: newDef.scale
           });
           
-          // Handle normal map changes by recreating textures
-          // GUARD: Check if immediate Normal Map change should be applied instead
-          const actualNormalMapChanged = hasImmediateNormalMap ? 
-            (existingSprite.shader as any).userData.__immediateNormalMap !== existingSprite.definition.useNormalMap :
-            normalMapChanged;
-          
-          if (actualNormalMapChanged) {
-            const finalUseNormalMap = hasImmediateNormalMap ? (existingSprite.shader as any).userData.__immediateNormalMap : finalDef.useNormalMap;
-            const changeType = hasImmediateNormalMap ? "🛡️ IMMEDIATE" : "🎨 NORMAL";
-            console.log(`${changeType} Normal map changed for ${existingSprite.id}: ${existingSprite.definition.useNormalMap} → ${finalUseNormalMap}`);
+          // Handle normal map changes by recreating textures  
+          // FORCE IMMEDIATE UPDATES - apply immediate values directly
+          if (hasImmediateNormalMap) {
+            const immediateValue = (existingSprite.shader as any).userData.__immediateNormalMap;
+            console.log(`🛡️ FORCING immediate normal map for ${existingSprite.id}: ${immediateValue}`);
+            
+            // Recreate normal texture based on immediate setting
+            if (immediateValue && finalDef.normal && finalDef.normal !== '') {
+              existingSprite.normalTexture = PIXI.Texture.from(finalDef.normal);
+            } else {
+              existingSprite.normalTexture = existingSprite['createFlatNormalTexture']();
+            }
+            // Update shader uniform
+            if (existingSprite.shader) {
+              existingSprite.shader.uniforms.uNormalMap = existingSprite.normalTexture;
+            }
+          } else if (normalMapChanged) {
+            console.log(`🎨 Normal map changed for ${existingSprite.id}: ${existingSprite.definition.useNormalMap} → ${finalDef.useNormalMap}`);
             
             // Recreate normal texture based on new setting
-            if (finalUseNormalMap && finalDef.normal && finalDef.normal !== '') {
+            if (finalDef.useNormalMap && finalDef.normal && finalDef.normal !== '') {
               existingSprite.normalTexture = PIXI.Texture.from(finalDef.normal);
             } else {
               existingSprite.normalTexture = existingSprite['createFlatNormalTexture']();
@@ -426,13 +434,16 @@ export class SceneManager {
           }
           
           // Update zIndex for z-ordering (this triggers PIXI to re-sort children)
-          // GUARD: Don't override immediate zOrder changes
-          const finalZOrder = hasImmediateZOrder ? (existingSprite.mesh as any).userData.__immediateZOrder : finalDef.zOrder;
-          if (finalZOrder !== undefined && existingSprite.mesh.zIndex !== finalZOrder) {
-            existingSprite.mesh.zIndex = finalZOrder;
+          // FORCE IMMEDIATE UPDATES - apply immediate values directly
+          if (hasImmediateZOrder) {
+            const immediateZOrder = (existingSprite.mesh as any).userData.__immediateZOrder;
+            console.log(`🛡️ FORCING immediate zOrder for ${existingSprite.id}: ${immediateZOrder}`);
+            existingSprite.mesh.zIndex = immediateZOrder;
             zOrderChanged = true;
-            const changeType = hasImmediateZOrder ? "🛡️ IMMEDIATE" : "🎭 NORMAL";
-            console.log(`${changeType} Updated zIndex for ${existingSprite.id}: ${oldZOrder} → ${finalZOrder}`);
+          } else if (finalDef.zOrder !== undefined && existingSprite.mesh.zIndex !== finalDef.zOrder) {
+            existingSprite.mesh.zIndex = finalDef.zOrder;
+            zOrderChanged = true;
+            console.log(`🎭 Updated zIndex for ${existingSprite.id}: ${oldZOrder} → ${finalDef.zOrder}`);
           }
           
           // Update visibility
@@ -465,8 +476,19 @@ export class SceneManager {
 
 
   // Get sprites sorted by zOrder (lowest to highest = back to front)
+  // IMMEDIATE FIX: Account for immediate zOrder changes stored in userData
   getSpritesSortedByZOrder(): SceneSprite[] {
-    return this.getAllSprites().sort((a, b) => a.definition.zOrder - b.definition.zOrder);
+    return this.getAllSprites().sort((a, b) => {
+      // Check for immediate zOrder changes first, then fall back to definition
+      const aZOrder = a.mesh && (a.mesh as any).userData?.__immediateZOrder !== undefined 
+        ? (a.mesh as any).userData.__immediateZOrder 
+        : a.definition.zOrder;
+      const bZOrder = b.mesh && (b.mesh as any).userData?.__immediateZOrder !== undefined 
+        ? (b.mesh as any).userData.__immediateZOrder 
+        : b.definition.zOrder;
+      
+      return aZOrder - bZOrder;
+    });
   }
   
   // Legacy method kept for backward compatibility, now returns all sprites
