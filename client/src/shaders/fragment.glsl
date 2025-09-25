@@ -477,6 +477,11 @@ void main(void) {
       if (uPoint3Enabled && uPoint3CastsShadows && uPoint3Intensity > 0.0) {
         globalShadowFactor *= calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
       }
+    } else {
+      // When using occluder map, sample it directly for global shadows
+      vec2 screenCoord = worldPos / vec2(800.0, 600.0); // Convert to screen coordinates
+      float occluderSample = texture2D(uOccluderMap, screenCoord).r;
+      globalShadowFactor = occluderSample; // Use occluder map directly
     }
     
     // Apply shadows to ambient light - shadows now darken everything properly
