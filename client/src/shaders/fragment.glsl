@@ -289,12 +289,32 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   float tEnterSelf = max(max(tNear.x, tNear.y), 0.0);
   float tExitSelf = min(min(tFar.x, tFar.y), rayLength);
   
+  // Check if light is inside receiver sprite bounds
+  bool lightInsideReceiver = (lightPos.x >= uReceiverMin.x && lightPos.x <= uReceiverMax.x && 
+                             lightPos.y >= uReceiverMin.y && lightPos.y <= uReceiverMax.y);
+  
+  // If light is inside receiver, start ray marching from exit point to avoid sprite blocking itself  
+  float startDistance = lightInsideReceiver ? max(tExitSelf + 5.0, 5.0) : 5.0;
+  
+  // AGGRESSIVE FIX: If light is very close to ANY sprite bounds, significantly increase start distance
+  // This prevents sprites near the light from blocking illumination to other sprites
+  float lightToBoundsDistance = min(min(
+    abs(lightPos.x - uReceiverMin.x), abs(lightPos.x - uReceiverMax.x)),
+    min(abs(lightPos.y - uReceiverMin.y), abs(lightPos.y - uReceiverMax.y))
+  );
+  
+  // Scale start distance based on proximity to sprite bounds
+  if (lightToBoundsDistance < 50.0) {
+    float proximityFactor = 1.0 - (lightToBoundsDistance / 50.0);
+    startDistance = max(startDistance, 10.0 + proximityFactor * 20.0);
+  }
+  
   // Ray marching with self-shadow avoidance
   float stepSize = 1.0; // Sample every pixel
   float eps = 1.5; // Small epsilon for edge cases
   
   for (int i = 1; i < 500; i++) {
-    float distance = float(i) * stepSize;
+    float distance = startDistance + float(i - 1) * stepSize;
     
     // Stop when we reach the pixel
     if (distance >= rayLength - eps) break;
