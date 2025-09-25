@@ -178,7 +178,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.14,
+      "brightness": 0.05,
       "color": "0xffffff"
     },
     {
@@ -197,18 +197,18 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": false,
-      "brightness": 0.3,
+      "enabled": true,
+      "brightness": 0.2,
       "color": "0xffffff",
-      "directionX": 6.123233995736766e-17,
-      "directionY": -1,
+      "directionX": -0.984807753012208,
+      "directionY": -0.17364817766693028,
       "directionZ": -1,
       "castsShadows": true
     },
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.4,
       "color": "0xf4f080",
       "x": 220,
@@ -277,7 +277,7 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.35,
+    "strength": 0.45,
     "maxLength": 280,
     "height": 8,
     "sharpness": 1

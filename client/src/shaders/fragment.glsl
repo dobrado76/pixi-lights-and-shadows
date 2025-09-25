@@ -599,9 +599,9 @@ void main(void) {
     float normalDot = max(dot(safeNormal, lightDir), 0.0);
     float intensity = normalDot * uDir0Intensity;
     
-    // Calculate shadow ONLY if this light has intensity > 0 (directional lights have infinite range)
+    // Calculate shadow for directional light (infinite range, always calculate shadows)
     float shadowFactor = 1.0;
-    if (uDir0CastsShadows && intensity > 0.0) {
+    if (uDir0CastsShadows) {
       shadowFactor = calculateDirectionalShadowUnified(uDir0Direction.xy, worldPos.xy);
     }
     
@@ -625,9 +625,9 @@ void main(void) {
     float normalDot = max(dot(safeNormal, lightDir), 0.0);
     float intensity = normalDot * uDir1Intensity;
     
-    // Calculate shadow ONLY if this light has intensity > 0 (directional lights have infinite range)
+    // Calculate shadow for directional light (infinite range, always calculate shadows)
     float shadowFactor = 1.0;
-    if (uDir1CastsShadows && intensity > 0.0) {
+    if (uDir1CastsShadows) {
       shadowFactor = calculateDirectionalShadowUnified(uDir1Direction.xy, worldPos.xy);
     }
     
