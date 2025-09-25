@@ -1,94 +1,72 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { storage } from "./storage";
 import { promises as fs } from "fs";
 import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // PIXI.js demo API routes - only for loading/saving configuration files
+  // put application routes here
+  // prefix all routes with /api
 
-  // Load lights configuration from scene file
+  // use storage to perform CRUD operations on the storage interface
+  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+
+  // Load lights configuration from file
   app.get('/api/load-lights-config', async (req, res) => {
     try {
-      const configPath = path.join(process.cwd(), 'client', 'public', 'scene.json');
+      const configPath = path.join(process.cwd(), 'client', 'public', 'lights-config.json');
       
       // Check if file exists
       try {
         await fs.access(configPath);
       } catch {
         // File doesn't exist, return default configuration
-        // Comprehensive default configuration with scene data
         const defaultConfig = {
           lights: [
             {
               id: "mouse_light",
               type: "point",
               enabled: true,
-              followMouse: true,
-              position: { x: 200, y: 150, z: 10 },
+              position: { x: 200, y: 150, z: 0 },
+              direction: { x: 0, y: 0, z: -1 },
               color: { r: 1, g: 1, b: 1 },
               intensity: 1,
-              radius: 200,
-              castsShadows: false
+              radius: 200
             },
             {
               id: "directional_light", 
               type: "directional",
               enabled: true,
-              position: { x: 0, y: 0, z: 0 },
-              direction: { x: 0.42261826174069944, y: 0.9063077870366499, z: -1 },
+              position: { x: 200, y: 150, z: 0 },
+              direction: { x: 1, y: 1, z: -1 },
               color: { r: 1, g: 1, b: 1 },
-              intensity: 0.3,
-              castsShadows: true
+              intensity: 0.5
             },
             {
               id: "spotlight_1",
               type: "spotlight", 
-              enabled: false,
+              enabled: true,
               position: { x: 200, y: 150, z: 100 },
               direction: { x: 0, y: 0, z: -1 },
               color: { r: 1, g: 1, b: 1 },
               intensity: 2,
               radius: 150,
               coneAngle: 30,
-              softness: 0.5,
-              castsShadows: false
+              softness: 0.5
             },
             {
-              id: "point_light_2",
-              type: "point",
-              enabled: false,
-              position: { x: 400, y: 300, z: 10 },
-              color: { r: 0.2, g: 0.8, b: 1 },
-              intensity: 1.2,
-              radius: 250,
-              castsShadows: false
+              type: "ambient",
+              brightness: 0.3,
+              color: { r: 0.4, g: 0.4, b: 0.4 }
             }
-          ],
-          shadowConfig: {
-            enabled: true,
-            strength: 0.7,
-            maxLength: 200,
-            height: 10
-          }
+          ]
         };
         return res.json(defaultConfig);
       }
       
-      // Read and return the lights configuration from scene file
+      // Read and return the saved configuration
       const configData = await fs.readFile(configPath, 'utf8');
-      const sceneConfig = JSON.parse(configData);
-      
-      // Extract lights and shadowConfig from the scene file
-      const config = {
-        lights: sceneConfig.lights || [],
-        shadowConfig: sceneConfig.shadowConfig || {
-          enabled: true,
-          strength: 0.5,
-          maxLength: 300,
-          height: 10,
-          sharpness: 1
-        }
-      };
+      const config = JSON.parse(configData);
       
       res.json(config);
     } catch (error) {
@@ -101,29 +79,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Save lights configuration to scene file
+  // Save lights configuration to file
   app.post('/api/save-lights-config', async (req, res) => {
     try {
       const config = req.body;
       
-      // Path to the scene configuration file
-      const configPath = path.join(process.cwd(), 'client', 'public', 'scene.json');
+      // Path to save the configuration file
+      const configPath = path.join(process.cwd(), 'client', 'public', 'lights-config.json');
       
-      // Read the existing scene configuration
-      let sceneConfig: any = {};
-      try {
-        const existingData = await fs.readFile(configPath, 'utf8');
-        sceneConfig = JSON.parse(existingData);
-      } catch {
-        // If file doesn't exist or is invalid, start with empty config
-      }
-      
-      // Update the lights and shadowConfig in the scene configuration
-      sceneConfig.lights = config.lights;
-      sceneConfig.shadowConfig = config.shadowConfig;
-      
-      // Write the updated scene configuration back to the file
-      await fs.writeFile(configPath, JSON.stringify(sceneConfig, null, 2), 'utf8');
+      // Write the configuration to the JSON file
+      await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf8');
       
       res.json({ success: true, message: 'Configuration saved successfully' });
     } catch (error) {
@@ -148,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // File doesn't exist, return default scene configuration
         const defaultScene = {
           scene: {
-            background2: {
+            background: {
               type: "background",
               image: "/textures/BGTextureTest.jpg",
               normal: "/textures/BGTextureNORM.jpg",
@@ -158,60 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               castsShadows: false,
               receiveShadows: true,
               visible: true,
-              useNormalMap: true,
-              zIndex: -1
-            },
-            ball: {
-              type: "sprite",
-              image: "/textures/ball.png", 
-              normal: "/textures/ballN.png",
-              position: { x: 120, y: 80 },
-              rotation: 0,
-              scale: 1,
-              castsShadows: true,
-              receiveShadows: true,
-              visible: true,
-              useNormalMap: true,
-              zIndex: 0
-            },
-            block: {
-              type: "sprite",
-              image: "/textures/block.png",
-              normal: "/textures/blockNormalMap.jpg", 
-              position: { x: 280, y: 120 },
-              rotation: 0,
-              scale: 1,
-              castsShadows: true,
-              receiveShadows: true,
-              visible: true,
-              useNormalMap: true,
-              zIndex: 0
-            },
-            block2: {
-              type: "sprite",
-              image: "/textures/block2.png",
-              normal: "/textures/block2NormalMap.png",
-              position: { x: 200, y: 320 },
-              rotation: 0,
-              scale: 1,
-              castsShadows: true,
-              receiveShadows: true,
-              visible: true,
-              useNormalMap: true,
-              zIndex: 0
-            },
-            test2: {
-              type: "sprite", 
-              image: "/textures/test2.png",
-              normal: "/textures/test2Normal.png",
-              position: { x: 84, y: 403 },
-              rotation: 0,
-              scale: 1,
-              castsShadows: true,
-              receiveShadows: true,
-              visible: true,
-              useNormalMap: true,
-              zIndex: 1
+              useNormalMap: true
             }
           }
         };

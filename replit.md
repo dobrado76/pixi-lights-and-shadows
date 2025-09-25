@@ -2,22 +2,7 @@
 
 ## Overview
 
-This project is a comprehensive React.js application showcasing advanced pseudo-3D shadow casting using PIXI.js primitives. It features two complete rendering systems: a forward renderer and an experimental deferred renderer. The application demonstrates complex WebGL rendering techniques including multi-pass lighting, normal mapping, texture-based light masking, distance-based soft shadows, and true deferred lighting with G-Buffer architecture. It's designed as both a technical demonstration and an interactive playground for exploring 2.5D lighting effects.
-
-## Rendering Systems
-
-### Forward Renderer (Original)
-- Per-sprite lighting calculations with real-time shader updates
-- Unlimited sprite shadow casters using auto-switching architecture
-- Multi-pass rendering for complex lighting scenarios
-- Optimized for compatibility and proven performance
-
-### Deferred Renderer (Experimental)
-- True deferred lighting pipeline with G-Buffer architecture
-- Screen-space lighting calculations for improved scalability
-- Unified illumination and shadow rendering on single screen-size maps
-- Reduces complexity for large numbers of sprites with lighting
-- Easy toggle system for A/B comparison testing
+This project is a comprehensive React.js application showcasing advanced pseudo-3D shadow casting using PIXI.js primitives. It features a complete lighting system with unlimited sprite shadow casters, real-time light controls, and advanced visual effects. The application demonstrates complex WebGL rendering techniques including multi-pass lighting, normal mapping, texture-based light masking, and distance-based soft shadows. It's designed as both a technical demonstration and an interactive playground for exploring 2.5D lighting effects.
 
 ## User Preferences
 
