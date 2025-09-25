@@ -61,8 +61,8 @@
       "image": "/textures/ball.png",
       "normal": "/textures/ballN.png",
       "position": {
-        "x": 175,
-        "y": 226
+        "x": 104,
+        "y": 309
       },
       "rotation": 0,
       "scale": 0.9,
@@ -145,7 +145,7 @@
       "scale": 1,
       "zOrder": 0,
       "castsShadows": true,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
@@ -197,7 +197,7 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.3,
       "color": "0xffffff",
       "directionX": 6.123233995736766e-17,
@@ -208,7 +208,7 @@
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.4,
       "color": "0xf4f080",
       "x": 220,
