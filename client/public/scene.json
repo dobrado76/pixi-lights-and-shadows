@@ -252,7 +252,7 @@
       "castsShadows": true,
       "radius": 400,
       "mask": {
-        "image": "00035-3934797537.png",
+        "image": "god-rays.png",
         "offset": {
           "x": 15,
           "y": 25
