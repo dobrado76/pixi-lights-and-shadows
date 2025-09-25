@@ -535,7 +535,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     };
   }, []);
 
-  // Setup demo content when PIXI app is ready - initial load only
+  // Setup demo content when PIXI app is ready - initial load and external config changes only
   useEffect(() => {
     if (!pixiApp || !pixiApp.stage || !sceneConfig.scene || Object.keys(sceneConfig.scene).length === 0 || lightsConfig.length === 0) {
       return;
@@ -1065,7 +1065,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       pixiApp.render();
     } catch (error) {
     }
-  }, [sceneConfig, pixiApp, JSON.stringify(sceneConfig.scene)]);
+  }, [pixiApp, lightsConfig]); // CRITICAL FIX: Remove sceneConfig dependency to prevent rebuilds on immediate updates
   
   // Simple render trigger when textures finish loading
   useEffect(() => {
