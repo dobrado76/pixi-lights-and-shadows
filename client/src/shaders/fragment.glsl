@@ -289,22 +289,24 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   float tEnterSelf = max(max(tNear.x, tNear.y), 0.0);
   float tExitSelf = min(min(tFar.x, tFar.y), rayLength);
   
-  // Check if light is inside receiver sprite bounds
-  bool lightInsideReceiver = (lightPos.x >= uReceiverMin.x && lightPos.x <= uReceiverMax.x && 
-                             lightPos.y >= uReceiverMin.y && lightPos.y <= uReceiverMax.y);
-  
-  // SMART FIX: Only increase start distance for reasonably-sized sprites, not huge backgrounds
-  // This preserves shadow casting while fixing self-shadow issues
+  // CONSERVATIVE SELF-SHADOW FIX: Only apply when light is very close to sprite center
+  // This preserves light contribution to other sprites while fixing severe self-shadowing
   float startDistance = 1.0; // Normal start distance for shadows
   
-  // Calculate sprite size to avoid applying fix to background sprites
+  // Calculate sprite center and distance from light
+  vec2 spriteCenter = (uReceiverMin + uReceiverMax) * 0.5;
   vec2 spriteSize = uReceiverMax - uReceiverMin;
-  float spriteArea = spriteSize.x * spriteSize.y;
-  bool isBackgroundSprite = spriteArea > 400000.0; // Background is ~480,000 pixels
+  float distanceToCenter = length(lightPos.xy - spriteCenter);
+  float spriteRadius = length(spriteSize) * 0.25; // Conservative radius (quarter of diagonal)
   
-  if (lightInsideReceiver && !isBackgroundSprite) {
-    // Light is inside this regular-sized sprite - start ray marching from outside the sprite
-    startDistance = max(tExitSelf + 2.0, 2.0);
+  // Only apply fix for non-background sprites when light is very close to center
+  float spriteArea = spriteSize.x * spriteSize.y;
+  bool isBackgroundSprite = spriteArea > 400000.0;
+  bool lightVeryCloseToCenter = distanceToCenter < spriteRadius;
+  
+  if (lightVeryCloseToCenter && !isBackgroundSprite) {
+    // Light is very close to sprite center - apply minimal fix to reduce self-shadowing
+    startDistance = 3.0; // Small increase to reduce self-shadow without breaking other shadows
   }
   
   // Ray marching with self-shadow avoidance

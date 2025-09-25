@@ -208,7 +208,7 @@
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.4,
       "color": "0xf4f080",
       "x": 220,
@@ -225,7 +225,7 @@
     {
       "id": "spotlight",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.6,
       "color": "0xffffff",
       "x": 300,
