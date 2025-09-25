@@ -453,13 +453,8 @@ void main(void) {
     float attenuation = 1.0 - clamp(lightDistance / uPoint0Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    // FIX: Handle severely corrupted normals only (preserve legitimate normal maps)
-    vec3 safeNormal = normal;
-    
-    // Only replace SEVERELY corrupted normals (much more lenient)
-    if (length(safeNormal) < 0.3 || length(safeNormal) > 2.0) {
-      safeNormal = vec3(0.0, 0.0, 1.0); // Flat surface normal
-    }
+    // DEBUG: Force flat normals to test Z-component calculation  
+    vec3 safeNormal = vec3(0.0, 0.0, 1.0); // Force perfect flat normal for debugging
     
     float normalDot = max(dot(safeNormal, lightDir), 0.0);
     
