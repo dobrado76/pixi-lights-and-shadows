@@ -1297,8 +1297,9 @@ const PixiDemo = (props: PixiDemoProps) => {
               shader.uniforms.uUseOccluderMap = true;
               shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
               
-              // FORCE DIRECTIONAL SHADOW SETUP IN ANIMATION LOOP
-              shader.uniforms.uDir0CastsShadows = true;
+              // Only enable directional shadows if there are actually enabled directional lights
+              const enabledDirectionalLights = lightsConfig.filter(light => light.enabled && light.type === 'directional');
+              shader.uniforms.uDir0CastsShadows = enabledDirectionalLights.length > 0 && enabledDirectionalLights[0].castsShadows;
             }
           });
           console.log(`✅ Unlimited shadows applied from animation loop!`);

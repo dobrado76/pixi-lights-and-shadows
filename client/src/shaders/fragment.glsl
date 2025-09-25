@@ -458,7 +458,7 @@ void main(void) {
     gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
     return;
   } else {
-    // Lighting pass: calculate GLOBAL shadow factor first - affects everything including ambient
+    // Calculate global shadow factor - affects everything including ambient
     float globalShadowFactor = 1.0;
     
     // Check shadows from all shadow-casting lights to get global shadow factor
@@ -475,18 +475,8 @@ void main(void) {
       globalShadowFactor *= calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
     }
     
-    // DEBUG: Visualize shadow factor as red/green
-    if (globalShadowFactor < 0.9) {
-      // In shadow - show as red tint
-      finalColor = vec3(1.0, 0.0, 0.0) * 0.8; // Bright red for shadows
-    } else {
-      // Not in shadow - show as green tint  
-      finalColor = vec3(0.0, 1.0, 0.0) * 0.8; // Bright green for lit areas
-    }
-    
-    // Skip normal lighting calculation for debugging
-    gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
-    return;
+    // Apply shadows to ambient light - shadows now darken everything properly
+    finalColor = diffuseColor.rgb * uAmbientLight * uAmbientColor * globalShadowFactor;
   }
   
   // Point Light 0
