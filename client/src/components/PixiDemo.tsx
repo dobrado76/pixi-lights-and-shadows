@@ -188,12 +188,17 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
       
       // Update position and scale to match the scene sprite
-      // Offset coordinates to account for expanded occlusion map buffer
-      const bounds = caster.getBounds();
-      occluderSprite.x = bounds.x + SHADOW_BUFFER;
-      occluderSprite.y = bounds.y + SHADOW_BUFFER;
-      occluderSprite.width = bounds.width;
-      occluderSprite.height = bounds.height;
+      // Use FULL sprite dimensions, not just visible bounds, to avoid shadow artifacts
+      const spritePos = caster.definition.position;
+      const spriteScale = caster.definition.scale || 1;
+      const textureWidth = caster.diffuseTexture.width;
+      const textureHeight = caster.diffuseTexture.height;
+      
+      // Position the full sprite in the expanded occlusion map
+      occluderSprite.x = spritePos.x + SHADOW_BUFFER;
+      occluderSprite.y = spritePos.y + SHADOW_BUFFER;
+      occluderSprite.width = textureWidth * spriteScale;
+      occluderSprite.height = textureHeight * spriteScale;
       occluderSprite.visible = true;
     });
     
