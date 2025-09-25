@@ -351,8 +351,8 @@ float calculateDirectionalShadow(vec4 caster, vec2 pixelPos, vec2 lightDirection
   vec2 casterSize = caster.zw;
   vec2 casterCenter = casterPos + casterSize * 0.5;
   
-  // Normalize light direction for consistent calculations
-  vec2 lightDir2D = normalize(lightDirection.xy);
+  // Normalize light direction for consistent calculations - use same convention as occluder map
+  vec2 lightDir2D = -normalize(lightDirection.xy); // Ray direction from light
   
   // Check if pixel is in the shadow area cast by this caster
   // For directional lights, shadows extend infinitely in the light direction
@@ -633,10 +633,15 @@ void main(void) {
     finalColor += diffuseColor.rgb * uPoint3Color * intensity;
   }
   
+  // Helper functions for directional lighting coordinate system
+  // uDirNDirection represents light→scene direction
+  vec2 dirToLight(vec3 dir) { return normalize(-dir.xy); } // from pixel to light (for lighting)
+  vec2 dirFromLight(vec3 dir) { return normalize(dir.xy); } // light travel direction (for shadows)
+
   // Directional Light 0
   if (uDir0Enabled) {
     // Directional lights: parallel rays from infinite distance with normal mapping
-    vec3 lightDir = normalize(uDir0Direction); // Use direction as intended (light direction)
+    vec3 lightDir = vec3(dirToLight(uDir0Direction), uDir0Direction.z); // Vector from pixel to light
     
     // Normal mapping with safe validation
     vec3 safeNormal = normal;
@@ -662,7 +667,7 @@ void main(void) {
   // Directional Light 1
   if (uDir1Enabled) {
     // Directional lights: parallel rays from infinite distance with normal mapping
-    vec3 lightDir = normalize(uDir1Direction); // Use direction as intended (light direction)
+    vec3 lightDir = vec3(dirToLight(uDir1Direction), uDir1Direction.z); // Vector from pixel to light
     
     // Normal mapping with safe validation
     vec3 safeNormal = normal;
