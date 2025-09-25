@@ -545,13 +545,24 @@ const PixiDemo = (props: PixiDemoProps) => {
 
     const setupDemo = async () => {
       try {
-        // Track last config to avoid rebuilds on immediate-only changes
-        const currentConfigKey = JSON.stringify(sceneConfig.scene);
-        if (lastSceneConfigRef.current === currentConfigKey) {
-          console.log('🛡️ SKIPPING setupDemo - config unchanged');
-          return;
+        // Skip rebuilds if only immediate properties (zOrder/normalMap) changed
+        if (sceneManagerRef.current) {
+          const hasOnlyImmediateChanges = Object.keys(sceneConfig.scene).every(spriteId => {
+            const sprite = sceneManagerRef.current!.getSprite(spriteId);
+            if (!sprite || !sprite.mesh) return true;
+            
+            const mesh = sprite.mesh as any;
+            const hasImmediateZOrder = mesh.userData?.__immediateZOrder !== undefined;
+            const hasImmediateNormal = mesh.userData?.__immediateNormalMap !== undefined;
+            
+            return hasImmediateZOrder || hasImmediateNormal;
+          });
+          
+          if (hasOnlyImmediateChanges) {
+            console.log('🛡️ SKIPPING setupDemo - only immediate changes detected');
+            return;
+          }
         }
-        lastSceneConfigRef.current = currentConfigKey;
         
         // Use scene configuration from props instead of fetching
         const sceneData = sceneConfig;

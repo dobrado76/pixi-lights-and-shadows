@@ -58,24 +58,16 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
     
     console.log(`🎮 UI: ${spriteId} config changed:`, Object.keys(updates));
     
-    // IMMEDIATE UPDATE for critical controls - bypass React state completely
+    // IMMEDIATE UPDATE for critical controls - bypass React rebuilds
     if (onImmediateSpriteChange) {
       onImmediateSpriteChange(spriteId, updates);
     }
     
-    // For zOrder/normalMap: ONLY update PIXI, don't trigger React rebuilds
+    // For zOrder/normalMap: Update UI but delay React state to prevent rebuilds
     if (updates.zOrder !== undefined || updates.useNormalMap !== undefined) {
-      // Save to backend directly without React state update
-      const saveData = { scene: newConfig.scene };
-      fetch('/api/save-scene-config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(saveData)
-      }).then(response => {
-        if (response.ok) {
-          console.log('🛡️ Immediate change saved without rebuild');
-        }
-      });
+      // Update React state immediately for UI controls to move
+      onSceneConfigChange(newConfig);
+      console.log('🛡️ Immediate change - UI updated, PIXI handles visual');
     } else {
       // Normal React state update for non-critical changes
       onSceneConfigChange(newConfig);
