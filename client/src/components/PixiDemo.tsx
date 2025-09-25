@@ -436,6 +436,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         canvas.focus();
         // FORCE initial render to ensure canvas displays immediately
         app.render();
+        // CRITICAL: Start the ticker for continuous rendering
+        app.ticker.start();
         console.log('🎯 Canvas auto-focused and force-rendered on load');
         
         setPixiApp(app);
@@ -542,6 +544,18 @@ const PixiDemo = (props: PixiDemoProps) => {
 
     const setupDemo = async () => {
       try {
+        // CRITICAL FIX: Don't rebuild if we have immediate changes pending
+        if (sceneManagerRef.current) {
+          const hasImmediateChanges = sceneManagerRef.current.getAllSprites().some(sprite => 
+            sprite.mesh && ((sprite.mesh as any).userData?.__immediateZOrder !== undefined ||
+                          (sprite.mesh as any).userData?.__immediateNormalMap !== undefined)
+          );
+          if (hasImmediateChanges) {
+            console.log('🛡️ SKIPPING setupDemo - immediate changes pending');
+            return;
+          }
+        }
+        
         // Use scene configuration from props instead of fetching
         const sceneData = sceneConfig;
         
