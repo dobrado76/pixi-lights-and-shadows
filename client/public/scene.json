@@ -61,8 +61,8 @@
       "image": "/textures/ball.png",
       "normal": "/textures/ballN.png",
       "position": {
-        "x": 175,
-        "y": 226
+        "x": 100,
+        "y": 300
       },
       "rotation": 0,
       "scale": 0.9,
