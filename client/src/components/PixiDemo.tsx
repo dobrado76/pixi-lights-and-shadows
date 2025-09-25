@@ -594,8 +594,31 @@ const PixiDemo = (props: PixiDemoProps) => {
                   sprite.shader.uniforms.uNormalMap = sprite.normalTexture;
                   (sprite.shader as any).userData = (sprite.shader as any).userData || {};
                   (sprite.shader as any).userData.__immediateNormalMap = updates.useNormalMap; // Mark as immediate
+                  
+                  // FORCE IMMEDIATE SHADER UPDATE - Multiple approaches to ensure visual change
+                  const mesh = sprite.mesh;
+                  if (mesh) {
+                    // Method 1: Force mesh state changes
+                    (mesh as any)._cachedTint = 0xFFFFFF + 1; // Force tint cache invalidation
+                    mesh.calculateVertices(); // Force geometry recalculation
+                    
+                    // Method 2: Force material/shader update - CORRECT PIXI.js way
+                    if (mesh.material && mesh.material.uniforms) {
+                      mesh.material.uniforms.uNormalMap = sprite.normalTexture; // Direct uniform update
+                      (mesh.material as any).update();
+                    }
+                    
+                    // Method 3: Force render (removed shader method - not accessible)
+                    
+                    // Method 4: Force container and app render
+                    mesh.parent?.removeChild(mesh);
+                    mesh.parent?.addChild(mesh); // Force re-add to trigger render
+                    
+                    // Method 5: Force immediate render
+                    pixiApp.render();
+                  }
                 }
-                console.log(`⚡ Immediate normal map: ${spriteId} → ${updates.useNormalMap}`);
+                console.log(`⚡ Immediate normal map: ${spriteId} → ${updates.useNormalMap} - SHADER FORCED`);
               }
               
               // Handle position changes
