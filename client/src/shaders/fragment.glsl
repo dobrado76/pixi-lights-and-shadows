@@ -1,5 +1,6 @@
 precision mediump float;
 varying vec2 vTextureCoord;
+varying vec2 vWorldPos; // Actual world position from vertex shader
 uniform sampler2D uDiffuse;
 uniform sampler2D uNormal;
 uniform vec2 uSpritePos;
@@ -410,8 +411,8 @@ void main(void) {
   vec4 diffuseColor = texture2D(uDiffuse, uv);
   vec3 normal = texture2D(uNormal, uv).rgb * 2.0 - 1.0;
   
-  // Calculate world position (PROPER - no artificial scaling)
-  vec2 worldPos = uSpritePos + uv * uSpriteSize;
+  // Use actual world position from vertex shader (includes container transforms)
+  vec2 worldPos = vWorldPos;
   vec3 worldPos3D = vec3(worldPos.x, worldPos.y, 0.0);
   
   // Debug: Log world position for first point light (if enabled)
@@ -442,15 +443,8 @@ void main(void) {
   
   // Point Light 0
   if (uPoint0Enabled) {
-    // DEBUG: Test if world position is the issue by forcing known good position
-    vec3 debugWorldPos3D = worldPos3D;
-    // Force small sprites to use background-like coordinates for testing
-    if (length(uSpriteSize - vec2(75.0, 75.0)) < 10.0) { // Ball is 75x75
-      debugWorldPos3D = vec3(400.0, 300.0, 0.0); // Force to screen center
-    }
-    
     vec3 lightPos3D = uPoint0Position;
-    vec3 lightDir3D = lightPos3D - debugWorldPos3D;
+    vec3 lightDir3D = lightPos3D - worldPos3D;
     lightDir3D.y = -lightDir3D.y; // Y-flip for coordinate system consistency
     
     float lightDistance = length(lightDir3D);
