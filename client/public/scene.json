@@ -190,7 +190,7 @@
       "x": 250,
       "y": 420,
       "z": 80,
-      "followMouse": false,
+      "followMouse": true,
       "castsShadows": true,
       "radius": 530
     },
