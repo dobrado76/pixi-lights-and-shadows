@@ -197,7 +197,7 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.7,
       "color": "0xffffff",
       "directionX": -0.4999999999999998,
@@ -208,7 +208,7 @@
     {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.4,
       "color": "0xf4f080",
       "x": 210,
