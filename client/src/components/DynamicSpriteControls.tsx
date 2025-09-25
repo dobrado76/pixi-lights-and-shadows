@@ -34,10 +34,10 @@ interface SceneConfig {
 interface DynamicSpriteControlsProps {
   sceneConfig: SceneConfig;
   onSceneConfigChange: (newConfig: SceneConfig) => void;
-  onZOrderChange?: (spriteId: string, oldZOrder: number, newZOrder: number) => void;
+  onImmediateSpriteChange?: (spriteId: string, updates: any) => void;
 }
 
-export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrderChange }: DynamicSpriteControlsProps) {
+export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImmediateSpriteChange }: DynamicSpriteControlsProps) {
   const [expandedSprites, setExpandedSprites] = useState<Set<string>>(new Set());
 
   const toggleExpanded = (spriteId: string) => {
@@ -72,15 +72,9 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onZOrd
     
     console.log(`🎮 UI: ${spriteId} config changed:`, Object.keys(updates));
     
-    // Special handling for zOrder changes - bypass React state updates
-    if (updates.zOrder !== undefined) {
-      const oldZOrder = currentSprite?.zOrder ?? 0;
-      console.log(`🎮 UI: zOrder changed for ${spriteId}: ${oldZOrder} → ${updates.zOrder}`);
-      
-      // Call direct callback for immediate update
-      if (onZOrderChange) {
-        onZOrderChange(spriteId, oldZOrder, updates.zOrder);
-      }
+    // IMMEDIATE UPDATE for ALL sprite controls - bypass React state for instant feedback
+    if (onImmediateSpriteChange) {
+      onImmediateSpriteChange(spriteId, updates);
     }
     
     // Always update the React state to trigger useEffect

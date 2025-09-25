@@ -32,11 +32,11 @@ interface PixiDemoProps {
   onGeometryUpdate: (status: string) => void;
   onShaderUpdate: (status: string) => void;
   onMeshUpdate: (status: string) => void;
-  onZOrderChange?: (spriteId: string, oldZOrder: number, newZOrder: number) => void;
+  onImmediateSpriteChange?: (spriteId: string, updates: any) => void;
 }
 
 const PixiDemo = (props: PixiDemoProps) => {
-  const { shaderParams, lightsConfig, ambientLight, shadowConfig, sceneConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate, onZOrderChange } = props;
+  const { shaderParams, lightsConfig, ambientLight, shadowConfig, sceneConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate, onImmediateSpriteChange } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
   const [mousePos, setMousePos] = useState({ x: 200, y: 150 });

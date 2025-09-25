@@ -229,16 +229,16 @@ function App() {
     debouncedSceneSave(newSceneConfig);
   }, [debouncedSceneSave]);
 
-  // Handler for immediate z-order changes (bypass React state)
-  const handleZOrderChange = useCallback((spriteId: string, oldZOrder: number, newZOrder: number) => {
-    console.log(`🎭 App: Direct zOrder change for ${spriteId}: ${oldZOrder} → ${newZOrder}`);
+  // Handler for immediate sprite changes (bypass React state for instant feedback)
+  const handleImmediateSpriteChange = useCallback((spriteId: string, updates: any) => {
+    console.log(`🚀 App: Immediate sprite change for ${spriteId}:`, Object.keys(updates));
     
-    // Call immediate update handler if available
-    const immediateUpdate = (window as any).__pixiImmediateZOrderUpdate;
+    // Call unified immediate update handler if available
+    const immediateUpdate = (window as any).__pixiImmediateUpdate;
     if (immediateUpdate) {
-      immediateUpdate(spriteId, newZOrder);
+      immediateUpdate(spriteId, updates);
     } else {
-      console.log('⚠️ Immediate zOrder update handler not yet available');
+      console.log('⚠️ Immediate update handler not yet available');
     }
   }, []);
 
@@ -289,7 +289,7 @@ function App() {
                     onGeometryUpdate={setGeometryStatus}
                     onShaderUpdate={setShaderStatus}
                     onMeshUpdate={setMeshStatus}
-                    onZOrderChange={handleZOrderChange}
+                    onImmediateSpriteChange={handleImmediateSpriteChange}
                   />
                 )}
               </div>
@@ -326,7 +326,7 @@ function App() {
                   <DynamicSpriteControls
                     sceneConfig={sceneConfig}
                     onSceneConfigChange={handleSceneConfigChange}
-                    onZOrderChange={handleZOrderChange}
+                    onImmediateSpriteChange={handleImmediateSpriteChange}
                   />
                 )}
               </TabsContent>
