@@ -160,19 +160,43 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
   const renderGeometryPass = () => {
     if (!pixiApp || !gBufferAlbedoRef.current || !geometryPassContainerRef.current) return;
     
-    // DEBUG: Test render texture with bright color
-    const testGraphics = new PIXI.Graphics();
-    testGraphics.beginFill(0xFF00FF); // Bright magenta
-    testGraphics.drawRect(0, 0, shaderParams.canvasWidth, shaderParams.canvasHeight);
-    testGraphics.endFill();
-    
-    // Test if render texture works at all
-    pixiApp.renderer.render(testGraphics, { 
+    // Clear albedo buffer
+    pixiApp.renderer.render(new PIXI.Container(), { 
       renderTexture: gBufferAlbedoRef.current, 
       clear: true
     });
     
-    console.log('🧪 DEBUG: Filled albedo buffer with bright magenta - testing render texture');
+    // Render sprites to G-Buffer
+    const sprites = sceneManagerRef.current?.getSprites() || [];
+    geometryPassContainerRef.current.removeChildren();
+    
+    let visibleSpriteCount = 0;
+    sprites.forEach((sprite: SceneSprite) => {
+      if (!sprite.definition.visible || !sprite.diffuseTexture) {
+        console.log(`⏭️ Skipping sprite ${sprite.id}: visible=${sprite.definition.visible}, hasTexture=${!!sprite.diffuseTexture}`);
+        return;
+      }
+      
+      const pixiSprite = new PIXI.Sprite(sprite.diffuseTexture);
+      const bounds = sprite.getBounds();
+      
+      pixiSprite.x = bounds.x;
+      pixiSprite.y = bounds.y;
+      pixiSprite.width = bounds.width;
+      pixiSprite.height = bounds.height;
+      
+      geometryPassContainerRef.current!.addChild(pixiSprite);
+      visibleSpriteCount++;
+      console.log(`✅ Added sprite ${sprite.id} at (${bounds.x}, ${bounds.y}) size ${bounds.width}x${bounds.height}`);
+    });
+    
+    // Render sprites to albedo buffer
+    pixiApp.renderer.render(geometryPassContainerRef.current, { 
+      renderTexture: gBufferAlbedoRef.current, 
+      clear: false 
+    });
+    
+    console.log(`📐 Geometry pass: ${visibleSpriteCount} sprites rendered to G-Buffer`);
   };
 
   /**
@@ -203,76 +227,22 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
       }
     `;
     
-    // Use the lighting-pass shader content directly (no fetch needed)
+    // SIMPLE DEBUG SHADER: Just display the albedo buffer directly
     const lightingFragmentShader = `
       precision mediump float;
       varying vec2 vTextureCoord;
-      
-      // G-Buffer inputs
       uniform sampler2D uGBufferAlbedo;
-      uniform sampler2D uGBufferNormal;
-      uniform sampler2D uGBufferPosition;
-      
-      // Scene parameters
-      uniform vec2 uCanvasSize;
-      uniform float uAmbientLight;
-      uniform vec3 uAmbientColor;
-      
-      // Light arrays for screen-space lighting
-      uniform int uNumPointLights;
-      uniform vec3 uPointLightPositions[8];
-      uniform vec3 uPointLightColors[8]; 
-      uniform float uPointLightIntensities[8];
-      uniform float uPointLightRadii[8];
-      
-      // Shadow system
-      uniform bool uShadowsEnabled;
-      uniform float uShadowStrength;
-      uniform sampler2D uShadowMap;
       
       void main(void) {
-        vec2 screenUV = vTextureCoord;
+        // Sample the G-Buffer albedo directly
+        vec3 albedo = texture2D(uGBufferAlbedo, vTextureCoord).rgb;
         
-        // Sample G-Buffer data
-        vec3 albedo = texture2D(uGBufferAlbedo, screenUV).rgb;
-        
-        // Skip empty pixels (background)
-        if (albedo.r == 0.0 && albedo.g == 0.0 && albedo.b == 0.0) {
-          gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-          return;
+        // If we get any color, show it; if empty show red for debugging
+        if (length(albedo) > 0.01) {
+          gl_FragColor = vec4(albedo, 1.0);
+        } else {
+          gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); // Red background for debugging
         }
-        
-        // Start with reasonable ambient lighting so sprites are visible
-        vec3 finalColor = albedo * (uAmbientLight * 0.8);
-        
-        // Add all enabled point lights with dramatic effect
-        for (int i = 0; i < 8; i++) {
-          if (i >= uNumPointLights) break;
-          
-          vec3 lightPos = uPointLightPositions[i];
-          vec3 lightColor = uPointLightColors[i];
-          float intensity = uPointLightIntensities[i];
-          float radius = uPointLightRadii[i];
-          
-          // Screen-space distance calculation
-          vec2 worldPos = screenUV * uCanvasSize;
-          float distance = length(lightPos.xy - worldPos);
-          
-          if (distance < radius) {
-            // Dramatic attenuation curve
-            float attenuation = 1.0 - pow(distance / radius, 2.0);
-            attenuation = clamp(attenuation, 0.0, 1.0);
-            
-            // Add dramatic lighting with boosted intensity
-            finalColor += albedo * lightColor * intensity * attenuation * 2.0;
-          }
-        }
-        
-        // Ensure adequate brightness for visibility
-        finalColor = finalColor * 2.0;
-        finalColor = clamp(finalColor, 0.0, 2.0); // Allow brighter values
-        
-        gl_FragColor = vec4(finalColor, 1.0);
       }
     `;
     
@@ -338,10 +308,10 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
    * FINAL COMPOSITION: Display the result on screen
    */
   const renderFinalComposite = () => {
-    if (!pixiApp || !gBufferAlbedoRef.current) return;
+    if (!pixiApp || !lightAccumulationRef.current) return;
     
-    // TEST: Display the albedo buffer directly to see if sprites made it through G-Buffer
-    const displaySprite = new PIXI.Sprite(gBufferAlbedoRef.current);
+    // Display the final lighting result
+    const displaySprite = new PIXI.Sprite(lightAccumulationRef.current);
     displaySprite.width = shaderParams.canvasWidth;
     displaySprite.height = shaderParams.canvasHeight;
     displaySprite.x = 0;
@@ -350,7 +320,7 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
     pixiApp.stage.removeChildren();
     pixiApp.stage.addChild(displaySprite);
     
-    console.log('🧪 DEBUG: Displaying albedo buffer directly to test G-Buffer pipeline');
+    console.log('🎨 Final composite - displaying deferred lighting result');
   };
 
   /**
