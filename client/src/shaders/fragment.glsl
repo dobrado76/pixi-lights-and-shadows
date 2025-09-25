@@ -461,17 +461,17 @@ void main(void) {
     // Calculate global shadow factor - affects everything including ambient
     float globalShadowFactor = 1.0;
     
-    // Check shadows from all shadow-casting lights to get global shadow factor
-    if (uPoint0Enabled && uPoint0CastsShadows) {
+    // Check shadows from lights that are enabled, cast shadows, AND have intensity > 0 (basic physics!)
+    if (uPoint0Enabled && uPoint0CastsShadows && uPoint0Intensity > 0.0) {
       globalShadowFactor *= calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
     }
-    if (uPoint1Enabled && uPoint1CastsShadows) {
+    if (uPoint1Enabled && uPoint1CastsShadows && uPoint1Intensity > 0.0) {
       globalShadowFactor *= calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
     }
-    if (uPoint2Enabled && uPoint2CastsShadows) {
+    if (uPoint2Enabled && uPoint2CastsShadows && uPoint2Intensity > 0.0) {
       globalShadowFactor *= calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
     }
-    if (uPoint3Enabled && uPoint3CastsShadows) {
+    if (uPoint3Enabled && uPoint3CastsShadows && uPoint3Intensity > 0.0) {
       globalShadowFactor *= calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
     }
     
@@ -504,9 +504,9 @@ void main(void) {
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
-    // Apply shadow calculation for this specific light
+    // Apply shadow calculation for this specific light (only if intensity > 0)
     float shadowFactor = 1.0;
-    if (uPoint0CastsShadows) {
+    if (uPoint0CastsShadows && uPoint0Intensity > 0.0) {
       shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
     }
     
@@ -539,7 +539,7 @@ void main(void) {
     
     // Apply shadow calculation FIRST - blocks light completely in shadowed areas
     float shadowFactor = 1.0;
-    if (uPoint1CastsShadows) {
+    if (uPoint1CastsShadows && uPoint1Intensity > 0.0) {
       shadowFactor *= calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
     }
     
@@ -572,7 +572,7 @@ void main(void) {
     
     // Apply shadow calculation FIRST - blocks light completely in shadowed areas
     float shadowFactor = 1.0;
-    if (uPoint2CastsShadows) {
+    if (uPoint2CastsShadows && uPoint2Intensity > 0.0) {
       shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
     }
     
@@ -605,7 +605,7 @@ void main(void) {
     
     // Apply shadow calculation FIRST - blocks light completely in shadowed areas
     float shadowFactor = 1.0;
-    if (uPoint3CastsShadows) {
+    if (uPoint3CastsShadows && uPoint3Intensity > 0.0) {
       shadowFactor *= calculateShadowUnified(lightPos3D.xy, worldPos.xy);
     }
     
