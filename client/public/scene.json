@@ -190,9 +190,9 @@
       "x": 250,
       "y": 420,
       "z": 20,
-      "followMouse": true,
+      "followMouse": false,
       "castsShadows": true,
-      "radius": 3310
+      "radius": 350
     },
     {
       "id": "directional_light",
