@@ -442,8 +442,15 @@ void main(void) {
   
   // Point Light 0
   if (uPoint0Enabled) {
+    // DEBUG: Test if world position is the issue by forcing known good position
+    vec3 debugWorldPos3D = worldPos3D;
+    // Force small sprites to use background-like coordinates for testing
+    if (length(uSpriteSize - vec2(75.0, 75.0)) < 10.0) { // Ball is 75x75
+      debugWorldPos3D = vec3(400.0, 300.0, 0.0); // Force to screen center
+    }
+    
     vec3 lightPos3D = uPoint0Position;
-    vec3 lightDir3D = lightPos3D - worldPos3D;
+    vec3 lightDir3D = lightPos3D - debugWorldPos3D;
     lightDir3D.y = -lightDir3D.y; // Y-flip for coordinate system consistency
     
     float lightDistance = length(lightDir3D);
