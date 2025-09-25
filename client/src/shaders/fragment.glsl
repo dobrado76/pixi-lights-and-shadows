@@ -206,7 +206,7 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
   
   // For directional lights, cast ray backwards from pixel position in light direction
   // This simulates parallel rays from infinite distance (sun/moon lighting)
-  vec2 rayDir = -normalize(lightDirection); // Ray direction opposite to light direction
+  vec2 rayDir = normalize(lightDirection); // Ray direction same as light direction
   
   // Raycast backwards from the pixel position to find occluders
   float stepSize = 2.0; // Pixel steps along the ray
