@@ -1059,8 +1059,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       allPointLights.slice(0, 4).forEach((light, slotIdx) => {
         const prefix = `uPoint${slotIdx}`;
         
-        // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
-        uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
+        // FIX: Properly respect the enabled flag - disabled lights should not cast shadows!
+        uniforms[`${prefix}Enabled`] = light.enabled; // Actually use the enabled flag
         uniforms[`${prefix}Position`] = [
           light.followMouse ? mousePos.x : light.position.x,
           light.followMouse ? mousePos.y : light.position.y,
@@ -1099,8 +1099,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       allDirectionalLights.slice(0, 2).forEach((light, slotIdx) => {
         const prefix = `uDir${slotIdx}`;
         
-        // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
-        uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
+        // FIX: Properly respect the enabled flag - disabled lights should not cast shadows!
+        uniforms[`${prefix}Enabled`] = light.enabled; // Actually use the enabled flag
         uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
         uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
         uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
@@ -1113,8 +1113,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       allSpotlights.slice(0, 4).forEach((light, slotIdx) => {
         const prefix = `uSpot${slotIdx}`;
         
-        // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
-        uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
+        // FIX: Properly respect the enabled flag - disabled lights should not cast shadows!
+        uniforms[`${prefix}Enabled`] = light.enabled; // Actually use the enabled flag
         uniforms[`${prefix}Position`] = [
           light.followMouse ? mousePos.x : light.position.x,
           light.followMouse ? mousePos.y : light.position.y,
