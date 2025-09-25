@@ -171,11 +171,9 @@ function App() {
   useEffect(() => {
     const loadConfigurations = async () => {
       try {
-        const [lightsResult, ambientLightData, sceneResult] = await Promise.all([
-          loadLightsConfig(),
-          loadAmbientLight(),
-          fetch('/api/load-scene-config').then(res => res.json())
-        ]);
+        const sceneResult = await fetch('/api/load-scene-config').then(res => res.json());
+        const lightsResult = await loadLightsConfig('/api/load-scene-config');
+        const ambientLightData = await loadAmbientLight('/api/load-scene-config');
         
         setLightsConfig(lightsResult.lights);
         setAmbientLight(ambientLightData);

@@ -330,36 +330,38 @@ export const convertLightToConfig = (light: Light): LightConfig => {
   return config;
 };
 
-// Save lights configuration to server
+// Save lights configuration to scene.json
 export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity: number, color: {r: number, g: number, b: number}}, shadowConfig?: ShadowConfig): Promise<boolean> => {
-  // Convert lights back to config format
-  const lightConfigs = lights.map(convertLightToConfig);
-  
-  // Add ambient light with proper color conversion
-  const ambientConfig: LightConfig = {
-    id: 'ambient_light',
-    type: 'ambient',
-    enabled: true,
-    brightness: ambientLight.intensity,
-    color: rgbToHex(ambientLight.color.r, ambientLight.color.g, ambientLight.color.b)
-  };
-  
-  const config: any = {
-    lights: [ambientConfig, ...lightConfigs]
-  };
-
-  // Include shadow configuration if provided
-  if (shadowConfig) {
-    config.shadowConfig = shadowConfig;
-  }
-
   try {
-    const response = await fetch('/api/save-lights-config', {
+    // First, load the current scene config to preserve sprites
+    const sceneResponse = await fetch('/api/load-scene-config');
+    const currentScene = await sceneResponse.json();
+
+    // Convert lights back to config format
+    const lightConfigs = lights.map(convertLightToConfig);
+    
+    // Add ambient light with proper color conversion
+    const ambientConfig: LightConfig = {
+      id: 'ambient_light',
+      type: 'ambient',
+      enabled: true,
+      brightness: ambientLight.intensity,
+      color: rgbToHex(ambientLight.color.r, ambientLight.color.g, ambientLight.color.b)
+    };
+    
+    // Update the scene with new lights and shadowConfig
+    const updatedScene = {
+      ...currentScene,
+      lights: [ambientConfig, ...lightConfigs],
+      shadowConfig: shadowConfig || currentScene.shadowConfig
+    };
+
+    const response = await fetch('/api/save-scene-config', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(config),
+      body: JSON.stringify(updatedScene),
     });
 
     return response.ok;
@@ -367,7 +369,21 @@ export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity
     console.warn('Server save failed, saving to localStorage instead:', error);
     // Fallback to localStorage for static deployment
     try {
-      localStorage.setItem('lights-config', JSON.stringify(config));
+      const lightConfigs = lights.map(convertLightToConfig);
+      const ambientConfig: LightConfig = {
+        id: 'ambient_light',
+        type: 'ambient',
+        enabled: true,
+        brightness: ambientLight.intensity,
+        color: rgbToHex(ambientLight.color.r, ambientLight.color.g, ambientLight.color.b)
+      };
+      
+      const config = {
+        lights: [ambientConfig, ...lightConfigs],
+        shadowConfig: shadowConfig
+      };
+      
+      localStorage.setItem('scene-config', JSON.stringify(config));
       return true;
     } catch (localError) {
       console.error('LocalStorage save also failed:', localError);
