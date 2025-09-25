@@ -163,7 +163,7 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
     // Clear albedo buffer
     pixiApp.renderer.render(new PIXI.Container(), { 
       renderTexture: gBufferAlbedoRef.current, 
-      clear: true 
+      clear: true
     });
     
     // For now, just render sprites as regular PIXI sprites to the albedo buffer
@@ -172,9 +172,13 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
     // Clear and rebuild geometry container
     geometryPassContainerRef.current.removeChildren();
     
+    let visibleSpriteCount = 0;
     sprites.forEach((sprite: SceneSprite, index: number) => {
       // Skip disabled sprites - this is critical for proper deferred rendering
-      if (!sprite.definition.visible || !sprite.diffuseTexture) return;
+      if (!sprite.definition.visible || !sprite.diffuseTexture) {
+        console.log(`⏭️ Skipping sprite ${sprite.id}: visible=${sprite.definition.visible}, hasTexture=${!!sprite.diffuseTexture}`);
+        return;
+      }
       
       // Create simple PIXI sprite for geometry pass
       const pixiSprite = new PIXI.Sprite(sprite.diffuseTexture);
@@ -187,7 +191,11 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
       pixiSprite.rotation = 0; // SceneSprite doesn't have rotation property yet
       
       geometryPassContainerRef.current!.addChild(pixiSprite);
+      visibleSpriteCount++;
+      console.log(`✅ Added sprite ${sprite.id} at (${bounds.x}, ${bounds.y}) size ${bounds.width}x${bounds.height}`);
     });
+    
+    console.log(`📊 Geometry pass: ${visibleSpriteCount} visible sprites added to container`);
     
     // Render sprites to albedo buffer
     pixiApp.renderer.render(geometryPassContainerRef.current, { 
@@ -335,7 +343,13 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
     
     const lightingMesh = new PIXI.Mesh(geometry, shader);
     
-    // Render lighting to accumulation buffer
+    // Clear and render lighting to accumulation buffer
+    pixiApp.renderer.render(new PIXI.Container(), { 
+      renderTexture: lightAccumulationRef.current, 
+      clear: true 
+    });
+    
+    // Render lighting mesh to accumulation buffer
     pixiApp.renderer.render(lightingMesh, { 
       renderTexture: lightAccumulationRef.current, 
       clear: false 
@@ -350,7 +364,7 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
   const renderFinalComposite = () => {
     if (!pixiApp || !lightAccumulationRef.current) return;
     
-    // For now, just display the lighting result directly
+    // Apply the lighting result with a simple pass-through shader
     const displaySprite = new PIXI.Sprite(lightAccumulationRef.current);
     displaySprite.width = shaderParams.canvasWidth;
     displaySprite.height = shaderParams.canvasHeight;
@@ -360,7 +374,7 @@ const PixiDemo2: React.FC<PixiDemo2Props> = ({
     pixiApp.stage.removeChildren();
     pixiApp.stage.addChild(displaySprite);
     
-    console.log('🎨 Final composite - displaying lighting result');
+    console.log('🎨 Final composite - displaying lighting accumulation result');
   };
 
   /**
