@@ -232,7 +232,14 @@ function App() {
   // Handler for immediate z-order changes (bypass React state)
   const handleZOrderChange = useCallback((spriteId: string, oldZOrder: number, newZOrder: number) => {
     console.log(`🎭 App: Direct zOrder change for ${spriteId}: ${oldZOrder} → ${newZOrder}`);
-    // This will be handled by the useEffect in PixiDemo when sceneConfig updates
+    
+    // Call immediate update handler if available
+    const immediateUpdate = (window as any).__pixiImmediateZOrderUpdate;
+    if (immediateUpdate) {
+      immediateUpdate(spriteId, newZOrder);
+    } else {
+      console.log('⚠️ Immediate zOrder update handler not yet available');
+    }
   }, []);
 
   return (
@@ -282,6 +289,7 @@ function App() {
                     onGeometryUpdate={setGeometryStatus}
                     onShaderUpdate={setShaderStatus}
                     onMeshUpdate={setMeshStatus}
+                    onZOrderChange={handleZOrderChange}
                   />
                 )}
               </div>

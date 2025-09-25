@@ -32,10 +32,11 @@ interface PixiDemoProps {
   onGeometryUpdate: (status: string) => void;
   onShaderUpdate: (status: string) => void;
   onMeshUpdate: (status: string) => void;
+  onZOrderChange?: (spriteId: string, oldZOrder: number, newZOrder: number) => void;
 }
 
 const PixiDemo = (props: PixiDemoProps) => {
-  const { shaderParams, lightsConfig, ambientLight, shadowConfig, sceneConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate } = props;
+  const { shaderParams, lightsConfig, ambientLight, shadowConfig, sceneConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate, onZOrderChange } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
   const [mousePos, setMousePos] = useState({ x: 200, y: 150 });
@@ -541,6 +542,69 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Set PIXI container reference for direct updates
         sceneManagerRef.current.setPixiContainer(sceneContainerRef.current);
+        
+        // UNIFIED IMMEDIATE UPDATE SYSTEM for ALL UI controls
+        const immediateUpdateHandler = (spriteId: string, updates: any) => {
+          console.log(`🚀 IMMEDIATE UPDATE for ${spriteId}:`, Object.keys(updates));
+          if (sceneManagerRef.current && sceneContainerRef.current) {
+            const sprite = sceneManagerRef.current.getSprite(spriteId);
+            if (sprite && sprite.mesh) {
+              let needsReSort = false;
+              
+              // Handle zOrder changes
+              if (updates.zOrder !== undefined) {
+                sprite.definition.zOrder = updates.zOrder;
+                sprite.mesh.zIndex = updates.zOrder;
+                needsReSort = true;
+                console.log(`⚡ Immediate zOrder: ${spriteId} → ${updates.zOrder}`);
+              }
+              
+              // Handle normal map changes
+              if (updates.useNormalMap !== undefined) {
+                sprite.definition.useNormalMap = updates.useNormalMap;
+                if (updates.useNormalMap && sprite.definition.normal) {
+                  sprite.normalTexture = PIXI.Texture.from(sprite.definition.normal);
+                } else {
+                  sprite.normalTexture = sprite['createFlatNormalTexture']();
+                }
+                if (sprite.shader) {
+                  sprite.shader.uniforms.uNormalMap = sprite.normalTexture;
+                }
+                console.log(`⚡ Immediate normal map: ${spriteId} → ${updates.useNormalMap}`);
+              }
+              
+              // Handle position/transform changes
+              if (updates.position || updates.rotation || updates.scale) {
+                sprite.updateTransform({
+                  position: updates.position || sprite.definition.position,
+                  rotation: updates.rotation ?? sprite.definition.rotation,
+                  scale: updates.scale ?? sprite.definition.scale
+                });
+                console.log(`⚡ Immediate transform: ${spriteId}`);
+              }
+              
+              // Handle visibility changes
+              if (updates.visible !== undefined) {
+                sprite.mesh.visible = updates.visible;
+                console.log(`⚡ Immediate visibility: ${spriteId} → ${updates.visible}`);
+              }
+              
+              // Force re-sort if needed
+              if (needsReSort) {
+                sceneContainerRef.current.sortChildren();
+                console.log(`⚡ Container re-sorted after immediate update`);
+              }
+              
+              // Force a render to ensure immediate visual feedback
+              if (pixiApp) {
+                pixiApp.render();
+              }
+            }
+          }
+        };
+        
+        // Store the unified handler for ALL UI controls to use
+        (window as any).__pixiImmediateUpdate = immediateUpdateHandler;
         
 
         // Helper function to convert external lights config to shader uniforms
