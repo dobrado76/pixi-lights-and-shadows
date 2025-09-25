@@ -47,7 +47,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   const shadowMeshesRef = useRef<PIXI.Mesh[]>([]);     // Legacy shadow geometry meshes
   const shadowCastersRef = useRef<ShadowCaster[]>([]);  // Simplified caster data for calculations
   const sceneManagerRef = useRef<SceneManager | null>(null);  // Scene/sprite management system
-  const lastSceneConfigRef = useRef<string>(''); // Track last config to prevent unnecessary rebuilds
   
   // Unlimited shadow caster system - uses render texture when >4 casters
   const occluderRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
@@ -432,20 +431,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       if (canvas && canvasRef.current) {
         canvasRef.current.appendChild(canvas);
-        // AUTO-FOCUS: Make canvas focusable and focus it immediately
-        canvas.tabIndex = 0;
-        canvas.focus();
-        // FORCE initial render to ensure canvas displays immediately
-        app.render();
-        // CRITICAL: Start the ticker for continuous rendering
-        app.ticker.start();
-        console.log('🎯 Canvas auto-focused and force-rendered on load');
-        
         setPixiApp(app);
         console.log('PIXI App initialized successfully');
         console.log('Renderer type:', app.renderer.type === PIXI.RENDERER_TYPE.WEBGL ? 'WebGL' : 'Canvas');
-        
-        // Store reference for scene manager that will be created later
         
         // Initialize render targets for multi-pass rendering
         renderTargetRef.current = PIXI.RenderTexture.create({ 
@@ -536,7 +524,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     };
   }, []);
 
-  // Setup demo content when PIXI app is ready - initial load and external config changes only
+  // Setup demo content when PIXI app is ready - initial load only
   useEffect(() => {
     if (!pixiApp || !pixiApp.stage || !sceneConfig.scene || Object.keys(sceneConfig.scene).length === 0 || lightsConfig.length === 0) {
       return;
@@ -545,35 +533,6 @@ const PixiDemo = (props: PixiDemoProps) => {
 
     const setupDemo = async () => {
       try {
-        // CRITICAL: Skip ALL rebuilds when we have immediate changes in progress
-        if (sceneManagerRef.current && sceneManagerRef.current.getAllSprites().length > 0) {
-          console.log('🛡️ SKIPPING setupDemo - scene already initialized, immediate changes handle updates');
-          
-          // BUT ensure all sprites have correct immediate states applied
-          Object.keys(sceneConfig.scene).forEach(spriteId => {
-            const sprite = sceneManagerRef.current!.getSprite(spriteId);
-            if (sprite?.shader && (sprite.shader as any).userData) {
-              // Re-apply any immediate normal map changes that might have been lost
-              const immediateNormalMap = (sprite.shader as any).userData.__immediateNormalMap;
-              if (immediateNormalMap !== undefined) {
-                sprite.definition.useNormalMap = immediateNormalMap;
-                if (immediateNormalMap && sprite.definition.normal) {
-                  sprite.normalTexture = PIXI.Texture.from(sprite.definition.normal);
-                } else {
-                  sprite.normalTexture = sprite['createFlatNormalTexture']();
-                }
-                sprite.shader.uniforms.uNormalMap = sprite.normalTexture;
-                if (sprite.mesh?.material?.uniforms) {
-                  sprite.mesh.material.uniforms.uNormalMap = sprite.normalTexture;
-                }
-                console.log(`🛡️ Re-applied immediate normal map for ${spriteId}: ${immediateNormalMap}`);
-              }
-            }
-          });
-          
-          return;
-        }
-        
         // Use scene configuration from props instead of fetching
         const sceneData = sceneConfig;
         
@@ -581,11 +540,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         sceneManagerRef.current = new SceneManager();
         await sceneManagerRef.current.loadScene(sceneData);
         
-        // Set PIXI container and app references for direct updates
+        // Set PIXI container reference for direct updates
         sceneManagerRef.current.setPixiContainer(sceneContainerRef.current);
-        if (pixiApp) {
-          sceneManagerRef.current.setPixiApp(pixiApp);
-        }
         
         // UNIFIED IMMEDIATE UPDATE SYSTEM for ALL UI controls
         const immediateUpdateHandler = (spriteId: string, updates: any) => {
@@ -599,8 +555,8 @@ const PixiDemo = (props: PixiDemoProps) => {
               if (updates.zOrder !== undefined) {
                 sprite.definition.zOrder = updates.zOrder;
                 sprite.mesh.zIndex = updates.zOrder;
-                (sprite.mesh as any).userData = (sprite.mesh as any).userData || {};
-                (sprite.mesh as any).userData.__immediateZOrder = updates.zOrder; // Mark as immediate
+                sprite.mesh.userData = sprite.mesh.userData || {};
+                sprite.mesh.userData.__immediateZOrder = updates.zOrder; // Mark as immediate
                 needsReSort = true;
                 console.log(`⚡ Immediate zOrder: ${spriteId} → ${updates.zOrder}`);
               }
@@ -615,33 +571,10 @@ const PixiDemo = (props: PixiDemoProps) => {
                 }
                 if (sprite.shader) {
                   sprite.shader.uniforms.uNormalMap = sprite.normalTexture;
-                  (sprite.shader as any).userData = (sprite.shader as any).userData || {};
-                  (sprite.shader as any).userData.__immediateNormalMap = updates.useNormalMap; // Mark as immediate
-                  
-                  // FORCE IMMEDIATE SHADER UPDATE - Multiple approaches to ensure visual change
-                  const mesh = sprite.mesh;
-                  if (mesh) {
-                    // Method 1: Force mesh state changes
-                    (mesh as any)._cachedTint = 0xFFFFFF + 1; // Force tint cache invalidation
-                    mesh.calculateVertices(); // Force geometry recalculation
-                    
-                    // Method 2: Force material/shader update - CORRECT PIXI.js way
-                    if (mesh.material && mesh.material.uniforms) {
-                      mesh.material.uniforms.uNormalMap = sprite.normalTexture; // Direct uniform update
-                      // No .update() needed - PIXI handles this automatically
-                    }
-                    
-                    // Method 3: Force render (removed shader method - not accessible)
-                    
-                    // Method 4: Force container and app render
-                    mesh.parent?.removeChild(mesh);
-                    mesh.parent?.addChild(mesh); // Force re-add to trigger render
-                    
-                    // Method 5: Force immediate render
-                    pixiApp.render();
-                  }
+                  sprite.shader.userData = sprite.shader.userData || {};
+                  sprite.shader.userData.__immediateNormalMap = updates.useNormalMap; // Mark as immediate
                 }
-                console.log(`⚡ Immediate normal map: ${spriteId} → ${updates.useNormalMap} - SHADER FORCED`);
+                console.log(`⚡ Immediate normal map: ${spriteId} → ${updates.useNormalMap}`);
               }
               
               // Handle position changes
@@ -881,22 +814,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       for (const sprite of visibleSprites) {
         const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
-        
-        // PRESERVE immediate changes from old mesh
-        const oldMesh = sprite.mesh;
-        if (oldMesh && (oldMesh as any).userData?.__immediateZOrder !== undefined) {
-          mesh.zIndex = (oldMesh as any).userData.__immediateZOrder;
-          (mesh as any).userData = (mesh as any).userData || {};
-          (mesh as any).userData.__immediateZOrder = (oldMesh as any).userData.__immediateZOrder;
-          console.log(`🔄 Preserved immediate zOrder ${sprite.id}: ${mesh.zIndex}`);
-        } else {
-          mesh.zIndex = sprite.definition.zOrder;
-        }
-        
+        // Set PIXI zIndex based on sprite's zOrder for proper layering
+        mesh.zIndex = sprite.definition.zOrder;
         spriteMeshes.push(mesh);
-        
-        // Update sprite's mesh reference to the new mesh
-        sprite.mesh = mesh;
       }
 
       // Log visible sprite information from scene
@@ -943,9 +863,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       shadersRef.current = spriteMeshes.map(mesh => mesh.shader!);
       shadowCastersRef.current = legacyShadowCasters;
 
-      // CLEAR old meshes first, then add new ones
-      sceneContainerRef.current!.removeChildren();
-      
       // Add all sprite meshes to stage (already filtered to visible sprites and z-ordered)
       spriteMeshes.forEach(mesh => {
         sceneContainerRef.current!.addChild(mesh);
@@ -1043,17 +960,8 @@ const PixiDemo = (props: PixiDemoProps) => {
             };
             
             const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
-            
-            // PRESERVE immediate changes from old mesh
-            const oldMesh = sprite.mesh;
-            if (oldMesh && (oldMesh as any).userData?.__immediateZOrder !== undefined) {
-              mesh.zIndex = (oldMesh as any).userData.__immediateZOrder;
-              (mesh as any).userData = (mesh as any).userData || {};
-              (mesh as any).userData.__immediateZOrder = (oldMesh as any).userData.__immediateZOrder;
-              console.log(`🔄 Preserved immediate zOrder ${sprite.id}: ${mesh.zIndex}`);
-            } else {
-              mesh.zIndex = sprite.definition.zOrder;
-            }
+            // Set PIXI zIndex based on sprite's zOrder for proper layering
+            mesh.zIndex = sprite.definition.zOrder;
             pixiApp.stage.addChild(mesh);
             meshesRef.current.push(mesh);
             shadersRef.current.push(mesh.shader as PIXI.Shader);
@@ -1106,7 +1014,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       pixiApp.render();
     } catch (error) {
     }
-  }, [pixiApp, lightsConfig]); // CRITICAL FIX: Remove sceneConfig dependency to prevent rebuilds on immediate updates
+  }, [sceneConfig, pixiApp, JSON.stringify(sceneConfig.scene)]);
   
   // Simple render trigger when textures finish loading
   useEffect(() => {

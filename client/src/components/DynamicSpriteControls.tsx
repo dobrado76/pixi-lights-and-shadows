@@ -58,13 +58,21 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
     
     console.log(`🎮 UI: ${spriteId} config changed:`, Object.keys(updates));
     
-    // IMMEDIATE UPDATE for critical controls - bypass React rebuilds
+    // IMMEDIATE UPDATE for ALL sprite controls - bypass React state for instant feedback
     if (onImmediateSpriteChange) {
       onImmediateSpriteChange(spriteId, updates);
     }
     
-    // Normal React state update for non-critical changes
-    onSceneConfigChange(newConfig);
+    // Always update React state, but delay for visual-heavy changes to prevent conflicts
+    if (updates.zOrder !== undefined || updates.useNormalMap !== undefined) {
+      // Delay React state update to let immediate visual change settle
+      setTimeout(() => {
+        onSceneConfigChange(newConfig);
+      }, 100); // Short delay to avoid overriding immediate changes
+    } else {
+      // Immediate React state update for other changes
+      onSceneConfigChange(newConfig);
+    }
   };
 
   const sprites = Object.entries(sceneConfig.scene || {});
