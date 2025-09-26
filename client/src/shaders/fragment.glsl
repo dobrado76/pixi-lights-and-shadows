@@ -393,59 +393,20 @@ float calculateDirectionalShadow(vec4 caster, vec2 pixelPos, vec2 lightDirection
   return 1.0; // Not in shadow
 }
 
-// Unified directional light shadow calculation with auto-switching
+// Unified directional light shadow calculation using occluder map
 float calculateDirectionalShadowUnified(vec2 lightDirection, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
   
-  if (uUseOccluderMap) {
-    // Use unlimited occluder map approach for directional lights
-    return calculateDirectionalShadowOccluderMap(lightDirection, pixelPos);
-  } else {
-    // Use fast per-caster uniform approach (≤3 casters) with virtual light position
-    float infiniteDistance = 10000.0; // Very large distance
-    vec2 virtualLightPos = pixelPos - lightDirection * infiniteDistance;
-    
-    float shadowFactor = 1.0;
-    
-    // Only apply shadows from casters at same zOrder level or above (higher zOrder values)
-    if (uShadowCaster0Enabled && uShadowCaster0ZOrder >= uCurrentSpriteZOrder) {
-      shadowFactor *= calculateShadow(virtualLightPos, pixelPos, uShadowCaster0, uShadowCaster0Texture);
-    }
-    if (uShadowCaster1Enabled && uShadowCaster1ZOrder >= uCurrentSpriteZOrder) {
-      shadowFactor *= calculateShadow(virtualLightPos, pixelPos, uShadowCaster1, uShadowCaster1Texture);
-    }
-    if (uShadowCaster2Enabled && uShadowCaster2ZOrder >= uCurrentSpriteZOrder) {
-      shadowFactor *= calculateShadow(virtualLightPos, pixelPos, uShadowCaster2, uShadowCaster2Texture);
-    }
-    
-    return shadowFactor;
-  }
+  // Use occluder map approach for all directional light shadows
+  return calculateDirectionalShadowOccluderMap(lightDirection, pixelPos);
 }
 
-// Unified shadow calculation with auto-switching
+// Unified shadow calculation using occluder map
 float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
   
-  if (uUseOccluderMap) {
-    // Use unlimited occluder map approach  
-    return calculateShadowOccluderMap(lightPos, pixelPos);
-  } else {
-    // Use fast per-caster uniform approach (≤4 casters) with zOrder hierarchy
-    float shadowFactor = 1.0;
-    
-    // Only apply shadows from casters at same zOrder level or above (higher zOrder values)
-    if (uShadowCaster0Enabled && uShadowCaster0ZOrder >= uCurrentSpriteZOrder) {
-      shadowFactor *= calculateShadow(lightPos, pixelPos, uShadowCaster0, uShadowCaster0Texture);
-    }
-    if (uShadowCaster1Enabled && uShadowCaster1ZOrder >= uCurrentSpriteZOrder) {
-      shadowFactor *= calculateShadow(lightPos, pixelPos, uShadowCaster1, uShadowCaster1Texture);
-    }
-    if (uShadowCaster2Enabled && uShadowCaster2ZOrder >= uCurrentSpriteZOrder) {
-      shadowFactor *= calculateShadow(lightPos, pixelPos, uShadowCaster2, uShadowCaster2Texture);
-    }
-    
-    return shadowFactor;
-  }
+  // Use occluder map approach for all point/spot light shadows
+  return calculateShadowOccluderMap(lightPos, pixelPos);
 }
 
 // UV rotation function - rotates UV coordinates around center (0.5, 0.5)
