@@ -197,7 +197,7 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.2,
       "color": "0xffffff",
       "directionX": 0.6427876096865394,
@@ -264,7 +264,7 @@
     {
       "id": "point_1758536509084",
       "type": "point",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.5,
       "color": "0xe12323",
       "x": 210,
