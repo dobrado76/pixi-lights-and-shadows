@@ -465,9 +465,24 @@ const PixiDemo = (props: PixiDemoProps) => {
         // CRITICAL FIX: Explicitly start the ticker and ensure canvas is ready
         app.ticker.start();
         
-        // Force canvas to be focusable and trigger initial render
+        // CRITICAL: Force canvas to be visible and interactive immediately
         canvas.tabIndex = 0;
         canvas.style.outline = 'none';
+        canvas.style.display = 'block';
+        canvas.style.visibility = 'visible';
+        canvas.style.opacity = '1';
+        canvas.style.pointerEvents = 'auto';
+        canvas.style.width = shaderParams.canvasWidth + 'px';
+        canvas.style.height = shaderParams.canvasHeight + 'px';
+        console.log('🎯 Canvas visibility styles applied');
+        
+        // CRITICAL: Force immediate render after canvas is made visible
+        requestAnimationFrame(() => {
+          if (app && app.renderer) {
+            app.render();
+            console.log('🎯 Immediate post-visibility render completed');
+          }
+        });
         
         setPixiApp(app);
         console.log('PIXI App initialized successfully');
@@ -942,6 +957,22 @@ const PixiDemo = (props: PixiDemoProps) => {
 
       // Store references
       meshesRef.current = spriteMeshes;
+      console.log('🎯 DEBUG: Set meshesRef.current to', spriteMeshes.length, 'meshes');
+      
+      // CRITICAL FIX: Force render immediately after meshes are created and added to stage
+      console.log('🎯 Scene fully loaded with', spriteMeshes.length, 'sprites - triggering render');
+      const forceRender = () => {
+        if (pixiApp && pixiApp.renderer) {
+          pixiApp.render();
+          console.log('🎯 Forced scene render completed');
+        }
+      };
+      
+      // Multiple renders to ensure scene displays immediately
+      forceRender(); // Immediate
+      setTimeout(forceRender, 50);  // Short delay
+      setTimeout(forceRender, 200); // Medium delay
+      setTimeout(forceRender, 500); // Long delay
       shadersRef.current = spriteMeshes.map(mesh => mesh.shader!);
       shadowCastersRef.current = legacyShadowCasters;
 
