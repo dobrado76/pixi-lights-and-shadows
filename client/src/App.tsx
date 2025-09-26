@@ -186,7 +186,6 @@ function App() {
         
         setLightsLoaded(true);
         setSceneLoaded(true);
-        console.log('✅ Configuration loaded successfully');
         console.log('Loaded configurations:', { lights: lightsResult, scene: sceneResult });
       } catch (error) {
         console.error('Failed to load configurations:', error);
@@ -277,18 +276,20 @@ function App() {
                 </h2>
               </div>
 
-              <div className="pixi-canvas rounded-lg glow max-w-full" style={{ width: 800, height: 600 }} data-testid="pixi-container">
-                <PixiDemo
-                  shaderParams={shaderParams}
-                  lightsConfig={lightsLoaded ? lightsConfig : []}
-                  ambientLight={ambientLight}
-                  shadowConfig={shadowConfig}
-                  sceneConfig={sceneLoaded ? sceneConfig : { scene: {} }}
-                  onGeometryUpdate={setGeometryStatus}
-                  onShaderUpdate={setShaderStatus}
-                  onMeshUpdate={setMeshStatus}
-                  onImmediateSpriteChange={handleImmediateSpriteChange}
-                />
+              <div className="pixi-canvas rounded-lg overflow-hidden glow" data-testid="pixi-container">
+                {lightsLoaded && sceneLoaded && (
+                  <PixiDemo
+                    shaderParams={shaderParams}
+                    lightsConfig={lightsConfig}
+                    ambientLight={ambientLight}
+                    shadowConfig={shadowConfig}
+                    sceneConfig={sceneConfig}
+                    onGeometryUpdate={setGeometryStatus}
+                    onShaderUpdate={setShaderStatus}
+                    onMeshUpdate={setMeshStatus}
+                    onImmediateSpriteChange={handleImmediateSpriteChange}
+                  />
+                )}
               </div>
             </div>
           </div>
