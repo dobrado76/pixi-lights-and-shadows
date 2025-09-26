@@ -552,22 +552,10 @@ void main(void) {
     if (uPoint0CastsShadows) {
       shadowFactor = calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
       
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING
+      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
       if (uPoint0Position.z >= 50.0) {
-        // Check if light is inside non-transparent part of current sprite
-        bool lightInSpriteBounds = (uPoint0Position.x >= uReceiverMin.x && uPoint0Position.x <= uReceiverMax.x && 
-                                   uPoint0Position.y >= uReceiverMin.y && uPoint0Position.y <= uReceiverMax.y);
-        if (lightInSpriteBounds) {
-          vec2 lightUV = (uPoint0Position.xy - uReceiverMin) / (uReceiverMax - uReceiverMin);
-          lightUV = rotateUV(lightUV, uRotation);
-          if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
-            float lightAlpha = texture2D(uDiffuse, lightUV).a;
-            if (lightAlpha > 0.0) {
-              // Light is inside non-transparent part - recalculate shadow with normal start distance
-              shadowFactor = calculateShadowOccluderMapWithOverride(uPoint0Position.xy, worldPos.xy, true);
-            }
-          }
-        }
+        // For Z>=50 lights, always use normal shadow calculation (no self-shadow avoidance)
+        shadowFactor = calculateShadowOccluderMapWithOverride(uPoint0Position.xy, worldPos.xy, true);
       }
     }
     
@@ -604,20 +592,9 @@ void main(void) {
     if (uPoint1CastsShadows) {
       shadowFactor = calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
       
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING
+      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
       if (uPoint1Position.z >= 50.0) {
-        bool lightInSpriteBounds = (uPoint1Position.x >= uReceiverMin.x && uPoint1Position.x <= uReceiverMax.x && 
-                                   uPoint1Position.y >= uReceiverMin.y && uPoint1Position.y <= uReceiverMax.y);
-        if (lightInSpriteBounds) {
-          vec2 lightUV = (uPoint1Position.xy - uReceiverMin) / (uReceiverMax - uReceiverMin);
-          lightUV = rotateUV(lightUV, uRotation);
-          if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
-            float lightAlpha = texture2D(uDiffuse, lightUV).a;
-            if (lightAlpha > 0.0) {
-              shadowFactor = calculateShadowOccluderMapWithOverride(uPoint1Position.xy, worldPos.xy, true);
-            }
-          }
-        }
+        shadowFactor = calculateShadowOccluderMapWithOverride(uPoint1Position.xy, worldPos.xy, true);
       }
     }
     
@@ -654,20 +631,9 @@ void main(void) {
     if (uPoint2CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
       
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING
+      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
       if (uPoint2Position.z >= 50.0) {
-        bool lightInSpriteBounds = (uPoint2Position.x >= uReceiverMin.x && uPoint2Position.x <= uReceiverMax.x && 
-                                   uPoint2Position.y >= uReceiverMin.y && uPoint2Position.y <= uReceiverMax.y);
-        if (lightInSpriteBounds) {
-          vec2 lightUV = (uPoint2Position.xy - uReceiverMin) / (uReceiverMax - uReceiverMin);
-          lightUV = rotateUV(lightUV, uRotation);
-          if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
-            float lightAlpha = texture2D(uDiffuse, lightUV).a;
-            if (lightAlpha > 0.0) {
-              shadowFactor = calculateShadowOccluderMapWithOverride(uPoint2Position.xy, worldPos.xy, true);
-            }
-          }
-        }
+        shadowFactor = calculateShadowOccluderMapWithOverride(uPoint2Position.xy, worldPos.xy, true);
       }
     }
     
@@ -704,20 +670,9 @@ void main(void) {
     if (uPoint3CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
       
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING
+      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
       if (uPoint3Position.z >= 50.0) {
-        bool lightInSpriteBounds = (uPoint3Position.x >= uReceiverMin.x && uPoint3Position.x <= uReceiverMax.x && 
-                                   uPoint3Position.y >= uReceiverMin.y && uPoint3Position.y <= uReceiverMax.y);
-        if (lightInSpriteBounds) {
-          vec2 lightUV = (uPoint3Position.xy - uReceiverMin) / (uReceiverMax - uReceiverMin);
-          lightUV = rotateUV(lightUV, uRotation);
-          if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
-            float lightAlpha = texture2D(uDiffuse, lightUV).a;
-            if (lightAlpha > 0.0) {
-              shadowFactor = calculateShadowOccluderMapWithOverride(uPoint3Position.xy, worldPos.xy, true);
-            }
-          }
-        }
+        shadowFactor = calculateShadowOccluderMapWithOverride(uPoint3Position.xy, worldPos.xy, true);
       }
     }
     
@@ -819,20 +774,9 @@ void main(void) {
     if (uSpot0CastsShadows) {
       shadowFactor = calculateShadowUnified(uSpot0Position.xy, worldPos.xy);
       
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING
+      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
       if (uSpot0Position.z >= 50.0) {
-        bool lightInSpriteBounds = (uSpot0Position.x >= uReceiverMin.x && uSpot0Position.x <= uReceiverMax.x && 
-                                   uSpot0Position.y >= uReceiverMin.y && uSpot0Position.y <= uReceiverMax.y);
-        if (lightInSpriteBounds) {
-          vec2 lightUV = (uSpot0Position.xy - uReceiverMin) / (uReceiverMax - uReceiverMin);
-          lightUV = rotateUV(lightUV, uRotation);
-          if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
-            float lightAlpha = texture2D(uDiffuse, lightUV).a;
-            if (lightAlpha > 0.0) {
-              shadowFactor = calculateShadowOccluderMapWithOverride(uSpot0Position.xy, worldPos.xy, true);
-            }
-          }
-        }
+        shadowFactor = calculateShadowOccluderMapWithOverride(uSpot0Position.xy, worldPos.xy, true);
       }
     }
     
@@ -882,20 +826,9 @@ void main(void) {
     if (uSpot1CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uSpot1Position.xy, worldPos.xy);
       
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING
+      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
       if (uSpot1Position.z >= 50.0) {
-        bool lightInSpriteBounds = (uSpot1Position.x >= uReceiverMin.x && uSpot1Position.x <= uReceiverMax.x && 
-                                   uSpot1Position.y >= uReceiverMin.y && uSpot1Position.y <= uReceiverMax.y);
-        if (lightInSpriteBounds) {
-          vec2 lightUV = (uSpot1Position.xy - uReceiverMin) / (uReceiverMax - uReceiverMin);
-          lightUV = rotateUV(lightUV, uRotation);
-          if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
-            float lightAlpha = texture2D(uDiffuse, lightUV).a;
-            if (lightAlpha > 0.0) {
-              shadowFactor = calculateShadowOccluderMapWithOverride(uSpot1Position.xy, worldPos.xy, true);
-            }
-          }
-        }
+        shadowFactor = calculateShadowOccluderMapWithOverride(uSpot1Position.xy, worldPos.xy, true);
       }
     }
     
@@ -945,20 +878,9 @@ void main(void) {
     if (uSpot2CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uSpot2Position.xy, worldPos.xy);
       
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING
+      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
       if (uSpot2Position.z >= 50.0) {
-        bool lightInSpriteBounds = (uSpot2Position.x >= uReceiverMin.x && uSpot2Position.x <= uReceiverMax.x && 
-                                   uSpot2Position.y >= uReceiverMin.y && uSpot2Position.y <= uReceiverMax.y);
-        if (lightInSpriteBounds) {
-          vec2 lightUV = (uSpot2Position.xy - uReceiverMin) / (uReceiverMax - uReceiverMin);
-          lightUV = rotateUV(lightUV, uRotation);
-          if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
-            float lightAlpha = texture2D(uDiffuse, lightUV).a;
-            if (lightAlpha > 0.0) {
-              shadowFactor = calculateShadowOccluderMapWithOverride(uSpot2Position.xy, worldPos.xy, true);
-            }
-          }
-        }
+        shadowFactor = calculateShadowOccluderMapWithOverride(uSpot2Position.xy, worldPos.xy, true);
       }
     }
     
@@ -1008,20 +930,9 @@ void main(void) {
     if (uSpot3CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uSpot3Position.xy, worldPos.xy);
       
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING
+      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
       if (uSpot3Position.z >= 50.0) {
-        bool lightInSpriteBounds = (uSpot3Position.x >= uReceiverMin.x && uSpot3Position.x <= uReceiverMax.x && 
-                                   uSpot3Position.y >= uReceiverMin.y && uSpot3Position.y <= uReceiverMax.y);
-        if (lightInSpriteBounds) {
-          vec2 lightUV = (uSpot3Position.xy - uReceiverMin) / (uReceiverMax - uReceiverMin);
-          lightUV = rotateUV(lightUV, uRotation);
-          if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
-            float lightAlpha = texture2D(uDiffuse, lightUV).a;
-            if (lightAlpha > 0.0) {
-              shadowFactor = calculateShadowOccluderMapWithOverride(uSpot3Position.xy, worldPos.xy, true);
-            }
-          }
-        }
+        shadowFactor = calculateShadowOccluderMapWithOverride(uSpot3Position.xy, worldPos.xy, true);
       }
     }
     
