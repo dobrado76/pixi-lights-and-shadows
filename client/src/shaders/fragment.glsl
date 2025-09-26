@@ -464,6 +464,60 @@ vec2 rotateUV(vec2 uv, float rotation) {
   return rotated + 0.5;
 }
 
+// Extra shadow pass for physically realistic Z>=50 light behavior
+// This stamps an additional shadow from the sprite containing the light
+float calculateExtraSelfShadowPass(vec2 lightPos, vec2 pixelPos, float lightZ) {
+  // Only apply for lights with Z >= 50 that are inside the current sprite
+  if (lightZ < 50.0) return 1.0;
+  
+  // Check if light is inside current sprite bounds
+  bool lightInsideCurrentSprite = (lightPos.x >= uReceiverMin.x && lightPos.x <= uReceiverMax.x && 
+                                   lightPos.y >= uReceiverMin.y && lightPos.y <= uReceiverMax.y);
+  
+  if (!lightInsideCurrentSprite) return 1.0;
+  
+  // For physically realistic behavior: sprite should cast shadow even when light is inside
+  // Use direct texture sampling approach for the current sprite
+  vec2 rayDir = pixelPos - lightPos;
+  float rayLength = length(rayDir);
+  if (rayLength < 1.0) return 1.0; // Too close to light
+  
+  rayDir = normalize(rayDir);
+  
+  // Sample key points along the ray to check for occlusion (no loops needed)
+  // Sample at 25%, 50%, and 75% of the ray length for efficient coverage
+  float samples[3];
+  samples[0] = rayLength * 0.25;
+  samples[1] = rayLength * 0.5;
+  samples[2] = rayLength * 0.75;
+  
+  // Check each sample point
+  for (int i = 0; i < 3; i++) {
+    vec2 samplePos = lightPos + rayDir * samples[i];
+    
+    // Check if sample position is within current sprite bounds
+    if (samplePos.x >= uReceiverMin.x && samplePos.x <= uReceiverMax.x && 
+        samplePos.y >= uReceiverMin.y && samplePos.y <= uReceiverMax.y) {
+      
+      // Convert world position to sprite UV coordinates
+      vec2 spriteUV = (samplePos - uReceiverMin) / (uReceiverMax - uReceiverMin);
+      
+      // Apply sprite rotation to UV
+      spriteUV = rotateUV(spriteUV, uRotation);
+      
+      // Sample sprite's alpha for occlusion
+      if (spriteUV.x >= 0.0 && spriteUV.x <= 1.0 && spriteUV.y >= 0.0 && spriteUV.y <= 1.0) {
+        float alpha = texture2D(uDiffuse, spriteUV).a;
+        if (alpha > 0.5) {
+          return 0.3; // Cast shadow with some transparency for realism
+        }
+      }
+    }
+  }
+  
+  return 1.0; // No additional shadow
+}
+
 void main(void) {
   // Apply rotation to UV coordinates BEFORE texture sampling (physically correct)
   vec2 uv = rotateUV(vTextureCoord, uRotation);
@@ -539,6 +593,8 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uPoint0CastsShadows) {
       shadowFactor = calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
+      // Extra pass for Z>=50 physically realistic self-shadow
+      shadowFactor *= calculateExtraSelfShadowPass(uPoint0Position.xy, worldPos.xy, uPoint0Position.z);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -573,6 +629,8 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uPoint1CastsShadows) {
       shadowFactor = calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
+      // Extra pass for Z>=50 physically realistic self-shadow
+      shadowFactor *= calculateExtraSelfShadowPass(uPoint1Position.xy, worldPos.xy, uPoint1Position.z);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -607,6 +665,8 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uPoint2CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
+      // Extra pass for Z>=50 physically realistic self-shadow
+      shadowFactor *= calculateExtraSelfShadowPass(uPoint2Position.xy, worldPos.xy, uPoint2Position.z);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -641,6 +701,8 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uPoint3CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
+      // Extra pass for Z>=50 physically realistic self-shadow
+      shadowFactor *= calculateExtraSelfShadowPass(uPoint3Position.xy, worldPos.xy, uPoint3Position.z);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -740,6 +802,8 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uSpot0CastsShadows) {
       shadowFactor = calculateShadowUnified(uSpot0Position.xy, worldPos.xy);
+      // Extra pass for Z>=50 physically realistic self-shadow
+      shadowFactor *= calculateExtraSelfShadowPass(uSpot0Position.xy, worldPos.xy, uSpot0Position.z);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -787,6 +851,8 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uSpot1CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uSpot1Position.xy, worldPos.xy);
+      // Extra pass for Z>=50 physically realistic self-shadow
+      shadowFactor *= calculateExtraSelfShadowPass(uSpot1Position.xy, worldPos.xy, uSpot1Position.z);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -834,6 +900,8 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uSpot2CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uSpot2Position.xy, worldPos.xy);
+      // Extra pass for Z>=50 physically realistic self-shadow
+      shadowFactor *= calculateExtraSelfShadowPass(uSpot2Position.xy, worldPos.xy, uSpot2Position.z);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -881,6 +949,8 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uSpot3CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uSpot3Position.xy, worldPos.xy);
+      // Extra pass for Z>=50 physically realistic self-shadow
+      shadowFactor *= calculateExtraSelfShadowPass(uSpot3Position.xy, worldPos.xy, uSpot3Position.z);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
