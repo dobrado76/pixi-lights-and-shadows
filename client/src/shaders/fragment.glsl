@@ -57,18 +57,6 @@ uniform bool uSpot3HasMask; uniform sampler2D uSpot3Mask; uniform vec2 uSpot3Mas
 uniform bool uSpot0CastsShadows; uniform bool uSpot1CastsShadows; uniform bool uSpot2CastsShadows; uniform bool uSpot3CastsShadows;
 
 // Shadow Caster Uniforms - integrated shadow calculation with zOrder hierarchy
-uniform vec4 uShadowCaster0; // x, y, width, height of first shadow caster
-uniform vec4 uShadowCaster1; // x, y, width, height of second shadow caster  
-uniform vec4 uShadowCaster2; // x, y, width, height of third shadow caster
-uniform bool uShadowCaster0Enabled;
-uniform bool uShadowCaster1Enabled;
-uniform bool uShadowCaster2Enabled;
-uniform float uShadowCaster0ZOrder; // Z-order of first shadow caster
-uniform float uShadowCaster1ZOrder; // Z-order of second shadow caster
-uniform float uShadowCaster2ZOrder; // Z-order of third shadow caster
-uniform sampler2D uShadowCaster0Texture; // Diffuse texture for first caster
-uniform sampler2D uShadowCaster1Texture; // Diffuse texture for second caster
-uniform sampler2D uShadowCaster2Texture; // Diffuse texture for third caster
 uniform float uShadowStrength; // Global shadow strength
 uniform bool uShadowsEnabled;
 uniform float uShadowMaxLength; // Maximum shadow length to prevent extremely long shadows
@@ -107,104 +95,6 @@ float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offse
   return texture2D(maskTexture, maskUV).r; // Use red channel as mask
 }
 
-// Shadow calculation function - uses shadow mask with self-occlusion avoidance
-float calculateShadow(vec2 lightPos, vec2 pixelPos, vec4 caster, sampler2D shadowMask) {
-  if (!uShadowsEnabled) return 1.0;
-  
-  // Extract caster bounds
-  vec2 casterMin = caster.xy;
-  vec2 casterMax = caster.xy + caster.zw;
-  
-  // Skip self-occlusion: check if current pixel is inside this caster
-  vec2 pixelUV = (pixelPos - casterMin) / (casterMax - casterMin);
-  if (pixelUV.x >= 0.0 && pixelUV.x <= 1.0 && pixelUV.y >= 0.0 && pixelUV.y <= 1.0) {
-    float pixelAlpha = texture2D(shadowMask, pixelUV).a;
-    if (pixelAlpha > 0.0) {
-      return 1.0; // Don't shadow pixels that are part of this caster
-    }
-  }
-  
-  // Direction from light to pixel
-  vec2 rayDir = pixelPos - lightPos;
-  float rayLength = length(rayDir);
-  
-  // Avoid division by zero
-  if (rayLength < 0.001) return 1.0;
-  
-  // Note: Don't limit rayLength here - we need to check actual shadow length after finding occluder
-  
-  rayDir /= rayLength; // Normalize
-  
-  // Check intersection using slab method
-  vec2 invDir = vec2(
-    abs(rayDir.x) > 0.0001 ? 1.0 / rayDir.x : 1000000.0,
-    abs(rayDir.y) > 0.0001 ? 1.0 / rayDir.y : 1000000.0
-  );
-  
-  vec2 t1 = (casterMin - lightPos) * invDir;
-  vec2 t2 = (casterMax - lightPos) * invDir;
-  
-  vec2 tNear = min(t1, t2);
-  vec2 tFar = max(t1, t2);
-  
-  float tEnter = max(max(tNear.x, tNear.y), 0.0);
-  float tExit = min(min(tFar.x, tFar.y), rayLength);
-  
-  // Check if ray intersects caster bounds
-  if (tEnter < tExit && tExit > 0.0) {
-    // Sample multiple points along the ray segment inside the caster
-    float bias = 0.01; // Small bias to avoid boundary artifacts
-    float sampleStart = tEnter + bias;
-    float sampleEnd = tExit - bias;
-    
-    if (sampleStart < sampleEnd) {
-      // Take 3 samples along the segment
-      float samples[3];
-      samples[0] = mix(sampleStart, sampleEnd, 0.2);
-      samples[1] = mix(sampleStart, sampleEnd, 0.5);
-      samples[2] = mix(sampleStart, sampleEnd, 0.8);
-      
-      for (int i = 0; i < 3; i++) {
-        vec2 samplePoint = lightPos + rayDir * samples[i];
-        vec2 maskUV = (samplePoint - casterMin) / (casterMax - casterMin);
-        
-        // Ensure UV coordinates are within bounds
-        if (maskUV.x >= 0.0 && maskUV.x <= 1.0 && maskUV.y >= 0.0 && maskUV.y <= 1.0) {
-          float maskValue = texture2D(shadowMask, maskUV).a;
-          
-          // Binary shadow mask: alpha > 0 = solid (cast shadow)
-          if (maskValue > 0.0) {
-            // Distance-based soft shadows: shadows get softer further from caster
-            float hitDistance = samples[i]; // Distance from light to occluder
-            float shadowLength = rayLength - hitDistance; // Actual shadow length (occluder to receiver)
-            
-            // Limit shadow by actual shadow length, not distance from light
-            if (shadowLength > uShadowMaxLength) {
-              return 1.0; // Shadow is longer than max allowed
-            }
-            
-            // Gradual fade-out towards max shadow length to avoid hard cutoffs
-            float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
-            if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
-            
-            // Binary shadow detection - clean and artifact-free
-            float shadowValue = 1.0;
-            
-            float normalizedDistance = shadowLength / uShadowMaxLength;
-            float distanceFade = exp(-normalizedDistance * 2.0);
-            
-            // shadowValue now contains the soft/sharp shadow information
-            float finalShadowStrength = uShadowStrength * shadowValue * distanceFade * maxLengthFade;
-            
-            return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
-          }
-        }
-      }
-    }
-  }
-  
-  return 1.0; // Not in shadow
-}
 
 // Directional light shadow calculation using occluder map - specialized for parallel rays
 float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) {
