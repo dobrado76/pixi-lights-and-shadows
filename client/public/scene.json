@@ -187,10 +187,10 @@
       "enabled": true,
       "brightness": 0.6,
       "color": "0xffffff",
-      "x": 250,
+      "x": 300,
       "y": 170,
       "z": 50,
-      "followMouse": true,
+      "followMouse": false,
       "castsShadows": true,
       "radius": 1300
     },
