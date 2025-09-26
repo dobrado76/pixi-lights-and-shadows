@@ -13,6 +13,11 @@ import { SceneManager, SceneSprite } from './Sprite';
  * auto-switching architecture between per-caster uniforms and occluder maps.
  */
 
+// SHADOW SYSTEM CONFIGURATION
+// Set to true to use unified occluder map system for all sprite counts (0-4+)
+// Set to false to use legacy dual system (≤3 per-caster, 4+ occluder map)
+const USE_UNIFIED_SHADOW_SYSTEM = true;
+
 // Simplified shadow caster representation for shadow geometry calculations
 interface ShadowCaster {
   id: string;
@@ -883,7 +888,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uShadowCaster1ZOrder: shadowCasters[1] ? shadowCasters[1].definition.zOrder : 0,
         uShadowCaster2ZOrder: shadowCasters[2] ? shadowCasters[2].definition.zOrder : 0,
         // Switch to unlimited mode when more than 3 shadow casters
-        uUseOccluderMap: shadowCasters.length > 3,
+        uUseOccluderMap: USE_UNIFIED_SHADOW_SYSTEM ? true : shadowCasters.length > 3,
         uOccluderMapOffset: [SHADOW_BUFFER, SHADOW_BUFFER], // Offset for expanded occlusion map
         ...lightUniforms
       };
@@ -927,8 +932,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
 
       
-      // Auto-switch between shadow systems based on caster count
-      const useOccluderMap = shadowCasters.length > 3;
+      // Shadow system selection: unified (always occluder map) or legacy (auto-switch)
+      const useOccluderMap = USE_UNIFIED_SHADOW_SYSTEM ? true : shadowCasters.length > 3;
 
       // Set shadow texture uniforms for all sprites
       const shadowTextureUniforms = {
@@ -1137,9 +1142,9 @@ const PixiDemo = (props: PixiDemoProps) => {
             Object.assign(shader.uniforms, shadowTextureUniforms);
             
             // Enable unlimited shadow mode when more than 3 casters
-            shader.uniforms.uUseOccluderMap = shadowCasters.length > 3;
+            shader.uniforms.uUseOccluderMap = USE_UNIFIED_SHADOW_SYSTEM ? true : shadowCasters.length > 3;
             shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
-            if (shadowCasters.length > 3) {
+            if (USE_UNIFIED_SHADOW_SYSTEM ? true : shadowCasters.length > 3) {
               shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
             }
           }
@@ -1232,7 +1237,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       
       // Occluder map uniforms for unlimited shadow casters (switch when >3 casters)
-      uniforms.uUseOccluderMap = shadowCasters.length > 3;
+      uniforms.uUseOccluderMap = USE_UNIFIED_SHADOW_SYSTEM ? true : shadowCasters.length > 3;
       uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
       uniforms.uOccluderMap = occluderRenderTargetRef.current || null;
       
@@ -1401,9 +1406,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Automatic mode selection: Multi-pass for >8 lights  
       const useMultiPass = lightCount > 8;
       
-      // Shadow system mode selection: Occluder map for >3 shadow casters
+      // Shadow system mode selection: unified (always occluder map) or legacy (>3 shadow casters)
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
-      const useOccluderMap = shadowCasters.length > 3;
+      const useOccluderMap = USE_UNIFIED_SHADOW_SYSTEM ? true : shadowCasters.length > 3;
       
       if (useOccluderMap) {
         buildOccluderMap();
@@ -1472,11 +1477,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Trigger shadow system check and render loop every frame
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
-      if (shadowCasters.length > 3) {
+      if (USE_UNIFIED_SHADOW_SYSTEM ? true : shadowCasters.length > 3) {
         // Unlimited shadows: ${shadowCasters.length} casters detected
         
         // TRIGGER THE RENDER LOOP FOR UNLIMITED SHADOWS
-        const useOccluderMap = shadowCasters.length > 3;
+        const useOccluderMap = USE_UNIFIED_SHADOW_SYSTEM ? true : shadowCasters.length > 3;
         if (useOccluderMap && occluderRenderTargetRef.current) {
           // Triggering occluder map build from animation loop
           buildOccluderMap();
