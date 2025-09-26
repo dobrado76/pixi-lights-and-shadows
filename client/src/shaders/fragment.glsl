@@ -273,91 +273,6 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
   return 1.0; // Not in shadow
 }
 
-// POINT LIGHT SPECIAL CASE: Physically accurate shadow calculation for point lights inside sprites
-float calculatePointLightShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
-  if (!uShadowsEnabled) return 1.0;
-  
-  vec2 rayDir = pixelPos - lightPos;
-  float rayLength = length(rayDir);
-  
-  if (rayLength < 0.001) return 1.0; // Same position as light
-  
-  rayDir /= rayLength; // Normalize
-  
-  // Calculate self-interval: where ray intersects current sprite's AABB
-  vec2 invDir = vec2(
-    abs(rayDir.x) > 0.0001 ? 1.0 / rayDir.x : 1000000.0,
-    abs(rayDir.y) > 0.0001 ? 1.0 / rayDir.y : 1000000.0
-  );
-  
-  vec2 t1 = (uReceiverMin - lightPos) * invDir;
-  vec2 t2 = (uReceiverMax - lightPos) * invDir;
-  
-  vec2 tNear = min(t1, t2);
-  vec2 tFar = max(t1, t2);
-  
-  float tEnterSelf = max(max(tNear.x, tNear.y), 0.0);
-  float tExitSelf = min(min(tFar.x, tFar.y), rayLength);
-  
-  // Check if light is inside receiver sprite bounds
-  bool lightInsideReceiver = (lightPos.x >= uReceiverMin.x && lightPos.x <= uReceiverMax.x && 
-                             lightPos.y >= uReceiverMin.y && lightPos.y <= uReceiverMax.y);
-  
-  // Calculate sprite size to avoid applying fix to background sprites
-  vec2 spriteSize = uReceiverMax - uReceiverMin;
-  float spriteArea = spriteSize.x * spriteSize.y;
-  bool isBackgroundSprite = spriteArea > 400000.0; // Background is ~480,000 pixels
-  
-  // POINT LIGHT SPECIAL CASE: When light is inside sprite, still allow sprite to cast shadows
-  // but avoid self-shadowing the sprite the light is inside of
-  float startDistance = 1.0; // Normal start distance for shadows
-  
-  if (lightInsideReceiver && !isBackgroundSprite) {
-    // For point lights inside sprites: Skip self-shadowing but allow OTHER sprites to cast shadows
-    // This preserves physical accuracy - sprite still casts shadows on surfaces behind it
-    startDistance = 1.0; // Start from normal distance, not outside sprite
-  } else {
-    // Original behavior for lights outside sprites (preserve perfectly working system)
-    startDistance = 1.0;
-  }
-  
-  // Ray marching with special point light handling
-  float stepSize = 1.0; // Sample every pixel
-  float eps = 1.5; // Small epsilon for edge cases
-  
-  for (int i = 1; i < 500; i++) {
-    float distance = startDistance + float(i - 1) * stepSize;
-    
-    // Stop when we reach the pixel
-    if (distance >= rayLength - eps) break;
-    
-    // POINT LIGHT SPECIAL CASE: Skip ONLY self-interval when light is inside sprite
-    if (lightInsideReceiver && !isBackgroundSprite && 
-        distance > tEnterSelf - eps && distance < tExitSelf + eps) {
-      continue; // Skip self-shadowing for the sprite containing the light
-    }
-    
-    vec2 samplePos = lightPos + rayDir * distance;
-    vec2 occluderUV = samplePos / uCanvasSize;
-    
-    // Skip out of bounds samples - allow expanded area for off-screen shadow casting
-    vec2 expandedMapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
-    vec2 bufferUV = uOccluderMapOffset / uCanvasSize;
-    if (occluderUV.x < -bufferUV.x || occluderUV.x > 1.0 + bufferUV.x || 
-        occluderUV.y < -bufferUV.y || occluderUV.y > 1.0 + bufferUV.y) {
-      continue;
-    }
-    
-    // Sample occluder map - if we hit an occluder, we're in shadow
-    vec2 adjustedUV = (occluderUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
-    float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
-    if (occluderAlpha > 0.5) {
-      return 1.0 - uShadowStrength; // Apply shadow strength
-    }
-  }
-  
-  return 1.0; // Not in shadow
-}
 
 // Occluder map shadow calculation - with proper self-shadow avoidance
 float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
@@ -389,8 +304,7 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   bool lightInsideReceiver = (lightPos.x >= uReceiverMin.x && lightPos.x <= uReceiverMax.x && 
                              lightPos.y >= uReceiverMin.y && lightPos.y <= uReceiverMax.y);
   
-  // SMART FIX: Only increase start distance for reasonably-sized sprites, not huge backgrounds
-  // This preserves shadow casting while fixing self-shadow issues
+  // MINIMAL FIX: Modified behavior when light is inside sprite for physical accuracy
   float startDistance = 1.0; // Normal start distance for shadows
   
   // Calculate sprite size to avoid applying fix to background sprites
@@ -398,9 +312,11 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   float spriteArea = spriteSize.x * spriteSize.y;
   bool isBackgroundSprite = spriteArea > 400000.0; // Background is ~480,000 pixels
   
+  // PHYSICAL ACCURACY FIX: When light is inside sprite, still allow shadow casting
+  // but don't make sprite completely transparent to shadows
   if (lightInsideReceiver && !isBackgroundSprite) {
-    // Light is inside this regular-sized sprite - start ray marching from outside the sprite
-    startDistance = max(tExitSelf + 2.0, 2.0);
+    // Keep normal shadow behavior instead of making sprite transparent
+    startDistance = 1.0; // Don't skip outside sprite - allow normal shadow casting
   }
   
   // Ray marching with self-shadow avoidance
@@ -620,14 +536,10 @@ void main(void) {
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
-    // Calculate shadow for THIS point light with special case handling
+    // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
     if (uPoint0CastsShadows) {
-      if (uUseOccluderMap) {
-        shadowFactor = calculatePointLightShadowOccluderMap(uPoint0Position.xy, worldPos.xy);
-      } else {
-        shadowFactor = calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
-      }
+      shadowFactor = calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -658,14 +570,10 @@ void main(void) {
     
     float intensity = normalDot * uPoint1Intensity * attenuation;
     
-    // Calculate shadow for THIS point light with special case handling
+    // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
     if (uPoint1CastsShadows) {
-      if (uUseOccluderMap) {
-        shadowFactor = calculatePointLightShadowOccluderMap(uPoint1Position.xy, worldPos.xy);
-      } else {
-        shadowFactor = calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
-      }
+      shadowFactor = calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -696,14 +604,10 @@ void main(void) {
     
     float intensity = normalDot * uPoint2Intensity * attenuation;
     
-    // Calculate shadow for THIS point light with special case handling
+    // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
     if (uPoint2CastsShadows && intensity > 0.0) {
-      if (uUseOccluderMap) {
-        shadowFactor = calculatePointLightShadowOccluderMap(uPoint2Position.xy, worldPos.xy);
-      } else {
-        shadowFactor = calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
-      }
+      shadowFactor = calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -734,14 +638,10 @@ void main(void) {
     
     float intensity = normalDot * uPoint3Intensity * attenuation;
     
-    // Calculate shadow for THIS point light with special case handling
+    // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
     if (uPoint3CastsShadows && intensity > 0.0) {
-      if (uUseOccluderMap) {
-        shadowFactor = calculatePointLightShadowOccluderMap(uPoint3Position.xy, worldPos.xy);
-      } else {
-        shadowFactor = calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
-      }
+      shadowFactor = calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
