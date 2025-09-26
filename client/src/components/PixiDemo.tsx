@@ -40,7 +40,14 @@ const PixiDemo = (props: PixiDemoProps) => {
   const { shaderParams, lightsConfig, ambientLight, shadowConfig, sceneConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate, onImmediateSpriteChange } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 200, y: 150 });
+  // Initialize mouse position to canvas center for immediate mouse-following light display
+  const [mousePos, setMousePos] = useState({ 
+    x: shaderParams.canvasWidth / 2,  // 400 for 800px width
+    y: shaderParams.canvasHeight / 2  // 300 for 600px height
+  });
+  
+  // Debug logging to confirm mouse position initialization
+  console.log('🖱️ Mouse position initialized to canvas center:', mousePos);
   
   // Core rendering references
   const meshesRef = useRef<PIXI.Mesh[]>([]);           // Main sprite meshes with lighting shaders
