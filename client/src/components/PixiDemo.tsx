@@ -429,13 +429,13 @@ const PixiDemo = (props: PixiDemoProps) => {
           backgroundColor: 0x1a1a1a,
           antialias: true,
           hello: false,
-          resolution: 1, // Use fixed resolution for compatibility
+          resolution: 1,
           autoDensity: false,
           forceCanvas: false,
           powerPreference: 'default',
           preserveDrawingBuffer: false,
           clearBeforeRender: true,
-          autoStart: true, // CRITICAL: Ensure ticker starts automatically
+          autoStart: false // CRITICAL: Set to false, we'll call start() manually
         });
       } catch (webglError) {
         console.warn('WebGL failed, trying Canvas fallback:', webglError);
@@ -452,7 +452,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           powerPreference: 'default',
           preserveDrawingBuffer: false,
           clearBeforeRender: true,
-          autoStart: true, // CRITICAL: Ensure ticker starts automatically
+          autoStart: false // CRITICAL: Set to false, we'll call start() manually
         });
       }
 
@@ -460,31 +460,17 @@ const PixiDemo = (props: PixiDemoProps) => {
       const canvas = app.view as HTMLCanvasElement;
       
       if (canvas && canvasRef.current) {
+        // Add canvas to DOM but DON'T start yet - wait for scene to load
         canvasRef.current.appendChild(canvas);
         
-        // CRITICAL FIX: Explicitly start the ticker and ensure canvas is ready
-        app.ticker.start();
-        
-        // CRITICAL: Force canvas to be visible and interactive immediately
-        canvas.tabIndex = 0;
-        canvas.style.outline = 'none';
+        // Set canvas properties
         canvas.style.display = 'block';
-        canvas.style.visibility = 'visible';
-        canvas.style.opacity = '1';
-        canvas.style.pointerEvents = 'auto';
         canvas.style.width = shaderParams.canvasWidth + 'px';
         canvas.style.height = shaderParams.canvasHeight + 'px';
-        console.log('🎯 Canvas visibility styles applied');
-        
-        // CRITICAL: Force immediate render after canvas is made visible
-        requestAnimationFrame(() => {
-          if (app && app.renderer) {
-            app.render();
-            console.log('🎯 Immediate post-visibility render completed');
-          }
-        });
+        canvas.tabIndex = 0;
         
         setPixiApp(app);
+        console.log('🎯 PIXI App created - waiting for scene to load before starting');
         console.log('PIXI App initialized successfully');
         console.log('Renderer type:', app.renderer.type === PIXI.RENDERER_TYPE.WEBGL ? 'WebGL' : 'Canvas');
         console.log('Ticker started:', app.ticker.started);
@@ -959,20 +945,25 @@ const PixiDemo = (props: PixiDemoProps) => {
       meshesRef.current = spriteMeshes;
       console.log('🎯 DEBUG: Set meshesRef.current to', spriteMeshes.length, 'meshes');
       
-      // CRITICAL FIX: Force render immediately after meshes are created and added to stage
-      console.log('🎯 Scene fully loaded with', spriteMeshes.length, 'sprites - triggering render');
-      const forceRender = () => {
-        if (pixiApp && pixiApp.renderer) {
-          pixiApp.render();
-          console.log('🎯 Forced scene render completed');
-        }
-      };
+      // CRITICAL FIX: NOW start PIXI app AFTER scene is loaded - this is the key!
+      console.log('🎯 Scene fully loaded with', spriteMeshes.length, 'sprites');
+      console.log('🎯 NOW starting PIXI app with content loaded...');
       
-      // Multiple renders to ensure scene displays immediately
-      forceRender(); // Immediate
-      setTimeout(forceRender, 50);  // Short delay
-      setTimeout(forceRender, 200); // Medium delay
-      setTimeout(forceRender, 500); // Long delay
+      if (pixiApp) {
+        // Start PIXI app now that scene is ready
+        pixiApp.start();
+        
+        // Force renders after starting
+        requestAnimationFrame(() => {
+          pixiApp.render();
+          console.log('🎯 Post-scene PIXI render completed');
+          
+          requestAnimationFrame(() => {
+            pixiApp.render();
+            console.log('🎯 Final safety render completed');
+          });
+        });
+      }
       shadersRef.current = spriteMeshes.map(mesh => mesh.shader!);
       shadowCastersRef.current = legacyShadowCasters;
 
