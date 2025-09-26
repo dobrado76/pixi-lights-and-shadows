@@ -189,7 +189,7 @@
       "color": "0xffffff",
       "x": 250,
       "y": 170,
-      "z": 40,
+      "z": 60,
       "followMouse": true,
       "castsShadows": true,
       "radius": 350
@@ -211,7 +211,7 @@
       "enabled": true,
       "brightness": 0.4,
       "color": "0xf4f080",
-      "x": 200,
+      "x": 180,
       "y": 210,
       "z": 80,
       "directionX": 0,
