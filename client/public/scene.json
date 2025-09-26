@@ -269,7 +269,7 @@
       "color": "0xe12323",
       "x": 210,
       "y": 130,
-      "z": 50,
+      "z": 20,
       "followMouse": false,
       "castsShadows": true,
       "radius": 900
