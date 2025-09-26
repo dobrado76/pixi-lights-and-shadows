@@ -172,6 +172,55 @@ const PixiDemo = (props: PixiDemoProps) => {
   
   const geometry = useCustomGeometry(shaderParams.canvasWidth, shaderParams.canvasHeight);
 
+  // Helper function to check if a light is inside a sprite's non-transparent area
+  const isLightInsideSprite = (light: Light, sprite: any): boolean => {
+    // Only apply special case if light Z >= 50
+    if (light.position.z < 50) return false;
+    
+    const lightX = light.followMouse ? mousePos.x : light.position.x;
+    const lightY = light.followMouse ? mousePos.y : light.position.y;
+    
+    const spritePos = sprite.definition.position;
+    const spriteScale = sprite.definition.scale || 1;
+    
+    if (!sprite.diffuseTexture) return false;
+    
+    const textureWidth = sprite.diffuseTexture.width * spriteScale;
+    const textureHeight = sprite.diffuseTexture.height * spriteScale;
+    
+    // Check if light is within sprite bounds
+    if (lightX < spritePos.x || lightX > spritePos.x + textureWidth ||
+        lightY < spritePos.y || lightY > spritePos.y + textureHeight) {
+      return false;
+    }
+    
+    // Sample texture at light position to check if non-transparent
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return false;
+      
+      const img = sprite.diffuseTexture.baseTexture.resource?.source;
+      if (!img) return false;
+      
+      canvas.width = sprite.diffuseTexture.width;
+      canvas.height = sprite.diffuseTexture.height;
+      ctx.drawImage(img, 0, 0);
+      
+      // Calculate UV coordinates within the texture
+      const uvX = Math.floor(((lightX - spritePos.x) / spriteScale) % sprite.diffuseTexture.width);
+      const uvY = Math.floor(((lightY - spritePos.y) / spriteScale) % sprite.diffuseTexture.height);
+      
+      const imageData = ctx.getImageData(uvX, uvY, 1, 1);
+      const alpha = imageData.data[3]; // Alpha channel
+      
+      return alpha > 0; // Non-transparent if alpha > 0
+    } catch (error) {
+      // If texture sampling fails, default to false (don't apply special case)
+      return false;
+    }
+  };
+
   // Occluder map builder with zOrder hierarchy support
   // Builds occluder map containing only shadow casters that should affect the given sprite  
   const buildOccluderMapForSprite = (currentSpriteZOrder: number) => {
@@ -180,9 +229,17 @@ const PixiDemo = (props: PixiDemoProps) => {
     const allShadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
     
     // Filter shadow casters based on zOrder hierarchy - only include casters at same level or above
-    const relevantShadowCasters = allShadowCasters.filter(caster => 
+    let relevantShadowCasters = allShadowCasters.filter(caster => 
       caster.definition.zOrder >= currentSpriteZOrder
     );
+    
+    // Special case: exclude sprites from casting shadows if light (Z >= 50) is inside their non-transparent area
+    const enabledLights = lightsConfig.filter(light => light.enabled);
+    relevantShadowCasters = relevantShadowCasters.filter(caster => {
+      // Check if any enabled light with Z >= 50 is inside this caster's non-transparent area
+      const lightInside = enabledLights.some(light => isLightInsideSprite(light, caster));
+      return !lightInside; // Exclude caster if light is inside
+    });
     
     // Ensure we have enough pooled sprites
     while (occluderSpritesRef.current.length < allShadowCasters.length) {
