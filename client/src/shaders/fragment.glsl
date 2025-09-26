@@ -314,9 +314,9 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   bool isBackgroundSprite = spriteArea > 400000.0; // Background is ~480,000 pixels
   
   if (lightInsideReceiver && !isBackgroundSprite) {
-    // UNITY-LIKE BEHAVIOR: Light inside sprite should still allow sprite to cast shadows
-    // Only skip a small portion to avoid self-shadowing, not the entire sprite
-    startDistance = tEnterSelf + 1.0; // Start just after entering sprite, not outside it
+    // UNITY-LIKE BEHAVIOR: When light is inside sprite, reduce self-shadow avoidance
+    // instead of completely skipping outside the sprite
+    startDistance = 1.0; // Normal start distance - don't skip sprite entirely
   }
   
   // Ray marching with self-shadow avoidance
@@ -331,7 +331,17 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
     
     // Skip samples within self-interval (avoid self-occlusion) - but NOT for background sprites
     if (!isBackgroundSprite && distance > tEnterSelf - eps && distance < tExitSelf + eps) {
-      continue;
+      // UNITY-LIKE FIX: When light is inside sprite, only skip close to the target pixel
+      if (lightInsideReceiver) {
+        // Only skip the last 20% of the self-interval to reduce stark shadowing
+        float intervalLength = tExitSelf - tEnterSelf;
+        if (distance > tExitSelf - intervalLength * 0.2) {
+          continue; // Skip only near the exit of the sprite
+        }
+      } else {
+        // Normal behavior for lights outside sprites
+        continue;
+      }
     }
     
     vec2 samplePos = lightPos + rayDir * distance;
