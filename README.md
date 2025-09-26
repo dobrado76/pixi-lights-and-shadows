@@ -15,12 +15,12 @@ Experience the full lighting and shadow system in action with interactive contro
 ## ✨ Key Features
 
 ### 🌑 Advanced Shadow Casting System
-- **Unlimited Shadow Casters**: Auto-switching architecture supports any number of sprite shadow casters
+- **Unlimited Shadow Casters**: Unified occluder map architecture supports any number of sprite shadow casters
 - **Off-Screen Shadow Casting**: Sprites outside the visible frame can cast shadows into the visible area
 - **Expanded Canvas System**: 512px buffer zones eliminate shadow artifacts when sprites move out of view
 - **Per-Light Shadow Control**: Individual shadow casting flags for each light source
 - **Per-Sprite Shadow Participation**: Granular control over which sprites cast and receive shadows
-- **Performance Optimized**: Automatic switching between per-caster uniforms (≤4 casters) and occluder map approach (unlimited)
+- **Performance Optimized**: Unified occluder map approach provides consistent performance for any number of shadow casters
 - **Distance-Based Soft Shadows**: Configurable shadow softness with distance-based edge controls
 - **Multiple Shadow Types**: Point light, spotlight, and directional light shadow casting
 - **Realistic Shadow Behavior**: Shadows maintain consistent size and shape regardless of sprite visibility
@@ -287,7 +287,7 @@ All scene, lighting, and shadow data is stored in a single JSON file with three 
 - **Multi-Pass Rendering**: Separate shadow calculation passes for complex scenes
 - **Expanded Occlusion Map System**: Canvas treated as "camera window" into larger rendered scene
 - **Off-Screen Shadow Integration**: 512px buffer zones capture off-screen sprites for realistic shadow casting
-- **Occluder Map Architecture**: Automatic switching for unlimited shadow casters
+- **Unified Occluder Map Architecture**: Consistent approach for all shadow caster counts
 - **Unified Shadow Calculation**: Single shader function handles all light types
 - **Distance-Based Softening**: Realistic shadow edge behavior
 - **Performance Optimized**: Efficient GPU utilization for real-time shadows
@@ -330,15 +330,9 @@ All scene, lighting, and shadow data is stored in a single JSON file with three 
 
 ## 🔧 Shadow System Technical Details
 
-### Architecture Modes
+### Unified Shadow Architecture
 
-#### Per-Caster Uniforms (≤4 shadow casters)
-- Direct uniform passing for each shadow casting sprite
-- Optimal performance for smaller scenes
-- Lower GPU memory usage
-- Simpler shader logic
-
-#### Occluder Map (Unlimited shadow casters)
+#### Occluder Map (All shadow caster counts)
 - Render-to-texture approach for complex scenes
 - **Expanded Canvas System**: Renders sprites in 1824×1624 occlusion map for 800×600 canvas
 - **Off-Screen Shadow Casting**: Sprites outside visible area (within 512px buffer) cast shadows into frame
@@ -349,7 +343,7 @@ All scene, lighting, and shadow data is stored in a single JSON file with three 
 ### Shadow Calculation Process
 
 1. **Caster Detection**: Identify sprites with `castsShadows: true` (includes off-screen sprites within buffer)
-2. **Architecture Selection**: Choose optimal rendering approach
+2. **Unified Rendering**: Use occluder map approach for all scenarios
 3. **Expanded Map Rendering**: Render full sprites to enlarged occlusion map (canvas + 512px buffer zones)
 4. **Shadow Ray Casting**: Calculate shadow rays from light to fragment with extended bounds
 5. **Occlusion Testing**: Test intersection with shadow casting geometry using coordinate offset mapping
@@ -402,9 +396,8 @@ uniform bool uShadowsEnabled;      // Global shadow toggle
 uniform float uShadowStrength;     // Shadow opacity
 uniform float uShadowHeight;       // Sprite height for projection
 uniform float uShadowMaxLength;    // Maximum shadow distance
-uniform bool uUseOccluderMap;      // Switch to expanded occlusion map mode
 uniform vec2 uOccluderMapOffset;   // Buffer offset for off-screen shadow casting
-uniform sampler2D uOccluderMap;    // Expanded occlusion map texture
+uniform sampler2D uOccluderMap;    // Unified occlusion map texture
 
 // Per-light uniforms (example for point light 0)
 uniform bool uPoint0Enabled;       // Light active state
@@ -497,8 +490,8 @@ Returns: Success/error status
 - **Normal map quality**: Balance detail vs. memory usage
 
 ### Shadow Performance
-- **≤4 casters**: Optimal performance with per-caster uniforms
-- **>4 casters**: Automatic switch to occluder map (higher memory)
+- **Unified System**: Consistent performance for all shadow caster counts
+- **Occluder Map**: Single approach provides predictable memory usage
 - **Disable unused shadows**: Turn off shadow casting for non-essential lights
 - **Adjust shadow quality**: Use maxLength to limit shadow calculations
 
