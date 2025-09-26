@@ -329,9 +329,20 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
     // Stop when we reach the pixel
     if (distance >= rayLength - eps) break;
     
-    // Skip samples within self-interval (avoid self-occlusion) - but NOT for background sprites
+    // PHYSICAL ACCURACY FIX: Modified self-occlusion logic for lights inside sprites
     if (!isBackgroundSprite && distance > tEnterSelf - eps && distance < tExitSelf + eps) {
-      continue;
+      // When light is inside sprite: only skip if we're at the exact pixel being rendered
+      // This allows sprite to cast shadows on surfaces behind it while avoiding self-shadowing
+      if (lightInsideReceiver) {
+        // For lights inside sprites: only skip samples very close to the target pixel
+        if (distance >= rayLength - eps * 2.0) {
+          continue; // Skip only the immediate area around target pixel
+        }
+        // Allow shadow casting from the sprite onto surfaces behind it
+      } else {
+        // Original behavior for lights outside sprites (preserve working system)
+        continue;
+      }
     }
     
     vec2 samplePos = lightPos + rayDir * distance;

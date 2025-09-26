@@ -46,8 +46,6 @@ const PixiDemo = (props: PixiDemoProps) => {
     y: shaderParams.canvasHeight / 2  // 300 for 600px height
   });
   
-  // Debug logging to confirm mouse position initialization
-  console.log('🖱️ Mouse position initialized to canvas center:', mousePos);
   
   // Core rendering references
   const meshesRef = useRef<PIXI.Mesh[]>([]);           // Main sprite meshes with lighting shaders
