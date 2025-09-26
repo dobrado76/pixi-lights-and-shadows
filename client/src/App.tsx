@@ -276,20 +276,18 @@ function App() {
                 </h2>
               </div>
 
-              <div className="pixi-canvas rounded-lg overflow-hidden glow" data-testid="pixi-container">
-                {lightsLoaded && sceneLoaded && (
-                  <PixiDemo
-                    shaderParams={shaderParams}
-                    lightsConfig={lightsConfig}
-                    ambientLight={ambientLight}
-                    shadowConfig={shadowConfig}
-                    sceneConfig={sceneConfig}
-                    onGeometryUpdate={setGeometryStatus}
-                    onShaderUpdate={setShaderStatus}
-                    onMeshUpdate={setMeshStatus}
-                    onImmediateSpriteChange={handleImmediateSpriteChange}
-                  />
-                )}
+              <div className="pixi-canvas rounded-lg glow" data-testid="pixi-container">
+                <PixiDemo
+                  shaderParams={shaderParams}
+                  lightsConfig={lightsConfig}
+                  ambientLight={ambientLight}
+                  shadowConfig={shadowConfig}
+                  sceneConfig={sceneConfig}
+                  onGeometryUpdate={setGeometryStatus}
+                  onShaderUpdate={setShaderStatus}
+                  onMeshUpdate={setMeshStatus}
+                  onImmediateSpriteChange={handleImmediateSpriteChange}
+                />
               </div>
             </div>
           </div>
