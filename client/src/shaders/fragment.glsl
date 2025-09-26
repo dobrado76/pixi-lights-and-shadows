@@ -291,14 +291,13 @@ float calculateDirectionalShadowUnified(vec2 lightDirection, vec2 pixelPos) {
   return calculateDirectionalShadowOccluderMap(lightDirection, pixelPos);
 }
 
-// Enhanced shadow calculation with light penetration feature
+// Unified shadow calculation using occluder map
 float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
   
   // Use occluder map approach for all point/spot light shadows
   return calculateShadowOccluderMap(lightPos, pixelPos);
 }
-
 
 // UV rotation function - rotates UV coordinates around center (0.5, 0.5)
 vec2 rotateUV(vec2 uv, float rotation) {
@@ -388,45 +387,10 @@ void main(void) {
     
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
-    // Calculate shadow for THIS light
+    // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
     if (uPoint0CastsShadows) {
       shadowFactor = calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
-      
-      // Apply penetration feature: elevated lights (Z >= 50) inside sprites cast through them
-      if (uPoint0Position.z >= 50.0) {
-        vec2 spriteMin = uReceiverMin;
-        vec2 spriteMax = uReceiverMax;
-        
-        // Check if light is inside current sprite bounds
-        if (uPoint0Position.x >= spriteMin.x && uPoint0Position.x <= spriteMax.x &&
-            uPoint0Position.y >= spriteMin.y && uPoint0Position.y <= spriteMax.y) {
-          
-          // Check if light is in non-transparent area
-          vec2 lightLocalPos = uPoint0Position.xy - spriteMin;
-          vec2 spriteSize = spriteMax - spriteMin;
-          vec2 lightUV = lightLocalPos / spriteSize;
-          
-          // Apply rotation to UV coordinates
-          vec2 center = vec2(0.5, 0.5);
-          vec2 rotatedUV = lightUV - center;
-          float cosR = cos(uRotation);
-          float sinR = sin(uRotation);
-          vec2 finalUV = vec2(
-            rotatedUV.x * cosR - rotatedUV.y * sinR,
-            rotatedUV.x * sinR + rotatedUV.y * cosR
-          ) + center;
-          
-          // Sample sprite alpha at light position
-          if (finalUV.x >= 0.0 && finalUV.x <= 1.0 && finalUV.y >= 0.0 && finalUV.y <= 1.0) {
-            vec4 spriteColor = texture2D(uDiffuse, finalUV);
-            if (spriteColor.a > 0.0) {
-              // Light is inside non-transparent area - allow penetration for other sprites
-              shadowFactor = 1.0; // Override shadow to allow light penetration
-            }
-          }
-        }
-      }
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -457,45 +421,10 @@ void main(void) {
     
     float intensity = normalDot * uPoint1Intensity * attenuation;
     
-    // Calculate shadow for THIS light
+    // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
     if (uPoint1CastsShadows) {
       shadowFactor = calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
-      
-      // Apply penetration feature: elevated lights (Z >= 50) inside sprites cast through them
-      if (uPoint1Position.z >= 50.0) {
-        vec2 spriteMin = uReceiverMin;
-        vec2 spriteMax = uReceiverMax;
-        
-        // Check if light is inside current sprite bounds
-        if (uPoint1Position.x >= spriteMin.x && uPoint1Position.x <= spriteMax.x &&
-            uPoint1Position.y >= spriteMin.y && uPoint1Position.y <= spriteMax.y) {
-          
-          // Check if light is in non-transparent area
-          vec2 lightLocalPos = uPoint1Position.xy - spriteMin;
-          vec2 spriteSize = spriteMax - spriteMin;
-          vec2 lightUV = lightLocalPos / spriteSize;
-          
-          // Apply rotation to UV coordinates
-          vec2 center = vec2(0.5, 0.5);
-          vec2 rotatedUV = lightUV - center;
-          float cosR = cos(uRotation);
-          float sinR = sin(uRotation);
-          vec2 finalUV = vec2(
-            rotatedUV.x * cosR - rotatedUV.y * sinR,
-            rotatedUV.x * sinR + rotatedUV.y * cosR
-          ) + center;
-          
-          // Sample sprite alpha at light position
-          if (finalUV.x >= 0.0 && finalUV.x <= 1.0 && finalUV.y >= 0.0 && finalUV.y <= 1.0) {
-            vec4 spriteColor = texture2D(uDiffuse, finalUV);
-            if (spriteColor.a > 0.0) {
-              // Light is inside non-transparent area - allow penetration for other sprites
-              shadowFactor = 1.0; // Override shadow to allow light penetration
-            }
-          }
-        }
-      }
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -526,45 +455,10 @@ void main(void) {
     
     float intensity = normalDot * uPoint2Intensity * attenuation;
     
-    // Calculate shadow for THIS light
+    // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
     if (uPoint2CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
-      
-      // Apply penetration feature: elevated lights (Z >= 50) inside sprites cast through them
-      if (uPoint2Position.z >= 50.0) {
-        vec2 spriteMin = uReceiverMin;
-        vec2 spriteMax = uReceiverMax;
-        
-        // Check if light is inside current sprite bounds
-        if (uPoint2Position.x >= spriteMin.x && uPoint2Position.x <= spriteMax.x &&
-            uPoint2Position.y >= spriteMin.y && uPoint2Position.y <= spriteMax.y) {
-          
-          // Check if light is in non-transparent area
-          vec2 lightLocalPos = uPoint2Position.xy - spriteMin;
-          vec2 spriteSize = spriteMax - spriteMin;
-          vec2 lightUV = lightLocalPos / spriteSize;
-          
-          // Apply rotation to UV coordinates
-          vec2 center = vec2(0.5, 0.5);
-          vec2 rotatedUV = lightUV - center;
-          float cosR = cos(uRotation);
-          float sinR = sin(uRotation);
-          vec2 finalUV = vec2(
-            rotatedUV.x * cosR - rotatedUV.y * sinR,
-            rotatedUV.x * sinR + rotatedUV.y * cosR
-          ) + center;
-          
-          // Sample sprite alpha at light position
-          if (finalUV.x >= 0.0 && finalUV.x <= 1.0 && finalUV.y >= 0.0 && finalUV.y <= 1.0) {
-            vec4 spriteColor = texture2D(uDiffuse, finalUV);
-            if (spriteColor.a > 0.0) {
-              // Light is inside non-transparent area - allow penetration for other sprites
-              shadowFactor = 1.0; // Override shadow to allow light penetration
-            }
-          }
-        }
-      }
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
