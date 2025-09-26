@@ -428,6 +428,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           powerPreference: 'default',
           preserveDrawingBuffer: false,
           clearBeforeRender: true,
+          autoStart: true, // CRITICAL: Ensure ticker starts automatically
         });
       } catch (webglError) {
         console.warn('WebGL failed, trying Canvas fallback:', webglError);
@@ -444,6 +445,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           powerPreference: 'default',
           preserveDrawingBuffer: false,
           clearBeforeRender: true,
+          autoStart: true, // CRITICAL: Ensure ticker starts automatically
         });
       }
 
@@ -452,9 +454,26 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       if (canvas && canvasRef.current) {
         canvasRef.current.appendChild(canvas);
+        
+        // CRITICAL FIX: Explicitly start the ticker and ensure canvas is ready
+        app.ticker.start();
+        
+        // Force canvas to be focusable and trigger initial render
+        canvas.tabIndex = 0;
+        canvas.style.outline = 'none';
+        
         setPixiApp(app);
         console.log('PIXI App initialized successfully');
         console.log('Renderer type:', app.renderer.type === PIXI.RENDERER_TYPE.WEBGL ? 'WebGL' : 'Canvas');
+        console.log('Ticker started:', app.ticker.started);
+        
+        // FORCE IMMEDIATE INITIAL RENDER - this ensures the canvas shows content instantly
+        setTimeout(() => {
+          if (app && app.renderer) {
+            app.render();
+            console.log('🎯 Forced initial render completed');
+          }
+        }, 50);
         
         // Initialize render targets for multi-pass rendering
         renderTargetRef.current = PIXI.RenderTexture.create({ 
