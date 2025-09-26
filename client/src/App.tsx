@@ -345,7 +345,7 @@ function App() {
                 href="https://github.com/dobrado76/pixi-lights-and-shadows"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-accent-foreground hover:text-accent transition-colors duration-200"
+                className="inline-flex items-center gap-2 text-sm text-primary hover:text-accent transition-colors duration-200"
                 data-testid="github-link"
               >
                 <svg
