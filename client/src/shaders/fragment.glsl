@@ -274,16 +274,8 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
 }
 
 
-// Forward declaration
-float calculateShadowOccluderMapWithOverride(vec2 lightPos, vec2 pixelPos, bool bypassSelfShadowAvoidance);
-
 // Occluder map shadow calculation - with proper self-shadow avoidance
 float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
-  return calculateShadowOccluderMapWithOverride(lightPos, pixelPos, false);
-}
-
-// Occluder map shadow calculation with Z>=50 override capability
-float calculateShadowOccluderMapWithOverride(vec2 lightPos, vec2 pixelPos, bool bypassSelfShadowAvoidance) {
   if (!uShadowsEnabled) return 1.0;
   
   vec2 rayDir = pixelPos - lightPos;
@@ -312,8 +304,7 @@ float calculateShadowOccluderMapWithOverride(vec2 lightPos, vec2 pixelPos, bool 
   bool lightInsideReceiver = (lightPos.x >= uReceiverMin.x && lightPos.x <= uReceiverMax.x && 
                              lightPos.y >= uReceiverMin.y && lightPos.y <= uReceiverMax.y);
   
-  // SMART FIX: Only increase start distance for reasonably-sized sprites, not huge backgrounds
-  // This preserves shadow casting while fixing self-shadow issues
+  // MINIMAL FIX: Modified behavior when light is inside sprite for physical accuracy
   float startDistance = 1.0; // Normal start distance for shadows
   
   // Calculate sprite size to avoid applying fix to background sprites
@@ -321,13 +312,12 @@ float calculateShadowOccluderMapWithOverride(vec2 lightPos, vec2 pixelPos, bool 
   float spriteArea = spriteSize.x * spriteSize.y;
   bool isBackgroundSprite = spriteArea > 400000.0; // Background is ~480,000 pixels
   
-  if (lightInsideReceiver && !isBackgroundSprite && !bypassSelfShadowAvoidance) {
-    // Light is inside this regular-sized sprite - start ray marching from outside the sprite
-    startDistance = max(tExitSelf + 2.0, 2.0);
+  // PHYSICAL ACCURACY FIX: When light is inside sprite, still allow shadow casting
+  // but don't make sprite completely transparent to shadows
+  if (lightInsideReceiver && !isBackgroundSprite) {
+    // Keep normal shadow behavior instead of making sprite transparent
+    startDistance = 1.0; // Don't skip outside sprite - allow normal shadow casting
   }
-  
-  // Store original startDistance for Z>=50 override
-  float originalStartDistance = startDistance;
   
   // Ray marching with self-shadow avoidance
   float stepSize = 1.0; // Sample every pixel
@@ -475,7 +465,6 @@ vec2 rotateUV(vec2 uv, float rotation) {
   return rotated + 0.5;
 }
 
-
 void main(void) {
   // Apply rotation to UV coordinates BEFORE texture sampling (physically correct)
   vec2 uv = rotateUV(vTextureCoord, uRotation);
@@ -551,12 +540,6 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uPoint0CastsShadows) {
       shadowFactor = calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
-      
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
-      if (uPoint0Position.z >= 50.0) {
-        // For Z>=50 lights, always use normal shadow calculation (no self-shadow avoidance)
-        shadowFactor = calculateShadowOccluderMapWithOverride(uPoint0Position.xy, worldPos.xy, true);
-      }
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -591,11 +574,6 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uPoint1CastsShadows) {
       shadowFactor = calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
-      
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
-      if (uPoint1Position.z >= 50.0) {
-        shadowFactor = calculateShadowOccluderMapWithOverride(uPoint1Position.xy, worldPos.xy, true);
-      }
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -630,11 +608,6 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uPoint2CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
-      
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
-      if (uPoint2Position.z >= 50.0) {
-        shadowFactor = calculateShadowOccluderMapWithOverride(uPoint2Position.xy, worldPos.xy, true);
-      }
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -669,11 +642,6 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uPoint3CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
-      
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
-      if (uPoint3Position.z >= 50.0) {
-        shadowFactor = calculateShadowOccluderMapWithOverride(uPoint3Position.xy, worldPos.xy, true);
-      }
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -773,11 +741,6 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uSpot0CastsShadows) {
       shadowFactor = calculateShadowUnified(uSpot0Position.xy, worldPos.xy);
-      
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
-      if (uSpot0Position.z >= 50.0) {
-        shadowFactor = calculateShadowOccluderMapWithOverride(uSpot0Position.xy, worldPos.xy, true);
-      }
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -825,11 +788,6 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uSpot1CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uSpot1Position.xy, worldPos.xy);
-      
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
-      if (uSpot1Position.z >= 50.0) {
-        shadowFactor = calculateShadowOccluderMapWithOverride(uSpot1Position.xy, worldPos.xy, true);
-      }
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -877,11 +835,6 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uSpot2CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uSpot2Position.xy, worldPos.xy);
-      
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
-      if (uSpot2Position.z >= 50.0) {
-        shadowFactor = calculateShadowOccluderMapWithOverride(uSpot2Position.xy, worldPos.xy, true);
-      }
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -929,11 +882,6 @@ void main(void) {
     float shadowFactor = 1.0;
     if (uSpot3CastsShadows && intensity > 0.0) {
       shadowFactor = calculateShadowUnified(uSpot3Position.xy, worldPos.xy);
-      
-      // Z>=50 PHYSICALLY REALISTIC SHADOW CASTING - SIMPLE FORCE OVERRIDE
-      if (uSpot3Position.z >= 50.0) {
-        shadowFactor = calculateShadowOccluderMapWithOverride(uSpot3Position.xy, worldPos.xy, true);
-      }
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)

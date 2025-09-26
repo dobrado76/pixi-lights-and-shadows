@@ -178,7 +178,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.1,
+      "brightness": 0.25,
       "color": "0xffffff"
     },
     {
@@ -187,18 +187,18 @@
       "enabled": true,
       "brightness": 0.6,
       "color": "0xffffff",
-      "x": 300,
+      "x": 250,
       "y": 170,
       "z": 50,
       "followMouse": true,
       "castsShadows": true,
-      "radius": 1300
+      "radius": 350
     },
     {
       "id": "directional_light",
       "type": "directional",
       "enabled": true,
-      "brightness": 0.4,
+      "brightness": 0.2,
       "color": "0xffffff",
       "directionX": 0.6427876096865394,
       "directionY": -0.766044443118978,
@@ -211,8 +211,8 @@
       "enabled": true,
       "brightness": 0.4,
       "color": "0xf4f080",
-      "x": 190,
-      "y": 230,
+      "x": 200,
+      "y": 210,
       "z": 80,
       "directionX": 0,
       "directionY": 1,

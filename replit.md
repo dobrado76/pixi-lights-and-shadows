@@ -10,7 +10,6 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-- **Z ≥ 50 Physically Realistic Shadow Casting IMPLEMENTED** (2025-09-26): Successfully implemented special case where lights with Z coordinate ≥ 50 positioned inside non-transparent parts of sprites (alpha > 0) cast physically realistic shadows like Unity examples. Implementation covers all light types (Point Lights 0-3, Spotlights 0-3) using existing vec3 uniform positions without breaking lighting calculations.
 - **Fixed zOrder immediate updates** (2025-09-25): Resolved issue where zOrder changes required scene reload. Now all sprites get meshes created regardless of visibility, with visibility controlled via `mesh.visible` property instead of excluding from creation.
 - **Fixed Use Normal Map toggle** (2025-09-25): Normal map textures are now always loaded if specified, with `uUseNormalMap` shader uniform controlling usage. Toggle responds immediately without texture reloading.
 - **Unified immediate update system**: All sprite controls (zOrder, visibility, position, normal maps) now update instantly with delayed React state synchronization to prevent timing conflicts.
@@ -47,7 +46,6 @@ The core rendering system implements several advanced techniques:
 - **Normal Mapping**: Supports both provided normal maps and auto-generated flat normals for sprites
 - **Texture-based Light Masking**: Allows complex lighting patterns through custom mask textures
 - **Distance-based Soft Shadows**: Configurable shadow softness with realistic falloff
-- **Z ≥ 50 Physically Realistic Shadow Casting**: Lights with Z coordinate ≥ 50 inside non-transparent sprite parts cast realistic shadows like Unity examples
 
 ### Configuration System
 
@@ -85,7 +83,7 @@ The project uses a simple in-memory storage system for development, with Drizzle
 - **PostCSS**: CSS processing with Tailwind integration
 
 ### Graphics & Assets
-- **Custom Shaders**: GLSL shaders for advanced lighting effects and shadow casting including Z ≥ 50 physically realistic behavior
+- **Custom Shaders**: GLSL shaders for advanced lighting effects and shadow casting
 - **Texture Assets**: Normal maps, diffuse textures, and light masks stored in public directory
 - **@pixi/react**: React integration layer for PIXI.js components
 
