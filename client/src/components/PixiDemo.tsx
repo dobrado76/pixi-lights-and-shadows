@@ -472,28 +472,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         setPixiApp(app);
         console.log('🎯 PIXI App created - waiting for scene to load before starting');
         
-        // GENIUS WORKAROUND: Simulate mouse move after 1 second to force canvas activation
-        setTimeout(() => {
-          const rect = canvas.getBoundingClientRect();
-          const centerX = rect.left + rect.width / 2;
-          const centerY = rect.top + rect.height / 2;
-          
-          // Create and dispatch synthetic mouse events
-          const mouseMoveEvent = new MouseEvent('mousemove', {
-            clientX: centerX,
-            clientY: centerY,
-            bubbles: true
-          });
-          
-          canvas.dispatchEvent(mouseMoveEvent);
-          console.log('🖱️ SIMULATED mouse move at canvas center to force activation');
-          
-          // Force render after simulated interaction
-          if (app && app.renderer) {
-            app.render();
-            console.log('🎯 Post-simulation render completed');
-          }
-        }, 1000);
+        // Store canvas reference for later activation when scene loads
+        (app as any).__canvas = canvas;
         console.log('PIXI App initialized successfully');
         console.log('Renderer type:', app.renderer.type === PIXI.RENDERER_TYPE.WEBGL ? 'WebGL' : 'Canvas');
         console.log('Ticker started:', app.ticker.started);
@@ -976,7 +956,28 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Start PIXI app now that scene is ready
         pixiApp.start();
         
-        // Force renders after starting
+        // SMART ACTIVATION: Trigger canvas focus + refresh RIGHT when scene is loaded!
+        const canvas = (pixiApp as any).__canvas;
+        if (canvas) {
+          // Focus canvas to activate it
+          canvas.focus();
+          
+          // Simulate mouse interaction at canvas center
+          const rect = canvas.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          
+          const mouseMoveEvent = new MouseEvent('mousemove', {
+            clientX: centerX,
+            clientY: centerY,
+            bubbles: true
+          });
+          
+          canvas.dispatchEvent(mouseMoveEvent);
+          console.log('🎯 SMART ACTIVATION: Canvas focused + mouse simulated RIGHT after scene load');
+        }
+        
+        // Force renders after activation
         requestAnimationFrame(() => {
           pixiApp.render();
           console.log('🎯 Post-scene PIXI render completed');
