@@ -274,8 +274,8 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
 }
 
 
-// Occluder map shadow calculation - with Z-aware shadow casting for physically realistic behavior
-float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightZ) {
+// Occluder map shadow calculation - with proper self-shadow avoidance
+float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
   
   vec2 rayDir = pixelPos - lightPos;
@@ -314,14 +314,8 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightZ) {
   bool isBackgroundSprite = spriteArea > 400000.0; // Background is ~480,000 pixels
   
   if (lightInsideReceiver && !isBackgroundSprite) {
-    // PHYSICALLY REALISTIC: For Z >= 50, sprite should always cast shadows even when light is inside
-    if (lightZ >= 50.0) {
-      // Light is above sprite level - sprite should cast shadows normally
-      startDistance = 1.0;
-    } else {
-      // Light is at sprite level - use existing behavior
-      startDistance = max(tExitSelf + 2.0, 2.0);
-    }
+    // Light is inside this regular-sized sprite - start ray marching from outside the sprite
+    startDistance = max(tExitSelf + 2.0, 2.0);
   }
   
   // Ray marching with self-shadow avoidance
@@ -336,12 +330,7 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightZ) {
     
     // Skip samples within self-interval (avoid self-occlusion) - but NOT for background sprites
     if (!isBackgroundSprite && distance > tEnterSelf - eps && distance < tExitSelf + eps) {
-      // PHYSICALLY REALISTIC: For Z >= 50 lights inside sprites, don't skip self-interval
-      if (lightInsideReceiver && lightZ >= 50.0) {
-        // Light is above sprite level - sprite should cast shadows, don't skip
-      } else {
-        continue;
-      }
+      continue;
     }
     
     vec2 samplePos = lightPos + rayDir * distance;
@@ -433,26 +422,25 @@ float calculateDirectionalShadowUnified(vec2 lightDirection, vec2 pixelPos) {
 }
 
 // Unified shadow calculation with auto-switching
-float calculateShadowUnified(vec3 lightPos3D, vec2 pixelPos) {
+float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
   
   if (uUseOccluderMap) {
-    // Use unlimited occluder map approach with Z-awareness for physical realism
-    return calculateShadowOccluderMap(lightPos3D.xy, pixelPos, lightPos3D.z);
+    // Use unlimited occluder map approach  
+    return calculateShadowOccluderMap(lightPos, pixelPos);
   } else {
     // Use fast per-caster uniform approach (≤4 casters) with zOrder hierarchy
     float shadowFactor = 1.0;
     
     // Only apply shadows from casters at same zOrder level or above (higher zOrder values)
-    vec2 lightPos2D = lightPos3D.xy; // Use 2D position for legacy uniform approach
     if (uShadowCaster0Enabled && uShadowCaster0ZOrder >= uCurrentSpriteZOrder) {
-      shadowFactor *= calculateShadow(lightPos2D, pixelPos, uShadowCaster0, uShadowCaster0Texture);
+      shadowFactor *= calculateShadow(lightPos, pixelPos, uShadowCaster0, uShadowCaster0Texture);
     }
     if (uShadowCaster1Enabled && uShadowCaster1ZOrder >= uCurrentSpriteZOrder) {
-      shadowFactor *= calculateShadow(lightPos2D, pixelPos, uShadowCaster1, uShadowCaster1Texture);
+      shadowFactor *= calculateShadow(lightPos, pixelPos, uShadowCaster1, uShadowCaster1Texture);
     }
     if (uShadowCaster2Enabled && uShadowCaster2ZOrder >= uCurrentSpriteZOrder) {
-      shadowFactor *= calculateShadow(lightPos2D, pixelPos, uShadowCaster2, uShadowCaster2Texture);
+      shadowFactor *= calculateShadow(lightPos, pixelPos, uShadowCaster2, uShadowCaster2Texture);
     }
     
     return shadowFactor;
@@ -550,7 +538,7 @@ void main(void) {
     // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
     if (uPoint0CastsShadows) {
-      shadowFactor = calculateShadowUnified(uPoint0Position, worldPos.xy);
+      shadowFactor = calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -584,7 +572,7 @@ void main(void) {
     // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
     if (uPoint1CastsShadows) {
-      shadowFactor = calculateShadowUnified(uPoint1Position, worldPos.xy);
+      shadowFactor = calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -618,7 +606,7 @@ void main(void) {
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
     if (uPoint2CastsShadows && intensity > 0.0) {
-      shadowFactor = calculateShadowUnified(uPoint2Position, worldPos.xy);
+      shadowFactor = calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -652,7 +640,7 @@ void main(void) {
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
     if (uPoint3CastsShadows && intensity > 0.0) {
-      shadowFactor = calculateShadowUnified(uPoint3Position, worldPos.xy);
+      shadowFactor = calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -751,7 +739,7 @@ void main(void) {
     // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
     if (uSpot0CastsShadows) {
-      shadowFactor = calculateShadowUnified(uSpot0Position, worldPos.xy);
+      shadowFactor = calculateShadowUnified(uSpot0Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -798,7 +786,7 @@ void main(void) {
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
     if (uSpot1CastsShadows && intensity > 0.0) {
-      shadowFactor = calculateShadowUnified(uSpot1Position, worldPos.xy);
+      shadowFactor = calculateShadowUnified(uSpot1Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -845,7 +833,7 @@ void main(void) {
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
     if (uSpot2CastsShadows && intensity > 0.0) {
-      shadowFactor = calculateShadowUnified(uSpot2Position, worldPos.xy);
+      shadowFactor = calculateShadowUnified(uSpot2Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -892,7 +880,7 @@ void main(void) {
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
     if (uSpot3CastsShadows && intensity > 0.0) {
-      shadowFactor = calculateShadowUnified(uSpot3Position, worldPos.xy);
+      shadowFactor = calculateShadowUnified(uSpot3Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
