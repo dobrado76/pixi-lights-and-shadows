@@ -53,7 +53,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   // Core rendering references
   const meshesRef = useRef<PIXI.Mesh[]>([]);           // Main sprite meshes with lighting shaders
   const shadersRef = useRef<PIXI.Shader[]>([]);        // Compiled shader programs
-  const shadowMeshesRef = useRef<PIXI.Mesh[]>([]);     // Legacy shadow geometry meshes
+  const shadowMeshesRef = useRef<PIXI.Mesh[]>([]);     // Shadow geometry meshes
   const shadowCastersRef = useRef<ShadowCaster[]>([]);  // Simplified caster data for calculations
   const sceneManagerRef = useRef<SceneManager | null>(null);  // Scene/sprite management system
   
@@ -129,7 +129,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   };
 
   /**
-   * Creates shadow mesh with simple black shader for legacy shadow system.
+   * Creates shadow mesh with simple black shader for shadow system.
    * Note: Modern system uses shader-based shadows instead of geometry meshes.
    */
   const createShadowMesh = (geometry: PIXI.Geometry, alpha: number = 0.3) => {
@@ -229,7 +229,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     });
   };
   
-  // Legacy buildOccluderMap function for backwards compatibility (all shadow casters)
+  // Build occluder map using all shadow casters for unified system
   const buildOccluderMap = () => {
     buildOccluderMapForSprite(-999); // Use very low zOrder to include all shadow casters
   };
@@ -669,15 +669,6 @@ const PixiDemo = (props: PixiDemoProps) => {
                 // Update all shader uniforms
                 shadersRef.current?.forEach(shader => {
                   if (shader && shader.uniforms) {
-                    shader.uniforms.uShadowCaster0 = [shadowCaster0.x, shadowCaster0.y, shadowCaster0.width, shadowCaster0.height];
-                    shader.uniforms.uShadowCaster1 = [shadowCaster1.x, shadowCaster1.y, shadowCaster1.width, shadowCaster1.height];
-                    shader.uniforms.uShadowCaster2 = [shadowCaster2.x, shadowCaster2.y, shadowCaster2.width, shadowCaster2.height];
-                    shader.uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
-                    shader.uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
-                    shader.uniforms.uShadowCaster2Enabled = shadowCasters.length > 2;
-                    shader.uniforms.uShadowCaster0Texture = shadowCasters[0]?.diffuseTexture || PIXI.Texture.WHITE;
-                    shader.uniforms.uShadowCaster1Texture = shadowCasters[1]?.diffuseTexture || PIXI.Texture.WHITE;
-                    shader.uniforms.uShadowCaster2Texture = shadowCasters[2]?.diffuseTexture || PIXI.Texture.WHITE;
                   }
                 });
                 console.log(`⚡ Shadow caster uniforms updated after zOrder change`);
@@ -873,16 +864,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Shadow system uniforms
         uShadowsEnabled: shadowConfig.enabled,
         uShadowStrength: shadowConfig.strength || 0.5,
-        uShadowCaster0: [shadowCaster0.x, shadowCaster0.y, shadowCaster0.width, shadowCaster0.height],
-        uShadowCaster1: [shadowCaster1.x, shadowCaster1.y, shadowCaster1.width, shadowCaster1.height],
-        uShadowCaster2: [shadowCaster2.x, shadowCaster2.y, shadowCaster2.width, shadowCaster2.height],
-        uShadowCaster0Enabled: shadowCasters.length > 0,
-        uShadowCaster1Enabled: shadowCasters.length > 1,
-        uShadowCaster2Enabled: shadowCasters.length > 2,
         // Add zOrder uniforms for shadow hierarchy
-        uShadowCaster0ZOrder: shadowCasters[0] ? shadowCasters[0].definition.zOrder : 0,
-        uShadowCaster1ZOrder: shadowCasters[1] ? shadowCasters[1].definition.zOrder : 0,
-        uShadowCaster2ZOrder: shadowCasters[2] ? shadowCasters[2].definition.zOrder : 0,
         // Switch to unlimited mode when more than 3 shadow casters
         uUseOccluderMap: true,
         uOccluderMapOffset: [SHADOW_BUFFER, SHADOW_BUFFER], // Offset for expanded occlusion map
@@ -913,8 +895,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         console.log(`${sprite.id} actual dimensions:`, bounds.width, bounds.height);
       });
 
-      // Create legacy shadow casters for compatibility
-      const legacyShadowCasters: ShadowCaster[] = shadowCasters.map(sprite => {
+      // Create shadow casters for occluder map system
+      const shadowCastersForMap: ShadowCaster[] = shadowCasters.map(sprite => {
         const bounds = sprite.getBounds();
         return {
           id: sprite.id,
@@ -933,9 +915,6 @@ const PixiDemo = (props: PixiDemoProps) => {
 
       // Set shadow texture uniforms for all sprites
       const shadowTextureUniforms = {
-        uShadowCaster0Texture: shadowCasters[0]?.diffuseTexture || PIXI.Texture.WHITE,
-        uShadowCaster1Texture: shadowCasters[1]?.diffuseTexture || PIXI.Texture.WHITE,
-        uShadowCaster2Texture: shadowCasters[2]?.diffuseTexture || PIXI.Texture.WHITE
       };
 
       // Apply shadow texture uniforms to all sprite shaders
@@ -990,7 +969,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         });
       }
       shadersRef.current = spriteMeshes.map(mesh => mesh.shader!);
-      shadowCastersRef.current = legacyShadowCasters;
+      shadowCastersRef.current = shadowCastersForMap;
 
       // Add all sprite meshes to stage (visibility controlled by mesh.visible property)
       spriteMeshes.forEach(mesh => {
@@ -1119,20 +1098,11 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // 🔧 CRITICAL FIX: Update shadow caster TEXTURES when shadow casters change!
         const shadowTextureUniforms = {
-          uShadowCaster0Texture: shadowCasters[0]?.diffuseTexture || PIXI.Texture.WHITE,
-          uShadowCaster1Texture: shadowCasters[1]?.diffuseTexture || PIXI.Texture.WHITE,
-          uShadowCaster2Texture: shadowCasters[2]?.diffuseTexture || PIXI.Texture.WHITE
         };
         
         // Update shadow uniforms for all shaders
         shadersRef.current.forEach(shader => {
           if (shader.uniforms) {
-            shader.uniforms.uShadowCaster0 = shadowCasters[0] ? [shadowCasters[0].getBounds().x, shadowCasters[0].getBounds().y, shadowCasters[0].getBounds().width, shadowCasters[0].getBounds().height] : [0, 0, 0, 0];
-            shader.uniforms.uShadowCaster1 = shadowCasters[1] ? [shadowCasters[1].getBounds().x, shadowCasters[1].getBounds().y, shadowCasters[1].getBounds().width, shadowCasters[1].getBounds().height] : [0, 0, 0, 0];
-            shader.uniforms.uShadowCaster2 = shadowCasters[2] ? [shadowCasters[2].getBounds().x, shadowCasters[2].getBounds().y, shadowCasters[2].getBounds().width, shadowCasters[2].getBounds().height] : [0, 0, 0, 0];
-            shader.uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
-            shader.uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
-            shader.uniforms.uShadowCaster2Enabled = shadowCasters.length > 2;
             
             // 🎯 UPDATE SHADOW CASTER TEXTURES (fixes mismatched masks!)
             Object.assign(shader.uniforms, shadowTextureUniforms);
@@ -1221,16 +1191,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Shadow casters from scene data (not hardcoded)
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
-      uniforms.uShadowCaster0 = shadowCasters[0] ? [shadowCasters[0].getBounds().x, shadowCasters[0].getBounds().y, shadowCasters[0].getBounds().width, shadowCasters[0].getBounds().height] : [0, 0, 0, 0];
-      uniforms.uShadowCaster1 = shadowCasters[1] ? [shadowCasters[1].getBounds().x, shadowCasters[1].getBounds().y, shadowCasters[1].getBounds().width, shadowCasters[1].getBounds().height] : [0, 0, 0, 0];
-      uniforms.uShadowCaster2 = shadowCasters[2] ? [shadowCasters[2].getBounds().x, shadowCasters[2].getBounds().y, shadowCasters[2].getBounds().width, shadowCasters[2].getBounds().height] : [0, 0, 0, 0];
-      uniforms.uShadowCaster0Enabled = shadowCasters.length > 0;
-      uniforms.uShadowCaster1Enabled = shadowCasters.length > 1;
-      uniforms.uShadowCaster2Enabled = shadowCasters.length > 2;
       // Add zOrder uniforms for shadow hierarchy
-      uniforms.uShadowCaster0ZOrder = shadowCasters[0] ? shadowCasters[0].definition.zOrder : 0;
-      uniforms.uShadowCaster1ZOrder = shadowCasters[1] ? shadowCasters[1].definition.zOrder : 0;
-      uniforms.uShadowCaster2ZOrder = shadowCasters[2] ? shadowCasters[2].definition.zOrder : 0;
       
       
       // Occluder map uniforms for unlimited shadow casters (switch when >3 casters)
@@ -1244,8 +1205,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       // console.log('🌑 SHADOW SYSTEM UNIFORMS:', {
       //   enabled: uniforms.uShadowsEnabled,
       //   strength: uniforms.uShadowStrength,
-      //   caster0: uniforms.uShadowCaster0,
-      //   caster1: uniforms.uShadowCaster1
       // });
       
       // Point Lights (up to 4) - pass ALL lights with stable slot assignment
