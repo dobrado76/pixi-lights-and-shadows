@@ -467,14 +467,6 @@ const PixiDemo = (props: PixiDemoProps) => {
         console.log('Renderer type:', app.renderer.type === PIXI.RENDERER_TYPE.WEBGL ? 'WebGL' : 'Canvas');
         console.log('Ticker started:', app.ticker.started);
         
-        // FORCE IMMEDIATE INITIAL RENDER - this ensures the canvas shows content instantly
-        setTimeout(() => {
-          if (app && app.renderer) {
-            app.render();
-            console.log('🎯 Forced initial render completed');
-          }
-        }, 50);
-        
         // Initialize render targets for multi-pass rendering
         renderTargetRef.current = PIXI.RenderTexture.create({ 
           width: shaderParams.canvasWidth, 
@@ -1108,22 +1100,32 @@ const PixiDemo = (props: PixiDemoProps) => {
     }
   }, [sceneConfig, pixiApp, JSON.stringify(sceneConfig.scene)]);
   
-  // Simple render trigger when textures finish loading
+  // CRITICAL: Render trigger when scene is fully loaded
   useEffect(() => {
     if (!pixiApp || meshesRef.current.length === 0) return;
     
-    // Single immediate render when scene is ready
+    console.log('🎯 Scene fully loaded with', meshesRef.current.length, 'sprites - triggering render');
+    
+    // Force multiple renders to ensure scene displays immediately
     const forceRender = () => {
       if (pixiApp && pixiApp.renderer) {
         pixiApp.render();
+        console.log('🎯 Forced scene render completed');
       }
     };
     
-    // Just one render pass after a short delay to allow textures to load
-    const timeout = setTimeout(forceRender, 100);
+    // Immediate render
+    forceRender();
+    
+    // Additional renders with delays to handle any async loading
+    const timeout1 = setTimeout(forceRender, 50);
+    const timeout2 = setTimeout(forceRender, 200);
+    const timeout3 = setTimeout(forceRender, 500);
     
     return () => {
-      clearTimeout(timeout);
+      clearTimeout(timeout1);
+      clearTimeout(timeout2);
+      clearTimeout(timeout3);
     };
   }, [pixiApp, meshesRef.current.length])
 
