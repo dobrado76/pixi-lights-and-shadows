@@ -178,7 +178,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.25,
+      "brightness": 0.15,
       "color": "0xffffff"
     },
     {
@@ -198,7 +198,7 @@
       "id": "directional_light",
       "type": "directional",
       "enabled": true,
-      "brightness": 0.2,
+      "brightness": 0.4,
       "color": "0xffffff",
       "directionX": 0.6427876096865394,
       "directionY": -0.766044443118978,

@@ -274,8 +274,16 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
 }
 
 
+// Forward declaration
+float calculateShadowOccluderMapWithOverride(vec2 lightPos, vec2 pixelPos, bool bypassSelfShadowAvoidance);
+
 // Occluder map shadow calculation - with proper self-shadow avoidance
 float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
+  return calculateShadowOccluderMapWithOverride(lightPos, pixelPos, false);
+}
+
+// Occluder map shadow calculation with Z>=50 override capability
+float calculateShadowOccluderMapWithOverride(vec2 lightPos, vec2 pixelPos, bool bypassSelfShadowAvoidance) {
   if (!uShadowsEnabled) return 1.0;
   
   vec2 rayDir = pixelPos - lightPos;
@@ -313,7 +321,7 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   float spriteArea = spriteSize.x * spriteSize.y;
   bool isBackgroundSprite = spriteArea > 400000.0; // Background is ~480,000 pixels
   
-  if (lightInsideReceiver && !isBackgroundSprite) {
+  if (lightInsideReceiver && !isBackgroundSprite && !bypassSelfShadowAvoidance) {
     // Light is inside this regular-sized sprite - start ray marching from outside the sprite
     startDistance = max(tExitSelf + 2.0, 2.0);
   }
@@ -556,7 +564,7 @@ void main(void) {
             float lightAlpha = texture2D(uDiffuse, lightUV).a;
             if (lightAlpha > 0.0) {
               // Light is inside non-transparent part - recalculate shadow with normal start distance
-              shadowFactor = calculateShadowOccluderMap(uPoint0Position.xy, worldPos.xy);
+              shadowFactor = calculateShadowOccluderMapWithOverride(uPoint0Position.xy, worldPos.xy, true);
             }
           }
         }
@@ -606,7 +614,7 @@ void main(void) {
           if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
             float lightAlpha = texture2D(uDiffuse, lightUV).a;
             if (lightAlpha > 0.0) {
-              shadowFactor = calculateShadowOccluderMap(uPoint1Position.xy, worldPos.xy);
+              shadowFactor = calculateShadowOccluderMapWithOverride(uPoint1Position.xy, worldPos.xy, true);
             }
           }
         }
@@ -656,7 +664,7 @@ void main(void) {
           if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
             float lightAlpha = texture2D(uDiffuse, lightUV).a;
             if (lightAlpha > 0.0) {
-              shadowFactor = calculateShadowOccluderMap(uPoint2Position.xy, worldPos.xy);
+              shadowFactor = calculateShadowOccluderMapWithOverride(uPoint2Position.xy, worldPos.xy, true);
             }
           }
         }
@@ -706,7 +714,7 @@ void main(void) {
           if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
             float lightAlpha = texture2D(uDiffuse, lightUV).a;
             if (lightAlpha > 0.0) {
-              shadowFactor = calculateShadowOccluderMap(uPoint3Position.xy, worldPos.xy);
+              shadowFactor = calculateShadowOccluderMapWithOverride(uPoint3Position.xy, worldPos.xy, true);
             }
           }
         }
@@ -821,7 +829,7 @@ void main(void) {
           if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
             float lightAlpha = texture2D(uDiffuse, lightUV).a;
             if (lightAlpha > 0.0) {
-              shadowFactor = calculateShadowOccluderMap(uSpot0Position.xy, worldPos.xy);
+              shadowFactor = calculateShadowOccluderMapWithOverride(uSpot0Position.xy, worldPos.xy, true);
             }
           }
         }
@@ -884,7 +892,7 @@ void main(void) {
           if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
             float lightAlpha = texture2D(uDiffuse, lightUV).a;
             if (lightAlpha > 0.0) {
-              shadowFactor = calculateShadowOccluderMap(uSpot1Position.xy, worldPos.xy);
+              shadowFactor = calculateShadowOccluderMapWithOverride(uSpot1Position.xy, worldPos.xy, true);
             }
           }
         }
@@ -947,7 +955,7 @@ void main(void) {
           if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
             float lightAlpha = texture2D(uDiffuse, lightUV).a;
             if (lightAlpha > 0.0) {
-              shadowFactor = calculateShadowOccluderMap(uSpot2Position.xy, worldPos.xy);
+              shadowFactor = calculateShadowOccluderMapWithOverride(uSpot2Position.xy, worldPos.xy, true);
             }
           }
         }
@@ -1010,7 +1018,7 @@ void main(void) {
           if (lightUV.x >= 0.0 && lightUV.x <= 1.0 && lightUV.y >= 0.0 && lightUV.y <= 1.0) {
             float lightAlpha = texture2D(uDiffuse, lightUV).a;
             if (lightAlpha > 0.0) {
-              shadowFactor = calculateShadowOccluderMap(uSpot3Position.xy, worldPos.xy);
+              shadowFactor = calculateShadowOccluderMapWithOverride(uSpot3Position.xy, worldPos.xy, true);
             }
           }
         }
