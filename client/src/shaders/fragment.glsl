@@ -291,11 +291,47 @@ float calculateDirectionalShadowUnified(vec2 lightDirection, vec2 pixelPos) {
   return calculateDirectionalShadowOccluderMap(lightDirection, pixelPos);
 }
 
-// Unified shadow calculation using occluder map
+// Check if a light position is inside the non-transparent area of the current sprite
+bool isLightInsideCurrentSprite(vec2 lightPos) {
+  // Convert light position to UV coordinates for current sprite
+  vec2 lightUV = (lightPos - vWorldPos + vTextureCoord * vec2(uSpriteWidth, uSpriteHeight)) / vec2(uSpriteWidth, uSpriteHeight);
+  
+  // Check if light is within sprite bounds
+  if (lightUV.x < 0.0 || lightUV.x > 1.0 || lightUV.y < 0.0 || lightUV.y > 1.0) {
+    return false;
+  }
+  
+  // Apply rotation to UV coordinates (same as main texture sampling)
+  vec2 rotatedUV = rotateUV(lightUV, uRotation);
+  
+  // Sample the diffuse texture at light position to check alpha
+  vec4 spriteColor = texture2D(uDiffuse, rotatedUV);
+  return spriteColor.a > 0.0; // Light is inside if alpha > 0
+}
+
+// Enhanced shadow calculation with light penetration feature
 float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
   
   // Use occluder map approach for all point/spot light shadows
+  return calculateShadowOccluderMap(lightPos, pixelPos);
+}
+
+// Enhanced shadow calculation for point lights with penetration
+float calculateShadowUnifiedWithPenetration(vec2 lightPos, float lightZ, vec2 pixelPos) {
+  if (!uShadowsEnabled) return 1.0;
+  
+  // Check penetration conditions:
+  // 1. Light Z >= 50
+  // 2. Light is inside current sprite's non-transparent area
+  // 3. We're calculating lighting on a different sprite (not shadows)
+  if (lightZ >= 50.0 && isLightInsideCurrentSprite(lightPos)) {
+    // Light penetrates this sprite - no shadow cast on OTHER sprites
+    // Return full light (no shadow) for lighting calculations on other sprites
+    return 1.0;
+  }
+  
+  // Normal shadow calculation
   return calculateShadowOccluderMap(lightPos, pixelPos);
 }
 
