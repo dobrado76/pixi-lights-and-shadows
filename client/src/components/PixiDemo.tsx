@@ -1422,6 +1422,11 @@ const PixiDemo = (props: PixiDemoProps) => {
           // Unlimited shadows applied from animation loop
         }
       }
+      
+      // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
+      if (pixiApp && pixiApp.renderer) {
+        pixiApp.render();
+      }
     };
 
     pixiApp.ticker.add(ticker);
