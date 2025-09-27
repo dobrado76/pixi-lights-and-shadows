@@ -1529,13 +1529,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       if (useOccluderMap) {
         buildOccluderMap();
         
-        // Build individual occluder maps for each sprite to prevent self-shadowing
-        const allSprites = sceneManagerRef.current?.getSprites() || [];
-        shadersRef.current.forEach((shader, index) => {
-          if (shader.uniforms && allSprites[index]) {
-            // Build occluder map excluding the current sprite to prevent self-shadowing
-            buildOccluderMapForSprite(allSprites[index].definition.zOrder, allSprites[index].id);
-            
+        // Update all shaders to use single global occluder map
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
             shader.uniforms.uUseOccluderMap = true;
             shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
             shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
@@ -1607,13 +1603,9 @@ const PixiDemo = (props: PixiDemoProps) => {
           // Triggering occluder map build from animation loop
           buildOccluderMap();
           
-          // Build individual occluder maps for each sprite to prevent self-shadowing
-          const allSprites = sceneManagerRef.current?.getSprites() || [];
-          shadersRef.current.forEach((shader, index) => {
-            if (shader.uniforms && allSprites[index]) {
-              // Build occluder map excluding the current sprite to prevent self-shadowing  
-              buildOccluderMapForSprite(allSprites[index].definition.zOrder, allSprites[index].id);
-              
+          // Update all shaders to use single global occluder map
+          shadersRef.current.forEach(shader => {
+            if (shader.uniforms) {
               shader.uniforms.uUseOccluderMap = true;
               shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
               shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
