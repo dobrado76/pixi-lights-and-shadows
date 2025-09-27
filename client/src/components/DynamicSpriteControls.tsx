@@ -242,17 +242,17 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                               <SelectTrigger className="h-8 flex-1">
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent className="bg-popover border border-border">
-                                <SelectItem value="top-left" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Top Left</SelectItem>
-                                <SelectItem value="top-center" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Top Center</SelectItem>
-                                <SelectItem value="top-right" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Top Right</SelectItem>
-                                <SelectItem value="middle-left" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Middle Left</SelectItem>
-                                <SelectItem value="middle-center" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Middle Center</SelectItem>
-                                <SelectItem value="middle-right" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Middle Right</SelectItem>
-                                <SelectItem value="bottom-left" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Bottom Left</SelectItem>
-                                <SelectItem value="bottom-center" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Bottom Center</SelectItem>
-                                <SelectItem value="bottom-right" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Bottom Right</SelectItem>
-                                <SelectItem value="offset" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Custom Offset</SelectItem>
+                              <SelectContent className="bg-card border border-border">
+                                <SelectItem value="top-left" className="bg-card text-foreground hover:bg-muted hover:text-foreground">Top Left</SelectItem>
+                                <SelectItem value="top-center" className="bg-card text-foreground hover:bg-muted hover:text-foreground">Top Center</SelectItem>
+                                <SelectItem value="top-right" className="bg-card text-foreground hover:bg-muted hover:text-foreground">Top Right</SelectItem>
+                                <SelectItem value="middle-left" className="bg-card text-foreground hover:bg-muted hover:text-foreground">Middle Left</SelectItem>
+                                <SelectItem value="middle-center" className="bg-card text-foreground hover:bg-muted hover:text-foreground">Middle Center</SelectItem>
+                                <SelectItem value="middle-right" className="bg-card text-foreground hover:bg-muted hover:text-foreground">Middle Right</SelectItem>
+                                <SelectItem value="bottom-left" className="bg-card text-foreground hover:bg-muted hover:text-foreground">Bottom Left</SelectItem>
+                                <SelectItem value="bottom-center" className="bg-card text-foreground hover:bg-muted hover:text-foreground">Bottom Center</SelectItem>
+                                <SelectItem value="bottom-right" className="bg-card text-foreground hover:bg-muted hover:text-foreground">Bottom Right</SelectItem>
+                                <SelectItem value="offset" className="bg-card text-foreground hover:bg-muted hover:text-foreground">Custom Offset</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
