@@ -68,7 +68,7 @@
       "scale": 0.9,
       "zOrder": 0,
       "castsShadows": true,
-      "visible": false,
+      "visible": true,
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
@@ -106,7 +106,7 @@
       "scale": 1,
       "zOrder": 2,
       "castsShadows": true,
-      "visible": false,
+      "visible": true,
       "useNormalMap": true,
       "pivot": {
         "offsetX": 0,
