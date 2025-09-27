@@ -361,6 +361,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       const mesh = new PIXI.Mesh(geometry, new PIXI.MeshMaterial(caster.diffuseTexture));
       mesh.tint = 0xFFFFFF; // White tint (no color modification)
       
+      // Set mesh pivot to match sprite's pivot for correct rotation center
+      const scaledPivotX = basePivotX * spriteScale;
+      const scaledPivotY = basePivotY * spriteScale; 
+      mesh.pivot.set(scaledPivotX, scaledPivotY);
+      
       // Position mesh at sprite location with SHADOW_BUFFER offset
       mesh.position.set(spritePos.x + SHADOW_BUFFER, spritePos.y + SHADOW_BUFFER);
       mesh.rotation = spriteRotation; // Apply rotation via mesh transform (like visual sprites)
