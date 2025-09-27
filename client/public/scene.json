@@ -11,13 +11,14 @@
       "scale": 1,
       "zOrder": -1,
       "castsShadows": false,
-      "visible": false,
+      "visible": true,
       "useNormalMap": true,
       "pivot": {
         "preset": "top-left",
         "offsetX": 0,
         "offsetY": 0
-      }
+      },
+      "receivesAO": false
     },
     "background2": {
       "image": "/textures/white-fabric-texture-background.jpg",
