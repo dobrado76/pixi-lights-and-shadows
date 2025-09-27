@@ -187,10 +187,10 @@
       "enabled": true,
       "brightness": 0.7,
       "color": "0xffffff",
-      "x": 250,
-      "y": 170,
+      "x": 320,
+      "y": 450,
       "z": 70,
-      "followMouse": true,
+      "followMouse": false,
       "castsShadows": true,
       "radius": 350
     },
@@ -280,6 +280,7 @@
     "strength": 0.8,
     "maxLength": 280,
     "height": 8,
-    "sharpness": 1
+    "sharpness": 1,
+    "bias": 10
   }
 }

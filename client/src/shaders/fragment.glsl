@@ -61,6 +61,7 @@ uniform bool uSpot0CastsShadows; uniform bool uSpot1CastsShadows; uniform bool u
 uniform float uShadowStrength; // Global shadow strength
 uniform bool uShadowsEnabled;
 uniform float uShadowMaxLength; // Maximum shadow length to prevent extremely long shadows
+uniform float uShadowBias; // Pixels to offset shadow ray to prevent self-shadowing
 uniform float uCurrentSpriteZOrder; // Z-order of current sprite being rendered
 // Removed shadow sharpness feature
 
@@ -216,8 +217,7 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   float eps = 1.5; // Small epsilon for edge cases
   
   // Apply shadow bias to start position to prevent self-shadowing artifacts
-  float shadowBiasOffset = 3.0; // Pixels to offset from sprite edge
-  float biasedStartDistance = max(startDistance, shadowBiasOffset);
+  float biasedStartDistance = max(startDistance, uShadowBias);
   
   for (int i = 1; i < 500; i++) {
     float distance = biasedStartDistance + float(i - 1) * stepSize;

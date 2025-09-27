@@ -1024,6 +1024,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Shadow system uniforms
         uShadowsEnabled: shadowConfig.enabled,
         uShadowStrength: shadowConfig.strength || 0.5,
+        uShadowBias: shadowConfig.bias || 3.0,
         // Add zOrder uniforms for shadow hierarchy
         // Switch to unlimited mode when more than 3 shadow casters
         uUseOccluderMap: true,
@@ -1227,6 +1228,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
               uShadowsEnabled: shadowConfig.enabled,
               uShadowStrength: shadowConfig.strength || 0.5,
+              uShadowBias: shadowConfig.bias || 3.0,
               ...lightUniforms
             };
             
@@ -1348,6 +1350,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Add shadow system uniforms - fully data-driven from scene configuration
       uniforms.uShadowsEnabled = shadowConfig.enabled;
       uniforms.uShadowStrength = shadowConfig.strength || 0.5;
+      uniforms.uShadowBias = shadowConfig.bias || 3.0;
       
       // Shadow casters from scene data (not hardcoded)
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
@@ -1476,6 +1479,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uShadowMaxLength = shadowConfig.maxLength; // Maximum shadow length to prevent extremely long shadows
       uniforms.uShadowsEnabled = shadowConfig.enabled; // Global shadow enable/disable
       uniforms.uShadowStrength = shadowConfig.strength; // Global shadow strength/opacity
+      uniforms.uShadowBias = shadowConfig.bias || 3.0; // Shadow bias to prevent self-shadowing artifacts
       // Removed shadow sharpness feature
       
       // Debug: Log ambient light uniforms (disabled for performance)

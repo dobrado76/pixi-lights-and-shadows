@@ -353,6 +353,27 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, onLightsChan
               />
             </div>
             
+            <div className="flex items-center space-x-2 mb-1">
+              <label className="text-xs text-muted-foreground min-w-[80px]">
+                Shadow Bias: {(localShadowConfig.bias || 3.0).toFixed(1)}
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="10"
+                step="0.1"
+                value={localShadowConfig.bias || 3.0}
+                onChange={(e) => {
+                  const newBias = parseFloat(e.target.value);
+                  const newConfig = { ...localShadowConfig, bias: newBias };
+                  setLocalShadowConfig(newConfig);
+                  onShadowConfigChange(newConfig);
+                }}
+                className="flex-1"
+                data-testid="slider-shadow-bias"
+              />
+            </div>
+            
             {/* Removed shadow sharpness slider */}
             
           </>
