@@ -340,6 +340,11 @@ const PixiDemo = (props: PixiDemoProps) => {
           y: spritePos.y + (basePivotY * spriteScale) + rotatedY
         };
       });
+
+      // DEBUG: Log block shadow geometry to trace shadow artifacts
+      if (caster.id === 'block2') {
+        console.log(`🔍 DEBUG BLOCK2 SHADOW: rotation=${spriteRotation.toFixed(4)}, pos=[${spritePos.x}, ${spritePos.y}], corners=[${transformedCorners.map(c => `(${c.x.toFixed(1)},${c.y.toFixed(1)})`).join(', ')}]`);
+      }
       
       // Create rotated geometry that matches visual sprite shape exactly
       const geometry = new PIXI.Geometry();

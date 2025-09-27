@@ -337,9 +337,19 @@ void main(void) {
   // Use normal map if enabled, otherwise use flat normal (0, 0, 1)
   vec3 normal;
   if (uUseNormalMap) {
-    // Sample normal map - NO rotation needed since world position is already rotated
-    // The geometry vertices are rotated, so normals should be in texture space
-    normal = texture2D(uNormal, uv).rgb * 2.0 - 1.0; // Sample and decode normal map
+    vec3 normalMapSample = texture2D(uNormal, uv).rgb * 2.0 - 1.0; // Sample and decode normal map
+    
+    // CRITICAL: Since geometry vertices are rotated, normals must also be rotated to match
+    // Apply same rotation to normals so they align with rotated surface orientation
+    float cosR = cos(uRotation);
+    float sinR = sin(uRotation);
+    
+    // Apply 2D rotation matrix to normal X and Y components (Z unchanged)
+    normal = vec3(
+      normalMapSample.x * cosR - normalMapSample.y * sinR,
+      normalMapSample.x * sinR + normalMapSample.y * cosR,
+      normalMapSample.z // Z component unchanged
+    );
   } else {
     normal = vec3(0.0, 0.0, 1.0); // Flat normal pointing outward
   }
