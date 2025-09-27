@@ -70,6 +70,13 @@ uniform bool uUseOccluderMap; // Switch between per-caster and occluder map
 uniform vec2 uOccluderMapOffset; // Offset for expanded occlusion map (buffer zone)
 uniform sampler2D uOccluderMap; // Binary alpha map of all shadow casters
 
+// Ambient Occlusion System (completely independent from lighting/shadows)
+uniform bool uAOEnabled; // Enable/disable ambient occlusion
+uniform float uAOStrength; // AO intensity (0.0 = no AO, 1.0 = full AO)
+uniform float uAORadius; // Sampling radius for occlusion detection
+uniform int uAOSamples; // Number of samples for AO calculation (4-16)
+uniform float uAOBias; // Bias to prevent self-occlusion
+
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
   vec2 relativePos = worldPos - lightPos;
