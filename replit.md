@@ -10,7 +10,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (September 2025)
 
-- **Fixed Critical Shadow Rotation Bug** (2025-09-27): Resolved major issue where rotated sprites cast shadows from unrotated rectangles instead of matching their rotated orientations. Problem was shadow system used manual vertex rotation while setting mesh.rotation=0, conflicting with visual sprite approach. Fixed by aligning shadow system with visual sprites: geometry handles only scaling/pivot, mesh.rotation handles rotation. Shadows now correctly rotate with sprites.
+- **Fixed Critical Shadow Positioning & Rotation Bugs** (2025-09-27): Resolved major issues with rotated sprite shadows: 1) Shadows cast from unrotated rectangles - fixed by aligning shadow system with visual sprites (geometry handles scaling/pivot, mesh.rotation handles rotation). 2) Shadow offset from pivot positioning - fixed by accounting for middle-center pivot offset in mesh positioning. Shadows now perfectly align with sprites regardless of rotation or pivot type.
 - **Unified Shadow System** (2025-09-26): Successfully unified the dual shadow casting system into a single, clean code path using occluder maps for all sprite counts (0-4+). Removed all legacy per-caster uniform code and simplified architecture.
 - **Complete Code Cleanup** (2025-09-26): Removed USE_UNIFIED_SHADOW_SYSTEM flag, cleaned up unused shader uniforms (uShadowCaster0-2), and eliminated legacy calculateShadow() function. System now uses single consistent approach.
 - **Fixed zOrder immediate updates** (2025-09-25): All sprites get meshes created regardless of visibility, with visibility controlled via `mesh.visible` property.
