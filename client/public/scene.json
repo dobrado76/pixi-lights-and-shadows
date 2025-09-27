@@ -64,7 +64,7 @@
         "x": 104,
         "y": 309
       },
-      "rotation": 0,
+      "rotation": 5.6374134839416845,
       "scale": 0.9,
       "zOrder": 0,
       "castsShadows": true,
@@ -138,8 +138,8 @@
       "image": "/textures/block.png",
       "normal": "/textures/blockNormalMap.jpg",
       "position": {
-        "x": 280,
-        "y": 120
+        "x": 254,
+        "y": 95
       },
       "rotation": 0,
       "scale": 1,
@@ -157,10 +157,10 @@
       "image": "/textures/block2.png",
       "normal": "/textures/block2NormalMap.png",
       "position": {
-        "x": 254,
-        "y": 293
+        "x": 229,
+        "y": 319
       },
-      "rotation": 0.6457718232379019,
+      "rotation": 6.283185307179586,
       "scale": 1,
       "zOrder": 0,
       "castsShadows": true,
