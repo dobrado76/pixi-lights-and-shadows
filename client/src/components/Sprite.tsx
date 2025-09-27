@@ -15,6 +15,7 @@ export interface SpriteDefinition {
   scale?: number;
   zOrder?: number;                    // Z-order for rendering depth (lower = behind, higher = in front)
   castsShadows?: boolean;             // Participates in shadow casting
+  castsAO?: boolean;                  // Contributes to ambient occlusion calculations
   visible?: boolean;                  // Controls sprite visibility without deletion
   useNormalMap?: boolean;             // Whether to use normal mapping for this sprite
   pivot?: {                           // Optional pivot point for rotation and scaling
@@ -33,6 +34,7 @@ interface CompleteSpriteDefinition {
   scale: number;
   zOrder: number;                     // Z-order for rendering depth
   castsShadows: boolean;
+  castsAO: boolean;                   // Contributes to ambient occlusion calculations
   visible: boolean;
   useNormalMap: boolean;
   pivot: {                            // Always present with defaults applied
@@ -73,6 +75,7 @@ export class SceneSprite {
       scale: definition.scale || 1,                    // 1:1 pixel scale
       zOrder: definition.zOrder ?? 0,                  // Default z-order (middle layer)
       castsShadows: definition.castsShadows ?? true,   // Most sprites cast shadows
+      castsAO: definition.castsAO ?? true,             // Most sprites contribute to AO by default
       visible: definition.visible ?? true,             // Visible by default
       useNormalMap: definition.useNormalMap ?? true,   // Use normal mapping by default
       pivot: { 

@@ -77,7 +77,8 @@
         "preset": "middle-center",
         "offsetX": 0,
         "offsetY": 0
-      }
+      },
+      "castsAO": true
     },
     "test1": {
       "image": "/textures/test1.png",
@@ -115,7 +116,8 @@
         "preset": "top-left",
         "offsetX": 0,
         "offsetY": 0
-      }
+      },
+      "castsAO": true
     },
     "test3": {
       "image": "/textures/test3.png",
@@ -154,7 +156,8 @@
         "preset": "top-left",
         "offsetX": 0,
         "offsetY": 0
-      }
+      },
+      "castsAO": true
     },
     "block2": {
       "image": "/textures/block2.png",
@@ -173,7 +176,8 @@
         "preset": "middle-center",
         "offsetX": 0,
         "offsetY": 0
-      }
+      },
+      "castsAO": true
     }
   },
   "lights": [
@@ -289,7 +293,7 @@
   "ambientOcclusionConfig": {
     "enabled": true,
     "strength": 1.95,
-    "radius": 6,
+    "radius": 8,
     "samples": 16,
     "bias": 7.5
   }

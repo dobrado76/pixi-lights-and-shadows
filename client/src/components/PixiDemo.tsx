@@ -259,9 +259,9 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     const allCasters = sceneManagerRef.current?.getShadowCasters() || [];
     
-    // For unified system: include sprites that cast shadows (AO uses same system)
+    // For unified system: include sprites that cast shadows OR AO (since they share the same occluder map)
     const allShadowCasters = allCasters.filter(caster => 
-      caster.definition.castsShadows
+      caster.definition.castsShadows || caster.definition.castsAO
     );
     
     // Filter shadow casters based on zOrder hierarchy - only include casters at same level or above
@@ -819,6 +819,12 @@ const PixiDemo = (props: PixiDemoProps) => {
               if (updates.castsShadows !== undefined) {
                 sprite.definition.castsShadows = updates.castsShadows;
                 console.log(`⚡ Immediate castsShadows: ${spriteId} → ${updates.castsShadows}`);
+              }
+              
+              // Handle AO casting changes
+              if (updates.castsAO !== undefined) {
+                sprite.definition.castsAO = updates.castsAO;
+                console.log(`⚡ Immediate castsAO: ${spriteId} → ${updates.castsAO}`);
               }
               
               // Force re-sort if needed and update shadow caster uniforms
