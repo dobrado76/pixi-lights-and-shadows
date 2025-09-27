@@ -49,6 +49,15 @@ export interface ShadowConfig {
   // Removed shadow sharpness feature
 }
 
+// Ambient Occlusion configuration interface (completely independent from shadows)
+export interface AmbientOcclusionConfig {
+  enabled: boolean;           // Global AO enable/disable
+  strength: number;          // AO intensity/darkness (0.0 - 1.0)
+  radius: number;            // Sampling radius for occlusion detection (pixels)
+  samples: number;           // Number of samples for AO calculation (4-16)
+  bias: number;              // Bias to prevent self-occlusion artifacts (pixels)
+}
+
 // Internal runtime format
 export interface Light {
   id: string;

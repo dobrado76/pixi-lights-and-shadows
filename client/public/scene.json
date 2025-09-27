@@ -14,7 +14,7 @@
       "visible": false,
       "useNormalMap": true,
       "pivot": {
-        "preset": "middle-center",
+        "preset": "top-left",
         "offsetX": 0,
         "offsetY": 0
       }
@@ -288,6 +288,6 @@
     "strength": 0.3,
     "radius": 25,
     "samples": 8,
-    "bias": 2.0
+    "bias": 2
   }
 }
