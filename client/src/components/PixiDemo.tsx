@@ -333,17 +333,40 @@ const PixiDemo = (props: PixiDemoProps) => {
         occluderSprite.texture = caster.diffuseTexture;
       }
       
-      // Update position and scale to match the scene sprite
+      // Update position, scale, rotation, and pivot to match the scene sprite
       const spritePos = caster.definition.position;
       const spriteScale = caster.definition.scale || 1;
+      const spriteRotation = caster.definition.rotation || 0;
       const textureWidth = caster.diffuseTexture.width;
       const textureHeight = caster.diffuseTexture.height;
       
-      // Position the full sprite in the expanded occlusion map
+      // Calculate pivot point (same logic as in getTransformedCorners)
+      const pivot = caster.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
+      let basePivotX = 0, basePivotY = 0;
+      
+      switch (pivot.preset) {
+        case 'top-left': basePivotX = 0; basePivotY = 0; break;
+        case 'top-center': basePivotX = textureWidth / 2; basePivotY = 0; break;
+        case 'top-right': basePivotX = textureWidth; basePivotY = 0; break;
+        case 'middle-left': basePivotX = 0; basePivotY = textureHeight / 2; break;
+        case 'middle-center': basePivotX = textureWidth / 2; basePivotY = textureHeight / 2; break;
+        case 'middle-right': basePivotX = textureWidth; basePivotY = textureHeight / 2; break;
+        case 'bottom-left': basePivotX = 0; basePivotY = textureHeight; break;
+        case 'bottom-center': basePivotX = textureWidth / 2; basePivotY = textureHeight; break;
+        case 'bottom-right': basePivotX = textureWidth; basePivotY = textureHeight; break;
+        case 'offset': 
+          basePivotX = textureWidth / 2 + (pivot.offsetX || 0);
+          basePivotY = textureHeight / 2 + (pivot.offsetY || 0);
+          break;
+      }
+      
+      // Set all transform properties to match the scene sprite exactly
       occluderSprite.x = spritePos.x + SHADOW_BUFFER;
       occluderSprite.y = spritePos.y + SHADOW_BUFFER;
       occluderSprite.width = textureWidth * spriteScale;
       occluderSprite.height = textureHeight * spriteScale;
+      occluderSprite.rotation = spriteRotation; // Apply rotation
+      occluderSprite.anchor.set(basePivotX / textureWidth, basePivotY / textureHeight); // Set pivot/anchor
       occluderSprite.visible = true;
       occluderSprite.tint = 0xFFFFFF; // White tint (no color modification)
     });
