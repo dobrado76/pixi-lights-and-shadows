@@ -193,9 +193,14 @@ function App() {
           setShadowConfig(lightsResult.shadowConfig);
         }
         
+        // Load ambient occlusion config from scene.json
+        if (sceneResult.ambientOcclusionConfig) {
+          setAmbientOcclusionConfig(sceneResult.ambientOcclusionConfig);
+        }
+        
         setLightsLoaded(true);
         setSceneLoaded(true);
-        console.log('Loaded configurations:', { lights: lightsResult, scene: sceneResult });
+        console.log('Loaded configurations:', { lights: lightsResult, ambient: ambientLightData, scene: sceneResult, ao: sceneResult.ambientOcclusionConfig });
       } catch (error) {
         console.error('Failed to load configurations:', error);
         setLightsLoaded(true); // Still set to true to proceed with fallbacks
@@ -232,9 +237,16 @@ function App() {
   // Handler for ambient occlusion configuration changes
   const handleAmbientOcclusionConfigChange = useCallback((newAOConfig: AmbientOcclusionConfig) => {
     setAmbientOcclusionConfig(newAOConfig);
-    // Note: AO config auto-save can be added later if needed
     console.log('AO config updated:', newAOConfig);
-  }, []);
+    
+    // Auto-save AO config to scene.json
+    const updatedSceneConfig = {
+      ...sceneConfig,
+      ambientOcclusionConfig: newAOConfig
+    };
+    setSceneConfig(updatedSceneConfig);
+    debouncedSceneSave(updatedSceneConfig);
+  }, [sceneConfig, debouncedSceneSave]);
 
   // Handler for scene configuration changes
   const handleSceneConfigChange = useCallback((newSceneConfig: { scene: Record<string, any> }) => {
