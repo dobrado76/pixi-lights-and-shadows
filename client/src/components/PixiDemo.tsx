@@ -1144,32 +1144,15 @@ const PixiDemo = (props: PixiDemoProps) => {
       shadersRef.current = spriteMeshes.map(mesh => mesh.shader!);
       shadowCastersRef.current = shadowCastersForMap;
       
-      // CRITICAL: Apply lighting uniforms immediately after shaders are created
-      // This fixes the initial load lighting issue where AO uniforms weren't applied
-      const immediateUniforms = {
-        // Ambient Occlusion uniforms
-        uAOEnabled: ambientOcclusionConfig.enabled,
-        uAOStrength: ambientOcclusionConfig.strength,
-        uAORadius: ambientOcclusionConfig.radius,
-        uAOSamples: ambientOcclusionConfig.samples,
-        uAOBias: ambientOcclusionConfig.bias,
-        // Shadow system uniforms
-        uShadowsEnabled: shadowConfig.enabled,
-        uShadowStrength: shadowConfig.strength || 0.5,
-        uShadowBias: shadowConfig.bias || 3.0,
-        // Ambient light uniforms
-        uAmbientLight: ambientLight.intensity,
-        uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
-      };
-      
-      // Apply these critical uniforms to all shaders immediately
-      shadersRef.current.forEach(shader => {
-        if (shader.uniforms) {
-          Object.keys(immediateUniforms).forEach(key => {
-            shader.uniforms[key] = (immediateUniforms as any)[key];
-          });
-        }
-      });
+      // CRITICAL FIX: Call updateTransform on all sprites to set missing shader uniforms
+      // This ensures uSpritePos, uSpriteSize, uRotation, uPivotPoint, etc. are properly set
+      for (const sprite of allSprites) {
+        sprite.updateTransform({
+          position: sprite.definition.position,
+          rotation: sprite.definition.rotation,
+          scale: sprite.definition.scale
+        });
+      }
 
       // Add all sprite meshes to stage (visibility controlled by mesh.visible property)
       spriteMeshes.forEach(mesh => {
