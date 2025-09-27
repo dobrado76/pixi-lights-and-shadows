@@ -306,7 +306,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     // Also exclude the current sprite being lit to prevent self-shadowing
     let relevantShadowCasters = allShadowCasters.filter(caster => 
       caster.definition.zOrder >= currentSpriteZOrder && 
-      (!excludeSpriteId || caster.definition.id !== excludeSpriteId)
+      (!excludeSpriteId || caster.id !== excludeSpriteId)
     );
     
     // Special case: exclude sprites from casting shadows if light (Z >= 50) is inside their non-transparent area
@@ -385,34 +385,34 @@ const PixiDemo = (props: PixiDemoProps) => {
         };
       });
       
-      // Create custom geometry with exact vertices (add shadow buffer offset)
-      const geometry = new PIXI.Geometry();
-      const vertices = new Float32Array([
-        transformedCorners[0].x + SHADOW_BUFFER, transformedCorners[0].y + SHADOW_BUFFER, // Top-left
-        transformedCorners[1].x + SHADOW_BUFFER, transformedCorners[1].y + SHADOW_BUFFER, // Top-right
-        transformedCorners[2].x + SHADOW_BUFFER, transformedCorners[2].y + SHADOW_BUFFER, // Bottom-right
-        transformedCorners[3].x + SHADOW_BUFFER, transformedCorners[3].y + SHADOW_BUFFER, // Bottom-left
-      ]);
+      // Create PIXI.Graphics with exact pixel-perfect shapes instead of mesh approximations
+      const graphics = new PIXI.Graphics();
       
-      const uvs = new Float32Array([
-        0, 0,     // Top-left UV
-        1, 0,     // Top-right UV
-        1, 1,     // Bottom-right UV
-        0, 1,     // Bottom-left UV
-      ]);
+      // Fill with white (opaque for occlusion)
+      graphics.beginFill(0xFFFFFF, 1.0);
       
-      const indices = new Uint16Array([0, 1, 2, 0, 2, 3]); // Two triangles forming a quad
-      
-      geometry.addAttribute('aVertexPosition', vertices, 2);
-      geometry.addAttribute('aTextureCoord', uvs, 2);
-      geometry.addIndex(indices);
-      
-      // Create mesh with custom geometry and add to container
-      const mesh = new PIXI.Mesh(geometry, new PIXI.MeshMaterial(caster.diffuseTexture));
-      mesh.tint = 0xFFFFFF; // White tint (no color modification)
+      // Draw the exact transformed quad using the computed vertices
+      graphics.moveTo(
+        transformedCorners[0].x + SHADOW_BUFFER, 
+        transformedCorners[0].y + SHADOW_BUFFER
+      );
+      graphics.lineTo(
+        transformedCorners[1].x + SHADOW_BUFFER, 
+        transformedCorners[1].y + SHADOW_BUFFER
+      );
+      graphics.lineTo(
+        transformedCorners[2].x + SHADOW_BUFFER, 
+        transformedCorners[2].y + SHADOW_BUFFER
+      );
+      graphics.lineTo(
+        transformedCorners[3].x + SHADOW_BUFFER, 
+        transformedCorners[3].y + SHADOW_BUFFER
+      );
+      graphics.closePath();
+      graphics.endFill();
       
       if (occluderContainerRef.current) {
-        occluderContainerRef.current.addChild(mesh);
+        occluderContainerRef.current.addChild(graphics);
       }
     });
     
