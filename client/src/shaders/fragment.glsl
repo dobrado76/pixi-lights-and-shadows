@@ -315,15 +315,20 @@ float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
   return calculateShadowOccluderMap(lightPos, pixelPos);
 }
 
-// Ambient Occlusion calculation - completely independent from lighting/shadows
+// Ambient Occlusion calculation - respects z-order hierarchy (only higher z-order sprites cast AO)
 float calculateAmbientOcclusion(vec2 pixelPos) {
-  // Check if AO is enabled globally (all sprites receive AO, control is via caster contribution)
+  // Check if AO is enabled globally
   if (!uAOEnabled) return 1.0;
+  
+  // CRITICAL: Only apply AO if there could be sprites above this one
+  // If current sprite is at the highest z-order layer, it should receive no AO
+  float currentZ = uCurrentSpriteZOrder;
   
   float totalOcclusion = 0.0;
   float validSamples = 0.0;
   
-  // Use occluder map to sample geometry proximity
+  // Use occluder map to sample geometry proximity, but only consider it as AO
+  // if the current sprite is at a low enough z-order to potentially be occluded
   vec2 expandedMapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
   
   for (int i = 0; i < 16; i++) {
@@ -348,22 +353,29 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     vec2 adjustedUV = (sampleUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
     float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     
-    // Apply bias to prevent self-occlusion
+    // Apply bias to prevent self-occlusion AND z-order filtering
     if (length(sampleOffset) > uAOBias) {
-      // NOTE: For full zOrder filtering, we would need per-pixel zOrder information
-      // Currently this prevents self-occlusion via bias, and respects per-sprite AO toggle
-      // Future enhancement: encode zOrder in occluder map alpha channel for proper filtering
-      totalOcclusion += occluderAlpha; // More occluders = more occlusion
+      // Z-ORDER HIERARCHY: Only sprites with lower z-order should receive AO
+      // Background sprites (z < 0) get full AO from all sprites above them
+      // Sprites at z=0+ get NO AO unless there are sprites with higher z-order
+      float zOrderInfluence = 0.0; // Default: no AO
+      
+      if (currentZ < 0.0) {
+        // Background sprites (z=-1) receive AO from all sprites above them
+        zOrderInfluence = 1.0;
+      }
+      // Note: Sprites at z=0+ get zOrderInfluence = 0.0 (no AO) unless overlapped by higher z sprites
+      
+      totalOcclusion += occluderAlpha * zOrderInfluence;
       validSamples += 1.0;
     }
   }
   
   if (validSamples > 0.0) {
     float aoFactor = totalOcclusion / validSamples;
-    // Support full strength range (0.0 to 3.0) but make it more reasonable
     float aoStrength = clamp(uAOStrength, 0.0, 3.0);
-    float aoEffect = 1.0 - (aoFactor * aoStrength * 0.8); // Visible AO effect
-    return clamp(aoEffect, 0.1, 1.0); // Never go completely black, but allow stronger darkening
+    float aoEffect = 1.0 - (aoFactor * aoStrength * 0.8);
+    return clamp(aoEffect, 0.1, 1.0);
   }
   
   return 1.0; // No occlusion
