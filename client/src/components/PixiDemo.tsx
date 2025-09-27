@@ -322,25 +322,23 @@ const PixiDemo = (props: PixiDemoProps) => {
       occluderContainerRef.current.addChild(sprite);
     }
     
-    // Update sprites with relevant shadow caster data
+    // Clear the container and manually add sprites with exact geometry matching
+    occluderContainerRef.current.removeChildren();
+    
+    // Create sprites with identical transforms to visual sprites
     relevantShadowCasters.forEach((caster, index) => {
       if (!caster.diffuseTexture) return;
       
-      const occluderSprite = occluderSpritesRef.current[index];
+      const occluderSprite = new PIXI.Sprite(caster.diffuseTexture);
       
-      // Update texture only if changed
-      if (occluderSprite.texture !== caster.diffuseTexture) {
-        occluderSprite.texture = caster.diffuseTexture;
-      }
-      
-      // Update position, scale, rotation, and pivot to match the scene sprite
+      // Use EXACT same transform calculation as visual sprites (from Sprite.tsx)
       const spritePos = caster.definition.position;
       const spriteScale = caster.definition.scale || 1;
       const spriteRotation = caster.definition.rotation || 0;
       const textureWidth = caster.diffuseTexture.width;
       const textureHeight = caster.diffuseTexture.height;
       
-      // Calculate pivot point (same logic as in getTransformedCorners)
+      // Calculate pivot point using EXACT same logic as Sprite.tsx
       const pivot = caster.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
       let basePivotX = 0, basePivotY = 0;
       
@@ -360,25 +358,60 @@ const PixiDemo = (props: PixiDemoProps) => {
           break;
       }
       
-      // Set anchor first (affects position calculation)
-      const anchorX = basePivotX / textureWidth;
-      const anchorY = basePivotY / textureHeight;
-      occluderSprite.anchor.set(anchorX, anchorY);
+      // Scale the pivot point (EXACT same as Sprite.tsx)
+      const scaledPivotX = basePivotX * spriteScale;
+      const scaledPivotY = basePivotY * spriteScale;
       
-      // Set size and rotation
-      occluderSprite.width = textureWidth * spriteScale;
-      occluderSprite.height = textureHeight * spriteScale;
+      // Create quad corners in local space  
+      const corners = [
+        { x: 0, y: 0 },                      // Top-left
+        { x: textureWidth, y: 0 },           // Top-right
+        { x: textureWidth, y: textureHeight }, // Bottom-right
+        { x: 0, y: textureHeight }           // Bottom-left
+      ];
+      
+      // Apply scaling and rotation around pivot point (EXACT same as Sprite.tsx)
+      const transformedCorners = corners.map(corner => {
+        // Apply scaling from pivot point (pivot stays stationary)
+        const scaledOffsetX = (corner.x - basePivotX) * spriteScale;
+        const scaledOffsetY = (corner.y - basePivotY) * spriteScale;
+        
+        // Apply rotation around the scaled pivot point
+        const cosRot = Math.cos(spriteRotation);
+        const sinRot = Math.sin(spriteRotation);
+        
+        const rotatedX = scaledOffsetX * cosRot - scaledOffsetY * sinRot;
+        const rotatedY = scaledOffsetX * sinRot + scaledOffsetY * cosRot;
+        
+        return {
+          x: spritePos.x + scaledPivotX + rotatedX,
+          y: spritePos.y + scaledPivotY + rotatedY
+        };
+      });
+      
+      // Calculate the bounding box of transformed corners
+      const minX = Math.min(...transformedCorners.map(c => c.x));
+      const minY = Math.min(...transformedCorners.map(c => c.y));
+      const maxX = Math.max(...transformedCorners.map(c => c.x));
+      const maxY = Math.max(...transformedCorners.map(c => c.y));
+      
+      // Calculate center and approximate rotation for PIXI sprite
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      const width = maxX - minX;
+      const height = maxY - minY;
+      
+      // Set up the sprite to match the transformed geometry as closely as possible
+      occluderSprite.anchor.set(0.5, 0.5); // Center anchor
+      occluderSprite.x = centerX + SHADOW_BUFFER;
+      occluderSprite.y = centerY + SHADOW_BUFFER;
+      occluderSprite.width = width;
+      occluderSprite.height = height;
       occluderSprite.rotation = spriteRotation;
-      
-      // Position is where the anchor point should be placed in world space
-      // Since our scene sprite position is top-left corner, we need to add the scaled pivot offset
-      const worldPivotX = spritePos.x + (basePivotX * spriteScale);
-      const worldPivotY = spritePos.y + (basePivotY * spriteScale);
-      occluderSprite.x = worldPivotX + SHADOW_BUFFER;
-      occluderSprite.y = worldPivotY + SHADOW_BUFFER;
-      
       occluderSprite.visible = true;
-      occluderSprite.tint = 0xFFFFFF; // White tint (no color modification)
+      occluderSprite.tint = 0xFFFFFF;
+      
+      occluderContainerRef.current.addChild(occluderSprite);
     });
     
     // Hide unused sprites (all sprites beyond relevant casters)
