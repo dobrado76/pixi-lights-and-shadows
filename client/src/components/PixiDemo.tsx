@@ -322,21 +322,19 @@ const PixiDemo = (props: PixiDemoProps) => {
       occluderContainerRef.current.addChild(sprite);
     }
     
-    // Clear the container and manually add sprites with exact geometry matching
+    // Clear the container and create custom geometry meshes that exactly match visual sprites
     occluderContainerRef.current.removeChildren();
     
-    // Create sprites with identical transforms to visual sprites
+    // Create meshes with identical custom geometry to visual sprites
     relevantShadowCasters.forEach((caster, index) => {
       if (!caster.diffuseTexture) return;
       
-      const occluderSprite = new PIXI.Sprite(caster.diffuseTexture);
-      
-      // Use EXACT same transform calculation as visual sprites (from Sprite.tsx)
+      // Use EXACT same geometry creation as Sprite.tsx createGeometry()
       const spritePos = caster.definition.position;
       const spriteScale = caster.definition.scale || 1;
       const spriteRotation = caster.definition.rotation || 0;
-      const textureWidth = caster.diffuseTexture.width;
-      const textureHeight = caster.diffuseTexture.height;
+      const baseWidth = caster.diffuseTexture.width;
+      const baseHeight = caster.diffuseTexture.height;
       
       // Calculate pivot point using EXACT same logic as Sprite.tsx
       const pivot = caster.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
@@ -344,30 +342,26 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       switch (pivot.preset) {
         case 'top-left': basePivotX = 0; basePivotY = 0; break;
-        case 'top-center': basePivotX = textureWidth / 2; basePivotY = 0; break;
-        case 'top-right': basePivotX = textureWidth; basePivotY = 0; break;
-        case 'middle-left': basePivotX = 0; basePivotY = textureHeight / 2; break;
-        case 'middle-center': basePivotX = textureWidth / 2; basePivotY = textureHeight / 2; break;
-        case 'middle-right': basePivotX = textureWidth; basePivotY = textureHeight / 2; break;
-        case 'bottom-left': basePivotX = 0; basePivotY = textureHeight; break;
-        case 'bottom-center': basePivotX = textureWidth / 2; basePivotY = textureHeight; break;
-        case 'bottom-right': basePivotX = textureWidth; basePivotY = textureHeight; break;
+        case 'top-center': basePivotX = baseWidth / 2; basePivotY = 0; break;
+        case 'top-right': basePivotX = baseWidth; basePivotY = 0; break;
+        case 'middle-left': basePivotX = 0; basePivotY = baseHeight / 2; break;
+        case 'middle-center': basePivotX = baseWidth / 2; basePivotY = baseHeight / 2; break;
+        case 'middle-right': basePivotX = baseWidth; basePivotY = baseHeight / 2; break;
+        case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
+        case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
+        case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
         case 'offset': 
-          basePivotX = textureWidth / 2 + (pivot.offsetX || 0);
-          basePivotY = textureHeight / 2 + (pivot.offsetY || 0);
+          basePivotX = baseWidth / 2 + (pivot.offsetX || 0);
+          basePivotY = baseHeight / 2 + (pivot.offsetY || 0);
           break;
       }
       
-      // Scale the pivot point (EXACT same as Sprite.tsx)
-      const scaledPivotX = basePivotX * spriteScale;
-      const scaledPivotY = basePivotY * spriteScale;
-      
-      // Create quad corners in local space  
+      // Local space quad corners in UNSCALED dimensions (EXACT same as Sprite.tsx)
       const corners = [
         { x: 0, y: 0 },                      // Top-left
-        { x: textureWidth, y: 0 },           // Top-right
-        { x: textureWidth, y: textureHeight }, // Bottom-right
-        { x: 0, y: textureHeight }           // Bottom-left
+        { x: baseWidth, y: 0 },              // Top-right
+        { x: baseWidth, y: baseHeight },     // Bottom-right
+        { x: 0, y: baseHeight }              // Bottom-left
       ];
       
       // Apply scaling and rotation around pivot point (EXACT same as Sprite.tsx)
@@ -384,34 +378,40 @@ const PixiDemo = (props: PixiDemoProps) => {
         const rotatedY = scaledOffsetX * sinRot + scaledOffsetY * cosRot;
         
         return {
-          x: spritePos.x + scaledPivotX + rotatedX,
-          y: spritePos.y + scaledPivotY + rotatedY
+          x: spritePos.x + (basePivotX * spriteScale) + rotatedX,
+          y: spritePos.y + (basePivotY * spriteScale) + rotatedY
         };
       });
       
-      // Calculate the bounding box of transformed corners
-      const minX = Math.min(...transformedCorners.map(c => c.x));
-      const minY = Math.min(...transformedCorners.map(c => c.y));
-      const maxX = Math.max(...transformedCorners.map(c => c.x));
-      const maxY = Math.max(...transformedCorners.map(c => c.y));
+      // Create custom geometry with exact vertices (add shadow buffer offset)
+      const geometry = new PIXI.Geometry();
+      const vertices = new Float32Array([
+        transformedCorners[0].x + SHADOW_BUFFER, transformedCorners[0].y + SHADOW_BUFFER, // Top-left
+        transformedCorners[1].x + SHADOW_BUFFER, transformedCorners[1].y + SHADOW_BUFFER, // Top-right
+        transformedCorners[2].x + SHADOW_BUFFER, transformedCorners[2].y + SHADOW_BUFFER, // Bottom-right
+        transformedCorners[3].x + SHADOW_BUFFER, transformedCorners[3].y + SHADOW_BUFFER, // Bottom-left
+      ]);
       
-      // Calculate center and approximate rotation for PIXI sprite
-      const centerX = (minX + maxX) / 2;
-      const centerY = (minY + maxY) / 2;
-      const width = maxX - minX;
-      const height = maxY - minY;
+      const uvs = new Float32Array([
+        0, 0,     // Top-left UV
+        1, 0,     // Top-right UV
+        1, 1,     // Bottom-right UV
+        0, 1,     // Bottom-left UV
+      ]);
       
-      // Set up the sprite to match the transformed geometry as closely as possible
-      occluderSprite.anchor.set(0.5, 0.5); // Center anchor
-      occluderSprite.x = centerX + SHADOW_BUFFER;
-      occluderSprite.y = centerY + SHADOW_BUFFER;
-      occluderSprite.width = width;
-      occluderSprite.height = height;
-      occluderSprite.rotation = spriteRotation;
-      occluderSprite.visible = true;
-      occluderSprite.tint = 0xFFFFFF;
+      const indices = new Uint16Array([0, 1, 2, 0, 2, 3]); // Two triangles forming a quad
       
-      occluderContainerRef.current.addChild(occluderSprite);
+      geometry.addAttribute('aVertexPosition', vertices, 2);
+      geometry.addAttribute('aTextureCoord', uvs, 2);
+      geometry.addIndex(indices);
+      
+      // Create mesh with custom geometry and add to container
+      const mesh = new PIXI.Mesh(geometry, new PIXI.MeshMaterial(caster.diffuseTexture));
+      mesh.tint = 0xFFFFFF; // White tint (no color modification)
+      
+      if (occluderContainerRef.current) {
+        occluderContainerRef.current.addChild(mesh);
+      }
     });
     
     // Hide unused sprites (all sprites beyond relevant casters)
