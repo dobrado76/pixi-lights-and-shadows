@@ -14,7 +14,7 @@
       "visible": false,
       "useNormalMap": true,
       "pivot": {
-        "preset": "middle-center",
+        "preset": "top-left",
         "offsetX": 0,
         "offsetY": 0
       }
@@ -42,8 +42,8 @@
       "image": "/textures/ball.png",
       "normal": "/textures/ballN.png",
       "position": {
-        "x": 100,
-        "y": 50
+        "x": 138,
+        "y": 86
       },
       "rotation": 0,
       "scale": 1,
@@ -52,7 +52,7 @@
       "visible": true,
       "useNormalMap": true,
       "pivot": {
-        "preset": "top-left",
+        "preset": "middle-center",
         "offsetX": 0,
         "offsetY": 0
       }
@@ -277,10 +277,17 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.55,
+    "strength": 0.15,
     "maxLength": 280,
     "height": 8,
     "sharpness": 1,
     "bias": 3
+  },
+  "ambientOcclusionConfig": {
+    "enabled": false,
+    "strength": 0.3,
+    "radius": 25,
+    "samples": 8,
+    "bias": 2
   }
 }
