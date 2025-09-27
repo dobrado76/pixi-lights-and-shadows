@@ -246,8 +246,8 @@ const PixiDemo = (props: PixiDemoProps) => {
 
   // Helper function to check if a light is inside a sprite's non-transparent area
   const isLightInsideSprite = (light: Light, sprite: any): boolean => {
-    // Only apply special case if light Z >= 50
-    if (light.position.z < 50) return false;
+    // DISABLED: This function was causing sprites to be excluded from shadow casting
+    return false;
     
     const lightX = light.followMouse ? mousePos.x : light.position.x;
     const lightY = light.followMouse ? mousePos.y : light.position.y;
@@ -1572,15 +1572,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       if (useOccluderMap) {
         buildOccluderMap();
         
-        // Update each sprite with a custom occluder map that excludes itself
-        const allSprites = sceneManagerRef.current?.getSprites() || [];
-        shadersRef.current.forEach((shader, index) => {
+        // Update all shaders to use single global occluder map  
+        shadersRef.current.forEach(shader => {
           if (shader.uniforms) {
-            // Build occluder map excluding this specific sprite to prevent self-shadowing
-            const currentSprite = allSprites[index];
-            const excludeSpriteId = currentSprite?.id;
-            buildOccluderMap(excludeSpriteId);
-            
             shader.uniforms.uUseOccluderMap = true;
             shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
             shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
@@ -1652,15 +1646,9 @@ const PixiDemo = (props: PixiDemoProps) => {
           // Triggering occluder map build from animation loop
           buildOccluderMap();
           
-          // Update each sprite with a custom occluder map that excludes itself
-          const allSprites = sceneManagerRef.current?.getSprites() || [];
-          shadersRef.current.forEach((shader, index) => {
+          // Update all shaders to use single global occluder map
+          shadersRef.current.forEach(shader => {
             if (shader.uniforms) {
-              // Build occluder map excluding this specific sprite to prevent self-shadowing
-              const currentSprite = allSprites[index];
-              const excludeSpriteId = currentSprite?.id;
-              buildOccluderMap(excludeSpriteId);
-              
               shader.uniforms.uUseOccluderMap = true;
               shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
               shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
