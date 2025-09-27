@@ -312,6 +312,54 @@ float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
   return calculateShadowOccluderMap(lightPos, pixelPos);
 }
 
+// Ambient Occlusion calculation - completely independent from lighting/shadows
+float calculateAmbientOcclusion(vec2 pixelPos) {
+  if (!uAOEnabled) return 1.0; // No AO when disabled
+  
+  float totalOcclusion = 0.0;
+  float validSamples = 0.0;
+  
+  // Use occluder map to sample geometry proximity
+  vec2 expandedMapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
+  
+  for (int i = 0; i < 16; i++) {
+    // Break early if we've reached the desired sample count
+    if (i >= uAOSamples) break;
+    
+    // Generate sample offset in circular pattern
+    float angle = float(i) * 6.28318530718 / float(uAOSamples); // 2*PI / samples
+    vec2 sampleOffset = vec2(cos(angle), sin(angle)) * uAORadius;
+    
+    vec2 samplePos = pixelPos + sampleOffset;
+    vec2 sampleUV = samplePos / uCanvasSize;
+    
+    // Check bounds for expanded map
+    vec2 bufferUV = uOccluderMapOffset / uCanvasSize;
+    if (sampleUV.x < -bufferUV.x || sampleUV.x > 1.0 + bufferUV.x || 
+        sampleUV.y < -bufferUV.y || sampleUV.y > 1.0 + bufferUV.y) {
+      continue; // Skip out of bounds samples
+    }
+    
+    // Sample occluder map (adjust UV for expanded map offset)
+    vec2 adjustedUV = (sampleUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
+    float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
+    
+    // Apply bias to prevent self-occlusion
+    if (length(sampleOffset) > uAOBias) {
+      totalOcclusion += occluderAlpha; // More occluders = more occlusion
+      validSamples += 1.0;
+    }
+  }
+  
+  if (validSamples > 0.0) {
+    float aoFactor = totalOcclusion / validSamples;
+    // Convert to darkening factor: 0.0 = no occlusion, 1.0 = full occlusion
+    return 1.0 - (aoFactor * uAOStrength);
+  }
+  
+  return 1.0; // No occlusion
+}
+
 // UV rotation function - rotates UV coordinates around configurable pivot point
 vec2 rotateUV(vec2 uv, float rotation) {
   // Convert world-space pivot to UV-space
