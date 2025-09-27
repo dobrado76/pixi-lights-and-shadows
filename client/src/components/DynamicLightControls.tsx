@@ -436,9 +436,9 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                     </label>
                     <input
                       type="range"
-                      min="5"
-                      max="100"
-                      step="5"
+                      min="1"
+                      max="50"
+                      step="1"
                       value={localAOConfig.radius}
                       onChange={(e) => {
                         const newRadius = parseFloat(e.target.value);
