@@ -340,9 +340,9 @@ void main(void) {
     vec3 normalMapSample = texture2D(uNormal, uv).rgb * 2.0 - 1.0; // Sample and decode normal map
     
     // CRITICAL: Since geometry vertices are rotated, normals must also be rotated to match
-    // Apply same rotation to normals so they align with rotated surface orientation
-    float cosR = cos(uRotation);
-    float sinR = sin(uRotation);
+    // Apply REVERSE rotation to normals - if geometry rotates clockwise, normals rotate counter-clockwise
+    float cosR = cos(-uRotation); // NEGATIVE rotation for normals
+    float sinR = sin(-uRotation); // NEGATIVE rotation for normals
     
     // Apply 2D rotation matrix to normal X and Y components (Z unchanged)
     normal = vec3(
