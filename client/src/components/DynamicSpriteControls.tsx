@@ -214,46 +214,48 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
 
                         {/* Pivot Control */}
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium text-muted-foreground">Pivot Point</Label>
-                          <Select
-                            value={sprite.pivot?.preset || 'middle-center'}
-                            onValueChange={(value: string) => {
-                              if (value === 'offset') {
-                                updateSpriteConfig(spriteId, {
-                                  pivot: {
-                                    preset: 'offset',
-                                    offsetX: sprite.pivot?.offsetX || 0,
-                                    offsetY: sprite.pivot?.offsetY || 0
-                                  }
-                                });
-                              } else {
-                                updateSpriteConfig(spriteId, {
-                                  pivot: {
-                                    preset: value as any,
-                                    offsetX: 0,
-                                    offsetY: 0
-                                  }
-                                });
-                              }
-                            }}
-                            data-testid={`select-pivot-${spriteId}`}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="top-left">Top Left</SelectItem>
-                              <SelectItem value="top-center">Top Center</SelectItem>
-                              <SelectItem value="top-right">Top Right</SelectItem>
-                              <SelectItem value="middle-left">Middle Left</SelectItem>
-                              <SelectItem value="middle-center">Middle Center</SelectItem>
-                              <SelectItem value="middle-right">Middle Right</SelectItem>
-                              <SelectItem value="bottom-left">Bottom Left</SelectItem>
-                              <SelectItem value="bottom-center">Bottom Center</SelectItem>
-                              <SelectItem value="bottom-right">Bottom Right</SelectItem>
-                              <SelectItem value="offset">Custom Offset</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div className="flex items-center justify-between gap-2">
+                            <Label className="text-xs font-medium text-muted-foreground">Pivot</Label>
+                            <Select
+                              value={sprite.pivot?.preset || 'middle-center'}
+                              onValueChange={(value: string) => {
+                                if (value === 'offset') {
+                                  updateSpriteConfig(spriteId, {
+                                    pivot: {
+                                      preset: 'offset',
+                                      offsetX: sprite.pivot?.offsetX || 0,
+                                      offsetY: sprite.pivot?.offsetY || 0
+                                    }
+                                  });
+                                } else {
+                                  updateSpriteConfig(spriteId, {
+                                    pivot: {
+                                      preset: value as any,
+                                      offsetX: 0,
+                                      offsetY: 0
+                                    }
+                                  });
+                                }
+                              }}
+                              data-testid={`select-pivot-${spriteId}`}
+                            >
+                              <SelectTrigger className="h-8 flex-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-popover border border-border">
+                                <SelectItem value="top-left" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Top Left</SelectItem>
+                                <SelectItem value="top-center" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Top Center</SelectItem>
+                                <SelectItem value="top-right" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Top Right</SelectItem>
+                                <SelectItem value="middle-left" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Middle Left</SelectItem>
+                                <SelectItem value="middle-center" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Middle Center</SelectItem>
+                                <SelectItem value="middle-right" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Middle Right</SelectItem>
+                                <SelectItem value="bottom-left" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Bottom Left</SelectItem>
+                                <SelectItem value="bottom-center" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Bottom Center</SelectItem>
+                                <SelectItem value="bottom-right" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Bottom Right</SelectItem>
+                                <SelectItem value="offset" className="bg-popover text-popover-foreground hover:bg-accent hover:text-accent-foreground">Custom Offset</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                           
                           {sprite.pivot?.preset === 'offset' && (
                             <div className="grid grid-cols-2 gap-2 mt-2">
