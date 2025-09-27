@@ -574,6 +574,18 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Replit** for the development platform and hosting
 - **WebGL Community** for advanced graphics programming resources
 
+## 📋 Version
+
+**Current Version: 1.0**
+
+This represents the first stable release of the PIXI.js 2.5D Advanced Light and Shadow System. All core features are fully implemented and working as intended:
+
+- ✅ Complete lighting system with unlimited multi-light support
+- ✅ Advanced shadow casting with rotation support and pivot-based scaling
+- ✅ Independent ambient occlusion post-processing with z-order hierarchy
+- ✅ Real-time interactive controls and JSON configuration management
+- ✅ All critical bugs resolved and shader uniforms properly initialized
+
 ---
 
 **Built with ❤️ featuring advanced shadow casting, unlimited sprite support, and comprehensive JSON configuration**
