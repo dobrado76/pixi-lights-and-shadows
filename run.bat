@@ -1,5 +1,3 @@
-f:
-cd /TheCaldwellLegacy
 npm install
 npm i -D cross-env
 npm run build
