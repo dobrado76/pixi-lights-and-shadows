@@ -148,7 +148,7 @@
       "visible": true,
       "useNormalMap": true,
       "pivot": {
-        "preset": "middle-center",
+        "preset": "top-left",
         "offsetX": 0,
         "offsetY": 0
       }
@@ -158,9 +158,9 @@
       "normal": "/textures/block2NormalMap.png",
       "position": {
         "x": 280,
-        "y": 319
+        "y": 345
       },
-      "rotation": 0,
+      "rotation": 0.47123889803846897,
       "scale": 1.2,
       "zOrder": 0,
       "castsShadows": true,

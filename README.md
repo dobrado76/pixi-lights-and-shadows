@@ -16,6 +16,8 @@ Experience the full lighting and shadow system in action with interactive contro
 
 ### 🌑 Advanced Shadow Casting System
 - **Unlimited Shadow Casters**: Unified occluder map architecture supports any number of sprite shadow casters
+- **Rotation-Aware Shadows**: Rotated sprites cast accurate shadows matching their visual orientation
+- **Self-Shadow Avoidance**: Advanced bounds calculation prevents rotated sprites from shadowing themselves incorrectly
 - **Off-Screen Shadow Casting**: Sprites outside the visible frame can cast shadows into the visible area
 - **Expanded Canvas System**: 512px buffer zones eliminate shadow artifacts when sprites move out of view
 - **Per-Light Shadow Control**: Individual shadow casting flags for each light source
@@ -41,6 +43,8 @@ Experience the full lighting and shadow system in action with interactive contro
 ### 📄 Unified JSON Configuration System
 - **Single Configuration File**: Everything stored in `scene.json` - sprites, lights, and shadow settings in one place
 - **Real-Time UI Editing**: All scene objects and lighting parameters editable through interactive controls
+- **Complete Transform Support**: Position, rotation, scale, and pivot controls for all sprites
+- **Pivot-Based Scaling**: Sprites scale around configurable pivot points (top-left, center, custom offsets)
 - **Automatic State Management**: Configuration changes update immediately with visual feedback
 - **Development-Friendly**: Live editing with instant visual updates during development
 - **Easy Scene Sharing**: Complete scenes can be shared via single JSON file
@@ -161,14 +165,41 @@ All scene, lighting, and shadow data is stored in a single JSON file with three 
 ### Scene Object Properties
 - **image**: Path to diffuse texture (relative to public/)
 - **normal**: Path to normal map texture for surface detail
-- **position**: X,Y coordinates in screen space
-- **rotation**: Rotation angle in degrees
-- **scale**: Size multiplier (1.0 = original size)
+- **position**: X,Y coordinates in screen space (relative to pivot point)
+- **rotation**: Rotation angle in radians (sprite rotates around pivot point)
+- **scale**: Size multiplier (1.0 = original size, scales around pivot point)
 - **zOrder**: Rendering order (lower values render first)
 - **castsShadows**: Whether object blocks light and casts shadows
 - **visible**: Whether object is rendered
 - **useNormalMap**: Whether to apply normal mapping
-- **pivot**: Anchor point configuration with presets and custom offsets
+- **pivot**: Anchor point configuration that determines scaling and rotation center
+
+#### Pivot System
+The pivot system determines how sprites are positioned, scaled, and rotated:
+
+**Preset Options:**
+- `"top-left"` (default): Position represents top-left corner, scale/rotate from top-left
+- `"top-center"`: Position represents top edge center, scale/rotate from top center
+- `"top-right"`: Position represents top-right corner, scale/rotate from top-right
+- `"middle-left"`: Position represents left edge center, scale/rotate from left center
+- `"middle-center"`: Position represents sprite center, scale/rotate from center
+- `"middle-right"`: Position represents right edge center, scale/rotate from right center
+- `"bottom-left"`: Position represents bottom-left corner, scale/rotate from bottom-left
+- `"bottom-center"`: Position represents bottom edge center, scale/rotate from bottom center
+- `"bottom-right"`: Position represents bottom-right corner, scale/rotate from bottom-right
+- `"offset"`: Custom pivot with offsetX/offsetY values relative to center
+
+**Custom Offsets:**
+```json
+"pivot": {
+  "preset": "offset",
+  "offsetX": 10,
+  "offsetY": -5
+}
+```
+
+**Default Behavior:**
+If no pivot is specified, sprites use `"top-left"` pivot, meaning the position coordinates represent where the top-left pixel of the sprite appears on screen.
 
 ### Light Properties
 - **id**: Unique identifier for the light
@@ -223,11 +254,18 @@ All scene, lighting, and shadow data is stored in a single JSON file with three 
 ### Using the Configuration System
 
 #### Scene Setup
-1. **Interactive Editing**: Use the UI controls to position, scale, and configure all scene objects
-2. **Add Textures**: Place diffuse textures in `client/public/textures/`
-3. **Add Normal Maps**: Place normal maps for surface detail
-4. **Configure Shadows**: Toggle shadow casting and receiving per object
-5. **Manual Editing**: Directly edit `scene.json` for precise control
+1. **Interactive Editing**: Use the UI controls to position, rotate, scale, and configure all scene objects
+2. **Transform Controls**: Adjust position, rotation, scale, and pivot settings with real-time preview
+3. **Add Textures**: Place diffuse textures in `client/public/textures/`
+4. **Add Normal Maps**: Place normal maps for surface detail
+5. **Configure Shadows**: Toggle shadow casting and receiving per object
+6. **Manual Editing**: Directly edit `scene.json` for precise control
+
+#### Transform System
+- **Position**: X,Y coordinates relative to the sprite's pivot point
+- **Rotation**: Rotate sprites around their pivot point with accurate shadow casting
+- **Scale**: Resize sprites around their pivot point (1.0 = original size)
+- **Pivot**: Choose from 9 preset positions or set custom offset for scaling/rotation center
 
 #### Lighting Setup  
 1. **Live Controls**: Use interactive panels to adjust all light properties
@@ -236,6 +274,13 @@ All scene, lighting, and shadow data is stored in a single JSON file with three 
 4. **Configuration Sharing**: Copy `scene.json` to share complete scenes
 
 ### Interactive Controls
+
+#### Sprite Transform Controls
+- **Position Sliders**: Drag to move sprites anywhere on the canvas
+- **Rotation Control**: Rotate sprites with real-time shadow updates
+- **Scale Control**: Resize sprites around their pivot points
+- **Pivot Presets**: Choose from 9 standard pivot positions or set custom offsets
+- **Live Preview**: All transform changes update immediately with shadow recalculation
 
 #### Light Management
 - **Add Light**: Click "Add Light" button and select type
@@ -288,13 +333,18 @@ All scene, lighting, and shadow data is stored in a single JSON file with three 
 - **Expanded Occlusion Map System**: Canvas treated as "camera window" into larger rendered scene
 - **Off-Screen Shadow Integration**: 512px buffer zones capture off-screen sprites for realistic shadow casting
 - **Unified Occluder Map Architecture**: Consistent approach for all shadow caster counts
+- **Rotation-Aware Shadow Geometry**: Shadow casting geometry perfectly matches visual sprite rotation
+- **Advanced Self-Shadow Bounds**: Rotated bounding box calculation prevents incorrect self-shadowing
+- **Pivot-Aligned Shadow Positioning**: Shadow meshes positioned relative to sprite pivot points
 - **Unified Shadow Calculation**: Single shader function handles all light types
 - **Distance-Based Softening**: Realistic shadow edge behavior
 - **Performance Optimized**: Efficient GPU utilization for real-time shadows
 
 ### Graphics Pipeline
-- **Custom Geometry**: Manual vertex buffer creation for fullscreen quads
+- **Custom Geometry**: Manual vertex buffer creation with pivot-aware transformations
+- **Pivot-Based Transforms**: Scaling and rotation around configurable anchor points
 - **Advanced Shaders**: Multi-light GLSL with normal mapping and shadow casting
+- **Rotation Support**: Full sprite rotation with accurate shadow casting
 - **Texture Management**: Efficient loading of diffuse, normal, and mask textures
 - **Uniform Optimization**: Smart uniform updates minimize GPU state changes
 
