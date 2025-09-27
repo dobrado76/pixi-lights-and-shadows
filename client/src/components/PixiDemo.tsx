@@ -368,8 +368,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       const mesh = new PIXI.Mesh(geometry, new PIXI.MeshMaterial(caster.diffuseTexture));
       mesh.tint = 0xFFFFFF; // White tint (no color modification)
       
-      // Position the mesh with shadow buffer offset
-      mesh.position.set(SHADOW_BUFFER, SHADOW_BUFFER);
+      // DON'T offset mesh position - vertices are already in correct world coordinates
+      // The SHADOW_BUFFER offset is handled by the expanded render target size
+      mesh.position.set(0, 0);
       mesh.rotation = 0;
       mesh.scale.set(1, 1);
       
