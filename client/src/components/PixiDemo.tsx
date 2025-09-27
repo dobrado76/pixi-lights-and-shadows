@@ -1057,6 +1057,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         mesh.zIndex = sprite.definition.zOrder;
         // Control visibility through PIXI, not by excluding from creation
         mesh.visible = sprite.definition.visible;
+        // CRITICAL: Attach sprite definition to mesh for animation loop access
+        (mesh as any).definition = sprite.definition;
         spriteMeshes.push(mesh);
       }
 
