@@ -26,6 +26,7 @@ Experience the full lighting and shadow system in action with interactive contro
 - **Distance-Based Soft Shadows**: Configurable shadow softness with distance-based edge controls
 - **Multiple Shadow Types**: Point light, spotlight, and directional light shadow casting
 - **Realistic Shadow Behavior**: Shadows maintain consistent size and shape regardless of sprite visibility
+- **Ambient Occlusion**: Independent post-processing system that creates realistic ambient shadows around sprites while respecting z-order hierarchy
 
 ### 🔦 Unlimited Multi-Light Support
 - **Point Lights**: Unlimited omnidirectional lights with multi-pass rendering (4 per pass for optimal performance)
