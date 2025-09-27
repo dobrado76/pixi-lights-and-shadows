@@ -288,8 +288,8 @@
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 4.45,
-    "radius": 7,
+    "strength": 5.5,
+    "radius": 6,
     "samples": 16,
     "bias": 10
   }

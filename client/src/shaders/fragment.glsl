@@ -379,8 +379,8 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   
   if (validSamples > 0.0) {
     float aoFactor = totalOcclusion / validSamples;
-    float aoStrength = clamp(uAOStrength, 0.0, 5.0);
-    float aoEffect = 1.0 - (aoFactor * aoStrength * 0.8);
+    float aoStrength = clamp(uAOStrength, 0.0, 10.0);
+    float aoEffect = 1.0 - (aoFactor * aoStrength); // Removed 0.8 scaling - use full strength
     return clamp(aoEffect, 0.1, 1.0);
   }
   
