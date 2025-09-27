@@ -120,11 +120,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
       case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
       case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
-      case 'offset': 
-        basePivotX = baseWidth / 2 + (pivot.offsetX || 0);
-        basePivotY = baseHeight / 2 + (pivot.offsetY || 0);
-        break;
     }
+    
+    // Apply offset relative to the selected preset
+    basePivotX += (pivot.offsetX || 0);
+    basePivotY += (pivot.offsetY || 0);
     
     const scaledPivotX = basePivotX * sprite.definition.scale;
     const scaledPivotY = basePivotY * sprite.definition.scale;
@@ -314,11 +314,11 @@ const PixiDemo = (props: PixiDemoProps) => {
         case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
         case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
         case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
-        case 'offset': 
-          basePivotX = baseWidth / 2 + (pivot.offsetX || 0);
-          basePivotY = baseHeight / 2 + (pivot.offsetY || 0);
-          break;
       }
+      
+      // Apply offset relative to the selected preset
+      basePivotX += (pivot.offsetX || 0);
+      basePivotY += (pivot.offsetY || 0);
       
       // Local space quad corners in UNSCALED dimensions (EXACT same as Sprite.tsx)
       const corners = [

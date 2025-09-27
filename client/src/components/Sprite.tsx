@@ -18,7 +18,7 @@ export interface SpriteDefinition {
   visible?: boolean;                  // Controls sprite visibility without deletion
   useNormalMap?: boolean;             // Whether to use normal mapping for this sprite
   pivot?: {                           // Optional pivot point for rotation and scaling
-    preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'offset';
+    preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
     offsetX?: number;
     offsetY?: number;
   };
@@ -36,7 +36,7 @@ interface CompleteSpriteDefinition {
   visible: boolean;
   useNormalMap: boolean;
   pivot: {                            // Always present with defaults applied
-    preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'offset';
+    preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
     offsetX: number;
     offsetY: number;
   };
@@ -157,11 +157,11 @@ export class SceneSprite {
       case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
       case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
       case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
-      case 'offset': 
-        basePivotX = baseWidth / 2 + (pivot.offsetX || 0);
-        basePivotY = baseHeight / 2 + (pivot.offsetY || 0);
-        break;
     }
+    
+    // Apply offset relative to the selected preset
+    basePivotX += (pivot.offsetX || 0);
+    basePivotY += (pivot.offsetY || 0);
     
     // Scale the pivot point
     const scaledPivotX = basePivotX * this.definition.scale;
@@ -241,11 +241,11 @@ export class SceneSprite {
       case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
       case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
       case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
-      case 'offset': 
-        basePivotX = baseWidth / 2 + (pivot.offsetX || 0);
-        basePivotY = baseHeight / 2 + (pivot.offsetY || 0);
-        break;
     }
+    
+    // Apply offset relative to the selected preset
+    basePivotX += (pivot.offsetX || 0);
+    basePivotY += (pivot.offsetY || 0);
     
     const worldPivotX = x + basePivotX * this.definition.scale;
     const worldPivotY = y + basePivotY * this.definition.scale;
@@ -358,11 +358,11 @@ export class SceneSprite {
       case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
       case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
       case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
-      case 'offset': 
-        basePivotX = baseWidth / 2 + (pivot.offsetX || 0);
-        basePivotY = baseHeight / 2 + (pivot.offsetY || 0);
-        break;
     }
+    
+    // Apply offset relative to the selected preset
+    basePivotX += (pivot.offsetX || 0);
+    basePivotY += (pivot.offsetY || 0);
     
     // Since position (x,y) is now the pivot location, calculate top-left corner
     const scaledPivotX = basePivotX * this.definition.scale;
@@ -411,11 +411,11 @@ export class SceneSprite {
         case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
         case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
         case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
-        case 'offset': 
-          basePivotX = baseWidth / 2 + (pivot.offsetX || 0);
-          basePivotY = baseHeight / 2 + (pivot.offsetY || 0);
-          break;
       }
+      
+      // Apply offset relative to the selected preset
+      basePivotX += (pivot.offsetX || 0);
+      basePivotY += (pivot.offsetY || 0);
       
       // Calculate world space pivot point for shader
       const worldPivotX = bounds.x + basePivotX * this.definition.scale;
