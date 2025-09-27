@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import PixiDemo from './components/PixiDemo';
 import DynamicLightControls from './components/DynamicLightControls';
 import { DynamicSpriteControls } from './components/DynamicSpriteControls';
-import { Light, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
+import { Light, ShadowConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -59,15 +59,6 @@ function App() {
     maxLength: 200,       // Maximum projection distance for shadow geometry
     height: 10,           // Z-height used for shadow volume calculations
     // Shadow sharpness removed - caused visual artifacts
-  });
-
-  // Ambient Occlusion configuration state (completely independent from shadows)
-  const [ambientOcclusionConfig, setAmbientOcclusionConfig] = useState<AmbientOcclusionConfig>({
-    enabled: false,
-    strength: 0.3,
-    radius: 25,
-    samples: 8,
-    bias: 2.0,
   });
 
   // Scene configuration state - sprites loaded from scene.json
@@ -229,13 +220,6 @@ function App() {
     debouncedSave(lightsConfig, ambientLight, newShadowConfig);
   }, [lightsConfig, ambientLight, debouncedSave]);
 
-  // Handler for ambient occlusion configuration changes
-  const handleAmbientOcclusionConfigChange = useCallback((newAOConfig: AmbientOcclusionConfig) => {
-    setAmbientOcclusionConfig(newAOConfig);
-    // Note: AO config auto-save can be added later if needed
-    console.log('AO config updated:', newAOConfig);
-  }, []);
-
   // Handler for scene configuration changes
   const handleSceneConfigChange = useCallback((newSceneConfig: { scene: Record<string, any> }) => {
     console.log('🔄 App: Scene config changed, triggering update...', Object.keys(newSceneConfig.scene));
@@ -299,7 +283,6 @@ function App() {
                     lightsConfig={lightsConfig}
                     ambientLight={ambientLight}
                     shadowConfig={shadowConfig}
-                    ambientOcclusionConfig={ambientOcclusionConfig}
                     sceneConfig={sceneConfig}
                     onGeometryUpdate={setGeometryStatus}
                     onShaderUpdate={setShaderStatus}
@@ -329,11 +312,9 @@ function App() {
                     lights={lightsConfig}
                     ambientLight={ambientLight}
                     shadowConfig={shadowConfig}
-                    ambientOcclusionConfig={ambientOcclusionConfig}
                     onLightsChange={handleLightsChange}
                     onAmbientChange={handleAmbientChange}
                     onShadowConfigChange={handleShadowConfigChange}
-                    onAmbientOcclusionConfigChange={handleAmbientOcclusionConfigChange}
                   />
                 )}
               </TabsContent>
