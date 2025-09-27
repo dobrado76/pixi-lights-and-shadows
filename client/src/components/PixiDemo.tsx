@@ -366,12 +366,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       const scaledPivotY = basePivotY * spriteScale; 
       mesh.pivot.set(scaledPivotX, scaledPivotY);
       
-      // Position mesh at sprite location with pivot offset and SHADOW_BUFFER offset
-      // Sprite position refers to center when using middle-center pivot, so we need to offset by pivot
-      mesh.position.set(
-        spritePos.x - scaledPivotX + SHADOW_BUFFER, 
-        spritePos.y - scaledPivotY + SHADOW_BUFFER
-      );
+      // Position mesh center at sprite center (both use center as reference point)
+      mesh.position.set(spritePos.x + SHADOW_BUFFER, spritePos.y + SHADOW_BUFFER);
       mesh.rotation = spriteRotation; // Apply rotation via mesh transform (like visual sprites)
       mesh.scale.set(1, 1);
       
