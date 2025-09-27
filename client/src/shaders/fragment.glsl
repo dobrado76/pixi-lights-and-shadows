@@ -176,6 +176,7 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   
   rayDir /= rayLength; // Normalize
   
+  
   // Calculate self-interval: where ray intersects current sprite's AABB
   vec2 invDir = vec2(
     abs(rayDir.x) > 0.0001 ? 1.0 / rayDir.x : 1000000.0,
@@ -210,12 +211,16 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
     startDistance = 1.0; // Don't skip outside sprite - allow normal shadow casting
   }
   
-  // Ray marching with self-shadow avoidance
+  // Ray marching with self-shadow avoidance and bias
   float stepSize = 1.0; // Sample every pixel
   float eps = 1.5; // Small epsilon for edge cases
   
+  // Apply shadow bias to start position to prevent self-shadowing artifacts
+  float shadowBiasOffset = 3.0; // Pixels to offset from sprite edge
+  float biasedStartDistance = max(startDistance, shadowBiasOffset);
+  
   for (int i = 1; i < 500; i++) {
-    float distance = startDistance + float(i - 1) * stepSize;
+    float distance = biasedStartDistance + float(i - 1) * stepSize;
     
     // Stop when we reach the pixel
     if (distance >= rayLength - eps) break;
