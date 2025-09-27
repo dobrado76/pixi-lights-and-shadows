@@ -144,7 +144,7 @@ export class SceneSprite {
     ];
 
     // Calculate pivot point based on definition (pivot-aware scaling only)
-    const pivot = this.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
+    const pivot = this.definition.pivot || { preset: 'top-left', offsetX: 0, offsetY: 0 };
     let basePivotX = 0, basePivotY = 0;
     
     switch (pivot.preset) {
@@ -226,7 +226,7 @@ export class SceneSprite {
     const height = this.diffuseTexture.height * this.definition.scale;
 
     // Calculate pivot point for shader
-    const pivot = this.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
+    const pivot = this.definition.pivot || { preset: 'top-left', offsetX: 0, offsetY: 0 };
     const baseWidth = this.diffuseTexture?.width || 1;
     const baseHeight = this.diffuseTexture?.height || 1;
     let basePivotX = 0, basePivotY = 0;
@@ -343,7 +343,7 @@ export class SceneSprite {
     const height = this.diffuseTexture.height * this.definition.scale;
     
     // Calculate pivot point to get top-left corner position
-    const pivot = this.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
+    const pivot = this.definition.pivot || { preset: 'top-left', offsetX: 0, offsetY: 0 };
     const baseWidth = this.diffuseTexture.width;
     const baseHeight = this.diffuseTexture.height;
     let basePivotX = 0, basePivotY = 0;
@@ -396,7 +396,7 @@ export class SceneSprite {
       this.shader.uniforms.uRotation = this.definition.rotation;
       
       // Update pivot point for rotation in shader
-      const pivot = this.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
+      const pivot = this.definition.pivot || { preset: 'top-left', offsetX: 0, offsetY: 0 };
       const baseWidth = this.diffuseTexture?.width || 1;
       const baseHeight = this.diffuseTexture?.height || 1;
       let basePivotX = 0, basePivotY = 0;
