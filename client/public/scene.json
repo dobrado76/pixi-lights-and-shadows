@@ -64,7 +64,7 @@
         "x": 104,
         "y": 309
       },
-      "rotation": 1.413716694115407,
+      "rotation": 0,
       "scale": 0.9,
       "zOrder": 0,
       "castsShadows": true,
@@ -160,7 +160,7 @@
         "x": 229,
         "y": 319
       },
-      "rotation": 6.283185307179586,
+      "rotation": 0.6457718232379019,
       "scale": 1,
       "zOrder": 0,
       "castsShadows": true,
