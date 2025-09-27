@@ -4,7 +4,7 @@ import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import vertexShaderSource from '../shaders/vertex.glsl?raw';
 import fragmentShaderSource from '../shaders/fragment.glsl?raw';
 import { ShaderParams } from '../App';
-import { Light, ShadowConfig } from '@/lib/lights';
+import { Light, ShadowConfig, AmbientOcclusionConfig } from '@/lib/lights';
 import { SceneManager, SceneSprite } from './Sprite';
 
 /**
@@ -30,6 +30,7 @@ interface PixiDemoProps {
   lightsConfig: Light[];
   ambientLight: {intensity: number, color: {r: number, g: number, b: number}};
   shadowConfig: ShadowConfig;
+  ambientOcclusionConfig: AmbientOcclusionConfig;
   sceneConfig: { scene: Record<string, any> };
   onGeometryUpdate: (status: string) => void;
   onShaderUpdate: (status: string) => void;
@@ -38,7 +39,7 @@ interface PixiDemoProps {
 }
 
 const PixiDemo = (props: PixiDemoProps) => {
-  const { shaderParams, lightsConfig, ambientLight, shadowConfig, sceneConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate, onImmediateSpriteChange } = props;
+  const { shaderParams, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, sceneConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate, onImmediateSpriteChange } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
   // Initialize mouse position to canvas center for immediate mouse-following light display
@@ -1354,6 +1355,13 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uShadowsEnabled = shadowConfig.enabled;
       uniforms.uShadowStrength = shadowConfig.strength || 0.5;
       uniforms.uShadowBias = shadowConfig.bias || 3.0;
+      
+      // Ambient Occlusion uniforms (completely independent from shadows)
+      uniforms.uAOEnabled = ambientOcclusionConfig.enabled;
+      uniforms.uAOStrength = ambientOcclusionConfig.strength;
+      uniforms.uAORadius = ambientOcclusionConfig.radius;
+      uniforms.uAOSamples = ambientOcclusionConfig.samples;
+      uniforms.uAOBias = ambientOcclusionConfig.bias;
       
       // Shadow casters from scene data (not hardcoded)
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];

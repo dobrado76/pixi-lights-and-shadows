@@ -23,7 +23,13 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
   const [localLights, setLocalLights] = useState<Light[]>(lights);
   const [localAmbient, setLocalAmbient] = useState(ambientLight);
   const [localShadowConfig, setLocalShadowConfig] = useState<ShadowConfig>(shadowConfig);
-  const [localAOConfig, setLocalAOConfig] = useState<AmbientOcclusionConfig>(ambientOcclusionConfig);
+  const [localAOConfig, setLocalAOConfig] = useState<AmbientOcclusionConfig>(ambientOcclusionConfig || {
+    enabled: false,
+    strength: 0.3,
+    radius: 25,
+    samples: 8,
+    bias: 2.0,
+  });
   const [newLightType, setNewLightType] = useState<'point' | 'directional' | 'spotlight'>('point');
   const [editingLightId, setEditingLightId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
@@ -379,116 +385,116 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
             
             {/* Removed shadow sharpness slider */}
             
-          </>
-        )}
-      </div>
-
-      {/* Ambient Occlusion Configuration Panel */}
-      <div className="border-b border-border pb-2">
-        <div className="flex items-center space-x-2 mb-2">
-          <Contrast size={14} className="text-muted-foreground" />
-          <h4 className="text-xs font-medium text-foreground">Ambient Occlusion</h4>
-          <button
-            onClick={() => {
-              const newConfig = { ...localAOConfig, enabled: !localAOConfig.enabled };
-              setLocalAOConfig(newConfig);
-              onAmbientOcclusionConfigChange(newConfig);
-            }}
-            className={`ml-auto p-1 rounded text-xs ${
-              localAOConfig.enabled 
-                ? 'bg-accent text-accent-foreground' 
-                : 'bg-muted text-muted-foreground'
-            }`}
-            data-testid="button-toggle-ao"
-          >
-            {localAOConfig.enabled ? <Eye size={12} /> : <EyeOff size={12} />}
-          </button>
-        </div>
-        
-        {localAOConfig.enabled && (
-          <>
-            <div className="flex items-center space-x-2 mb-1">
-              <label className="text-xs text-muted-foreground min-w-[80px]">
-                Strength: {localAOConfig.strength.toFixed(2)}
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={localAOConfig.strength}
-                onChange={(e) => {
-                  const newStrength = parseFloat(e.target.value);
-                  const newConfig = { ...localAOConfig, strength: newStrength };
-                  setLocalAOConfig(newConfig);
-                  onAmbientOcclusionConfigChange(newConfig);
-                }}
-                className="flex-1"
-                data-testid="slider-ao-strength"
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2 mb-1">
-              <label className="text-xs text-muted-foreground min-w-[80px]">
-                Radius: {localAOConfig.radius}
-              </label>
-              <input
-                type="range"
-                min="5"
-                max="100"
-                step="5"
-                value={localAOConfig.radius}
-                onChange={(e) => {
-                  const newRadius = parseFloat(e.target.value);
-                  const newConfig = { ...localAOConfig, radius: newRadius };
-                  setLocalAOConfig(newConfig);
-                  onAmbientOcclusionConfigChange(newConfig);
-                }}
-                className="flex-1"
-                data-testid="slider-ao-radius"
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2 mb-1">
-              <label className="text-xs text-muted-foreground min-w-[80px]">
-                Samples: {localAOConfig.samples}
-              </label>
-              <input
-                type="range"
-                min="4"
-                max="16"
-                step="2"
-                value={localAOConfig.samples}
-                onChange={(e) => {
-                  const newSamples = parseInt(e.target.value);
-                  const newConfig = { ...localAOConfig, samples: newSamples };
-                  setLocalAOConfig(newConfig);
-                  onAmbientOcclusionConfigChange(newConfig);
-                }}
-                className="flex-1"
-                data-testid="slider-ao-samples"
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2 mb-1">
-              <label className="text-xs text-muted-foreground min-w-[80px]">
-                Bias: {localAOConfig.bias.toFixed(1)}
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="10"
-                step="0.5"
-                value={localAOConfig.bias}
-                onChange={(e) => {
-                  const newBias = parseFloat(e.target.value);
-                  const newConfig = { ...localAOConfig, bias: newBias };
-                  setLocalAOConfig(newConfig);
-                  onAmbientOcclusionConfigChange(newConfig);
-                }}
-                className="flex-1"
-                data-testid="slider-ao-bias"
-              />
+            {/* Ambient Occlusion Controls - part of shadow system */}
+            <div className="mt-3 pt-2 border-t border-border/50">
+              <div className="flex items-center space-x-2 mb-2">
+                <Contrast size={12} className="text-muted-foreground" />
+                <h5 className="text-xs font-medium text-muted-foreground">Ambient Occlusion</h5>
+                <button
+                  onClick={() => {
+                    const newConfig = { ...localAOConfig, enabled: !localAOConfig.enabled };
+                    setLocalAOConfig(newConfig);
+                    onAmbientOcclusionConfigChange(newConfig);
+                  }}
+                  className={`ml-auto p-1 rounded text-xs ${
+                    localAOConfig.enabled 
+                      ? 'bg-accent text-accent-foreground' 
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                  data-testid="button-toggle-ao"
+                >
+                  {localAOConfig.enabled ? <Eye size={10} /> : <EyeOff size={10} />}
+                </button>
+              </div>
+              
+              {localAOConfig.enabled && (
+                <>
+                  <div className="flex items-center space-x-2 mb-1">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Strength: {localAOConfig.strength.toFixed(2)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={localAOConfig.strength}
+                      onChange={(e) => {
+                        const newStrength = parseFloat(e.target.value);
+                        const newConfig = { ...localAOConfig, strength: newStrength };
+                        setLocalAOConfig(newConfig);
+                        onAmbientOcclusionConfigChange(newConfig);
+                      }}
+                      className="flex-1"
+                      data-testid="slider-ao-strength"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 mb-1">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Radius: {localAOConfig.radius}
+                    </label>
+                    <input
+                      type="range"
+                      min="5"
+                      max="100"
+                      step="5"
+                      value={localAOConfig.radius}
+                      onChange={(e) => {
+                        const newRadius = parseFloat(e.target.value);
+                        const newConfig = { ...localAOConfig, radius: newRadius };
+                        setLocalAOConfig(newConfig);
+                        onAmbientOcclusionConfigChange(newConfig);
+                      }}
+                      className="flex-1"
+                      data-testid="slider-ao-radius"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 mb-1">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Samples: {localAOConfig.samples}
+                    </label>
+                    <input
+                      type="range"
+                      min="4"
+                      max="16"
+                      step="2"
+                      value={localAOConfig.samples}
+                      onChange={(e) => {
+                        const newSamples = parseInt(e.target.value);
+                        const newConfig = { ...localAOConfig, samples: newSamples };
+                        setLocalAOConfig(newConfig);
+                        onAmbientOcclusionConfigChange(newConfig);
+                      }}
+                      className="flex-1"
+                      data-testid="slider-ao-samples"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 mb-1">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Bias: {localAOConfig.bias.toFixed(1)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="10"
+                      step="0.5"
+                      value={localAOConfig.bias}
+                      onChange={(e) => {
+                        const newBias = parseFloat(e.target.value);
+                        const newConfig = { ...localAOConfig, bias: newBias };
+                        setLocalAOConfig(newConfig);
+                        onAmbientOcclusionConfigChange(newConfig);
+                      }}
+                      className="flex-1"
+                      data-testid="slider-ao-bias"
+                    />
+                  </div>
+                  
+                </>
+              )}
             </div>
             
           </>
