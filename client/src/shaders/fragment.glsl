@@ -62,7 +62,7 @@ uniform float uShadowStrength; // Global shadow strength
 uniform bool uShadowsEnabled;
 uniform float uShadowMaxLength; // Maximum shadow length to prevent extremely long shadows
 uniform float uShadowBias; // Pixels to offset shadow ray to prevent self-shadowing
-uniform float uCurrentSpriteZOrder; // Z-order of current sprite being rendered
+uniform float uCurrentSpriteZOrder; // Z-order of current sprite (used for shadows and AO hierarchy)
 // Removed shadow sharpness feature
 
 // Occluder Map System (for unlimited shadow casters)
@@ -72,10 +72,13 @@ uniform sampler2D uOccluderMap; // Binary alpha map of all shadow casters
 
 // Ambient Occlusion System (completely independent from lighting/shadows)
 uniform bool uAOEnabled; // Enable/disable ambient occlusion
-uniform float uAOStrength; // AO intensity (0.0 = no AO, 1.0 = full AO)
+uniform float uAOStrength; // AO intensity (0.0 = no AO, 3.0 = max AO)
 uniform float uAORadius; // Sampling radius for occlusion detection
 uniform int uAOSamples; // Number of samples for AO calculation (4-16)
 uniform float uAOBias; // Bias to prevent self-occlusion
+
+// Per-sprite AO settings (uCurrentSpriteZOrder already declared above for shadows)
+uniform bool uCurrentSpriteReceivesAO; // Whether current sprite should receive AO
 
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
@@ -314,7 +317,8 @@ float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
 
 // Ambient Occlusion calculation - completely independent from lighting/shadows
 float calculateAmbientOcclusion(vec2 pixelPos) {
-  if (!uAOEnabled) return 1.0; // No AO when disabled
+  // First check if AO is enabled globally and for this sprite
+  if (!uAOEnabled || !uCurrentSpriteReceivesAO) return 1.0;
   
   float totalOcclusion = 0.0;
   float validSamples = 0.0;
@@ -346,6 +350,9 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     
     // Apply bias to prevent self-occlusion
     if (length(sampleOffset) > uAOBias) {
+      // NOTE: For full zOrder filtering, we would need per-pixel zOrder information
+      // Currently this prevents self-occlusion via bias, and respects per-sprite AO toggle
+      // Future enhancement: encode zOrder in occluder map alpha channel for proper filtering
       totalOcclusion += occluderAlpha; // More occluders = more occlusion
       validSamples += 1.0;
     }
@@ -353,10 +360,10 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   
   if (validSamples > 0.0) {
     float aoFactor = totalOcclusion / validSamples;
-    // FIXED: Make AO much more subtle to preserve beautiful lighting
-    // Apply much gentler darkening that doesn't overpower the lighting
-    float subtleAO = 1.0 - (aoFactor * uAOStrength * 0.3); // Reduced by 70%
-    return clamp(subtleAO, 0.7, 1.0); // Never go below 30% brightness
+    // Support full strength range (0.0 to 3.0) but make it more reasonable
+    float aoStrength = clamp(uAOStrength, 0.0, 3.0);
+    float aoEffect = 1.0 - (aoFactor * aoStrength * 0.2); // Reduced multiplier for reasonable effect
+    return clamp(aoEffect, 0.1, 1.0); // Never go completely black, but allow stronger darkening
   }
   
   return 1.0; // No occlusion

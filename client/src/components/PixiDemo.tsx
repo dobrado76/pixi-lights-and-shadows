@@ -1363,6 +1363,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uAOSamples = ambientOcclusionConfig.samples;
       uniforms.uAOBias = ambientOcclusionConfig.bias;
       
+      // Per-sprite AO settings will be set individually for each sprite
+      
       // Shadow casters from scene data (not hardcoded)
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
       // Add zOrder uniforms for shadow hierarchy
@@ -1576,6 +1578,13 @@ const PixiDemo = (props: PixiDemoProps) => {
           if (mesh.parent !== pixiApp.stage) {
             if (mesh.parent) mesh.parent.removeChild(mesh);
             pixiApp.stage.addChild(mesh);
+          }
+          
+          // Set per-sprite AO settings
+          if (mesh.shader && mesh.shader.uniforms && (mesh as any).definition) {
+            const spriteData = (mesh as any).definition;
+            mesh.shader.uniforms.uCurrentSpriteZOrder = spriteData.zOrder || 0;
+            mesh.shader.uniforms.uCurrentSpriteReceivesAO = spriteData.receivesAO !== false;
           }
         });
         shadersRef.current.forEach(shader => {

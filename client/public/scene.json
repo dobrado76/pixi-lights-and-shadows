@@ -189,10 +189,10 @@
       "color": "0xffffff",
       "x": 250,
       "y": 170,
-      "z": 20,
+      "z": 70,
       "followMouse": true,
       "castsShadows": true,
-      "radius": 1000
+      "radius": 350
     },
     {
       "id": "directional_light",
@@ -277,7 +277,7 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.15,
+    "strength": 0.55,
     "maxLength": 280,
     "height": 8,
     "sharpness": 1,

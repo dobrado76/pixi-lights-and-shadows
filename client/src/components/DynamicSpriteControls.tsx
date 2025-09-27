@@ -20,6 +20,7 @@ interface SpriteConfig {
   castsShadows: boolean;
   visible: boolean;
   useNormalMap?: boolean;
+  receivesAO?: boolean; // Per-sprite ambient occlusion toggle
   pivot?: {
     preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'offset';
     offsetX?: number;
@@ -322,6 +323,15 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                               checked={sprite.castsShadows}
                               onCheckedChange={(checked) => updateSpriteConfig(spriteId, { castsShadows: checked })}
                               data-testid={`switch-casts-shadows-${spriteId}`}
+                            />
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs text-card-foreground">Receives AO</Label>
+                            <Switch
+                              checked={sprite.receivesAO !== false}
+                              onCheckedChange={(checked) => updateSpriteConfig(spriteId, { receivesAO: checked })}
+                              data-testid={`switch-receives-ao-${spriteId}`}
                             />
                           </div>
                           
