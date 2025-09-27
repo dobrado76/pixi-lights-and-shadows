@@ -28,7 +28,7 @@
       },
       "rotation": 0,
       "scale": 1,
-      "zOrder": -3,
+      "zOrder": -1,
       "castsShadows": false,
       "visible": true,
       "useNormalMap": false,
@@ -47,7 +47,7 @@
       },
       "rotation": 0,
       "scale": 1,
-      "zOrder": -1,
+      "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
@@ -285,9 +285,9 @@
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 0.8,
-    "radius": 40,
-    "samples": 8,
+    "strength": 1.2,
+    "radius": 35,
+    "samples": 10,
     "bias": 2
   }
 }

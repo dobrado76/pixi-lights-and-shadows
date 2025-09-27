@@ -41,6 +41,7 @@ interface PixiDemoProps {
 const PixiDemo = (props: PixiDemoProps) => {
   const { shaderParams, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, sceneConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate, onImmediateSpriteChange } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
+  
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
   // Initialize mouse position to canvas center for immediate mouse-following light display
   const [mousePos, setMousePos] = useState({ 
