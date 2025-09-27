@@ -837,11 +837,13 @@ void main(void) {
   // Apply color tinting
   finalColor *= uColor;
   
-  // Apply Ambient Occlusion as final post-processing step (completely independent from lighting)
-  // FIXED: Apply AO much more subtly to preserve beautiful lighting
+  // Apply Ambient Occlusion with reduced effect on solid sprites
   if (uAOEnabled) {
     float aoFactor = calculateAmbientOcclusion(vWorldPos);
-    finalColor *= aoFactor;
+    // Reduce AO effect on solid sprite areas, but don't eliminate it completely
+    float aoInfluence = mix(0.3, 1.0, 1.0 - diffuseColor.a); // Sprites get 30% AO, background gets full AO
+    float aoEffect = mix(1.0, aoFactor, aoInfluence);
+    finalColor *= aoEffect;
   }
   
   gl_FragColor = vec4(finalColor, diffuseColor.a);

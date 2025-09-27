@@ -11,14 +11,15 @@
       "scale": 1,
       "zOrder": -1,
       "castsShadows": false,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true,
       "pivot": {
         "preset": "top-left",
         "offsetX": 0,
         "offsetY": 0
       },
-      "receivesAO": false
+      "receivesAO": false,
+      "castsAO": false
     },
     "background2": {
       "image": "/textures/white-fabric-texture-background.jpg",
@@ -37,7 +38,8 @@
         "preset": "top-left",
         "offsetX": 0,
         "offsetY": 0
-      }
+      },
+      "castsAO": false
     },
     "ball": {
       "image": "/textures/ball.png",
@@ -179,7 +181,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.17,
+      "brightness": 0.3,
       "color": "0xffffff"
     },
     {
@@ -199,7 +201,7 @@
       "id": "directional_light",
       "type": "directional",
       "enabled": true,
-      "brightness": 0.2,
+      "brightness": 0.4,
       "color": "0xffffff",
       "directionX": 0.6427876096865394,
       "directionY": -0.766044443118978,
@@ -286,8 +288,8 @@
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 0.3,
-    "radius": 5,
+    "strength": 3,
+    "radius": 15,
     "samples": 16,
     "bias": 0.5
   }

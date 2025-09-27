@@ -257,7 +257,12 @@ const PixiDemo = (props: PixiDemoProps) => {
   const buildOccluderMapForSprite = (currentSpriteZOrder: number, excludeSpriteId?: string) => {
     if (!pixiApp || !occluderRenderTargetRef.current || !occluderContainerRef.current) return;
     
-    const allShadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
+    const allCasters = sceneManagerRef.current?.getShadowCasters() || [];
+    
+    // For unified system: include sprites that cast shadows OR AO (since they share the same occluder map)
+    const allShadowCasters = allCasters.filter(caster => 
+      caster.definition.castsShadows || (caster.definition.castsAO !== false)
+    );
     
     // Filter shadow casters based on zOrder hierarchy - only include casters at same level or above
     // Also exclude the current sprite being lit to prevent self-shadowing
@@ -396,7 +401,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   
   // Build occluder map using all shadow casters for unified system
   const buildOccluderMap = (excludeSpriteId?: string) => {
-    buildOccluderMapForSprite(-999, excludeSpriteId); // Use very low zOrder to include all shadow casters
+    buildOccluderMapForSprite(-999, excludeSpriteId); // Use very low zOrder to include all casters
   };
 
   // Multi-pass lighting composer
