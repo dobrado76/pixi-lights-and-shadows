@@ -157,10 +157,10 @@
       "image": "/textures/block2.png",
       "normal": "/textures/block2NormalMap.png",
       "position": {
-        "x": 203,
-        "y": 360
+        "x": 254,
+        "y": 293
       },
-      "rotation": 0.3490658503988659,
+      "rotation": 0.6457718232379019,
       "scale": 1,
       "zOrder": 0,
       "castsShadows": true,
