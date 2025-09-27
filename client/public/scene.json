@@ -102,7 +102,7 @@
       "image": "/textures/test2.png",
       "normal": "/textures/test2Normal.png",
       "position": {
-        "x": 84,
+        "x": 98,
         "y": 444
       },
       "rotation": 0,
@@ -160,7 +160,7 @@
       "image": "/textures/block2.png",
       "normal": "/textures/block2NormalMap.png",
       "position": {
-        "x": 280,
+        "x": 291,
         "y": 354
       },
       "rotation": 0.5061454830783556,
