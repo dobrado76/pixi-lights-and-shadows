@@ -388,10 +388,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Create custom geometry with exact computed vertices (no PIXI transforms!)
       const geometry = new PIXI.Geometry();
       const vertices = new Float32Array([
-        transformedCorners[0].x + SHADOW_BUFFER, transformedCorners[0].y + SHADOW_BUFFER, // Top-left
-        transformedCorners[1].x + SHADOW_BUFFER, transformedCorners[1].y + SHADOW_BUFFER, // Top-right
-        transformedCorners[2].x + SHADOW_BUFFER, transformedCorners[2].y + SHADOW_BUFFER, // Bottom-right
-        transformedCorners[3].x + SHADOW_BUFFER, transformedCorners[3].y + SHADOW_BUFFER, // Bottom-left
+        transformedCorners[0].x, transformedCorners[0].y, // Top-left
+        transformedCorners[1].x, transformedCorners[1].y, // Top-right
+        transformedCorners[2].x, transformedCorners[2].y, // Bottom-right
+        transformedCorners[3].x, transformedCorners[3].y, // Bottom-left
       ]);
       
       const uvs = new Float32Array([
