@@ -161,7 +161,7 @@
       "normal": "/textures/block2NormalMap.png",
       "position": {
         "x": 280,
-        "y": 345
+        "y": 354
       },
       "rotation": 0.47123889803846897,
       "scale": 1.2,
@@ -291,6 +291,6 @@
     "strength": 1.85,
     "radius": 5,
     "samples": 16,
-    "bias": 0.5
+    "bias": 0
   }
 }

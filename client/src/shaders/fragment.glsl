@@ -353,22 +353,28 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     vec2 adjustedUV = (sampleUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
     float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     
-    // Apply bias to prevent self-occlusion AND z-order filtering
-    if (length(sampleOffset) > uAOBias) {
-      // Z-ORDER HIERARCHY: Only sprites with lower z-order should receive AO
-      // Background sprites (z < 0) get full AO from all sprites above them
-      // Sprites at z=0+ get NO AO unless there are sprites with higher z-order
-      float zOrderInfluence = 0.0; // Default: no AO
-      
-      if (currentZ < 0.0) {
-        // Background sprites (z=-1) receive AO from all sprites above them
-        zOrderInfluence = 1.0;
-      }
-      // Note: Sprites at z=0+ get zOrderInfluence = 0.0 (no AO) unless overlapped by higher z sprites
-      
-      totalOcclusion += occluderAlpha * zOrderInfluence;
-      validSamples += 1.0;
+    // Z-ORDER HIERARCHY: Only sprites with lower z-order should receive AO
+    // Background sprites (z < 0) get full AO from all sprites above them
+    // Sprites at z=0+ get NO AO unless there are sprites with higher z-order
+    float zOrderInfluence = 0.0; // Default: no AO
+    
+    if (currentZ < 0.0) {
+      // Background sprites (z=-1) receive AO from all sprites above them
+      zOrderInfluence = 1.0;
     }
+    // Note: Sprites at z=0+ get zOrderInfluence = 0.0 (no AO) unless overlapped by higher z sprites
+    
+    // Apply bias to prevent self-occlusion: reduce occlusion strength for nearby samples
+    float sampleDistance = length(sampleOffset);
+    float biasReduction = 1.0;
+    if (sampleDistance < uAOBias * 2.0) {
+      // Gradually reduce occlusion strength for samples within bias range
+      biasReduction = smoothstep(0.0, uAOBias * 2.0, sampleDistance);
+    }
+    
+    // Apply both z-order filtering and bias reduction
+    totalOcclusion += occluderAlpha * zOrderInfluence * biasReduction;
+    validSamples += 1.0;
   }
   
   if (validSamples > 0.0) {
