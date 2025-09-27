@@ -1570,11 +1570,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // UNIFIED RENDERING PATH: Set per-sprite settings and render directly (no more multi-pass complexity)
       meshesRef.current.forEach(mesh => {
-        // Set per-sprite AO and zOrder settings
+        // Set per-sprite zOrder settings (AO is now controlled via caster contribution, not per-sprite receive)
         if (mesh.shader && mesh.shader.uniforms && (mesh as any).definition) {
           const spriteData = (mesh as any).definition;
           mesh.shader.uniforms.uCurrentSpriteZOrder = spriteData.zOrder || 0;
-          mesh.shader.uniforms.uCurrentSpriteReceivesAO = spriteData.receivesAO !== false;
           
         }
 

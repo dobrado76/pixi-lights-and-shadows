@@ -78,7 +78,7 @@ uniform int uAOSamples; // Number of samples for AO calculation (4-16)
 uniform float uAOBias; // Bias to prevent self-occlusion
 
 // Per-sprite AO settings (uCurrentSpriteZOrder already declared above for shadows)
-uniform bool uCurrentSpriteReceivesAO; // Whether current sprite should receive AO
+// AO is now calculated for all sprites - no per-sprite toggle needed in shader
 
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
@@ -317,8 +317,8 @@ float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
 
 // Ambient Occlusion calculation - completely independent from lighting/shadows
 float calculateAmbientOcclusion(vec2 pixelPos) {
-  // First check if AO is enabled globally and for this sprite
-  if (!uAOEnabled || !uCurrentSpriteReceivesAO) return 1.0;
+  // Check if AO is enabled globally (all sprites receive AO, control is via caster contribution)
+  if (!uAOEnabled) return 1.0;
   
   float totalOcclusion = 0.0;
   float validSamples = 0.0;
