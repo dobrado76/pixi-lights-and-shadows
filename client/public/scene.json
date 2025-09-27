@@ -45,7 +45,7 @@
         "x": 100,
         "y": 50
       },
-      "rotation": 3.12413936106985,
+      "rotation": 0,
       "scale": 1,
       "zOrder": -1,
       "castsShadows": true,
@@ -109,9 +109,9 @@
       "visible": true,
       "useNormalMap": true,
       "pivot": {
+        "preset": "top-left",
         "offsetX": 0,
-        "offsetY": 0,
-        "preset": "middle-center"
+        "offsetY": 0
       }
     },
     "test3": {
