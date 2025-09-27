@@ -297,14 +297,16 @@ const PixiDemo = (props: PixiDemoProps) => {
 
   // Occluder map builder with zOrder hierarchy support
   // Builds occluder map containing only shadow casters that should affect the given sprite  
-  const buildOccluderMapForSprite = (currentSpriteZOrder: number) => {
+  const buildOccluderMapForSprite = (currentSpriteZOrder: number, excludeSpriteId?: string) => {
     if (!pixiApp || !occluderRenderTargetRef.current || !occluderContainerRef.current) return;
     
     const allShadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
     
     // Filter shadow casters based on zOrder hierarchy - only include casters at same level or above
+    // Also exclude the current sprite being lit to prevent self-shadowing
     let relevantShadowCasters = allShadowCasters.filter(caster => 
-      caster.definition.zOrder >= currentSpriteZOrder
+      caster.definition.zOrder >= currentSpriteZOrder && 
+      (!excludeSpriteId || caster.definition.id !== excludeSpriteId)
     );
     
     // Special case: exclude sprites from casting shadows if light (Z >= 50) is inside their non-transparent area
@@ -427,8 +429,8 @@ const PixiDemo = (props: PixiDemoProps) => {
   };
   
   // Build occluder map using all shadow casters for unified system
-  const buildOccluderMap = () => {
-    buildOccluderMapForSprite(-999); // Use very low zOrder to include all shadow casters
+  const buildOccluderMap = (excludeSpriteId?: string) => {
+    buildOccluderMapForSprite(-999, excludeSpriteId); // Use very low zOrder to include all shadow casters
   };
 
   // Multi-pass lighting composer

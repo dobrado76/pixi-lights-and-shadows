@@ -214,14 +214,17 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   float stepSize = 1.0; // Sample every pixel
   float eps = 1.5; // Small epsilon for edge cases
   
+  // Add bias to prevent self-shadowing - start sampling a bit away from the receiver
+  float selfShadowBias = 3.0; // Bias distance to avoid self-occlusion
+  
   for (int i = 1; i < 500; i++) {
     float distance = startDistance + float(i - 1) * stepSize;
     
     // Stop when we reach the pixel
     if (distance >= rayLength - eps) break;
     
-    // Skip samples within self-interval (avoid self-occlusion) - but NOT for background sprites
-    if (!isBackgroundSprite && distance > tEnterSelf - eps && distance < tExitSelf + eps) {
+    // Skip samples within self-interval PLUS bias (avoid self-occlusion) - but NOT for background sprites
+    if (!isBackgroundSprite && distance > tEnterSelf - eps && distance < tExitSelf + eps + selfShadowBias) {
       continue;
     }
     
