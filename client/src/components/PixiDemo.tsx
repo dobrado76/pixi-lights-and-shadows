@@ -364,32 +364,20 @@ const PixiDemo = (props: PixiDemoProps) => {
         { x: 0, y: baseHeight }              // Bottom-left
       ];
       
-      // Apply scaling and rotation around pivot point (EXACT same as Sprite.tsx)
+      // Apply ONLY scaling and pivot transform (NO rotation in geometry - matches Sprite.tsx exactly)
       const transformedCorners = corners.map(corner => {
         // Apply scaling from pivot point (pivot stays stationary)
         const scaledOffsetX = (corner.x - basePivotX) * spriteScale;
         const scaledOffsetY = (corner.y - basePivotY) * spriteScale;
         
-        // Apply rotation around the scaled pivot point
-        const cosRot = Math.cos(spriteRotation);
-        const sinRot = Math.sin(spriteRotation);
-        
-        const rotatedX = scaledOffsetX * cosRot - scaledOffsetY * sinRot;
-        const rotatedY = scaledOffsetX * sinRot + scaledOffsetY * cosRot;
+        // NO rotation applied to geometry! (Visual sprites do rotation in fragment shader only)
         
         return {
-          x: spritePos.x + (basePivotX * spriteScale) + rotatedX,
-          y: spritePos.y + (basePivotY * spriteScale) + rotatedY
+          x: spritePos.x + (basePivotX * spriteScale) + scaledOffsetX,
+          y: spritePos.y + (basePivotY * spriteScale) + scaledOffsetY
         };
       });
       
-      // Debug: Log vertex comparison for first rotated sprite
-      if (spriteRotation !== 0 && index === 0) {
-        console.log(`🔍 GEOMETRY DEBUG for ${caster.id} (rot: ${spriteRotation}):`);
-        console.log(`  Visual corners:`, transformedCorners);
-        console.log(`  Occlusion corners (no buffer):`, transformedCorners);
-        console.log(`  Occlusion corners (with buffer):`, transformedCorners.map(c => ({x: c.x + SHADOW_BUFFER, y: c.y + SHADOW_BUFFER})));
-      }
       
       // Create custom geometry with exact computed vertices (NO shadow buffer offset to prevent rotation mismatch)
       const geometry = new PIXI.Geometry();
