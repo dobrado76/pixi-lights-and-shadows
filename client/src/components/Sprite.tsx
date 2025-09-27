@@ -258,9 +258,8 @@ export class SceneSprite {
       uSpriteSize: [width, height],
       uRotation: this.definition.rotation, // Pass rotation to fragment shader
       uPivotPoint: [worldPivotX, worldPivotY], // Pass pivot point to fragment shader
-      // Self-shadow avoidance bounds for occluder map
-      uReceiverMin: [x, y],
-      uReceiverMax: [x + width, y + height],
+      // Self-shadow avoidance bounds for occluder map - calculate rotated bounds
+      ...this.calculateRotatedBounds(x, y, width, height, basePivotX * this.definition.scale, basePivotY * this.definition.scale, this.definition.rotation),
       ...uniforms
     };
 
@@ -278,6 +277,58 @@ export class SceneSprite {
     this.mesh.y = 0;
     
     return this.mesh;
+  }
+
+  /**
+   * Calculates rotated bounding box for self-shadow avoidance
+   */
+  calculateRotatedBounds(x: number, y: number, width: number, height: number, pivotX: number, pivotY: number, rotation: number): { uReceiverMin: number[], uReceiverMax: number[] } {
+    if (!rotation) {
+      // No rotation, return simple bounds
+      return {
+        uReceiverMin: [x, y],
+        uReceiverMax: [x + width, y + height]
+      };
+    }
+
+    // Calculate corners of unrotated rectangle relative to top-left
+    const corners = [
+      { x: 0, y: 0 },                // Top-left
+      { x: width, y: 0 },            // Top-right  
+      { x: width, y: height },       // Bottom-right
+      { x: 0, y: height }            // Bottom-left
+    ];
+
+    // Rotate each corner around the pivot point
+    const cos = Math.cos(rotation);
+    const sin = Math.sin(rotation);
+    
+    const rotatedCorners = corners.map(corner => {
+      // Offset from pivot
+      const offsetX = corner.x - pivotX;
+      const offsetY = corner.y - pivotY;
+      
+      // Rotate around pivot
+      const rotatedX = offsetX * cos - offsetY * sin;
+      const rotatedY = offsetX * sin + offsetY * cos;
+      
+      // Translate back to world position
+      return {
+        x: x + pivotX + rotatedX,
+        y: y + pivotY + rotatedY
+      };
+    });
+
+    // Find axis-aligned bounding box of rotated corners
+    const minX = Math.min(...rotatedCorners.map(c => c.x));
+    const maxX = Math.max(...rotatedCorners.map(c => c.x));
+    const minY = Math.min(...rotatedCorners.map(c => c.y));
+    const maxY = Math.max(...rotatedCorners.map(c => c.y));
+
+    return {
+      uReceiverMin: [minX, minY],
+      uReceiverMax: [maxX, maxY]
+    };
   }
 
   /**
@@ -340,9 +391,10 @@ export class SceneSprite {
       const worldPivotY = bounds.y + basePivotY * this.definition.scale;
       this.shader.uniforms.uPivotPoint = [worldPivotX, worldPivotY];
       
-      // Update self-shadow avoidance bounds
-      this.shader.uniforms.uReceiverMin = [bounds.x, bounds.y];
-      this.shader.uniforms.uReceiverMax = [bounds.x + bounds.width, bounds.y + bounds.height];
+      // Update self-shadow avoidance bounds - calculate rotated bounds  
+      const rotatedBounds = this.calculateRotatedBounds(bounds.x, bounds.y, bounds.width, bounds.height, basePivotX * this.definition.scale, basePivotY * this.definition.scale, this.definition.rotation);
+      this.shader.uniforms.uReceiverMin = rotatedBounds.uReceiverMin;
+      this.shader.uniforms.uReceiverMax = rotatedBounds.uReceiverMax;
       
       // CRITICAL: Recreate geometry with new transform and apply to mesh
       const newGeometry = this.createGeometry();
