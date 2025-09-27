@@ -323,10 +323,10 @@ vec2 rotateUV(vec2 uv, float rotation) {
 }
 
 void main(void) {
-  // Apply rotation to UV coordinates BEFORE texture sampling (physically correct)
-  vec2 uv = rotateUV(vTextureCoord, uRotation);
+  // Use UV coordinates directly since geometry is already rotated
+  vec2 uv = vTextureCoord;
   
-  // Sample textures with rotated UV coordinates (rotation affects lighting calculation)
+  // Sample textures with standard UV coordinates
   vec4 diffuseColor = texture2D(uDiffuse, uv);
   
   // Use normal map if enabled, otherwise use flat normal (0, 0, 1)

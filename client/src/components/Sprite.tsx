@@ -157,15 +157,22 @@ export class SceneSprite {
     const scaledPivotX = basePivotX * this.definition.scale;
     const scaledPivotY = basePivotY * this.definition.scale;
     
-    // Apply ONLY pivot-aware scaling (rotation is handled in fragment shader)
+    // Apply scaling and rotation around pivot point
     const transformedCorners = corners.map(corner => {
       // Apply scaling from pivot point (pivot stays stationary)
       const scaledOffsetX = (corner.x - basePivotX) * this.definition.scale;
       const scaledOffsetY = (corner.y - basePivotY) * this.definition.scale;
       
+      // Apply rotation around the scaled pivot point
+      const cosRot = Math.cos(this.definition.rotation);
+      const sinRot = Math.sin(this.definition.rotation);
+      
+      const rotatedX = scaledOffsetX * cosRot - scaledOffsetY * sinRot;
+      const rotatedY = scaledOffsetX * sinRot + scaledOffsetY * cosRot;
+      
       return {
-        x: x + scaledPivotX + scaledOffsetX,
-        y: y + scaledPivotY + scaledOffsetY
+        x: x + scaledPivotX + rotatedX,
+        y: y + scaledPivotY + rotatedY
       };
     });
 
