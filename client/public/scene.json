@@ -189,10 +189,10 @@
       "color": "0xffffff",
       "x": 250,
       "y": 170,
-      "z": 70,
+      "z": 20,
       "followMouse": true,
       "castsShadows": true,
-      "radius": 350
+      "radius": 1000
     },
     {
       "id": "directional_light",
@@ -284,7 +284,7 @@
     "bias": 3
   },
   "ambientOcclusionConfig": {
-    "enabled": false,
+    "enabled": true,
     "strength": 0.3,
     "radius": 25,
     "samples": 8,
