@@ -68,7 +68,7 @@
       "scale": 0.9,
       "zOrder": 0,
       "castsShadows": true,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
@@ -106,7 +106,7 @@
       "scale": 1,
       "zOrder": 2,
       "castsShadows": true,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true,
       "pivot": {
         "offsetX": 0,
@@ -161,13 +161,13 @@
         "y": 328
       },
       "rotation": 0.3665191429188092,
-      "scale": 1,
+      "scale": 1.3,
       "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
       "pivot": {
-        "preset": "offset",
+        "preset": "bottom-right",
         "offsetX": 0,
         "offsetY": 0
       }
