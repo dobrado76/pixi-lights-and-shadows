@@ -362,7 +362,7 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     float aoFactor = totalOcclusion / validSamples;
     // Support full strength range (0.0 to 3.0) but make it more reasonable
     float aoStrength = clamp(uAOStrength, 0.0, 3.0);
-    float aoEffect = 1.0 - (aoFactor * aoStrength * 0.5); // More visible AO effect
+    float aoEffect = 1.0 - (aoFactor * aoStrength * 0.8); // Visible AO effect
     return clamp(aoEffect, 0.1, 1.0); // Never go completely black, but allow stronger darkening
   }
   

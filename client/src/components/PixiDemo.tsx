@@ -1364,6 +1364,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uAOSamples = ambientOcclusionConfig.samples;
       uniforms.uAOBias = ambientOcclusionConfig.bias;
       
+      
       // Per-sprite AO settings will be set individually for each sprite
       
       // Shadow casters from scene data (not hardcoded)
@@ -1567,34 +1568,33 @@ const PixiDemo = (props: PixiDemoProps) => {
         });
       }
       
-      if (useMultiPass && renderTargetRef.current && sceneContainerRef.current && displaySpriteRef.current) {
-        // console.log(`🚀 MULTI-PASS: Rendering ${lightCount} lights with multi-pass architecture (${Math.ceil(lightCount/8)} passes`);
-        renderMultiPass(lightsConfig);
-      } else {
-        // console.log(`⚡ SINGLE-PASS: Rendering ${lightCount} lights directly to screen (≤8 lights)`);
-        // Single-pass: Ensure meshes are on main stage and render directly
-        meshesRef.current.forEach(mesh => {
-          mesh.blendMode = PIXI.BLEND_MODES.NORMAL;
-          // Make sure mesh is on the main stage for single-pass rendering
-          if (mesh.parent !== pixiApp.stage) {
-            if (mesh.parent) mesh.parent.removeChild(mesh);
-            pixiApp.stage.addChild(mesh);
-          }
+      // UNIFIED RENDERING PATH: Set per-sprite settings and render directly (no more multi-pass complexity)
+      meshesRef.current.forEach(mesh => {
+        // Set per-sprite AO and zOrder settings
+        if (mesh.shader && mesh.shader.uniforms && (mesh as any).definition) {
+          const spriteData = (mesh as any).definition;
+          mesh.shader.uniforms.uCurrentSpriteZOrder = spriteData.zOrder || 0;
+          mesh.shader.uniforms.uCurrentSpriteReceivesAO = spriteData.receivesAO !== false;
           
-          // Set per-sprite AO settings
-          if (mesh.shader && mesh.shader.uniforms && (mesh as any).definition) {
-            const spriteData = (mesh as any).definition;
-            mesh.shader.uniforms.uCurrentSpriteZOrder = spriteData.zOrder || 0;
-            mesh.shader.uniforms.uCurrentSpriteReceivesAO = spriteData.receivesAO !== false;
-          }
-        });
-        shadersRef.current.forEach(shader => {
-          if (shader.uniforms) {
-            shader.uniforms.uPassMode = 1; // Lighting pass mode (all lights active)
-          }
-        });
-        pixiApp.render();
-      }
+        }
+
+        // Ensure mesh is properly positioned for rendering
+        mesh.blendMode = PIXI.BLEND_MODES.NORMAL;
+        if (mesh.parent !== pixiApp.stage) {
+          if (mesh.parent) mesh.parent.removeChild(mesh);
+          pixiApp.stage.addChild(mesh);
+        }
+      });
+      
+      // Set unified lighting mode for all shaders
+      shadersRef.current.forEach(shader => {
+        if (shader.uniforms) {
+          shader.uniforms.uPassMode = 1; // All lights active in unified mode
+        }
+      });
+      
+      // Single unified render call
+      pixiApp.render();
       
       // Force immediate render after updating lighting uniforms
       if (pixiApp && pixiApp.renderer) {
