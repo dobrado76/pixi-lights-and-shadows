@@ -829,8 +829,10 @@ void main(void) {
   finalColor *= uColor;
   
   // Apply Ambient Occlusion as final post-processing step (completely independent from lighting)
-  float aoFactor = calculateAmbientOcclusion(vWorldPos);
-  finalColor *= aoFactor;
+  if (uAOEnabled) {
+    float aoFactor = calculateAmbientOcclusion(vWorldPos);
+    finalColor *= aoFactor;
+  }
   
   gl_FragColor = vec4(finalColor, diffuseColor.a);
 }
