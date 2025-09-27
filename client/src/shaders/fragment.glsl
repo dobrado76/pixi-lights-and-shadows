@@ -14,6 +14,7 @@ uniform vec3 uColor;
 uniform float uAmbientLight;
 uniform vec3 uAmbientColor;
 uniform float uRotation; // Sprite rotation for UV transformation
+uniform vec2 uPivotPoint; // World-space pivot point for rotation
 
 // Multi-pass rendering control
 uniform int uPassMode; // 0 = base pass (ambient only), 1 = lighting pass (incremental)
@@ -299,10 +300,15 @@ float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
   return calculateShadowOccluderMap(lightPos, pixelPos);
 }
 
-// UV rotation function - rotates UV coordinates around center (0.5, 0.5)
+// UV rotation function - rotates UV coordinates around configurable pivot point
 vec2 rotateUV(vec2 uv, float rotation) {
-  // Translate to center
-  vec2 centered = uv - 0.5;
+  // Convert world-space pivot to UV-space
+  // World position = uSpritePos + uv * uSpriteSize
+  // So UV pivot = (worldPivot - uSpritePos) / uSpriteSize
+  vec2 pivotUV = (uPivotPoint - uSpritePos) / uSpriteSize;
+  
+  // Translate to pivot point
+  vec2 centered = uv - pivotUV;
   
   // Apply rotation matrix
   float cosRot = cos(rotation);
@@ -312,8 +318,8 @@ vec2 rotateUV(vec2 uv, float rotation) {
     centered.x * sinRot + centered.y * cosRot
   );
   
-  // Translate back
-  return rotated + 0.5;
+  // Translate back from pivot point
+  return rotated + pivotUV;
 }
 
 void main(void) {

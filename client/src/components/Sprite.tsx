@@ -208,6 +208,31 @@ export class SceneSprite {
     const width = this.diffuseTexture.width * this.definition.scale;
     const height = this.diffuseTexture.height * this.definition.scale;
 
+    // Calculate pivot point for shader
+    const pivot = this.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
+    const baseWidth = this.diffuseTexture?.width || 1;
+    const baseHeight = this.diffuseTexture?.height || 1;
+    let basePivotX = 0, basePivotY = 0;
+    
+    switch (pivot.preset) {
+      case 'top-left': basePivotX = 0; basePivotY = 0; break;
+      case 'top-center': basePivotX = baseWidth / 2; basePivotY = 0; break;
+      case 'top-right': basePivotX = baseWidth; basePivotY = 0; break;
+      case 'middle-left': basePivotX = 0; basePivotY = baseHeight / 2; break;
+      case 'middle-center': basePivotX = baseWidth / 2; basePivotY = baseHeight / 2; break;
+      case 'middle-right': basePivotX = baseWidth; basePivotY = baseHeight / 2; break;
+      case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
+      case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
+      case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
+      case 'offset': 
+        basePivotX = baseWidth / 2 + (pivot.offsetX || 0);
+        basePivotY = baseHeight / 2 + (pivot.offsetY || 0);
+        break;
+    }
+    
+    const worldPivotX = x + basePivotX * this.definition.scale;
+    const worldPivotY = y + basePivotY * this.definition.scale;
+
     const shaderUniforms = {
       uDiffuse: this.diffuseTexture,
       uNormal: this.normalTexture,
@@ -215,6 +240,7 @@ export class SceneSprite {
       uSpritePos: [x, y],
       uSpriteSize: [width, height],
       uRotation: this.definition.rotation, // Pass rotation to fragment shader
+      uPivotPoint: [worldPivotX, worldPivotY], // Pass pivot point to fragment shader
       // Self-shadow avoidance bounds for occluder map
       uReceiverMin: [x, y],
       uReceiverMax: [x + width, y + height],
@@ -267,6 +293,35 @@ export class SceneSprite {
       const bounds = this.getBounds();
       this.shader.uniforms.uSpritePos = [bounds.x, bounds.y];
       this.shader.uniforms.uSpriteSize = [bounds.width, bounds.height];
+      this.shader.uniforms.uRotation = this.definition.rotation;
+      
+      // Update pivot point for rotation in shader
+      const pivot = this.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
+      const baseWidth = this.diffuseTexture?.width || 1;
+      const baseHeight = this.diffuseTexture?.height || 1;
+      let basePivotX = 0, basePivotY = 0;
+      
+      switch (pivot.preset) {
+        case 'top-left': basePivotX = 0; basePivotY = 0; break;
+        case 'top-center': basePivotX = baseWidth / 2; basePivotY = 0; break;
+        case 'top-right': basePivotX = baseWidth; basePivotY = 0; break;
+        case 'middle-left': basePivotX = 0; basePivotY = baseHeight / 2; break;
+        case 'middle-center': basePivotX = baseWidth / 2; basePivotY = baseHeight / 2; break;
+        case 'middle-right': basePivotX = baseWidth; basePivotY = baseHeight / 2; break;
+        case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
+        case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
+        case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
+        case 'offset': 
+          basePivotX = baseWidth / 2 + (pivot.offsetX || 0);
+          basePivotY = baseHeight / 2 + (pivot.offsetY || 0);
+          break;
+      }
+      
+      // Calculate world space pivot point for shader
+      const worldPivotX = bounds.x + basePivotX * this.definition.scale;
+      const worldPivotY = bounds.y + basePivotY * this.definition.scale;
+      this.shader.uniforms.uPivotPoint = [worldPivotX, worldPivotY];
+      
       // Update self-shadow avoidance bounds
       this.shader.uniforms.uReceiverMin = [bounds.x, bounds.y];
       this.shader.uniforms.uReceiverMax = [bounds.x + bounds.width, bounds.y + bounds.height];

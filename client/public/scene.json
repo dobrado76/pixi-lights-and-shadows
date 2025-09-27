@@ -161,13 +161,13 @@
         "y": 320
       },
       "rotation": 0,
-      "scale": 1,
+      "scale": 1.1,
       "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
       "pivot": {
-        "preset": "middle-center",
+        "preset": "offset",
         "offsetX": 0,
         "offsetY": 0
       }
