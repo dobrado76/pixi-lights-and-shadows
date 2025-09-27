@@ -385,34 +385,39 @@ const PixiDemo = (props: PixiDemoProps) => {
         };
       });
       
-      // Create PIXI.Graphics with exact pixel-perfect shapes instead of mesh approximations
-      const graphics = new PIXI.Graphics();
+      // Create custom geometry with exact computed vertices (no PIXI transforms!)
+      const geometry = new PIXI.Geometry();
+      const vertices = new Float32Array([
+        transformedCorners[0].x + SHADOW_BUFFER, transformedCorners[0].y + SHADOW_BUFFER, // Top-left
+        transformedCorners[1].x + SHADOW_BUFFER, transformedCorners[1].y + SHADOW_BUFFER, // Top-right
+        transformedCorners[2].x + SHADOW_BUFFER, transformedCorners[2].y + SHADOW_BUFFER, // Bottom-right
+        transformedCorners[3].x + SHADOW_BUFFER, transformedCorners[3].y + SHADOW_BUFFER, // Bottom-left
+      ]);
       
-      // Fill with white (opaque for occlusion)
-      graphics.beginFill(0xFFFFFF, 1.0);
+      const uvs = new Float32Array([
+        0, 0,     // Top-left UV
+        1, 0,     // Top-right UV
+        1, 1,     // Bottom-right UV
+        0, 1,     // Bottom-left UV
+      ]);
       
-      // Draw the exact transformed quad using the computed vertices
-      graphics.moveTo(
-        transformedCorners[0].x + SHADOW_BUFFER, 
-        transformedCorners[0].y + SHADOW_BUFFER
-      );
-      graphics.lineTo(
-        transformedCorners[1].x + SHADOW_BUFFER, 
-        transformedCorners[1].y + SHADOW_BUFFER
-      );
-      graphics.lineTo(
-        transformedCorners[2].x + SHADOW_BUFFER, 
-        transformedCorners[2].y + SHADOW_BUFFER
-      );
-      graphics.lineTo(
-        transformedCorners[3].x + SHADOW_BUFFER, 
-        transformedCorners[3].y + SHADOW_BUFFER
-      );
-      graphics.closePath();
-      graphics.endFill();
+      const indices = new Uint16Array([0, 1, 2, 0, 2, 3]); // Two triangles forming a quad
+      
+      geometry.addAttribute('aVertexPosition', vertices, 2);
+      geometry.addAttribute('aTextureCoord', uvs, 2);
+      geometry.addIndex(indices);
+      
+      // Create mesh with exact geometry AND original texture (preserves alpha channel)
+      const mesh = new PIXI.Mesh(geometry, new PIXI.MeshMaterial(caster.diffuseTexture));
+      mesh.tint = 0xFFFFFF; // White tint (no color modification)
+      
+      // CRITICAL: No transforms! Position is already baked into vertices
+      mesh.position.set(0, 0);
+      mesh.rotation = 0;
+      mesh.scale.set(1, 1);
       
       if (occluderContainerRef.current) {
-        occluderContainerRef.current.addChild(graphics);
+        occluderContainerRef.current.addChild(mesh);
       }
     });
     
