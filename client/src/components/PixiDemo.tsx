@@ -69,14 +69,88 @@ const PixiDemo = (props: PixiDemoProps) => {
   const createShadowGeometry = (caster: ShadowCaster, lightX: number, lightY: number, shadowLength: number = 100) => {
     if (!caster.castsShadows) return null;
     
-    // Rectangle corners for shadow volume calculation
+    // Get the actual sprite to access transformed geometry
+    const sprite = sceneManagerRef.current?.getSprite(caster.id);
+    if (!sprite) {
+      // Fallback to basic rectangle if sprite not found
+      const corners = [
+        { x: caster.x, y: caster.y },                           // Top-left
+        { x: caster.x + caster.width, y: caster.y },            // Top-right  
+        { x: caster.x + caster.width, y: caster.y + caster.height }, // Bottom-right
+        { x: caster.x, y: caster.y + caster.height }            // Bottom-left
+      ];
+      return createShadowVolumeFromCorners(corners, lightX, lightY, shadowLength);
+    }
+    
+    // Get transformed corners that include rotation, scale, and pivot
+    const corners = getTransformedCorners(sprite);
+    return createShadowVolumeFromCorners(corners, lightX, lightY, shadowLength);
+  };
+
+  // Helper function to get transformed corners from sprite (includes rotation, scale, pivot)
+  const getTransformedCorners = (sprite: SceneSprite) => {
+    const { x, y } = sprite.definition.position;
+    
+    // Get dimensions from texture (like in Sprite.tsx)
+    if (!sprite.diffuseTexture) {
+      throw new Error('Texture must be loaded to get dimensions');
+    }
+    const baseWidth = sprite.diffuseTexture.width;
+    const baseHeight = sprite.diffuseTexture.height;
+    
+    // Local space quad corners
     const corners = [
-      { x: caster.x, y: caster.y },                           // Top-left
-      { x: caster.x + caster.width, y: caster.y },            // Top-right  
-      { x: caster.x + caster.width, y: caster.y + caster.height }, // Bottom-right
-      { x: caster.x, y: caster.y + caster.height }            // Bottom-left
+      { x: 0, y: 0 },                      // Top-left
+      { x: baseWidth, y: 0 },              // Top-right
+      { x: baseWidth, y: baseHeight },     // Bottom-right
+      { x: 0, y: baseHeight }              // Bottom-left
     ];
 
+    // Calculate pivot point
+    const pivot = sprite.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
+    let basePivotX = 0, basePivotY = 0;
+    
+    switch (pivot.preset) {
+      case 'top-left': basePivotX = 0; basePivotY = 0; break;
+      case 'top-center': basePivotX = baseWidth / 2; basePivotY = 0; break;
+      case 'top-right': basePivotX = baseWidth; basePivotY = 0; break;
+      case 'middle-left': basePivotX = 0; basePivotY = baseHeight / 2; break;
+      case 'middle-center': basePivotX = baseWidth / 2; basePivotY = baseHeight / 2; break;
+      case 'middle-right': basePivotX = baseWidth; basePivotY = baseHeight / 2; break;
+      case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
+      case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
+      case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
+      case 'offset': 
+        basePivotX = baseWidth / 2 + (pivot.offsetX || 0);
+        basePivotY = baseHeight / 2 + (pivot.offsetY || 0);
+        break;
+    }
+    
+    const scaledPivotX = basePivotX * sprite.definition.scale;
+    const scaledPivotY = basePivotY * sprite.definition.scale;
+    
+    // Apply scaling and rotation around pivot point (same logic as Sprite.tsx)
+    return corners.map(corner => {
+      // Apply scaling from pivot point
+      const scaledOffsetX = (corner.x - basePivotX) * sprite.definition.scale;
+      const scaledOffsetY = (corner.y - basePivotY) * sprite.definition.scale;
+      
+      // Apply rotation around the scaled pivot point
+      const cosRot = Math.cos(sprite.definition.rotation);
+      const sinRot = Math.sin(sprite.definition.rotation);
+      
+      const rotatedX = scaledOffsetX * cosRot - scaledOffsetY * sinRot;
+      const rotatedY = scaledOffsetX * sinRot + scaledOffsetY * cosRot;
+      
+      return {
+        x: x + scaledPivotX + rotatedX,
+        y: y + scaledPivotY + rotatedY
+      };
+    });
+  };
+
+  // Helper function to create shadow volume from any set of corners
+  const createShadowVolumeFromCorners = (corners: Array<{x: number, y: number}>, lightX: number, lightY: number, shadowLength: number = 100) => {
     // Project corners away from light to create shadow volume endpoints
     const projectedCorners = corners.map(corner => {
       const dx = corner.x - lightX;
