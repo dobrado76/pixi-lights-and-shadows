@@ -178,15 +178,15 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <Label className="text-xs font-medium text-muted-foreground">Rotation</Label>
-                            <span className="text-xs text-muted-foreground">{Math.round((sprite.rotation || 0) * 180 / Math.PI)}°</span>
+                            <span className="text-xs text-muted-foreground">{Math.round(((sprite.rotation || 0) * 180 / Math.PI + 360) % 360)}°</span>
                           </div>
                           <Slider
-                            value={[(sprite.rotation || 0) * 180 / Math.PI]}
+                            value={[((sprite.rotation || 0) * 180 / Math.PI + 360) % 360]}
                             onValueChange={([value]) => updateSpriteConfig(spriteId, {
                               rotation: value * Math.PI / 180
                             })}
-                            min={-180}
-                            max={180}
+                            min={0}
+                            max={360}
                             step={1}
                             className="w-full"
                             data-testid={`slider-rotation-${spriteId}`}

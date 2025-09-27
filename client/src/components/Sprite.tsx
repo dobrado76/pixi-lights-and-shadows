@@ -445,15 +445,16 @@ export class SceneManager {
         const newDef = newSpriteData as SpriteDefinition;
         const wasVisible = existingSprite.definition.visible;
         const oldZOrder = existingSprite.definition.zOrder;
-        // Properly merge definitions ensuring pivot has correct types
-        const updatedDef = { ...existingSprite.definition, ...newDef };
-        if (newDef.pivot) {
-          updatedDef.pivot = {
-            preset: newDef.pivot.preset || existingSprite.definition.pivot.preset,
-            offsetX: newDef.pivot.offsetX !== undefined ? newDef.pivot.offsetX : existingSprite.definition.pivot.offsetX,
-            offsetY: newDef.pivot.offsetY !== undefined ? newDef.pivot.offsetY : existingSprite.definition.pivot.offsetY
-          };
-        }
+        // Create a properly typed updated definition
+        const updatedDef: CompleteSpriteDefinition = {
+          ...existingSprite.definition,
+          ...newDef,
+          pivot: {
+            preset: newDef.pivot?.preset || existingSprite.definition.pivot.preset,
+            offsetX: newDef.pivot?.offsetX !== undefined ? newDef.pivot.offsetX : existingSprite.definition.pivot.offsetX,
+            offsetY: newDef.pivot?.offsetY !== undefined ? newDef.pivot.offsetY : existingSprite.definition.pivot.offsetY
+          }
+        };
         existingSprite.definition = updatedDef;
         
         // Handle visibility changes that require mesh creation/destruction

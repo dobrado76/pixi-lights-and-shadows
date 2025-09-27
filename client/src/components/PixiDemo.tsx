@@ -370,11 +370,12 @@ const PixiDemo = (props: PixiDemoProps) => {
       occluderSprite.height = textureHeight * spriteScale;
       occluderSprite.rotation = spriteRotation;
       
-      // Adjust position to compensate for anchor - position should be top-left corner + pivot offset
-      const pivotOffsetX = basePivotX * spriteScale;
-      const pivotOffsetY = basePivotY * spriteScale;
-      occluderSprite.x = spritePos.x + SHADOW_BUFFER + pivotOffsetX;
-      occluderSprite.y = spritePos.y + SHADOW_BUFFER + pivotOffsetY;
+      // Position is where the anchor point should be placed in world space
+      // Since our scene sprite position is top-left corner, we need to add the scaled pivot offset
+      const worldPivotX = spritePos.x + (basePivotX * spriteScale);
+      const worldPivotY = spritePos.y + (basePivotY * spriteScale);
+      occluderSprite.x = worldPivotX + SHADOW_BUFFER;
+      occluderSprite.y = worldPivotY + SHADOW_BUFFER;
       
       occluderSprite.visible = true;
       occluderSprite.tint = 0xFFFFFF; // White tint (no color modification)
