@@ -17,6 +17,11 @@ export interface SpriteDefinition {
   castsShadows?: boolean;             // Participates in shadow casting
   visible?: boolean;                  // Controls sprite visibility without deletion
   useNormalMap?: boolean;             // Whether to use normal mapping for this sprite
+  pivot?: {                           // Optional pivot point for rotation and scaling
+    preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'offset';
+    offsetX?: number;
+    offsetY?: number;
+  };
 }
 
 // Internal interface with defaults applied - all fields guaranteed to exist
@@ -30,10 +35,10 @@ interface CompleteSpriteDefinition {
   castsShadows: boolean;
   visible: boolean;
   useNormalMap: boolean;
-  pivot?: {
+  pivot: {                            // Always present with defaults applied
     preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'offset';
-    offsetX?: number;
-    offsetY?: number;
+    offsetX: number;
+    offsetY: number;
   };
 }
 
@@ -69,7 +74,12 @@ export class SceneSprite {
       zOrder: definition.zOrder ?? 0,                  // Default z-order (middle layer)
       castsShadows: definition.castsShadows ?? true,   // Most sprites cast shadows
       visible: definition.visible ?? true,             // Visible by default
-      useNormalMap: definition.useNormalMap ?? true    // Use normal mapping by default
+      useNormalMap: definition.useNormalMap ?? true,   // Use normal mapping by default
+      pivot: { 
+        preset: definition.pivot?.preset || 'middle-center', 
+        offsetX: definition.pivot?.offsetX || 0, 
+        offsetY: definition.pivot?.offsetY || 0 
+      } // Default center pivot with explicit offset values
     };
   }
 
@@ -435,7 +445,16 @@ export class SceneManager {
         const newDef = newSpriteData as SpriteDefinition;
         const wasVisible = existingSprite.definition.visible;
         const oldZOrder = existingSprite.definition.zOrder;
-        existingSprite.definition = { ...existingSprite.definition, ...newDef };
+        // Properly merge definitions ensuring pivot has correct types
+        const updatedDef = { ...existingSprite.definition, ...newDef };
+        if (newDef.pivot) {
+          updatedDef.pivot = {
+            preset: newDef.pivot.preset || existingSprite.definition.pivot.preset,
+            offsetX: newDef.pivot.offsetX !== undefined ? newDef.pivot.offsetX : existingSprite.definition.pivot.offsetX,
+            offsetY: newDef.pivot.offsetY !== undefined ? newDef.pivot.offsetY : existingSprite.definition.pivot.offsetY
+          };
+        }
+        existingSprite.definition = updatedDef;
         
         // Handle visibility changes that require mesh creation/destruction
         const isNowVisible = newDef.visible ?? true;

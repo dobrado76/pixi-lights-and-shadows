@@ -360,13 +360,22 @@ const PixiDemo = (props: PixiDemoProps) => {
           break;
       }
       
-      // Set all transform properties to match the scene sprite exactly
-      occluderSprite.x = spritePos.x + SHADOW_BUFFER;
-      occluderSprite.y = spritePos.y + SHADOW_BUFFER;
+      // Set anchor first (affects position calculation)
+      const anchorX = basePivotX / textureWidth;
+      const anchorY = basePivotY / textureHeight;
+      occluderSprite.anchor.set(anchorX, anchorY);
+      
+      // Set size and rotation
       occluderSprite.width = textureWidth * spriteScale;
       occluderSprite.height = textureHeight * spriteScale;
-      occluderSprite.rotation = spriteRotation; // Apply rotation
-      occluderSprite.anchor.set(basePivotX / textureWidth, basePivotY / textureHeight); // Set pivot/anchor
+      occluderSprite.rotation = spriteRotation;
+      
+      // Adjust position to compensate for anchor - position should be top-left corner + pivot offset
+      const pivotOffsetX = basePivotX * spriteScale;
+      const pivotOffsetY = basePivotY * spriteScale;
+      occluderSprite.x = spritePos.x + SHADOW_BUFFER + pivotOffsetX;
+      occluderSprite.y = spritePos.y + SHADOW_BUFFER + pivotOffsetY;
+      
       occluderSprite.visible = true;
       occluderSprite.tint = 0xFFFFFF; // White tint (no color modification)
     });
