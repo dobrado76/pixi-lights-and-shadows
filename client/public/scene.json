@@ -160,14 +160,14 @@
         "x": 203,
         "y": 328
       },
-      "rotation": 0.3665191429188092,
+      "rotation": -0.3141592653589793,
       "scale": 1.3,
       "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
       "pivot": {
-        "preset": "bottom-right",
+        "preset": "middle-center",
         "offsetX": 0,
         "offsetY": 0
       }
