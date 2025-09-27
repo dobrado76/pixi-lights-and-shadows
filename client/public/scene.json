@@ -33,7 +33,7 @@
       "visible": true,
       "useNormalMap": false,
       "pivot": {
-        "preset": "middle-center",
+        "preset": "top-left",
         "offsetX": 0,
         "offsetY": 0
       }

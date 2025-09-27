@@ -181,8 +181,8 @@ export class SceneSprite {
       const rotatedY = scaledOffsetX * sinRot + scaledOffsetY * cosRot;
       
       return {
-        x: x + scaledPivotX + rotatedX,
-        y: y + scaledPivotY + rotatedY
+        x: x + rotatedX,
+        y: y + rotatedY
       };
     });
 
@@ -284,7 +284,7 @@ export class SceneSprite {
    */
   calculateRotatedBounds(x: number, y: number, width: number, height: number, pivotX: number, pivotY: number, rotation: number): { uReceiverMin: number[], uReceiverMax: number[] } {
     if (!rotation) {
-      // No rotation, return simple bounds
+      // No rotation, return simple bounds (x,y is now top-left corner from getBounds)
       return {
         uReceiverMin: [x, y],
         uReceiverMax: [x + width, y + height]
@@ -304,7 +304,7 @@ export class SceneSprite {
     const sin = Math.sin(rotation);
     
     const rotatedCorners = corners.map(corner => {
-      // Offset from pivot
+      // Offset from pivot (relative to top-left corner)
       const offsetX = corner.x - pivotX;
       const offsetY = corner.y - pivotY;
       
@@ -312,7 +312,7 @@ export class SceneSprite {
       const rotatedX = offsetX * cos - offsetY * sin;
       const rotatedY = offsetX * sin + offsetY * cos;
       
-      // Translate back to world position
+      // Translate back to world position (x,y is top-left corner)
       return {
         x: x + pivotX + rotatedX,
         y: y + pivotY + rotatedY
@@ -342,7 +342,38 @@ export class SceneSprite {
     const width = this.diffuseTexture.width * this.definition.scale;
     const height = this.diffuseTexture.height * this.definition.scale;
     
-    return { x, y, width, height };
+    // Calculate pivot point to get top-left corner position
+    const pivot = this.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
+    const baseWidth = this.diffuseTexture.width;
+    const baseHeight = this.diffuseTexture.height;
+    let basePivotX = 0, basePivotY = 0;
+    
+    switch (pivot.preset) {
+      case 'top-left': basePivotX = 0; basePivotY = 0; break;
+      case 'top-center': basePivotX = baseWidth / 2; basePivotY = 0; break;
+      case 'top-right': basePivotX = baseWidth; basePivotY = 0; break;
+      case 'middle-left': basePivotX = 0; basePivotY = baseHeight / 2; break;
+      case 'middle-center': basePivotX = baseWidth / 2; basePivotY = baseHeight / 2; break;
+      case 'middle-right': basePivotX = baseWidth; basePivotY = baseHeight / 2; break;
+      case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
+      case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
+      case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
+      case 'offset': 
+        basePivotX = baseWidth / 2 + (pivot.offsetX || 0);
+        basePivotY = baseHeight / 2 + (pivot.offsetY || 0);
+        break;
+    }
+    
+    // Since position (x,y) is now the pivot location, calculate top-left corner
+    const scaledPivotX = basePivotX * this.definition.scale;
+    const scaledPivotY = basePivotY * this.definition.scale;
+    
+    return { 
+      x: x - scaledPivotX, 
+      y: y - scaledPivotY, 
+      width, 
+      height 
+    };
   }
 
   // Update transform (for dynamic updates)
