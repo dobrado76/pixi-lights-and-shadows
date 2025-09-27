@@ -260,6 +260,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     const allCasters = sceneManagerRef.current?.getShadowCasters() || [];
     
     // For unified system: include sprites that cast shadows OR AO (since they share the same occluder map)
+    // TODO: Make AO and shadows completely independent by using separate occluder maps or shader logic
     const allShadowCasters = allCasters.filter(caster => 
       caster.definition.castsShadows || caster.definition.castsAO
     );
