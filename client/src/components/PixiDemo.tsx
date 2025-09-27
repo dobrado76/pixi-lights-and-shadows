@@ -321,33 +321,22 @@ const PixiDemo = (props: PixiDemoProps) => {
         { x: 0, y: baseHeight }              // Bottom-left
       ];
       
-      // Apply scaling and rotation around pivot point for accurate shadow casting
-      const transformedCorners = corners.map(corner => {
-        // Apply scaling from pivot point (pivot stays stationary)
-        const scaledOffsetX = (corner.x - basePivotX) * spriteScale;
-        const scaledOffsetY = (corner.y - basePivotY) * spriteScale;
-        
-        // Apply rotation around the scaled pivot point to match visual rotation
-        const cosRot = Math.cos(spriteRotation);
-        const sinRot = Math.sin(spriteRotation);
-        
-        const rotatedX = scaledOffsetX * cosRot - scaledOffsetY * sinRot;
-        const rotatedY = scaledOffsetX * sinRot + scaledOffsetY * cosRot;
-        
-        return {
-          x: spritePos.x + (basePivotX * spriteScale) + rotatedX,
-          y: spritePos.y + (basePivotY * spriteScale) + rotatedY
-        };
-      });
+      // Create rectangular geometry WITHOUT vertex rotation (match visual sprite approach)
+      // Visual sprites use UV rotation in shader, so shadow sprites should use same approach
+      const spriteWidth = baseWidth * spriteScale;
+      const spriteHeight = baseHeight * spriteScale;
       
+      // Position with pivot offset but NO rotation applied to vertices
+      const finalX = spritePos.x - (basePivotX * spriteScale);
+      const finalY = spritePos.y - (basePivotY * spriteScale);
       
-      // Create custom geometry with exact computed vertices (NO shadow buffer offset to prevent rotation mismatch)
+      // Create simple rectangular geometry (rotation handled in shader via UV)
       const geometry = new PIXI.Geometry();
       const vertices = new Float32Array([
-        transformedCorners[0].x, transformedCorners[0].y, // Top-left
-        transformedCorners[1].x, transformedCorners[1].y, // Top-right
-        transformedCorners[2].x, transformedCorners[2].y, // Bottom-right
-        transformedCorners[3].x, transformedCorners[3].y, // Bottom-left
+        finalX, finalY,                           // Top-left
+        finalX + spriteWidth, finalY,             // Top-right  
+        finalX + spriteWidth, finalY + spriteHeight, // Bottom-right
+        finalX, finalY + spriteHeight,            // Bottom-left
       ]);
       
       const uvs = new Float32Array([
@@ -363,11 +352,53 @@ const PixiDemo = (props: PixiDemoProps) => {
       geometry.addAttribute('aTextureCoord', uvs, 2);
       geometry.addIndex(indices);
       
-      // Create mesh with exact geometry AND original texture (preserves alpha channel)
-      const mesh = new PIXI.Mesh(geometry, new PIXI.MeshMaterial(caster.diffuseTexture));
-      mesh.tint = 0xFFFFFF; // White tint (no color modification)
+      // Create shader with UV rotation support (like visual sprites)
+      const occluderShader = PIXI.Shader.from(
+        vertexShaderSource,
+        `
+        precision mediump float;
+        varying vec2 vTextureCoord;
+        varying vec2 vWorldPos;
+        uniform sampler2D uDiffuse;
+        uniform float uRotation;
+        uniform vec2 uPivotPoint;
+        uniform vec2 uSpritePos;
+        uniform vec2 uSpriteSize;
+        
+        // UV rotation function (same as visual sprites)
+        vec2 rotateUV(vec2 uv, float rotation) {
+          vec2 pivotUV = (uPivotPoint - uSpritePos) / uSpriteSize;
+          vec2 centered = uv - pivotUV;
+          float cosRot = cos(rotation);
+          float sinRot = sin(rotation);
+          vec2 rotated = vec2(
+            centered.x * cosRot - centered.y * sinRot,
+            centered.x * sinRot + centered.y * cosRot
+          );
+          return rotated + pivotUV;
+        }
+        
+        void main(void) {
+          vec2 uv = vTextureCoord;
+          if (uRotation != 0.0) {
+            uv = rotateUV(uv, uRotation);
+          }
+          vec4 color = texture2D(uDiffuse, uv);
+          gl_FragColor = vec4(1.0, 1.0, 1.0, color.a); // White with original alpha
+        }
+        `,
+        {
+          uDiffuse: caster.diffuseTexture,
+          uRotation: spriteRotation,
+          uPivotPoint: [spritePos.x + (basePivotX * spriteScale), spritePos.y + (basePivotY * spriteScale)],
+          uSpritePos: [finalX, finalY],
+          uSpriteSize: [spriteWidth, spriteHeight]
+        }
+      );
       
-      // Position the mesh with shadow buffer offset (since we removed it from vertices)
+      const mesh = new PIXI.Mesh(geometry, occluderShader);
+      
+      // Position the mesh with shadow buffer offset
       mesh.position.set(SHADOW_BUFFER, SHADOW_BUFFER);
       mesh.rotation = 0;
       mesh.scale.set(1, 1);
