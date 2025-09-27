@@ -70,12 +70,12 @@ uniform bool uUseOccluderMap; // Switch between per-caster and occluder map
 uniform vec2 uOccluderMapOffset; // Offset for expanded occlusion map (buffer zone)
 uniform sampler2D uOccluderMap; // Binary alpha map of all shadow casters
 
-// Ambient Occlusion System (completely independent from lighting/shadows)
-uniform bool uAOEnabled; // Enable/disable ambient occlusion
-uniform float uAOStrength; // AO intensity (0.0 = no AO, 1.0 = full AO)
-uniform float uAORadius; // Sampling radius for occlusion detection
-uniform int uAOSamples; // Number of samples for AO calculation (4-16)
-uniform float uAOBias; // Bias to prevent self-occlusion
+// Ambient Occlusion System (completely independent from lighting/shadows) - TEMPORARILY REMOVED
+// uniform bool uAOEnabled; // Enable/disable ambient occlusion
+// uniform float uAOStrength; // AO intensity (0.0 = no AO, 1.0 = full AO)
+// uniform float uAORadius; // Sampling radius for occlusion detection
+// uniform int uAOSamples; // Number of samples for AO calculation (4-16)
+// uniform float uAOBias; // Bias to prevent self-occlusion
 
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
@@ -312,7 +312,8 @@ float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
   return calculateShadowOccluderMap(lightPos, pixelPos);
 }
 
-// Ambient Occlusion calculation - completely independent from lighting/shadows
+// Ambient Occlusion calculation - completely independent from lighting/shadows - TEMPORARILY REMOVED
+/*
 float calculateAmbientOcclusion(vec2 pixelPos) {
   if (!uAOEnabled) return 1.0; // No AO when disabled
   
@@ -359,6 +360,7 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   
   return 1.0; // No occlusion
 }
+*/
 
 // UV rotation function - rotates UV coordinates around configurable pivot point
 vec2 rotateUV(vec2 uv, float rotation) {
@@ -829,10 +831,11 @@ void main(void) {
   finalColor *= uColor;
   
   // Apply Ambient Occlusion as final post-processing step (completely independent from lighting)
-  if (uAOEnabled) {
-    float aoFactor = calculateAmbientOcclusion(vWorldPos);
-    finalColor *= aoFactor;
-  }
+  // Temporarily disabled to restore original lighting
+  // if (uAOEnabled) {
+  //   float aoFactor = calculateAmbientOcclusion(vWorldPos);
+  //   finalColor *= aoFactor;
+  // }
   
   gl_FragColor = vec4(finalColor, diffuseColor.a);
 }

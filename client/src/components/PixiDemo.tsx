@@ -1356,12 +1356,12 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uShadowStrength = shadowConfig.strength || 0.5;
       uniforms.uShadowBias = shadowConfig.bias || 3.0;
       
-      // Ambient Occlusion uniforms (completely independent from shadows)
-      uniforms.uAOEnabled = ambientOcclusionConfig.enabled;
-      uniforms.uAOStrength = ambientOcclusionConfig.strength;
-      uniforms.uAORadius = ambientOcclusionConfig.radius;
-      uniforms.uAOSamples = ambientOcclusionConfig.samples;
-      uniforms.uAOBias = ambientOcclusionConfig.bias;
+      // Ambient Occlusion uniforms (completely independent from shadows) - TEMPORARILY REMOVED
+      // uniforms.uAOEnabled = ambientOcclusionConfig.enabled;
+      // uniforms.uAOStrength = ambientOcclusionConfig.strength;
+      // uniforms.uAORadius = ambientOcclusionConfig.radius;
+      // uniforms.uAOSamples = ambientOcclusionConfig.samples;
+      // uniforms.uAOBias = ambientOcclusionConfig.bias;
       
       // Shadow casters from scene data (not hardcoded)
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
