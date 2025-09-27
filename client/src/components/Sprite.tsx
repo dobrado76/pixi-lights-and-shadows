@@ -264,10 +264,6 @@ export class SceneSprite {
       ...uniforms
     };
 
-    // DEBUG: Log rotation for ball2 to trace lighting issue
-    if (this.id === 'ball2') {
-      console.log(`🔍 DEBUG BALL2 SHADER: rotation=${this.definition.rotation.toFixed(4)}, pos=[${x}, ${y}], pivot=[${worldPivotX.toFixed(2)}, ${worldPivotY.toFixed(2)}]`);
-    }
 
     this.shader = PIXI.Shader.from(vertexShader, fragmentShader, shaderUniforms);
     return this.shader;
