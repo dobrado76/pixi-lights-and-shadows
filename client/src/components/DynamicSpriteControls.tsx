@@ -14,10 +14,17 @@ interface SpriteConfig {
   image: string;
   normal?: string;
   position: { x: number; y: number };
+  rotation?: number;
+  scale?: number;
   zOrder: number;
   castsShadows: boolean;
   visible: boolean;
   useNormalMap?: boolean;
+  pivot?: {
+    preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'offset';
+    offsetX?: number;
+    offsetY?: number;
+  };
 }
 
 interface SceneConfig {
@@ -167,8 +174,124 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                           </div>
                         </div>
 
+                        {/* Rotation Control */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-medium text-muted-foreground">Rotation</Label>
+                            <span className="text-xs text-muted-foreground">{Math.round((sprite.rotation || 0) * 180 / Math.PI)}°</span>
+                          </div>
+                          <Slider
+                            value={[(sprite.rotation || 0) * 180 / Math.PI]}
+                            onValueChange={([value]) => updateSpriteConfig(spriteId, {
+                              rotation: value * Math.PI / 180
+                            })}
+                            min={-180}
+                            max={180}
+                            step={1}
+                            className="w-full"
+                            data-testid={`slider-rotation-${spriteId}`}
+                          />
+                        </div>
 
+                        {/* Scale Control */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-medium text-muted-foreground">Scale</Label>
+                            <span className="text-xs text-muted-foreground">{((sprite.scale || 1) * 100).toFixed(0)}%</span>
+                          </div>
+                          <Slider
+                            value={[sprite.scale || 1]}
+                            onValueChange={([value]) => updateSpriteConfig(spriteId, {
+                              scale: value
+                            })}
+                            min={0.1}
+                            max={3.0}
+                            step={0.1}
+                            className="w-full"
+                            data-testid={`slider-scale-${spriteId}`}
+                          />
+                        </div>
 
+                        {/* Pivot Control */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-muted-foreground">Pivot Point</Label>
+                          <Select
+                            value={sprite.pivot?.preset || 'middle-center'}
+                            onValueChange={(value: string) => {
+                              if (value === 'offset') {
+                                updateSpriteConfig(spriteId, {
+                                  pivot: {
+                                    preset: 'offset',
+                                    offsetX: sprite.pivot?.offsetX || 0,
+                                    offsetY: sprite.pivot?.offsetY || 0
+                                  }
+                                });
+                              } else {
+                                updateSpriteConfig(spriteId, {
+                                  pivot: {
+                                    preset: value as any,
+                                    offsetX: 0,
+                                    offsetY: 0
+                                  }
+                                });
+                              }
+                            }}
+                            data-testid={`select-pivot-${spriteId}`}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="top-left">Top Left</SelectItem>
+                              <SelectItem value="top-center">Top Center</SelectItem>
+                              <SelectItem value="top-right">Top Right</SelectItem>
+                              <SelectItem value="middle-left">Middle Left</SelectItem>
+                              <SelectItem value="middle-center">Middle Center</SelectItem>
+                              <SelectItem value="middle-right">Middle Right</SelectItem>
+                              <SelectItem value="bottom-left">Bottom Left</SelectItem>
+                              <SelectItem value="bottom-center">Bottom Center</SelectItem>
+                              <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                              <SelectItem value="offset">Custom Offset</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          {sprite.pivot?.preset === 'offset' && (
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Offset X</Label>
+                                <Input
+                                  type="number"
+                                  value={sprite.pivot?.offsetX || 0}
+                                  onChange={(e) => updateSpriteConfig(spriteId, {
+                                    pivot: {
+                                      ...sprite.pivot,
+                                      preset: 'offset',
+                                      offsetX: parseFloat(e.target.value) || 0
+                                    }
+                                  })}
+                                  className="h-8 text-xs"
+                                  data-testid={`input-pivot-offset-x-${spriteId}`}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Offset Y</Label>
+                                <Input
+                                  type="number"
+                                  value={sprite.pivot?.offsetY || 0}
+                                  onChange={(e) => updateSpriteConfig(spriteId, {
+                                    pivot: {
+                                      ...sprite.pivot,
+                                      preset: 'offset',
+                                      offsetY: parseFloat(e.target.value) || 0
+                                    }
+                                  })}
+                                  className="h-8 text-xs"
+                                  data-testid={`input-pivot-offset-y-${spriteId}`}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
 
                         {/* Z-Order Control */}
                         <div className="space-y-2">
