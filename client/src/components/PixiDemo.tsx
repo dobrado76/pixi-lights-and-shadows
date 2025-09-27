@@ -364,17 +364,22 @@ const PixiDemo = (props: PixiDemoProps) => {
         { x: 0, y: baseHeight }              // Bottom-left
       ];
       
-      // Apply ONLY scaling and pivot transform (NO rotation in geometry - matches Sprite.tsx exactly)
+      // Apply scaling and rotation around pivot point for accurate shadow casting
       const transformedCorners = corners.map(corner => {
         // Apply scaling from pivot point (pivot stays stationary)
         const scaledOffsetX = (corner.x - basePivotX) * spriteScale;
         const scaledOffsetY = (corner.y - basePivotY) * spriteScale;
         
-        // NO rotation applied to geometry! (Visual sprites do rotation in fragment shader only)
+        // Apply rotation around the scaled pivot point to match visual rotation
+        const cosRot = Math.cos(spriteRotation);
+        const sinRot = Math.sin(spriteRotation);
+        
+        const rotatedX = scaledOffsetX * cosRot - scaledOffsetY * sinRot;
+        const rotatedY = scaledOffsetX * sinRot + scaledOffsetY * cosRot;
         
         return {
-          x: spritePos.x + (basePivotX * spriteScale) + scaledOffsetX,
-          y: spritePos.y + (basePivotY * spriteScale) + scaledOffsetY
+          x: spritePos.x + (basePivotX * spriteScale) + rotatedX,
+          y: spritePos.y + (basePivotY * spriteScale) + rotatedY
         };
       });
       
