@@ -321,23 +321,16 @@ const PixiDemo = (props: PixiDemoProps) => {
         { x: 0, y: baseHeight }              // Bottom-left
       ];
       
-      // Create rotated geometry to match visual sprite exactly
-      // Shadow sprites MUST use vertex rotation to capture full rotated silhouette
+      // Apply ONLY scaling and pivot (NO rotation in geometry) - match visual sprite approach
       const transformedCorners = corners.map(corner => {
-        // Apply scaling from pivot point (pivot stays stationary)
+        // Apply scaling from pivot point (pivot stays stationary) - NO ROTATION here
         const scaledOffsetX = (corner.x - basePivotX) * spriteScale;
         const scaledOffsetY = (corner.y - basePivotY) * spriteScale;
         
-        // Apply rotation around the scaled pivot point to match visual rotation
-        const cosRot = Math.cos(spriteRotation);
-        const sinRot = Math.sin(spriteRotation);
-        
-        const rotatedX = scaledOffsetX * cosRot - scaledOffsetY * sinRot;
-        const rotatedY = scaledOffsetX * sinRot + scaledOffsetY * cosRot;
-        
+        // Local position relative to sprite origin (mesh.rotation will handle rotation)
         return {
-          x: spritePos.x + (basePivotX * spriteScale) + rotatedX,
-          y: spritePos.y + (basePivotY * spriteScale) + rotatedY
+          x: scaledOffsetX + (basePivotX * spriteScale),
+          y: scaledOffsetY + (basePivotY * spriteScale)
         };
       });
 
@@ -368,10 +361,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       const mesh = new PIXI.Mesh(geometry, new PIXI.MeshMaterial(caster.diffuseTexture));
       mesh.tint = 0xFFFFFF; // White tint (no color modification)
       
-      // Apply SHADOW_BUFFER offset for proper render target positioning
-      // The render target is expanded by SHADOW_BUFFER, so shadow meshes need this offset
-      mesh.position.set(SHADOW_BUFFER, SHADOW_BUFFER);
-      mesh.rotation = 0;
+      // Position mesh at sprite location with SHADOW_BUFFER offset
+      mesh.position.set(spritePos.x + SHADOW_BUFFER, spritePos.y + SHADOW_BUFFER);
+      mesh.rotation = spriteRotation; // Apply rotation via mesh transform (like visual sprites)
       mesh.scale.set(1, 1);
       
       if (occluderContainerRef.current) {
