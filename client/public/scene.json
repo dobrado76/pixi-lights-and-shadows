@@ -282,5 +282,12 @@
     "height": 8,
     "sharpness": 1,
     "bias": 3
+  },
+  "ambientOcclusionConfig": {
+    "enabled": false,
+    "strength": 0.3,
+    "radius": 25,
+    "samples": 8,
+    "bias": 2.0
   }
 }
