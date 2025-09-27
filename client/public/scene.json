@@ -102,7 +102,7 @@
         "x": 84,
         "y": 444
       },
-      "rotation": 0.41887902047863906,
+      "rotation": 0,
       "scale": 1,
       "zOrder": 2,
       "castsShadows": true,
@@ -187,10 +187,10 @@
       "enabled": true,
       "brightness": 0.7,
       "color": "0xffffff",
-      "x": 320,
-      "y": 450,
+      "x": 250,
+      "y": 170,
       "z": 70,
-      "followMouse": false,
+      "followMouse": true,
       "castsShadows": true,
       "radius": 350
     },
@@ -281,6 +281,6 @@
     "maxLength": 280,
     "height": 8,
     "sharpness": 1,
-    "bias": 10
+    "bias": 3
   }
 }
