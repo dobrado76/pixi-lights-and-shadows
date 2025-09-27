@@ -129,7 +129,7 @@
       "visible": false,
       "useNormalMap": true,
       "pivot": {
-        "preset": "middle-center",
+        "preset": "top-left",
         "offsetX": 0,
         "offsetY": 0
       }
@@ -157,7 +157,7 @@
       "image": "/textures/block2.png",
       "normal": "/textures/block2NormalMap.png",
       "position": {
-        "x": 232,
+        "x": 280,
         "y": 319
       },
       "rotation": 0,
