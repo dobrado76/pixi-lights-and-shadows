@@ -69,99 +69,94 @@ Experience the full lighting and shadow system in action with interactive contro
 
 ### Unified Configuration (`client/public/scene.json`)
 
-All scene, lighting, and shadow data is stored in a single JSON file with three main sections:
+All scene, lighting, shadow, and performance data is stored in a single JSON file with five main sections:
 
 ```json
 {
   "scene": {
     "background": {
-      "image": "/textures/BGTextureTest.jpg",
+      "image": "/textures/BGTextureTest.jpg", 
       "normal": "/textures/BGTextureNORM.jpg",
       "position": { "x": 0, "y": 0 },
       "rotation": 0,
       "scale": 1,
       "zOrder": -1,
       "castsShadows": false,
-      "visible": true,
+      "visible": false,
       "useNormalMap": true,
-      "pivot": {
-        "preset": "middle-center",
-        "offsetX": 0,
-        "offsetY": 0
-      }
+      "pivot": { "preset": "top-left", "offsetX": 0, "offsetY": 0 },
+      "receivesAO": false
     },
-    "ball": {
-      "image": "/textures/ball.png",
-      "normal": "/textures/ballN.png",
-      "position": { "x": 100, "y": 50 },
-      "rotation": 0,
-      "scale": 1,
+    "block2": {
+      "image": "/textures/block2.png",
+      "normal": "/textures/block2NormalMap.png", 
+      "position": { "x": 291, "y": 354 },
+      "rotation": 0.3665191429188092,
+      "scale": 1.2,
       "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
-      "pivot": {
-        "preset": "middle-center",
-        "offsetX": 0,
-        "offsetY": 0
-      }
+      "pivot": { "preset": "middle-center", "offsetX": 0, "offsetY": 0 }
     }
   },
   "lights": [
     {
       "id": "mouse_light",
-      "type": "point",
+      "type": "point", 
       "enabled": true,
-      "brightness": 1,
+      "brightness": 0.7,
       "color": "0xffffff",
-      "x": 250,
-      "y": 170,
-      "z": 40,
+      "x": 250, "y": 170, "z": 70,
       "followMouse": true,
       "castsShadows": true,
       "radius": 350
     },
     {
-      "id": "directional_light",
-      "type": "directional",
-      "enabled": true,
-      "brightness": 0.2,
-      "color": "0xffffff",
-      "directionX": 0.64,
-      "directionY": -0.77,
-      "directionZ": -1,
-      "castsShadows": true
-    },
-    {
       "id": "spotlight_1",
       "type": "spotlight",
-      "enabled": true,
-      "brightness": 0.4,
+      "enabled": true, 
+      "brightness": 0.7,
       "color": "0xf4f080",
-      "x": 200,
-      "y": 210,
-      "z": 80,
-      "directionX": 0,
-      "directionY": 1,
-      "directionZ": -1,
+      "x": 200, "y": 210, "z": 80,
+      "directionX": 0, "directionY": 1, "directionZ": -1,
       "castsShadows": true,
       "radius": 780,
       "coneAngle": 49,
       "softness": 0.2,
       "mask": {
-        "image": "00035-3934797537.png",
+        "image": "god-rays.png",
         "offset": { "x": 15, "y": 25 },
         "rotation": 0,
         "scale": 1.4
       }
     }
   ],
+  "performanceSettings": {
+    "quality": "high",
+    "resolution": 1,
+    "maxLights": 999,
+    "enableShadows": true,
+    "enableAmbientOcclusion": true,
+    "enableNormalMapping": true,
+    "enableLightMasks": true,
+    "textureScale": 1,
+    "fpsTarget": 60,
+    "manualOverride": true
+  },
   "shadowConfig": {
     "enabled": true,
     "strength": 0.55,
     "maxLength": 280,
     "height": 8,
-    "sharpness": 1
+    "bias": 3
+  },
+  "ambientOcclusionConfig": {
+    "enabled": true,
+    "strength": 1.95,
+    "radius": 8,
+    "samples": 16,
+    "bias": 7.5
   }
 }
 ```
@@ -174,8 +169,10 @@ All scene, lighting, and shadow data is stored in a single JSON file with three 
 - **scale**: Size multiplier (1.0 = original size, scales around pivot point)
 - **zOrder**: Rendering order (lower values render first)
 - **castsShadows**: Whether object blocks light and casts shadows
+- **receiveShadows**: Whether object receives shadows from other objects (optional)
 - **visible**: Whether object is rendered
 - **useNormalMap**: Whether to apply normal mapping
+- **receivesAO**: Whether object receives ambient occlusion effects (optional)
 - **pivot**: Anchor point configuration that determines scaling and rotation center
 
 #### Pivot System
@@ -225,12 +222,31 @@ If no pivot is specified, sprites use `"top-left"` pivot, meaning the position c
 - **rotation**: Rotation angle in degrees
 - **scale**: Size multiplier (1.0 = actual pixel size)
 
+### Performance Settings
+- **quality**: Performance preset ("low", "medium", "high")
+- **resolution**: Rendering resolution multiplier (0.5 - 1.0)
+- **maxLights**: Maximum number of lights to process (2, 4, or 999 for unlimited)
+- **enableShadows**: Global shadow system toggle
+- **enableAmbientOcclusion**: Ambient occlusion effects toggle
+- **enableNormalMapping**: Normal map rendering toggle
+- **enableLightMasks**: Light pattern masks toggle
+- **textureScale**: Texture resolution multiplier
+- **fpsTarget**: Target frame rate (30, 45, or 60)
+- **manualOverride**: Whether settings resist automatic performance adjustments
+
 ### Shadow Configuration
 - **enabled**: Global shadow system on/off
 - **strength**: Shadow opacity (0.0 - 1.0)
 - **maxLength**: Maximum shadow length in pixels
 - **height**: Shadow casting height (affects projection angle)
-- **sharpness**: Shadow edge sharpness (higher = sharper edges)
+- **bias**: Shadow bias to prevent self-shadowing artifacts
+
+### Ambient Occlusion Configuration
+- **enabled**: Global ambient occlusion on/off
+- **strength**: AO intensity (0.0 - 3.0)
+- **radius**: Sampling radius for occlusion detection
+- **samples**: Number of samples for AO calculation (4-16)
+- **bias**: Bias to prevent self-occlusion
 
 ## 🚀 Quick Start
 
