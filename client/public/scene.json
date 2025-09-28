@@ -62,7 +62,7 @@
       "image": "/textures/ball.png",
       "normal": "/textures/ballN.png",
       "position": {
-        "x": 116,
+        "x": 87,
         "y": 309
       },
       "rotation": 0,
@@ -72,7 +72,7 @@
       "visible": true,
       "useNormalMap": true,
       "pivot": {
-        "preset": "middle-center",
+        "preset": "custom-offset",
         "offsetX": 0,
         "offsetY": 0
       }
