@@ -107,7 +107,7 @@ All scene, lighting, shadow, and performance data is stored in a single JSON fil
       "enabled": true,
       "brightness": 0.7,
       "color": "0xffffff",
-      "x": 250, "y": 170, "z": 70,
+      "position": { "x": 250, "y": 170, "z": 70 },
       "followMouse": true,
       "castsShadows": true,
       "radius": 350
@@ -118,7 +118,7 @@ All scene, lighting, shadow, and performance data is stored in a single JSON fil
       "enabled": true, 
       "brightness": 0.7,
       "color": "0xf4f080",
-      "x": 200, "y": 210, "z": 80,
+      "position": { "x": 200, "y": 210, "z": 80 },
       "directionX": 0, "directionY": 1, "directionZ": -1,
       "castsShadows": true,
       "radius": 780,
@@ -208,7 +208,7 @@ If no pivot is specified, sprites use `"top-left"` pivot, meaning the position c
 - **enabled**: Whether the light is active
 - **brightness**: Light intensity multiplier
 - **color**: Hex color value (e.g., "0xffffff")
-- **x, y, z**: 3D position (point/spotlight only)
+- **position**: 3D position object with x, y, z coordinates (point/spotlight only)
 - **directionX, directionY, directionZ**: Light direction (directional/spotlight only)
 - **radius**: Attenuation distance (point/spotlight only)
 - **coneAngle**: Spotlight cone angle in degrees
