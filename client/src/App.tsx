@@ -78,7 +78,7 @@ function App() {
 
   // Performance monitoring state
   const [deviceInfo] = useState(() => detectDevice());
-  const [performanceSettings, setPerformanceSettings] = useState<PerformanceSettings>(() => getOptimalSettings(detectDevice()));
+  const [performanceSettings, setPerformanceSettings] = useState<PerformanceSettings & { manualOverride?: boolean }>(() => getOptimalSettings(detectDevice()));
   const [fpsData, setFpsData] = useState({ current: 60, average: 60 });
   
 
@@ -204,6 +204,11 @@ function App() {
         if (sceneResult.ambientOcclusionConfig) {
           setAmbientOcclusionConfig(sceneResult.ambientOcclusionConfig);
         }
+
+        // Load performance settings from scene.json
+        if (sceneResult.performanceSettings) {
+          setPerformanceSettings(sceneResult.performanceSettings);
+        }
         
         setLightsLoaded(true);
         setSceneLoaded(true);
@@ -261,6 +266,43 @@ function App() {
     setSceneConfig(newSceneConfig);
     debouncedSceneSave(newSceneConfig);
   }, [debouncedSceneSave]);
+
+  // Handler for performance settings changes with auto-save
+  const handlePerformanceSettingsChange = useCallback((newSettings: PerformanceSettings & { manualOverride?: boolean }) => {
+    console.log('🔧 Performance settings changed:', newSettings);
+    const settingsWithOverride = { ...newSettings, manualOverride: true };
+    setPerformanceSettings(settingsWithOverride);
+    
+    // Save to scene.json
+    const saveData = {
+      scene: sceneConfig.scene,
+      performanceSettings: settingsWithOverride,
+      shadowConfig,
+      ambientOcclusionConfig
+    };
+    
+    // Debounced save to prevent excessive writes
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+    
+    const timeout = setTimeout(async () => {
+      try {
+        await fetch('/api/save-scene-config', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(saveData),
+        });
+        console.log('Performance settings auto-saved successfully');
+      } catch (error) {
+        console.error('Failed to save performance settings:', error);
+      }
+    }, 1000);
+    
+    setSaveTimeout(timeout);
+  }, [sceneConfig.scene, shadowConfig, ambientOcclusionConfig, saveTimeout]);
 
   // Handler for immediate sprite changes (bypass React state for instant feedback)
   const handleImmediateSpriteChange = useCallback((spriteId: string, updates: any) => {
@@ -327,7 +369,10 @@ function App() {
                     onImmediateSpriteChange={handleImmediateSpriteChange}
                     onPerformanceUpdate={(fps, settings) => {
                       setFpsData(fps);
-                      setPerformanceSettings(settings);
+                      // Only update performance settings if not manually overridden
+                      if (!performanceSettings.manualOverride) {
+                        setPerformanceSettings(settings);
+                      }
                     }}
                   />
                 )}
@@ -470,7 +515,7 @@ function App() {
                                 <input
                                   type="checkbox"
                                   checked={performanceSettings.enableShadows}
-                                  onChange={(e) => setPerformanceSettings({
+                                  onChange={(e) => handlePerformanceSettingsChange({
                                     ...performanceSettings,
                                     enableShadows: e.target.checked
                                   })}
@@ -485,7 +530,7 @@ function App() {
                                 <input
                                   type="checkbox"
                                   checked={performanceSettings.enableAmbientOcclusion}
-                                  onChange={(e) => setPerformanceSettings({
+                                  onChange={(e) => handlePerformanceSettingsChange({
                                     ...performanceSettings,
                                     enableAmbientOcclusion: e.target.checked
                                   })}
@@ -500,7 +545,7 @@ function App() {
                                 <input
                                   type="checkbox"
                                   checked={performanceSettings.enableNormalMapping}
-                                  onChange={(e) => setPerformanceSettings({
+                                  onChange={(e) => handlePerformanceSettingsChange({
                                     ...performanceSettings,
                                     enableNormalMapping: e.target.checked
                                   })}
@@ -515,7 +560,7 @@ function App() {
                                 <input
                                   type="checkbox"
                                   checked={performanceSettings.enableLightMasks}
-                                  onChange={(e) => setPerformanceSettings({
+                                  onChange={(e) => handlePerformanceSettingsChange({
                                     ...performanceSettings,
                                     enableLightMasks: e.target.checked
                                   })}
@@ -531,7 +576,7 @@ function App() {
                           <h4 className="font-medium text-foreground mb-3">Quality Presets</h4>
                           <div className="flex gap-2 mb-3">
                             <button
-                              onClick={() => setPerformanceSettings({
+                              onClick={() => handlePerformanceSettingsChange({
                                 quality: 'low',
                                 resolution: 0.5,
                                 maxLights: 2,
@@ -548,7 +593,7 @@ function App() {
                               Low
                             </button>
                             <button
-                              onClick={() => setPerformanceSettings({
+                              onClick={() => handlePerformanceSettingsChange({
                                 quality: 'medium',
                                 resolution: 0.75,
                                 maxLights: 4,
@@ -565,7 +610,7 @@ function App() {
                               Medium
                             </button>
                             <button
-                              onClick={() => setPerformanceSettings({
+                              onClick={() => handlePerformanceSettingsChange({
                                 quality: 'high',
                                 resolution: 1.0,
                                 maxLights: 8,

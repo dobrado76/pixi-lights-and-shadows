@@ -290,5 +290,17 @@
     "radius": 8,
     "samples": 16,
     "bias": 7.5
+  },
+  "performanceSettings": {
+    "quality": "high",
+    "resolution": 1.0,
+    "maxLights": 8,
+    "enableShadows": true,
+    "enableAmbientOcclusion": true,
+    "enableNormalMapping": true,
+    "enableLightMasks": true,
+    "textureScale": 1.0,
+    "fpsTarget": 60,
+    "manualOverride": false
   }
 }
