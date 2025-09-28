@@ -462,29 +462,127 @@ function App() {
                         </div>
 
                         <div className="border-t pt-4">
-                          <h4 className="font-medium text-foreground mb-3">Feature Availability</h4>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${performanceSettings.enableShadows ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                              <span>Shadows</span>
+                          <h4 className="font-medium text-foreground mb-3">Feature Controls</h4>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Shadows</span>
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={performanceSettings.enableShadows}
+                                  onChange={(e) => setPerformanceSettings({
+                                    ...performanceSettings,
+                                    enableShadows: e.target.checked
+                                  })}
+                                  className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                  data-testid="toggle-shadows"
+                                />
+                              </label>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${performanceSettings.enableAmbientOcclusion ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                              <span>Ambient Occlusion</span>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Ambient Occlusion</span>
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={performanceSettings.enableAmbientOcclusion}
+                                  onChange={(e) => setPerformanceSettings({
+                                    ...performanceSettings,
+                                    enableAmbientOcclusion: e.target.checked
+                                  })}
+                                  className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                  data-testid="toggle-ambient-occlusion"
+                                />
+                              </label>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${performanceSettings.enableNormalMapping ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                              <span>Normal Mapping</span>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Normal Mapping</span>
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={performanceSettings.enableNormalMapping}
+                                  onChange={(e) => setPerformanceSettings({
+                                    ...performanceSettings,
+                                    enableNormalMapping: e.target.checked
+                                  })}
+                                  className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                  data-testid="toggle-normal-mapping"
+                                />
+                              </label>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${performanceSettings.enableLightMasks ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                              <span>Light Masks</span>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Light Masks</span>
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={performanceSettings.enableLightMasks}
+                                  onChange={(e) => setPerformanceSettings({
+                                    ...performanceSettings,
+                                    enableLightMasks: e.target.checked
+                                  })}
+                                  className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                  data-testid="toggle-light-masks"
+                                />
+                              </label>
                             </div>
                           </div>
                         </div>
 
                         <div className="border-t pt-4">
-                          <h4 className="font-medium text-foreground mb-3">Recommendations</h4>
+                          <h4 className="font-medium text-foreground mb-3">Quality Presets</h4>
+                          <div className="flex gap-2 mb-3">
+                            <button
+                              onClick={() => setPerformanceSettings({
+                                quality: 'low',
+                                resolution: 0.5,
+                                maxLights: 2,
+                                enableShadows: false,
+                                enableAmbientOcclusion: false,
+                                enableNormalMapping: false,
+                                enableLightMasks: false,
+                                textureScale: 0.5,
+                                fpsTarget: 30
+                              })}
+                              className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'low' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                              data-testid="preset-low"
+                            >
+                              Low
+                            </button>
+                            <button
+                              onClick={() => setPerformanceSettings({
+                                quality: 'medium',
+                                resolution: 0.75,
+                                maxLights: 4,
+                                enableShadows: true,
+                                enableAmbientOcclusion: false,
+                                enableNormalMapping: true,
+                                enableLightMasks: false,
+                                textureScale: 0.75,
+                                fpsTarget: 45
+                              })}
+                              className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'medium' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                              data-testid="preset-medium"
+                            >
+                              Medium
+                            </button>
+                            <button
+                              onClick={() => setPerformanceSettings({
+                                quality: 'high',
+                                resolution: 1.0,
+                                maxLights: 8,
+                                enableShadows: true,
+                                enableAmbientOcclusion: true,
+                                enableNormalMapping: true,
+                                enableLightMasks: true,
+                                textureScale: 1.0,
+                                fpsTarget: 60
+                              })}
+                              className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'high' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                              data-testid="preset-high"
+                            >
+                              High
+                            </button>
+                          </div>
+                          
                           <div className="text-sm text-muted-foreground space-y-2">
                             {deviceInfo.isMobile && (
                               <p>• Mobile device detected - automatic quality reduction enabled</p>
@@ -499,8 +597,9 @@ function App() {
                               <p>• Low FPS detected - automatic quality adjustment in progress</p>
                             )}
                             {!deviceInfo.isMobile && !deviceInfo.isLowEnd && (
-                              <p>• High-performance device - all features enabled for best quality</p>
+                              <p>• High-performance device - use High preset for best quality</p>
                             )}
+                            <p>• Manual toggles override automatic settings</p>
                           </div>
                         </div>
                       </div>
