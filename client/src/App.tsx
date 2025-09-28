@@ -68,7 +68,6 @@ function App() {
 
   // Performance monitoring state
   const [deviceInfo] = useState(() => detectDevice());
-  const [performanceSettings, setPerformanceSettings] = useState<PerformanceSettings & { manualOverride?: boolean }>(() => getOptimalSettings(detectDevice()));
   const [fpsData, setFpsData] = useState({ current: 60, average: 60 });
   
 
@@ -265,7 +264,7 @@ function App() {
                     shadowConfig={shadowConfig}
                     ambientOcclusionConfig={ambientOcclusionConfig}
                     sceneConfig={sceneConfig}
-                    performanceSettings={performanceSettings}
+                    performanceSettings={centralizedPerformanceSettings}
                     onGeometryUpdate={setGeometryStatus}
                     onShaderUpdate={setShaderStatus}
                     onMeshUpdate={setMeshStatus}
@@ -273,8 +272,8 @@ function App() {
                     onPerformanceUpdate={(fps, settings) => {
                       setFpsData(fps);
                       // Only update performance settings if not manually overridden
-                      if (!performanceSettings.manualOverride) {
-                        setPerformanceSettings(settings);
+                      if (!centralizedPerformanceSettings.manualOverride) {
+                        updatePerformanceSettings(settings);
                       }
                     }}
                   />
@@ -393,19 +392,19 @@ function App() {
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="font-medium text-muted-foreground">Quality Level:</span>
-                            <p className="text-foreground capitalize">{performanceSettings.quality}</p>
+                            <p className="text-foreground capitalize">{centralizedPerformanceSettings.quality}</p>
                           </div>
                           <div>
                             <span className="font-medium text-muted-foreground">Resolution Scale:</span>
-                            <p className="text-foreground">{performanceSettings.resolution}x</p>
+                            <p className="text-foreground">{centralizedPerformanceSettings.resolution}x</p>
                           </div>
                           <div>
                             <span className="font-medium text-muted-foreground">Max Lights:</span>
-                            <p className="text-foreground">{performanceSettings.maxLights}</p>
+                            <p className="text-foreground">{centralizedPerformanceSettings.maxLights}</p>
                           </div>
                           <div>
                             <span className="font-medium text-muted-foreground">Target FPS:</span>
-                            <p className="text-foreground">{performanceSettings.fpsTarget}</p>
+                            <p className="text-foreground">{centralizedPerformanceSettings.fpsTarget}</p>
                           </div>
                         </div>
 
@@ -417,9 +416,9 @@ function App() {
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                   type="checkbox"
-                                  checked={performanceSettings.enableShadows}
+                                  checked={centralizedPerformanceSettings.enableShadows}
                                   onChange={(e) => handlePerformanceSettingsChange({
-                                    ...performanceSettings,
+                                    ...centralizedPerformanceSettings,
                                     enableShadows: e.target.checked
                                   })}
                                   className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
@@ -432,9 +431,9 @@ function App() {
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                   type="checkbox"
-                                  checked={performanceSettings.enableAmbientOcclusion}
+                                  checked={centralizedPerformanceSettings.enableAmbientOcclusion}
                                   onChange={(e) => handlePerformanceSettingsChange({
-                                    ...performanceSettings,
+                                    ...centralizedPerformanceSettings,
                                     enableAmbientOcclusion: e.target.checked
                                   })}
                                   className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
@@ -447,9 +446,9 @@ function App() {
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                   type="checkbox"
-                                  checked={performanceSettings.enableNormalMapping}
+                                  checked={centralizedPerformanceSettings.enableNormalMapping}
                                   onChange={(e) => handlePerformanceSettingsChange({
-                                    ...performanceSettings,
+                                    ...centralizedPerformanceSettings,
                                     enableNormalMapping: e.target.checked
                                   })}
                                   className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
@@ -462,9 +461,9 @@ function App() {
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                   type="checkbox"
-                                  checked={performanceSettings.enableLightMasks}
+                                  checked={centralizedPerformanceSettings.enableLightMasks}
                                   onChange={(e) => handlePerformanceSettingsChange({
-                                    ...performanceSettings,
+                                    ...centralizedPerformanceSettings,
                                     enableLightMasks: e.target.checked
                                   })}
                                   className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
@@ -490,7 +489,7 @@ function App() {
                                 textureScale: 0.5,
                                 fpsTarget: 30
                               })}
-                              className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'low' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                              className={`px-3 py-1 text-xs rounded ${centralizedPerformanceSettings.quality === 'low' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                               data-testid="preset-low"
                             >
                               Low
@@ -507,7 +506,7 @@ function App() {
                                 textureScale: 0.75,
                                 fpsTarget: 45
                               })}
-                              className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'medium' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                              className={`px-3 py-1 text-xs rounded ${centralizedPerformanceSettings.quality === 'medium' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                               data-testid="preset-medium"
                             >
                               Medium
@@ -524,7 +523,7 @@ function App() {
                                 textureScale: 1.0,
                                 fpsTarget: 60
                               })}
-                              className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'high' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                              className={`px-3 py-1 text-xs rounded ${centralizedPerformanceSettings.quality === 'high' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                               data-testid="preset-high"
                             >
                               High
@@ -538,7 +537,7 @@ function App() {
                             {deviceInfo.isLowEnd && (
                               <p>• Low-end device - consider reducing light count for better performance</p>
                             )}
-                            {performanceSettings.quality === 'low' && (
+                            {centralizedPerformanceSettings.quality === 'low' && (
                               <p>• Low quality mode active - shadows and effects are simplified</p>
                             )}
                             {fpsData.average < 30 && (
