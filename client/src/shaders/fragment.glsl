@@ -322,20 +322,22 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   // Check if AO is enabled globally
   if (!uAOEnabled) return 1.0;
   
-  // CRITICAL FIX: Don't apply AO to sprite pixels themselves
-  // Check if current pixel is part of a sprite - if so, don't apply AO to it
+  // Check if current pixel is part of a sprite to reduce AO intensity on sprite pixels
   vec2 mapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
   vec2 currentUV = pixelPos / uCanvasSize;
   vec2 bufferUV = uOccluderMapOffset / uCanvasSize;
   
+  float spritePixelReduction = 1.0; // Default: no reduction
   if (currentUV.x >= -bufferUV.x && currentUV.x <= 1.0 + bufferUV.x && 
       currentUV.y >= -bufferUV.y && currentUV.y <= 1.0 + bufferUV.y) {
     vec2 currentAdjustedUV = (currentUV * uCanvasSize + uOccluderMapOffset) / mapSize;
     float currentAlpha = texture2D(uOccluderMap, currentAdjustedUV).a;
     
-    // If this pixel is part of a sprite (alpha > 0.5), don't apply AO to it
-    if (currentAlpha > 0.5) {
-      return 1.0; // No AO on sprite pixels themselves - AO should only be UNDER sprites
+    // Reduce AO on sprite pixels but don't eliminate it completely (this preserves bias effects)
+    if (currentAlpha > 0.8) {
+      spritePixelReduction = 0.1; // Heavily reduce AO on solid sprite pixels
+    } else if (currentAlpha > 0.3) {
+      spritePixelReduction = 0.5; // Moderately reduce AO on semi-transparent areas
     }
   }
   
@@ -346,8 +348,7 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   float totalOcclusion = 0.0;
   float validSamples = 0.0;
   
-  // Use occluder map to sample geometry proximity, but only consider it as AO
-  // if the current sprite is at a low enough z-order to potentially be occluded
+  // Use occluder map to sample geometry proximity
   vec2 expandedMapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
   
   for (int i = 0; i < 16; i++) {
@@ -389,11 +390,11 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     float sampleDistance = length(sampleOffset);
     float biasReduction = 1.0;
     
-    // Make bias effect extremely dramatic and visible
-    float biasRadius = uAOBias * 5.0; // Much larger radius for dramatic effect
+    // Make bias effect dramatic and visible but more reasonable
+    float biasRadius = uAOBias * 3.0; // Visible but not excessive
     if (sampleDistance < biasRadius) {
-      // Create an extreme falloff that's impossible to miss
-      biasReduction = smoothstep(0.0, biasRadius, sampleDistance) * 0.9 + 0.1;
+      // Create clear falloff effect
+      biasReduction = smoothstep(0.0, biasRadius, sampleDistance) * 0.8 + 0.2;
     }
     
     // Apply both z-order filtering and bias reduction
@@ -404,7 +405,7 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   if (validSamples > 0.0) {
     float aoFactor = totalOcclusion / validSamples;
     float aoStrength = clamp(uAOStrength, 0.0, 10.0);
-    float aoEffect = 1.0 - (aoFactor * aoStrength); // Removed 0.8 scaling - use full strength
+    float aoEffect = 1.0 - (aoFactor * aoStrength * spritePixelReduction * 0.3); // Apply sprite pixel reduction
     return clamp(aoEffect, 0.1, 1.0);
   }
   
