@@ -110,21 +110,28 @@ const PixiDemo = (props: PixiDemoProps) => {
     const pivot = sprite.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
     let basePivotX = 0, basePivotY = 0;
     
-    switch (pivot.preset) {
-      case 'top-left': basePivotX = 0; basePivotY = 0; break;
-      case 'top-center': basePivotX = baseWidth / 2; basePivotY = 0; break;
-      case 'top-right': basePivotX = baseWidth; basePivotY = 0; break;
-      case 'middle-left': basePivotX = 0; basePivotY = baseHeight / 2; break;
-      case 'middle-center': basePivotX = baseWidth / 2; basePivotY = baseHeight / 2; break;
-      case 'middle-right': basePivotX = baseWidth; basePivotY = baseHeight / 2; break;
-      case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
-      case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
-      case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
+    if (pivot.preset === 'custom-offset') {
+      // For custom offset, use offset values directly as pivot coordinates (invert to match expected direction)
+      basePivotX = -(pivot.offsetX || 0);
+      basePivotY = -(pivot.offsetY || 0);
+    } else {
+      // For preset pivots, calculate base position then apply offset
+      switch (pivot.preset) {
+        case 'top-left': basePivotX = 0; basePivotY = 0; break;
+        case 'top-center': basePivotX = baseWidth / 2; basePivotY = 0; break;
+        case 'top-right': basePivotX = baseWidth; basePivotY = 0; break;
+        case 'middle-left': basePivotX = 0; basePivotY = baseHeight / 2; break;
+        case 'middle-center': basePivotX = baseWidth / 2; basePivotY = baseHeight / 2; break;
+        case 'middle-right': basePivotX = baseWidth; basePivotY = baseHeight / 2; break;
+        case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
+        case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
+        case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
+      }
+      
+      // Apply offset relative to the selected preset (invert to match expected direction)
+      basePivotX -= (pivot.offsetX || 0);
+      basePivotY -= (pivot.offsetY || 0);
     }
-    
-    // Apply offset relative to the selected preset (invert to match expected direction)
-    basePivotX -= (pivot.offsetX || 0);
-    basePivotY -= (pivot.offsetY || 0);
     
     const scaledPivotX = basePivotX * sprite.definition.scale;
     const scaledPivotY = basePivotY * sprite.definition.scale;
@@ -304,21 +311,28 @@ const PixiDemo = (props: PixiDemoProps) => {
       const pivot = caster.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
       let basePivotX = 0, basePivotY = 0;
       
-      switch (pivot.preset) {
-        case 'top-left': basePivotX = 0; basePivotY = 0; break;
-        case 'top-center': basePivotX = baseWidth / 2; basePivotY = 0; break;
-        case 'top-right': basePivotX = baseWidth; basePivotY = 0; break;
-        case 'middle-left': basePivotX = 0; basePivotY = baseHeight / 2; break;
-        case 'middle-center': basePivotX = baseWidth / 2; basePivotY = baseHeight / 2; break;
-        case 'middle-right': basePivotX = baseWidth; basePivotY = baseHeight / 2; break;
-        case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
-        case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
-        case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
+      if (pivot.preset === 'custom-offset') {
+        // For custom offset, use offset values directly as pivot coordinates (invert to match expected direction)
+        basePivotX = -(pivot.offsetX || 0);
+        basePivotY = -(pivot.offsetY || 0);
+      } else {
+        // For preset pivots, calculate base position then apply offset
+        switch (pivot.preset) {
+          case 'top-left': basePivotX = 0; basePivotY = 0; break;
+          case 'top-center': basePivotX = baseWidth / 2; basePivotY = 0; break;
+          case 'top-right': basePivotX = baseWidth; basePivotY = 0; break;
+          case 'middle-left': basePivotX = 0; basePivotY = baseHeight / 2; break;
+          case 'middle-center': basePivotX = baseWidth / 2; basePivotY = baseHeight / 2; break;
+          case 'middle-right': basePivotX = baseWidth; basePivotY = baseHeight / 2; break;
+          case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
+          case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
+          case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
+        }
+        
+        // Apply offset relative to the selected preset (invert to match expected direction)
+        basePivotX -= (pivot.offsetX || 0);
+        basePivotY -= (pivot.offsetY || 0);
       }
-      
-      // Apply offset relative to the selected preset (invert to match expected direction)
-      basePivotX -= (pivot.offsetX || 0);
-      basePivotY -= (pivot.offsetY || 0);
       
       // Local space quad corners in UNSCALED dimensions (EXACT same as Sprite.tsx)
       const corners = [

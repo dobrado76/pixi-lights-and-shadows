@@ -242,6 +242,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                                 <SelectItem value="bottom-left" className="bg-card text-foreground hover:bg-muted hover:text-foreground">Bottom Left</SelectItem>
                                 <SelectItem value="bottom-center" className="bg-card text-foreground hover:bg-muted hover:text-foreground">Bottom Center</SelectItem>
                                 <SelectItem value="bottom-right" className="bg-card text-foreground hover:bg-muted hover:text-foreground">Bottom Right</SelectItem>
+                                <SelectItem value="custom-offset" className="bg-card text-foreground hover:bg-muted hover:text-foreground">Custom Offset</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
