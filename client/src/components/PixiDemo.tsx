@@ -281,13 +281,10 @@ const PixiDemo = (props: PixiDemoProps) => {
     );
     
     
-    // Z-order filtering: only include casters that can affect this sprite
+    // Include ALL shadow casters in occluder map - z-order filtering happens in shader
     let relevantShadowCasters = allShadowCasters.filter(caster => {
-      // Only sprites at same level or higher (in front) can cast shadows on this sprite
-      const canCastShadow = caster.definition.zOrder >= currentSpriteZOrder;
       const isNotExcluded = !excludeSpriteId || caster.id !== excludeSpriteId;
-      
-      return canCastShadow && isNotExcluded;
+      return isNotExcluded;
     });
     
     // Special case: exclude sprites from casting shadows if light (Z >= 50) is inside their non-transparent area
@@ -1637,18 +1634,39 @@ const PixiDemo = (props: PixiDemoProps) => {
         }
       });
       
-      // Build occluder map per-sprite with correct z-order filtering
+      // Set shadow caster uniforms with z-order filtering per sprite
       meshesRef.current.forEach(mesh => {
         if (mesh.shader && mesh.shader.uniforms && (mesh as any).definition) {
           const spriteData = (mesh as any).definition;
           const spriteZOrder = spriteData.zOrder || 0;
           mesh.shader.uniforms.uCurrentSpriteZOrder = spriteZOrder;
           
-          // Build occluder map for this specific sprite's z-order
-          if (useOccluderMap) {
-            buildOccluderMapForSprite(spriteZOrder);
-            mesh.shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+          // Get shadow casters that can affect this sprite (same z-level or higher)
+          const validCasters = shadowCasters.filter(caster => 
+            caster.definition.castsShadows && caster.definition.zOrder >= spriteZOrder
+          );
+          
+          // Set up to 3 shadow caster uniforms for this sprite
+          for (let i = 0; i < 3; i++) {
+            if (i < validCasters.length) {
+              const caster = validCasters[i];
+              const casterSize = caster.diffuseTexture ? 
+                [caster.diffuseTexture.width * (caster.definition.scale || 1), caster.diffuseTexture.height * (caster.definition.scale || 1)] :
+                [100, 100]; // fallback size
+              mesh.shader.uniforms[`uShadowCaster${i}Pos`] = [caster.definition.position.x, caster.definition.position.y];
+              mesh.shader.uniforms[`uShadowCaster${i}Size`] = casterSize;
+              mesh.shader.uniforms[`uShadowCaster${i}ZOrder`] = caster.definition.zOrder;
+            } else {
+              // Clear unused caster slots
+              mesh.shader.uniforms[`uShadowCaster${i}Pos`] = [-9999, -9999];
+              mesh.shader.uniforms[`uShadowCaster${i}Size`] = [0, 0];
+              mesh.shader.uniforms[`uShadowCaster${i}ZOrder`] = -9999;
+            }
           }
+          
+          // Set count of valid casters
+          mesh.shader.uniforms.uShadowCasterCount = Math.min(validCasters.length, 3);
+          mesh.shader.uniforms.uUseOccluderMap = false; // Use per-caster approach
           
           // ✅ Apply performance setting for normal mapping
           mesh.shader.uniforms.uUseNormalMap = spriteData.useNormalMap && performanceSettings.enableNormalMapping;
