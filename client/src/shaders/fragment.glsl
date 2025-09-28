@@ -364,19 +364,19 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
       // Background sprites (z=-1) receive full AO from all sprites above them
       zOrderInfluence = 1.0;
     } else {
-      // Foreground sprites receive reduced AO for subtle depth effect
-      zOrderInfluence = 0.3; // Reduced AO for foreground sprites
+      // Foreground sprites receive strong AO for dramatic bias testing
+      zOrderInfluence = 0.8; // Much stronger AO for foreground sprites to show bias effect
     }
     
-    // Apply bias to create visible AO edge softening effect
+    // Apply bias to create VERY visible AO edge softening effect
     float sampleDistance = length(sampleOffset);
     float biasReduction = 1.0;
     
-    // Make bias effect much more visible and dramatic
-    float biasRadius = uAOBias * 3.0; // Expand the bias range to make it more visible
+    // Make bias effect extremely dramatic and visible
+    float biasRadius = uAOBias * 5.0; // Much larger radius for dramatic effect
     if (sampleDistance < biasRadius) {
-      // Create a dramatic falloff that's clearly visible
-      biasReduction = smoothstep(0.0, biasRadius, sampleDistance) * 0.7 + 0.3;
+      // Create an extreme falloff that's impossible to miss
+      biasReduction = smoothstep(0.0, biasRadius, sampleDistance) * 0.9 + 0.1;
     }
     
     // Apply both z-order filtering and bias reduction
