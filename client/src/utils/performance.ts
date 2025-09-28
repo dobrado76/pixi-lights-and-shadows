@@ -165,7 +165,7 @@ export class FPSMonitor {
   
   constructor(private callback?: (fps: number, avgFps: number) => void) {}
   
-  update(): { current: number; average: number } {
+  update(): { current: number; average: number; samples: number } {
     this.frameCount++;
     const currentTime = performance.now();
     const deltaTime = currentTime - this.lastTime;
@@ -187,14 +187,14 @@ export class FPSMonitor {
         this.callback(this.fps, avgFps);
       }
       
-      return { current: this.fps, average: avgFps };
+      return { current: this.fps, average: avgFps, samples: this.samples.length };
     }
     
     const avgFps = this.samples.length > 0 
       ? Math.round(this.samples.reduce((a, b) => a + b, 0) / this.samples.length)
       : 60;
       
-    return { current: this.fps, average: avgFps };
+    return { current: this.fps, average: avgFps, samples: this.samples.length };
   }
   
   getCurrentFPS(): number {
@@ -228,22 +228,30 @@ export class AdaptiveQuality {
     const now = performance.now();
     let adjusted = false;
     
-    // Only adjust if cooldown has passed
-    if (now - this.lastAdjustment > this.adjustmentCooldown) {
+    // Respect manual override - don't adjust if user has manual control
+    if (this.currentSettings.manualOverride) {
+      return { fps: fpsData.current, avgFps: fpsData.average, adjusted: false };
+    }
+    
+    // Only adjust if cooldown has passed and we have enough samples
+    if (now - this.lastAdjustment > this.adjustmentCooldown && fpsData.samples >= 30) {
       const targetFps = this.currentSettings.fpsTarget;
       const avgFps = fpsData.average;
       
-      // If performance is significantly below target, reduce quality
-      if (avgFps < targetFps * 0.8 && this.currentSettings.quality !== 'low') {
+      // Much more conservative thresholds - 59 FPS should NOT trigger downgrade!
+      // If performance is severely below target, reduce quality
+      if (avgFps < targetFps * 0.5 && this.currentSettings.quality !== 'low') {
         this.downgradeQuality();
         adjusted = true;
         this.lastAdjustment = now;
+        console.log(`📉 Performance severely below target (${avgFps.toFixed(1)} < ${(targetFps * 0.5).toFixed(1)}), reducing quality...`);
       }
-      // If performance is stable above target, consider upgrading
-      else if (avgFps > targetFps * 1.1 && this.currentSettings.quality !== 'high') {
+      // If performance is consistently excellent, consider upgrading
+      else if (avgFps > targetFps * 0.95 && this.currentSettings.quality !== 'high') {
         this.upgradeQuality();
         adjusted = true;
         this.lastAdjustment = now;
+        console.log(`📈 Performance excellent (${avgFps.toFixed(1)} > ${(targetFps * 0.95).toFixed(1)}), increasing quality...`);
       }
     }
     
@@ -251,7 +259,10 @@ export class AdaptiveQuality {
   }
   
   private downgradeQuality() {
-    console.log('📉 Performance below target, reducing quality...');
+    // Don't downgrade if manual override is set
+    if (this.currentSettings.manualOverride) {
+      return;
+    }
     
     if (this.currentSettings.quality === 'high') {
       this.currentSettings = {
@@ -277,7 +288,10 @@ export class AdaptiveQuality {
   }
   
   private upgradeQuality() {
-    console.log('📈 Performance stable, increasing quality...');
+    // Don't upgrade if manual override is set
+    if (this.currentSettings.manualOverride) {
+      return;
+    }
     
     if (this.currentSettings.quality === 'low') {
       this.currentSettings = {

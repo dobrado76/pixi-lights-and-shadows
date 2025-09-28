@@ -273,9 +273,10 @@ function App() {
     const settingsWithOverride = { ...newSettings, manualOverride: true };
     setPerformanceSettings(settingsWithOverride);
     
-    // Save to scene.json
+    // Save to scene.json - ensure lights are preserved
     const saveData = {
       scene: sceneConfig.scene,
+      lights: sceneConfig.lights || [], // ✅ Preserve lights!
       performanceSettings: settingsWithOverride,
       shadowConfig,
       ambientOcclusionConfig

@@ -18,7 +18,8 @@
         "offsetX": 0,
         "offsetY": 0
       },
-      "receivesAO": false
+      "receivesAO": false,
+      "castsAO": false
     },
     "background2": {
       "image": "/textures/white-fabric-texture-background.jpg",
@@ -37,7 +38,8 @@
         "preset": "top-left",
         "offsetX": 0,
         "offsetY": 0
-      }
+      },
+      "castsAO": false
     },
     "ball": {
       "image": "/textures/ball.png",
@@ -62,7 +64,7 @@
       "image": "/textures/ball.png",
       "normal": "/textures/ballN.png",
       "position": {
-        "x": 87,
+        "x": 104,
         "y": 309
       },
       "rotation": 0,
@@ -72,7 +74,7 @@
       "visible": true,
       "useNormalMap": true,
       "pivot": {
-        "preset": "custom-offset",
+        "preset": "middle-center",
         "offsetX": 0,
         "offsetY": 0
       }
@@ -100,7 +102,7 @@
       "image": "/textures/test2.png",
       "normal": "/textures/test2Normal.png",
       "position": {
-        "x": 98,
+        "x": 84,
         "y": 444
       },
       "rotation": 0,
@@ -158,10 +160,10 @@
       "image": "/textures/block2.png",
       "normal": "/textures/block2NormalMap.png",
       "position": {
-        "x": 291,
+        "x": 280,
         "y": 354
       },
-      "rotation": 0.3665191429188092,
+      "rotation": 0.5061454830783556,
       "scale": 1.2,
       "zOrder": 0,
       "castsShadows": true,
@@ -276,18 +278,6 @@
       "radius": 900
     }
   ],
-  "performanceSettings": {
-    "quality": "high",
-    "resolution": 1,
-    "maxLights": 8,
-    "enableShadows": true,
-    "enableAmbientOcclusion": true,
-    "enableNormalMapping": true,
-    "enableLightMasks": true,
-    "textureScale": 1,
-    "fpsTarget": 60,
-    "manualOverride": true
-  },
   "shadowConfig": {
     "enabled": true,
     "strength": 0.55,
@@ -299,7 +289,7 @@
   "ambientOcclusionConfig": {
     "enabled": true,
     "strength": 1.95,
-    "radius": 8,
+    "radius": 6,
     "samples": 16,
     "bias": 7.5
   }
