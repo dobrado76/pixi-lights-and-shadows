@@ -6,6 +6,7 @@ import fragmentShaderSource from '../shaders/fragment.glsl?raw';
 import { ShaderParams } from '../App';
 import { Light, ShadowConfig, AmbientOcclusionConfig } from '@/lib/lights';
 import { SceneManager, SceneSprite } from './Sprite';
+import { detectDevice, getOptimalSettings, AdaptiveQuality, PerformanceSettings } from '../utils/performance';
 
 /**
  * Core PIXI.js rendering component implementing advanced shadow casting system.
@@ -48,6 +49,12 @@ const PixiDemo = (props: PixiDemoProps) => {
     x: shaderParams.canvasWidth / 2,  // 400 for 800px width
     y: shaderParams.canvasHeight / 2  // 300 for 600px height
   });
+  
+  // Performance monitoring and optimization
+  const [deviceInfo] = useState(() => detectDevice());
+  const [performanceSettings, setPerformanceSettings] = useState<PerformanceSettings>(() => getOptimalSettings(detectDevice()));
+  const [fpsData, setFpsData] = useState({ current: 60, average: 60 });
+  const adaptiveQualityRef = useRef<AdaptiveQuality | null>(null);
   
   
   // Core rendering references
@@ -606,35 +613,39 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       let app: PIXI.Application;
       
+      // Log device detection results for debugging
+      console.log('📱 Device Info:', deviceInfo);
+      console.log('⚙️ Performance Settings:', performanceSettings);
+      
       try {
-        // First try WebGL
+        // First try WebGL with performance-optimized settings
         app = new PIXI.Application({
           width: shaderParams.canvasWidth,
           height: shaderParams.canvasHeight,
           backgroundColor: 0x1a1a1a,
-          antialias: true,
+          antialias: performanceSettings.quality !== 'low',
           hello: false,
-          resolution: 1,
+          resolution: performanceSettings.resolution,
           autoDensity: false,
           forceCanvas: false,
-          powerPreference: 'default',
+          powerPreference: deviceInfo.isMobile ? 'low-power' : 'high-performance',
           preserveDrawingBuffer: false,
           clearBeforeRender: true,
           autoStart: false // CRITICAL: Set to false, we'll call start() manually
         });
       } catch (webglError) {
         console.warn('WebGL failed, trying Canvas fallback:', webglError);
-        // Fallback to Canvas renderer
+        // Fallback to Canvas renderer with mobile optimizations
         app = new PIXI.Application({
           width: shaderParams.canvasWidth,
           height: shaderParams.canvasHeight,
           backgroundColor: 0x1a1a1a,
           antialias: false, // Disable for canvas
           hello: false,
-          resolution: 1,
+          resolution: Math.min(performanceSettings.resolution, 0.75), // Lower resolution for canvas fallback
           autoDensity: false,
           forceCanvas: true, // Force Canvas renderer
-          powerPreference: 'default',
+          powerPreference: 'low-power',
           preserveDrawingBuffer: false,
           clearBeforeRender: true,
           autoStart: false // CRITICAL: Set to false, we'll call start() manually
@@ -656,6 +667,12 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         setPixiApp(app);
         console.log('🎯 PIXI App created - waiting for scene to load before starting');
+        
+        // Initialize adaptive quality system
+        adaptiveQualityRef.current = new AdaptiveQuality(performanceSettings, (newSettings) => {
+          console.log('🔧 Adaptive quality adjustment:', newSettings.quality);
+          setPerformanceSettings(newSettings);
+        });
         
         // Store canvas reference for later activation when scene loads
         (app as any).__canvas = canvas;
@@ -890,9 +907,10 @@ const PixiDemo = (props: PixiDemoProps) => {
           uniforms.uPoint0HasMask = false; uniforms.uPoint1HasMask = false; uniforms.uPoint2HasMask = false; uniforms.uPoint3HasMask = false;
           uniforms.uSpot0HasMask = false; uniforms.uSpot1HasMask = false; uniforms.uSpot2HasMask = false; uniforms.uSpot3HasMask = false;
           
-          // Point Lights (up to 4) - pass ALL lights with stable slot assignment
+          // Point Lights (performance-limited) - pass lights with stable slot assignment
+          const maxPointLights = Math.min(4, performanceSettings.maxLights);
           
-          allPointLights.slice(0, 4).forEach((light, slotIdx) => {
+          allPointLights.slice(0, maxPointLights).forEach((light, slotIdx) => {
             const prefix = `uPoint${slotIdx}`;
 
             
@@ -953,9 +971,10 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
           });
           
-          // Spotlights (up to 4) - pass ALL lights with stable slot assignment
+          // Spotlights (performance-limited) - pass lights with stable slot assignment
+          const maxSpotlights = Math.min(4, Math.max(0, performanceSettings.maxLights - maxPointLights));
           
-          allSpotlights.slice(0, 4).forEach((light, slotIdx) => {
+          allSpotlights.slice(0, maxSpotlights).forEach((light, slotIdx) => {
             const prefix = `uSpot${slotIdx}`;
 
             
@@ -1644,6 +1663,16 @@ const PixiDemo = (props: PixiDemoProps) => {
     if (!pixiApp || !pixiApp.ticker) return;
 
     const ticker = () => {
+      // Performance monitoring and adaptive quality
+      if (adaptiveQualityRef.current) {
+        const perfData = adaptiveQualityRef.current.update();
+        setFpsData({ current: perfData.fps, average: perfData.avgFps });
+        
+        if (perfData.adjusted) {
+          console.log(`📊 Performance adjusted: ${perfData.fps}fps avg, new quality: ${adaptiveQualityRef.current.getSettings().quality}`);
+        }
+      }
+      
       if (shadersRef.current.length > 0 && shadersRef.current[0].uniforms) {
         shadersRef.current[0].uniforms.uTime += 0.02;
       }
