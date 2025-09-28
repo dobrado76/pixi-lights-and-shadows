@@ -322,6 +322,23 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   // Check if AO is enabled globally
   if (!uAOEnabled) return 1.0;
   
+  // CRITICAL FIX: Don't apply AO to sprite pixels themselves
+  // Check if current pixel is part of a sprite - if so, don't apply AO to it
+  vec2 mapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
+  vec2 currentUV = pixelPos / uCanvasSize;
+  vec2 bufferUV = uOccluderMapOffset / uCanvasSize;
+  
+  if (currentUV.x >= -bufferUV.x && currentUV.x <= 1.0 + bufferUV.x && 
+      currentUV.y >= -bufferUV.y && currentUV.y <= 1.0 + bufferUV.y) {
+    vec2 currentAdjustedUV = (currentUV * uCanvasSize + uOccluderMapOffset) / mapSize;
+    float currentAlpha = texture2D(uOccluderMap, currentAdjustedUV).a;
+    
+    // If this pixel is part of a sprite (alpha > 0.5), don't apply AO to it
+    if (currentAlpha > 0.5) {
+      return 1.0; // No AO on sprite pixels themselves - AO should only be UNDER sprites
+    }
+  }
+  
   // CRITICAL: Only apply AO if there could be sprites above this one
   // If current sprite is at the highest z-order layer, it should receive no AO
   float currentZ = uCurrentSpriteZOrder;
