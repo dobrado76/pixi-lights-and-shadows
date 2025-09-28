@@ -632,6 +632,38 @@ export class SceneManager {
     }
   }
 
+  // Check if a sprite is visually occluded by higher z-order sprites  
+  private isVisuallyOccluded(sprite: SceneSprite): boolean {
+    const spriteBounds = sprite.getBounds();
+    const spriteZ = sprite.definition.zOrder;
+    
+    // Get all sprites with higher z-order (render in front)
+    const higherSprites = this.getAllSprites().filter(other => 
+      other.id !== sprite.id && 
+      other.definition.visible &&
+      other.definition.zOrder > spriteZ
+    );
+    
+    // Check if any higher z-order sprite completely covers this sprite
+    for (const higherSprite of higherSprites) {
+      const higherBounds = higherSprite.getBounds();
+      
+      // Check if higher sprite completely covers the current sprite
+      const completelyCovers = (
+        higherBounds.x <= spriteBounds.x &&
+        higherBounds.y <= spriteBounds.y &&
+        higherBounds.x + higherBounds.width >= spriteBounds.x + spriteBounds.width &&
+        higherBounds.y + higherBounds.height >= spriteBounds.y + spriteBounds.height
+      );
+      
+      if (completelyCovers) {
+        return true; // Sprite is completely hidden behind this higher sprite
+      }
+    }
+    
+    return false; // Sprite is not completely occluded
+  }
+
   // Filter sprites by shadow participation flags and sort by zOrder
   // Includes off-screen sprites that can cast shadows into visible area (expanded shadow buffer)
   getShadowCasters(): SceneSprite[] {
@@ -640,13 +672,11 @@ export class SceneManager {
     return this.getAllSprites()
       .filter(sprite => {
         if (!sprite.definition.castsShadows) return false;
+        if (!sprite.definition.visible) return false;
         
-        // Check both definition visibility AND actual mesh visibility (z-order hidden sprites should not cast shadows)
-        const isDefinitionVisible = sprite.definition.visible;
-        const isMeshVisible = sprite.mesh ? sprite.mesh.visible : false;
-        
-        // Only include sprites that are both definition-visible AND mesh-visible (not hidden behind others)
-        if (isDefinitionVisible && isMeshVisible) return true;
+        // Check if sprite is visually occluded by higher z-order sprites
+        const isOccluded = this.isVisuallyOccluded(sprite);
+        if (isOccluded) return false;
         
         // For invisible sprites, only include if they're OFF-SCREEN but within shadow buffer
         const bounds = sprite.getBounds();
