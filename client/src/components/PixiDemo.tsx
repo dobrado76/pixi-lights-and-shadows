@@ -1417,6 +1417,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uAOSamples = Math.min(ambientOcclusionConfig.samples, performanceSettings.quality === 'low' ? 4 : 8);
       uniforms.uAOBias = ambientOcclusionConfig.bias;
       
+      // ✅ Global Light Masks Control (performance-filtered)
+      uniforms.uMasksEnabled = performanceSettings.enableLightMasks;
+      
       
       // Per-sprite AO settings will be set individually for each sprite
       

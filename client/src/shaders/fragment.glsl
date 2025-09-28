@@ -60,6 +60,8 @@ uniform bool uSpot0CastsShadows; uniform bool uSpot1CastsShadows; uniform bool u
 // Shadow Caster Uniforms - integrated shadow calculation with zOrder hierarchy
 uniform float uShadowStrength; // Global shadow strength
 uniform bool uShadowsEnabled;
+// Global Light Mask Control
+uniform bool uMasksEnabled; // Global toggle for all light masks
 uniform float uShadowMaxLength; // Maximum shadow length to prevent extremely long shadows
 uniform float uShadowBias; // Pixels to offset shadow ray to prevent self-shadowing
 uniform float uCurrentSpriteZOrder; // Z-order of current sprite (used for shadows and AO hierarchy)
@@ -499,7 +501,7 @@ void main(void) {
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
-    if (uPoint0HasMask && shadowFactor >= 0.99) {
+    if (uMasksEnabled && uPoint0HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uPoint0Mask, worldPos.xy, uPoint0Position.xy, uPoint0MaskOffset, uPoint0MaskRotation, uPoint0MaskScale, uPoint0MaskSize);
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
@@ -533,7 +535,7 @@ void main(void) {
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
-    if (uPoint1HasMask && shadowFactor >= 0.99) {
+    if (uMasksEnabled && uPoint1HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uPoint1Mask, worldPos.xy, uPoint1Position.xy, uPoint1MaskOffset, uPoint1MaskRotation, uPoint1MaskScale, uPoint1MaskSize);
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
@@ -567,7 +569,7 @@ void main(void) {
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
-    if (uPoint2HasMask && shadowFactor >= 0.99) {
+    if (uMasksEnabled && uPoint2HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uPoint2Mask, worldPos.xy, uPoint2Position.xy, uPoint2MaskOffset, uPoint2MaskRotation, uPoint2MaskScale, uPoint2MaskSize);
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
@@ -601,7 +603,7 @@ void main(void) {
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
-    if (uPoint3HasMask && shadowFactor >= 0.99) {
+    if (uMasksEnabled && uPoint3HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uPoint3Mask, worldPos.xy, uPoint3Position.xy, uPoint3MaskOffset, uPoint3MaskRotation, uPoint3MaskScale, uPoint3MaskSize);
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
@@ -700,7 +702,7 @@ void main(void) {
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
-    if (uSpot0HasMask && shadowFactor >= 0.99) {
+    if (uMasksEnabled && uSpot0HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uSpot0Mask, worldPos.xy, uSpot0Position.xy, uSpot0MaskOffset, uSpot0MaskRotation, uSpot0MaskScale, uSpot0MaskSize);
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
@@ -747,7 +749,7 @@ void main(void) {
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
-    if (uSpot1HasMask && shadowFactor >= 0.99) {
+    if (uMasksEnabled && uSpot1HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uSpot1Mask, worldPos.xy, uSpot1Position.xy, uSpot1MaskOffset, uSpot1MaskRotation, uSpot1MaskScale, uSpot1MaskSize);
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
@@ -794,7 +796,7 @@ void main(void) {
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
-    if (uSpot2HasMask && shadowFactor >= 0.99) {
+    if (uMasksEnabled && uSpot2HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uSpot2Mask, worldPos.xy, uSpot2Position.xy, uSpot2MaskOffset, uSpot2MaskRotation, uSpot2MaskScale, uSpot2MaskSize);
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
@@ -841,7 +843,7 @@ void main(void) {
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
-    if (uSpot3HasMask && shadowFactor >= 0.99) {
+    if (uMasksEnabled && uSpot3HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uSpot3Mask, worldPos.xy, uSpot3Position.xy, uSpot3MaskOffset, uSpot3MaskRotation, uSpot3MaskScale, uSpot3MaskSize);
       intensity *= maskValue; // Apply mask only where there's no shadow
     }
