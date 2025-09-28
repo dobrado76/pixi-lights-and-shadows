@@ -335,9 +335,9 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     
     // Reduce AO on sprite pixels but don't eliminate it completely (this preserves bias effects)
     if (currentAlpha > 0.8) {
-      spritePixelReduction = 0.1; // Heavily reduce AO on solid sprite pixels
+      spritePixelReduction = 0.2; // Reduce AO on solid sprite pixels but keep bias visible
     } else if (currentAlpha > 0.3) {
-      spritePixelReduction = 0.5; // Moderately reduce AO on semi-transparent areas
+      spritePixelReduction = 0.6; // Moderately reduce AO on semi-transparent areas
     }
   }
   
@@ -355,8 +355,8 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     // Break early if we've reached the desired sample count
     if (i >= uAOSamples) break;
     
-    // Generate sample offset in circular pattern
-    float angle = float(i) * 6.28318530718 / float(uAOSamples); // 2*PI / samples
+    // Generate sample offset in circular pattern - FIXED: Use actual index for all sample counts
+    float angle = float(i) * 6.28318530718 / 16.0; // Always distribute evenly over 16 max samples  
     vec2 sampleOffset = vec2(cos(angle), sin(angle)) * uAORadius;
     
     vec2 samplePos = pixelPos + sampleOffset;
@@ -390,11 +390,11 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     float sampleDistance = length(sampleOffset);
     float biasReduction = 1.0;
     
-    // Make bias effect dramatic and visible but more reasonable
-    float biasRadius = uAOBias * 3.0; // Visible but not excessive
+    // FIXED: Make bias effect much more dramatic and visible
+    float biasRadius = uAOBias * 8.0; // Much larger radius for very visible effect
     if (sampleDistance < biasRadius) {
-      // Create clear falloff effect
-      biasReduction = smoothstep(0.0, biasRadius, sampleDistance) * 0.8 + 0.2;
+      // Create dramatic falloff that's impossible to miss
+      biasReduction = smoothstep(0.0, biasRadius, sampleDistance) * 0.95 + 0.05;
     }
     
     // Apply both z-order filtering and bias reduction
@@ -405,7 +405,7 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   if (validSamples > 0.0) {
     float aoFactor = totalOcclusion / validSamples;
     float aoStrength = clamp(uAOStrength, 0.0, 10.0);
-    float aoEffect = 1.0 - (aoFactor * aoStrength * spritePixelReduction * 0.3); // Apply sprite pixel reduction
+    float aoEffect = 1.0 - (aoFactor * aoStrength * spritePixelReduction); // FIXED: Removed 0.3 weakening
     return clamp(aoEffect, 0.1, 1.0);
   }
   
