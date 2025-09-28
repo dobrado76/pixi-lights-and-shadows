@@ -354,6 +354,10 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     
     // Generate sample offset in circular pattern - PROPER FIX: Use actual sample count
     float angle = float(i) * 6.28318530718 / float(uAOSamples); // Distribute evenly around full circle
+
+    if (i > 8)
+      angle += 6.28318530718 / 32.0;
+    
     vec2 sampleOffset = vec2(cos(angle), sin(angle)) * uAORadius;
     
     vec2 samplePos = pixelPos + sampleOffset;
@@ -408,6 +412,96 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   
   return 1.0; // No occlusion
 }
+float calculateAmbientOcclusion_(vec2 pixelPos) {
+  // AO master switch
+  if (!uAOEnabled) return 1.0;
+
+  // Exclude sprite pixels entirely
+  vec2 mapSize   = uCanvasSize + 2.0 * uOccluderMapOffset;
+  vec2 currentUV = pixelPos / uCanvasSize;
+  vec2 bufUV     = uOccluderMapOffset / uCanvasSize;
+
+  if (currentUV.x >= -bufUV.x && currentUV.x <= 1.0 + bufUV.x &&
+      currentUV.y >= -bufUV.y && currentUV.y <= 1.0 + bufUV.y) {
+    vec2 currentAdjustedUV = (currentUV * uCanvasSize + uOccluderMapOffset) / mapSize;
+    float currentAlpha = texture2D(uOccluderMap, currentAdjustedUV).a;
+    if (currentAlpha > 0.5) {
+      return 1.0; // no AO ON sprite pixels
+    }
+  }
+
+  // Z-order (unchanged)
+  float currentZ = uCurrentSpriteZOrder;
+
+  float totalOcclusion = 0.0;
+  float validSamples   = 0.0;
+
+  vec2 expandedMapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
+
+  // WebGL1-safe int clamp
+  int maxSamples = uAOSamples;
+  if (maxSamples > 16) maxSamples = 16;
+  if (maxSamples < 0)  maxSamples = 0;
+
+  if (maxSamples > 0) {
+    // Ring sampling with golden-angle step: distributes evenly for ANY N
+    // (no even-division symmetry like 2π/N)
+    const float GOLDEN_ANGLE = 2.39996322973; // ~137.5°
+
+    float biasRadius = uAOBias * 8.0;
+
+    // Optional per-pixel rotation (breaks grid alignment/quantization)
+    // Uses normalized pixelPos as a tiny hash; harmless if you want deterministic look
+    float baseRot = fract(dot(pixelPos, vec2(0.3183099, 0.3678794))) * 6.28318530718;
+
+    for (int i = 0; i < 16; i++) {
+      if (i >= maxSamples) break;
+
+      float fi    = float(i);
+      float angle = baseRot + GOLDEN_ANGLE * fi;
+
+      // RING (not disk): keeps your original appearance while avoiding wrap artifacts
+      vec2 sampleOffset = vec2(cos(angle), sin(angle)) * uAORadius;
+
+      vec2 samplePos = pixelPos + sampleOffset;
+      vec2 sampleUV  = samplePos / uCanvasSize;
+
+      // Bounds against expanded map
+      if (sampleUV.x < -bufUV.x || sampleUV.x > 1.0 + bufUV.x ||
+          sampleUV.y < -bufUV.y || sampleUV.y > 1.0 + bufUV.y) {
+        continue;
+      }
+
+      // Sample occluder map with offset
+      vec2 adjustedUV   = (sampleUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
+      float occAlpha    = texture2D(uOccluderMap, adjustedUV).a;
+
+      // Z-order influence (unchanged)
+      float zInfluence  = (currentZ < 0.0) ? 1.0 : 0.8;
+
+      // Visible bias (unchanged)
+      float r            = uAORadius; // ring distance
+      float biasReduction = 1.0;
+      if (r < biasRadius) {
+        biasReduction = smoothstep(0.0, biasRadius, r) * 0.95 + 0.05;
+      }
+
+      totalOcclusion += occAlpha * zInfluence * biasReduction;
+      validSamples   += 1.0;
+    }
+  }
+
+  if (validSamples > 0.0) {
+    float aoFactor   = totalOcclusion / validSamples;
+    float aoStrength = clamp(uAOStrength, 0.0, 10.0);
+    float aoEffect   = 1.0 - (aoFactor * aoStrength);
+    return clamp(aoEffect, 0.1, 1.0);
+  }
+
+  return 1.0;
+}
+
+
 
 // UV rotation function - rotates UV coordinates around configurable pivot point
 vec2 rotateUV(vec2 uv, float rotation) {

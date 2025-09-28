@@ -1414,7 +1414,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uAOEnabled = ambientOcclusionConfig.enabled && performanceSettings.enableAmbientOcclusion;
       uniforms.uAOStrength = ambientOcclusionConfig.strength;
       uniforms.uAORadius = ambientOcclusionConfig.radius;
-      uniforms.uAOSamples = Math.min(ambientOcclusionConfig.samples, performanceSettings.quality === 'low' ? 4 : 8);
+      uniforms.uAOSamples = Math.min(ambientOcclusionConfig.samples, 
+        performanceSettings.quality === 'low' ? 4 : 
+        performanceSettings.quality === 'high' ? 16 : 8);
       uniforms.uAOBias = ambientOcclusionConfig.bias;
       
       // Debug AO bias uniform

@@ -309,7 +309,7 @@
   "ambientOcclusionConfig": {
     "enabled": true,
     "strength": 9.45,
-    "radius": 25,
+    "radius": 50,
     "samples": 16,
     "bias": 0
   }
