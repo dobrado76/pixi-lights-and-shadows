@@ -1631,37 +1631,30 @@ const PixiDemo = (props: PixiDemoProps) => {
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
       const useOccluderMap = true;
       
-      if (useOccluderMap) {
-        // Build occluder map with ALL shadow casters - use very low z-order to ensure inclusion
-        // This prevents interdependence where one sprite's z-order affects others' shadows
-        buildOccluderMapForZOrder(-1000); // Fixed low value ensures ALL shadow casters are included
-        
-        // Update all shaders to use single global occluder map
-        shadersRef.current.forEach(shader => {
-          if (shader.uniforms) {
-            shader.uniforms.uUseOccluderMap = true;
-            shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
-            shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
-          }
-        });
-      } else {
-        
-        // Update all shaders to use per-caster uniforms
-        shadersRef.current.forEach(shader => {
-          if (shader.uniforms) {
-            shader.uniforms.uUseOccluderMap = false;
-            shader.uniforms.uOccluderMapOffset = [0, 0]; // No offset when not using occlusion map
+      // Set global occluder map settings for all shaders
+      shadersRef.current.forEach(shader => {
+        if (shader.uniforms) {
+          shader.uniforms.uUseOccluderMap = useOccluderMap;
+          shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
+          if (!useOccluderMap) {
             shader.uniforms.uOccluderMap = PIXI.Texture.EMPTY;
           }
-        });
-      }
+        }
+      });
       
-      // UNIFIED RENDERING PATH: Set per-sprite settings and render directly (no more multi-pass complexity)
+      // PER-SPRITE SHADOW SYSTEM: Build occluder map for each sprite's z-order
       meshesRef.current.forEach(mesh => {
-        // Set per-sprite zOrder settings (AO is now controlled via caster contribution, not per-sprite receive)
+        // Set per-sprite zOrder settings and build custom occluder map
         if (mesh.shader && mesh.shader.uniforms && (mesh as any).definition) {
           const spriteData = (mesh as any).definition;
-          mesh.shader.uniforms.uCurrentSpriteZOrder = spriteData.zOrder || 0;
+          const spriteZOrder = spriteData.zOrder || 0;
+          mesh.shader.uniforms.uCurrentSpriteZOrder = spriteZOrder;
+          
+          // Build occluder map specific to this sprite's z-order hierarchy
+          if (useOccluderMap) {
+            buildOccluderMapForZOrder(spriteZOrder);
+            mesh.shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+          }
           
           // ✅ Apply performance setting for normal mapping
           mesh.shader.uniforms.uUseNormalMap = spriteData.useNormalMap && performanceSettings.enableNormalMapping;
