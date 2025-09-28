@@ -281,23 +281,29 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     // Filter shadow casters based on zOrder hierarchy - include casters above current sprite
     // Allow sprites at same level to cast shadows on each other (except self-shadowing)
-    let relevantShadowCasters = allShadowCasters.filter(caster => 
-      caster.definition.zOrder > currentSpriteZOrder || 
-      (caster.definition.zOrder === currentSpriteZOrder && caster.id !== excludeSpriteId)
-    );
+    let relevantShadowCasters = allShadowCasters.filter(caster => {
+      const casterZ = Number(caster.definition.zOrder);
+      const currentZ = Number(currentSpriteZOrder);
+      
+      // Force explicit number comparison to avoid type issues
+      return casterZ > currentZ || (casterZ === currentZ && caster.id !== excludeSpriteId);
+    });
     
-    // Z-order filtering now works correctly - sprites can cast shadows with 1 z-order gap
+    // Z-order filtering - sprites cast shadows on sprites below them
     
     // Z-order filtering now works correctly with fragment shader
     
     // Special case: exclude sprites from casting shadows if light (Z >= 50) is inside their non-transparent area
     const enabledLights = lightsConfig.filter(light => light.enabled);
+    const beforeLightFilter = relevantShadowCasters.length;
     relevantShadowCasters = relevantShadowCasters.filter(caster => {
       // Check if any enabled light with Z >= 50 is inside this caster's non-transparent area
       const highZLights = enabledLights.filter(light => (light.position?.z || 0) >= 50);
       const lightInside = highZLights.some(light => isLightInsideSprite(light, caster));
       return !lightInside; // Exclude caster if light is inside
     });
+    
+    // Light filtering completed
     
     // Ensure we have enough pooled sprites
     while (occluderSpritesRef.current.length < allShadowCasters.length) {
