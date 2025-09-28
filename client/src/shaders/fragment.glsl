@@ -380,16 +380,10 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     // we need to be more selective about when AO is applied
     float zOrderInfluence = 0.0; // Default: no AO
     
-    // PROPER Z-ORDER FILTERING: Strict hierarchy to prevent incorrect shadow/AO layering
-    // CRITICAL FIX: Background sprites should NOT receive AO from other background sprites behind them
-    if (currentZ < 0.0) {
-      // Background sprites: Only receive AO from sprites with zOrder >= 0 (foreground)
-      // Disable AO entirely for background sprites to prevent incorrect layering
-      zOrderInfluence = 0.0; // No AO for background sprites to prevent depth errors
-    } else {
-      // Foreground sprites (z >= 0): Receive AO from sprites at same/higher z-order
-      zOrderInfluence = 0.8; // Normal AO for foreground sprites
-    }
+    // FIXED: Allow proper z-order-based shadow/AO casting
+    // Background sprites can receive shadows from sprites above them
+    // The JavaScript filtering already handles proper z-order hierarchy
+    zOrderInfluence = 0.8; // Allow normal shadow/AO influence - JavaScript filtering handles z-order
     
     // Apply bias to create VERY visible AO edge softening effect
     float sampleDistance = length(sampleOffset);

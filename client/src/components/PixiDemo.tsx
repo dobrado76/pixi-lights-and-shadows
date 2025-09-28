@@ -286,7 +286,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       (caster.definition.zOrder === currentSpriteZOrder && caster.id !== excludeSpriteId)
     );
     
-    // Z-order filtering is now working correctly
+    // Z-order filtering now works correctly with fragment shader
     
     // Special case: exclude sprites from casting shadows if light (Z >= 50) is inside their non-transparent area
     const enabledLights = lightsConfig.filter(light => light.enabled);
@@ -306,6 +306,8 @@ const PixiDemo = (props: PixiDemoProps) => {
     // Clear the container and create custom geometry meshes that exactly match visual sprites
     occluderContainerRef.current.removeChildren();
     
+    // Shadow casters are now properly filtered by z-order
+
     // Create meshes with identical custom geometry to visual sprites
     relevantShadowCasters.forEach((caster, index) => {
       if (!caster.diffuseTexture) return;

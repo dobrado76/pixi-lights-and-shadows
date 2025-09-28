@@ -161,9 +161,9 @@
         "x": 291,
         "y": 382
       },
-      "rotation": 0.3665191429188092,
+      "rotation": 0.3839724354387525,
       "scale": 1.2,
-      "zOrder": -2,
+      "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
