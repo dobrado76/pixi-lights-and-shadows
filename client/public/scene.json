@@ -48,7 +48,7 @@
       },
       "rotation": 0,
       "scale": 1,
-      "zOrder": 0,
+      "zOrder": 1,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,

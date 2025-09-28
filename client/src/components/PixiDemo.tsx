@@ -279,21 +279,14 @@ const PixiDemo = (props: PixiDemoProps) => {
       caster.definition.castsShadows
     );
     
-    // Filter shadow casters based on zOrder hierarchy - only include casters at same level or above
-    // Also exclude the current sprite being lit to prevent self-shadowing
+    // Filter shadow casters based on zOrder hierarchy - include casters above current sprite
+    // Allow sprites at same level to cast shadows on each other (except self-shadowing)
     let relevantShadowCasters = allShadowCasters.filter(caster => 
-      caster.definition.zOrder >= currentSpriteZOrder && 
-      (!excludeSpriteId || caster.id !== excludeSpriteId)
+      caster.definition.zOrder > currentSpriteZOrder || 
+      (caster.definition.zOrder === currentSpriteZOrder && caster.id !== excludeSpriteId)
     );
     
-    // DEBUG: Log z-order filtering
-    if (allShadowCasters.length > 0) {
-      console.log(`🌑 Shadow filtering for sprite at z=${currentSpriteZOrder}:`);
-      allShadowCasters.forEach(caster => {
-        const included = caster.definition.zOrder >= currentSpriteZOrder && (!excludeSpriteId || caster.id !== excludeSpriteId);
-        console.log(`  ${caster.id} (z=${caster.definition.zOrder}): ${included ? 'INCLUDED' : 'EXCLUDED'}`);
-      });
-    }
+    // Z-order filtering is now working correctly
     
     // Special case: exclude sprites from casting shadows if light (Z >= 50) is inside their non-transparent area
     const enabledLights = lightsConfig.filter(light => light.enabled);
