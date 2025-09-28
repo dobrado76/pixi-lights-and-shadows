@@ -9,7 +9,7 @@
       },
       "rotation": 0,
       "scale": 1,
-      "zOrder": -1,
+      "zOrder": 0,
       "castsShadows": false,
       "visible": false,
       "useNormalMap": true,
@@ -198,7 +198,6 @@
         "z": 0
       },
       "color": "#ffffff",
-      "intensity": 0.7,
       "radius": 350,
       "castsShadows": true
     },
@@ -212,12 +211,11 @@
         "z": 0
       },
       "direction": {
-        "x": 0.6427876096865394,
-        "y": -0.766044443118978,
-        "z": -1
+        "x": 0,
+        "y": 0,
+        "z": 0
       },
       "color": "#ffffff",
-      "intensity": 0.4,
       "castsShadows": true
     },
     {
@@ -231,11 +229,10 @@
       },
       "direction": {
         "x": 0,
-        "y": 1,
-        "z": -1
+        "y": 0,
+        "z": 0
       },
       "color": "#f4f080",
-      "intensity": 0.7,
       "radius": 780,
       "coneAngle": 49,
       "softness": 0.2,
@@ -252,11 +249,10 @@
       },
       "direction": {
         "x": 0,
-        "y": 1,
-        "z": -0.5
+        "y": 0,
+        "z": 0
       },
       "color": "#ffffff",
-      "intensity": 0.6,
       "radius": 400,
       "coneAngle": 43,
       "softness": 0.5,
@@ -278,7 +274,6 @@
         "z": 0
       },
       "color": "#ffffff",
-      "intensity": 0.6,
       "radius": 400,
       "castsShadows": true
     },
@@ -298,7 +293,6 @@
         "z": 0
       },
       "color": "#e12323",
-      "intensity": 0.9,
       "radius": 900,
       "castsShadows": true
     }
