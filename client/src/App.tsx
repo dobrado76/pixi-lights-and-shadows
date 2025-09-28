@@ -276,7 +276,7 @@ function App() {
     // Save to scene.json - ensure lights are preserved
     const saveData = {
       scene: sceneConfig.scene,
-      lights: sceneConfig.lights || [], // ✅ Preserve lights!
+      lights: lightsConfig, // ✅ Preserve lights!
       performanceSettings: settingsWithOverride,
       shadowConfig,
       ambientOcclusionConfig
