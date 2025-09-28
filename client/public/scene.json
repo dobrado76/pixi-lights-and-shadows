@@ -198,6 +198,7 @@
         "z": 0
       },
       "color": "#ffffff",
+      "intensity": 0.7,
       "radius": 350,
       "castsShadows": true
     },
@@ -216,6 +217,7 @@
         "z": 0
       },
       "color": "#ffffff",
+      "intensity": 0.7,
       "castsShadows": true
     },
     {
@@ -233,6 +235,7 @@
         "z": 0
       },
       "color": "#f4f080",
+      "intensity": 0.7,
       "radius": 780,
       "coneAngle": 49,
       "softness": 0.2,
@@ -253,6 +256,7 @@
         "z": 0
       },
       "color": "#ffffff",
+      "intensity": 0.5,
       "radius": 400,
       "coneAngle": 43,
       "softness": 0.5,
@@ -274,6 +278,7 @@
         "z": 0
       },
       "color": "#ffffff",
+      "intensity": 0.8,
       "radius": 400,
       "castsShadows": true
     },
@@ -293,6 +298,7 @@
         "z": 0
       },
       "color": "#e12323",
+      "intensity": 1.0,
       "radius": 900,
       "castsShadows": true
     }
