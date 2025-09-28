@@ -15,10 +15,12 @@ export interface LightConfig {
   enabled: boolean;
   shadowConfig?: ShadowConfig; // Optional shadow configuration
   
-  // Position properties
-  x?: number;
-  y?: number;
-  z?: number;
+  // Position properties (same format as sprites)
+  position?: {
+    x: number;
+    y: number;
+    z: number;
+  };
   
   // Direction properties  
   directionX?: number;
