@@ -510,9 +510,9 @@ const PixiDemo = (props: PixiDemoProps) => {
               shader.uniforms[`${prefix}Radius`] = light.radius || 200;
               
               // Handle masks
-              if (light.mask) {
+              if (light.mask && performanceSettings.enableLightMasks) {
                 const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
-                shader.uniforms[`${prefix}HasMask`] = performanceSettings.enableLightMasks; // ✅ Use performance setting
+                shader.uniforms[`${prefix}HasMask`] = true;
                 shader.uniforms[`${prefix}Mask`] = maskTexture;
                 shader.uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
                 shader.uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -545,9 +545,9 @@ const PixiDemo = (props: PixiDemoProps) => {
               shader.uniforms[`${prefix}Softness`] = light.softness || 0.5;
               
               // Handle masks
-              if (light.mask) {
+              if (light.mask && performanceSettings.enableLightMasks) {
                 const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
-                shader.uniforms[`${prefix}HasMask`] = performanceSettings.enableLightMasks; // ✅ Use performance setting
+                shader.uniforms[`${prefix}HasMask`] = true;
                 shader.uniforms[`${prefix}Mask`] = maskTexture;
                 shader.uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
                 shader.uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -927,13 +927,13 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}Radius`] = light.radius || 200;
             
             // ✅ Handle mask (always load, toggle with performance setting)
-            if (light.mask) {
+            if (light.mask && performanceSettings.enableLightMasks) {
               console.log(`Loading mask for ${prefix}:`, light.mask);
               const maskPath = `/light_masks/${light.mask.image}`;
               console.log(`Mask texture path: ${maskPath}`);
               
               const maskTexture = PIXI.Texture.from(maskPath);
-              uniforms[`${prefix}HasMask`] = performanceSettings.enableLightMasks; // ✅ Controlled by performance setting
+              uniforms[`${prefix}HasMask`] = true;
               uniforms[`${prefix}Mask`] = maskTexture;
               uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
               uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -941,7 +941,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
               
               console.log(`Mask uniforms for ${prefix}:`, {
-                hasMask: performanceSettings.enableLightMasks,
+                hasMask: true,
                 offset: [light.mask.offset.x, light.mask.offset.y],
                 rotation: light.mask.rotation,
                 scale: light.mask.scale
@@ -994,13 +994,13 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}Softness`] = light.softness || 0.5;
             
             // ✅ Handle mask (always load, toggle with performance setting)
-            if (light.mask) {
+            if (light.mask && performanceSettings.enableLightMasks) {
               console.log(`Loading mask for ${prefix}:`, light.mask);
               const maskPath = `/light_masks/${light.mask.image}`;
               console.log(`Mask texture path: ${maskPath}`);
               
               const maskTexture = PIXI.Texture.from(maskPath);
-              uniforms[`${prefix}HasMask`] = performanceSettings.enableLightMasks; // ✅ Controlled by performance setting
+              uniforms[`${prefix}HasMask`] = true;
               uniforms[`${prefix}Mask`] = maskTexture;
               uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
               uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -1008,7 +1008,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
               
               console.log(`Mask uniforms for ${prefix}:`, {
-                hasMask: performanceSettings.enableLightMasks,
+                hasMask: true,
                 offset: [light.mask.offset.x, light.mask.offset.y],
                 rotation: light.mask.rotation,
                 scale: light.mask.scale
