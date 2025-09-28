@@ -512,7 +512,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               // Handle masks
               if (light.mask) {
                 const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
-                // ✅ REMOVED: Don't override the performance-controlled HasMask setting
+                shader.uniforms[`${prefix}HasMask`] = true;
                 shader.uniforms[`${prefix}Mask`] = maskTexture;
                 shader.uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
                 shader.uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -547,7 +547,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               // Handle masks
               if (light.mask) {
                 const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
-                // ✅ REMOVED: Don't override the performance-controlled HasMask setting
+                shader.uniforms[`${prefix}HasMask`] = true;
                 shader.uniforms[`${prefix}Mask`] = maskTexture;
                 shader.uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
                 shader.uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -1465,7 +1465,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Handle mask
         if (light.mask) {
           const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
-          // ✅ REMOVED: Don't override the performance-controlled HasMask setting
+          uniforms[`${prefix}HasMask`] = true;
           uniforms[`${prefix}Mask`] = maskTexture;
           uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
           uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -1516,7 +1516,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Handle mask
         if (light.mask) {
           const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
-          // ✅ REMOVED: Don't override the performance-controlled HasMask setting
+          uniforms[`${prefix}HasMask`] = true;
           uniforms[`${prefix}Mask`] = maskTexture;
           uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
           uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -1545,7 +1545,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Global shadow properties
       uniforms.uShadowHeight = shadowConfig.height; // Height of sprites above ground plane for shadow projection
       uniforms.uShadowMaxLength = shadowConfig.maxLength; // Maximum shadow length to prevent extremely long shadows
-      // ✅ REMOVED: Don't override the performance-controlled uShadowsEnabled from line 1409
+      uniforms.uShadowsEnabled = shadowConfig.enabled; // Global shadow enable/disable
       uniforms.uShadowStrength = shadowConfig.strength; // Global shadow strength/opacity
       uniforms.uShadowBias = shadowConfig.bias || 3.0; // Shadow bias to prevent self-shadowing artifacts
       // Removed shadow sharpness feature
