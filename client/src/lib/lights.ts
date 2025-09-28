@@ -176,9 +176,9 @@ export const convertConfigToLight = (config: LightConfig): Light => {
     type: config.type,
     enabled: config.enabled,
     position: {
-      x: config.x || 0,
-      y: config.y || 0,
-      z: config.z || 0
+      x: config.position?.x || 0,
+      y: config.position?.y || 0,
+      z: config.position?.z || 0
     },
     direction: {
       x: config.directionX || 0,
@@ -319,9 +319,11 @@ export const convertLightToConfig = (light: Light): LightConfig => {
 
   // Add position properties if relevant
   if (light.type === 'point' || light.type === 'spotlight') {
-    config.x = light.position.x;
-    config.y = light.position.y;
-    config.z = light.position.z;
+    config.position = {
+      x: light.position.x,
+      y: light.position.y,
+      z: light.position.z
+    };
   }
 
   // Add direction properties if relevant  
