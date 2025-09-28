@@ -29,7 +29,7 @@
       },
       "rotation": 0,
       "scale": 1,
-      "zOrder": -2,
+      "zOrder": -1,
       "castsShadows": false,
       "visible": true,
       "useNormalMap": false,
