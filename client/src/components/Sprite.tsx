@@ -148,9 +148,9 @@ export class SceneSprite {
     let basePivotX = 0, basePivotY = 0;
     
     if (pivot.preset === 'custom-offset') {
-      // For custom offset, use offset values directly as pivot coordinates
-      basePivotX = pivot.offsetX || 0;
-      basePivotY = pivot.offsetY || 0;
+      // For custom offset, use offset values directly as pivot coordinates (invert to match expected direction)
+      basePivotX = -(pivot.offsetX || 0);
+      basePivotY = -(pivot.offsetY || 0);
     } else {
       // For preset pivots, calculate base position then apply offset
       switch (pivot.preset) {
@@ -239,9 +239,9 @@ export class SceneSprite {
     let basePivotX = 0, basePivotY = 0;
     
     if (pivot.preset === 'custom-offset') {
-      // For custom offset, use offset values directly as pivot coordinates
-      basePivotX = pivot.offsetX || 0;
-      basePivotY = pivot.offsetY || 0;
+      // For custom offset, use offset values directly as pivot coordinates (invert to match expected direction)
+      basePivotX = -(pivot.offsetX || 0);
+      basePivotY = -(pivot.offsetY || 0);
     } else {
       // For preset pivots, calculate base position then apply offset
       switch (pivot.preset) {
@@ -363,9 +363,9 @@ export class SceneSprite {
     let basePivotX = 0, basePivotY = 0;
     
     if (pivot.preset === 'custom-offset') {
-      // For custom offset, use offset values directly as pivot coordinates
-      basePivotX = pivot.offsetX || 0;
-      basePivotY = pivot.offsetY || 0;
+      // For custom offset, use offset values directly as pivot coordinates (invert to match expected direction)
+      basePivotX = -(pivot.offsetX || 0);
+      basePivotY = -(pivot.offsetY || 0);
     } else {
       // For preset pivots, calculate base position then apply offset
       switch (pivot.preset) {
