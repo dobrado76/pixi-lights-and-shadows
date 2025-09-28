@@ -64,6 +64,8 @@ export class SceneSprite {
 
   constructor(id: string, definition: SpriteDefinition) {
     this.id = id;
+    
+    
     // Normalize sprite definition by applying sensible defaults
     this.definition = {
       image: definition.image,
@@ -557,10 +559,17 @@ export class SceneManager {
         const newDef = newSpriteData as SpriteDefinition;
         const wasVisible = existingSprite.definition.visible;
         const oldZOrder = existingSprite.definition.zOrder;
-        // Create a properly typed updated definition
+        
+        // DEBUG: Log zOrder changes for block2
+        if (existingSprite.id === 'block2' && newDef.zOrder !== undefined && newDef.zOrder !== oldZOrder) {
+          console.log(`🐛 DEBUG: block2 zOrder update: ${oldZOrder} → ${newDef.zOrder}`);
+        }
+        
+        // Create a properly typed updated definition with explicit zOrder handling
         const updatedDef: CompleteSpriteDefinition = {
           ...existingSprite.definition,
           ...newDef,
+          zOrder: newDef.zOrder ?? existingSprite.definition.zOrder,  // Ensure zOrder is properly preserved
           pivot: {
             preset: newDef.pivot?.preset || existingSprite.definition.pivot.preset,
             offsetX: newDef.pivot?.offsetX !== undefined ? newDef.pivot.offsetX : existingSprite.definition.pivot.offsetX,

@@ -816,7 +816,18 @@ const PixiDemo = (props: PixiDemoProps) => {
                 (sprite.mesh as any).userData = (sprite.mesh as any).userData || {};
                 (sprite.mesh as any).userData.__immediateZOrder = updates.zOrder; // Mark as immediate
                 needsReSort = true;
+                
                 console.log(`⚡ Immediate zOrder: ${spriteId} → ${updates.zOrder}`);
+                
+                // CRITICAL FIX: Force immediate shadow system sync after zOrder change
+                // The shadow system was reading stale zOrder values from sprite definitions
+                // Force a micro-task to ensure shadow system sees updated values
+                setTimeout(() => {
+                  // Trigger a minimal re-render to sync shadow system with new zOrder
+                  if (pixiApp) {
+                    pixiApp.render();
+                  }
+                }, 0);
               }
               
               // Handle normal map changes - Update shader uniform without reloading texture
