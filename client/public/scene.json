@@ -277,15 +277,15 @@
     }
   ],
   "performanceSettings": {
-    "quality": "medium",
-    "resolution": 0.75,
-    "maxLights": 4,
+    "quality": "high",
+    "resolution": 1,
+    "maxLights": 999,
     "enableShadows": true,
-    "enableAmbientOcclusion": false,
+    "enableAmbientOcclusion": true,
     "enableNormalMapping": true,
-    "enableLightMasks": false,
-    "textureScale": 0.75,
-    "fpsTarget": 45,
+    "enableLightMasks": true,
+    "textureScale": 1,
+    "fpsTarget": 60,
     "manualOverride": true
   },
   "shadowConfig": {
