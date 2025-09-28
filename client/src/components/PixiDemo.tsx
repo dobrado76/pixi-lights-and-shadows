@@ -283,10 +283,14 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     // Filter shadow casters based on zOrder hierarchy - only include casters at same level or above
     // Also exclude the current sprite being lit to prevent self-shadowing
-    // Include ALL shadow casters in global map - z-order filtering happens per-sprite in uniforms
-    let relevantShadowCasters = allShadowCasters.filter(caster => 
-      !excludeSpriteId || caster.id !== excludeSpriteId
-    );
+    // CRITICAL Z-ORDER FIX: Only include casters that can affect this sprite
+    let relevantShadowCasters = allShadowCasters.filter(caster => {
+      // Shadow casters can only affect sprites at same level or below (higher z-order numbers)
+      const canCastShadow = caster.definition.zOrder >= currentSpriteZOrder;
+      const isNotExcluded = !excludeSpriteId || caster.id !== excludeSpriteId;
+      
+      return canCastShadow && isNotExcluded;
+    });
     
     // Special case: exclude sprites from casting shadows if light (Z >= 50) is inside their non-transparent area
     const enabledLights = lightsConfig.filter(light => light.enabled);
@@ -423,9 +427,9 @@ const PixiDemo = (props: PixiDemoProps) => {
     });
   };
   
-  // Build single global occluder map containing all shadow casters
-  const buildOccluderMap = (excludeSpriteId?: string) => {
-    buildOccluderMapForSprite(-999, excludeSpriteId); // Use low zOrder to include all casters
+  // Build occluder map for specific z-order level (NOT global anymore)
+  const buildOccluderMapForZOrder = (spriteZOrder: number, excludeSpriteId?: string) => {
+    buildOccluderMapForSprite(spriteZOrder, excludeSpriteId);
   };
 
   // Multi-pass lighting composer
@@ -1628,7 +1632,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       const useOccluderMap = true;
       
       if (useOccluderMap) {
-        buildOccluderMap();
+        // CRITICAL FIX: Build separate occluder map for background sprites only
+        buildOccluderMapForZOrder(-1); // Only for background sprites at z=-1
         
         // Update all shaders to use single global occluder map
         shadersRef.current.forEach(shader => {
@@ -1724,7 +1729,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         const useOccluderMap = true;
         if (useOccluderMap && occluderRenderTargetRef.current) {
           // Triggering occluder map build from animation loop
-          buildOccluderMap();
+          // CRITICAL FIX: Build separate occluder map for background sprites only
+        buildOccluderMapForZOrder(-1); // Only for background sprites at z=-1
           
           // Update all shaders to use single global occluder map
           shadersRef.current.forEach(shader => {
