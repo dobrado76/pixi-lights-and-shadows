@@ -1412,7 +1412,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Ambient Occlusion uniforms (performance-filtered and completely independent from shadows)
       uniforms.uAOEnabled = ambientOcclusionConfig.enabled && performanceSettings.enableAmbientOcclusion;
-      uniforms.uAOStrength = ambientOcclusionConfig.strength;
+      uniforms.uAOStrength = ambientOcclusionConfig.strength * 3;
       uniforms.uAORadius = ambientOcclusionConfig.radius;
       uniforms.uAOSamples = Math.min(ambientOcclusionConfig.samples, 
         performanceSettings.quality === 'low' ? 4 : 

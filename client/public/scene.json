@@ -249,7 +249,7 @@
     {
       "id": "point_copy_1758529441818",
       "type": "point",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.6,
       "color": "0xffffff",
       "position": {
@@ -308,9 +308,9 @@
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 10,
-    "radius": 43,
+    "strength": 4.5,
+    "radius": 5,
     "samples": 16,
-    "bias": 13
+    "bias": 20
   }
 }
