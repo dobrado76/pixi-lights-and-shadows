@@ -374,16 +374,18 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     vec2 adjustedUV = (sampleUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
     float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     
-    // Z-ORDER HIERARCHY: Sprites should only receive AO from objects in front of them
-    // CRITICAL FIX: The occluder map contains ALL sprites, but we need to filter based on z-order
-    // Since we can't determine individual sprite z-orders from the occluder map,
-    // we need to be more selective about when AO is applied
+    // Z-ORDER HIERARCHY: All sprites can receive AO for better visual effect
+    // Background sprites (z < 0) get full AO from all sprites above them
+    // Foreground sprites (z >= 0) get partial AO from sprites at same/higher z-order  
     float zOrderInfluence = 0.0; // Default: no AO
     
-    // FIXED: Allow proper z-order-based shadow/AO casting
-    // Background sprites can receive shadows from sprites above them
-    // The JavaScript filtering already handles proper z-order hierarchy
-    zOrderInfluence = 0.8; // Allow normal shadow/AO influence - JavaScript filtering handles z-order
+    if (currentZ < 0.0) {
+      // Background sprites (z=-1) receive full AO from all sprites above them
+      zOrderInfluence = 1.0;
+    } else {
+      // Foreground sprites receive strong AO for dramatic bias testing
+      zOrderInfluence = 0.8; // Much stronger AO for foreground sprites to show bias effect
+    }
     
     // Apply bias to create VERY visible AO edge softening effect
     float sampleDistance = length(sampleOffset);
@@ -403,7 +405,7 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   
   if (validSamples > 0.0) {
     float aoFactor = totalOcclusion / validSamples;
-    float aoStrength = clamp(uAOStrength, 0.0, 50.0);
+    float aoStrength = clamp(uAOStrength, 0.0, 10.0);
     float aoEffect = 1.0 - (aoFactor * aoStrength); // Clean AO calculation without sprite pixel reduction
     return clamp(aoEffect, 0.1, 1.0);
   }

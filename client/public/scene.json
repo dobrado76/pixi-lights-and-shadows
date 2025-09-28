@@ -24,8 +24,8 @@
       "image": "/textures/white-fabric-texture-background.jpg",
       "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
       "position": {
-        "x": -5,
-        "y": 1
+        "x": -1,
+        "y": 0
       },
       "rotation": 0,
       "scale": 1,
@@ -144,7 +144,7 @@
       },
       "rotation": 0,
       "scale": 1,
-      "zOrder": 2,
+      "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
@@ -159,11 +159,11 @@
       "normal": "/textures/block2NormalMap.png",
       "position": {
         "x": 291,
-        "y": 382
+        "y": 354
       },
-      "rotation": 0.3839724354387525,
+      "rotation": 0.3665191429188092,
       "scale": 1.2,
-      "zOrder": 2,
+      "zOrder": 0,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
@@ -179,7 +179,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.15,
+      "brightness": 0.3,
       "color": "0xffffff"
     },
     {
@@ -189,11 +189,11 @@
       "brightness": 0.7,
       "color": "0xffffff",
       "position": {
-        "x": 300,
-        "y": 440,
+        "x": 250,
+        "y": 170,
         "z": 70
       },
-      "followMouse": false,
+      "followMouse": true,
       "castsShadows": true,
       "radius": 350
     },
@@ -201,7 +201,7 @@
       "id": "directional_light",
       "type": "directional",
       "enabled": true,
-      "brightness": 0.5,
+      "brightness": 0.4,
       "color": "0xffffff",
       "directionX": 0.6427876096865394,
       "directionY": -0.766044443118978,
@@ -230,8 +230,8 @@
     {
       "id": "spotlight",
       "type": "spotlight",
-      "enabled": false,
-      "brightness": 0.5,
+      "enabled": true,
+      "brightness": 0.6,
       "color": "0xffffff",
       "position": {
         "x": 300,
@@ -249,7 +249,7 @@
     {
       "id": "point_copy_1758529441818",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.6,
       "color": "0xffffff",
       "position": {
@@ -308,9 +308,9 @@
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 4.5,
-    "radius": 5,
+    "strength": 10,
+    "radius": 43,
     "samples": 16,
-    "bias": 20
+    "bias": 13
   }
 }

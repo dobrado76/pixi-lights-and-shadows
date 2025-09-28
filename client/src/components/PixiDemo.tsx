@@ -279,32 +279,20 @@ const PixiDemo = (props: PixiDemoProps) => {
       caster.definition.castsShadows
     );
     
-    // Filter shadow casters based on zOrder hierarchy - include casters above current sprite
-    // Allow sprites at same level to cast shadows on each other (except self-shadowing)
-    let relevantShadowCasters = allShadowCasters.filter(caster => {
-      const casterZ = Number(caster.definition.zOrder);
-      const currentZ = Number(currentSpriteZOrder);
-      
-      // Force explicit number comparison to avoid type issues
-      return casterZ > currentZ || (casterZ === currentZ && caster.id !== excludeSpriteId);
-    });
+    // Filter shadow casters based on zOrder hierarchy - only include casters at same level or above
+    // Also exclude the current sprite being lit to prevent self-shadowing
+    let relevantShadowCasters = allShadowCasters.filter(caster => 
+      caster.definition.zOrder >= currentSpriteZOrder && 
+      (!excludeSpriteId || caster.id !== excludeSpriteId)
+    );
     
-    // Z-order filtering - sprites cast shadows on sprites below them
-    
-    // Z-order filtering now works correctly with fragment shader
-    
-    // DISABLED: Light filtering that was causing shadow exclusions
     // Special case: exclude sprites from casting shadows if light (Z >= 50) is inside their non-transparent area
-    // const enabledLights = lightsConfig.filter(light => light.enabled);
-    // const beforeLightFilter = relevantShadowCasters.length;
-    // relevantShadowCasters = relevantShadowCasters.filter(caster => {
-    //   // Check if any enabled light with Z >= 50 is inside this caster's non-transparent area
-    //   const highZLights = enabledLights.filter(light => (light.position?.z || 0) >= 50);
-    //   const lightInside = highZLights.some(light => isLightInsideSprite(light, caster));
-    //   return !lightInside; // Exclude caster if light is inside
-    // });
-    
-    // Light filtering completed
+    const enabledLights = lightsConfig.filter(light => light.enabled);
+    relevantShadowCasters = relevantShadowCasters.filter(caster => {
+      // Check if any enabled light with Z >= 50 is inside this caster's non-transparent area
+      const lightInside = enabledLights.some(light => isLightInsideSprite(light, caster));
+      return !lightInside; // Exclude caster if light is inside
+    });
     
     // Ensure we have enough pooled sprites
     while (occluderSpritesRef.current.length < allShadowCasters.length) {
@@ -315,13 +303,6 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     // Clear the container and create custom geometry meshes that exactly match visual sprites
     occluderContainerRef.current.removeChildren();
-    
-    // Shadow casters are now properly filtered by z-order
-
-    console.log(`🎯 FINAL RESULT: ${relevantShadowCasters.length} shadow casters will be rendered for sprite z=${currentSpriteZOrder}`);
-    if (relevantShadowCasters.length === 0) {
-      console.log(`❌ NO SHADOW CASTERS - this sprite will receive NO shadows!`);
-    }
     
     // Create meshes with identical custom geometry to visual sprites
     relevantShadowCasters.forEach((caster, index) => {
@@ -440,8 +421,10 @@ const PixiDemo = (props: PixiDemoProps) => {
     });
   };
   
-  // REMOVED: This function was using hardcoded -999 z-order instead of relative comparisons
-  // All calls should use buildOccluderMapForSprite() with actual sprite z-orders
+  // Build occluder map using all shadow casters for unified system
+  const buildOccluderMap = (excludeSpriteId?: string) => {
+    buildOccluderMapForSprite(-999, excludeSpriteId); // Use very low zOrder to include all casters
+  };
 
   // Multi-pass lighting composer
   const renderMultiPass = (lights: Light[]) => {
@@ -636,7 +619,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       console.log('⚙️ Performance Settings:', performanceSettings);
       
       try {
-        console.log('Attempting PIXI WebGL initialization...');
         // First try WebGL with performance-optimized settings
         app = new PIXI.Application({
           width: shaderParams.canvasWidth,
@@ -650,67 +632,25 @@ const PixiDemo = (props: PixiDemoProps) => {
           powerPreference: deviceInfo.isMobile ? 'low-power' : 'high-performance',
           preserveDrawingBuffer: false,
           clearBeforeRender: true,
-          autoStart: true // Let PIXI handle ticker automatically
+          autoStart: false // CRITICAL: Set to false, we'll call start() manually
         });
-        console.log('✅ PIXI WebGL initialization successful');
       } catch (webglError) {
-        console.warn('❌ WebGL failed, trying Canvas fallback:', webglError);
-        try {
-          // Fallback to Canvas renderer with minimal settings
-          app = new PIXI.Application({
-            width: shaderParams.canvasWidth,
-            height: shaderParams.canvasHeight,
-            backgroundColor: 0x1a1a1a,
-            antialias: false, // Disable for canvas
-            hello: false,
-            resolution: 1, // Force low resolution for maximum compatibility
-            autoDensity: false,
-            forceCanvas: true, // Force Canvas renderer
-            powerPreference: 'low-power',
-            preserveDrawingBuffer: false,
-            clearBeforeRender: true,
-            autoStart: true // Let PIXI handle ticker automatically
-          });
-          console.log('✅ PIXI Canvas fallback successful');
-        } catch (canvasError) {
-          console.error('❌ Both WebGL and Canvas initialization failed:', canvasError);
-          // FINAL FALLBACK: Create a minimal application
-          try {
-            app = new PIXI.Application({
-              width: 800, // Fixed minimal dimensions
-              height: 600,
-              backgroundColor: 0x1a1a1a,
-              antialias: false,
-              resolution: 1,
-              forceCanvas: true,
-              autoStart: false
-            });
-            console.log('✅ PIXI minimal fallback successful');
-          } catch (finalError) {
-            console.error('❌ All PIXI initialization attempts failed:', finalError);
-            // Create a dummy app object to prevent crashes
-            const canvas = document.createElement('canvas');
-            canvas.width = 800;
-            canvas.height = 600;
-            app = {
-              view: canvas,
-              stage: new PIXI.Container(),
-              renderer: { 
-                type: 'FALLBACK',
-                render: () => {
-                  console.log('Using fallback renderer - PIXI functionality limited');
-                }
-              },
-              ticker: { 
-                add: () => {}, 
-                remove: () => {}, 
-                start: () => {},
-                started: false 
-              }
-            } as any;
-            console.log('🚨 Using emergency fallback mode');
-          }
-        }
+        console.warn('WebGL failed, trying Canvas fallback:', webglError);
+        // Fallback to Canvas renderer with mobile optimizations
+        app = new PIXI.Application({
+          width: shaderParams.canvasWidth,
+          height: shaderParams.canvasHeight,
+          backgroundColor: 0x1a1a1a,
+          antialias: false, // Disable for canvas
+          hello: false,
+          resolution: Math.min(performanceSettings.resolution, 0.75), // Lower resolution for canvas fallback
+          autoDensity: false,
+          forceCanvas: true, // Force Canvas renderer
+          powerPreference: 'low-power',
+          preserveDrawingBuffer: false,
+          clearBeforeRender: true,
+          autoStart: false // CRITICAL: Set to false, we'll call start() manually
+        });
       }
 
       // Access canvas using proper PIXI.js property
@@ -940,7 +880,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               
               // Force a render to ensure immediate visual feedback
               if (pixiApp) {
-                pixiApp.renderer.render(pixiApp.stage);
+                pixiApp.render();
               }
             }
           }
@@ -1202,7 +1142,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       console.log('🎯 NOW starting PIXI app with content loaded...');
       
       if (pixiApp) {
-        // Start PIXI app now that scene is ready (ticker starts automatically)
+        // Start PIXI app now that scene is ready
+        pixiApp.start();
         
         // SMART ACTIVATION: Trigger canvas focus + refresh RIGHT when scene is loaded!
         const canvas = (pixiApp as any).__canvas;
@@ -1227,11 +1168,11 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Force renders after activation
         requestAnimationFrame(() => {
-          pixiApp.renderer.render(pixiApp.stage);
+          pixiApp.render();
           console.log('🎯 Post-scene PIXI render completed');
           
           requestAnimationFrame(() => {
-            pixiApp.renderer.render(pixiApp.stage);
+            pixiApp.render();
             console.log('🎯 Final safety render completed');
           });
         });
@@ -1399,7 +1340,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
       
       // Trigger immediate render after sprite updates
-      pixiApp.renderer.render(pixiApp.stage);
+      pixiApp.render();
     } catch (error) {
     }
   }, [sceneConfig, pixiApp, JSON.stringify(sceneConfig.scene)]);
@@ -1413,7 +1354,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     // Force multiple renders to ensure scene displays immediately
     const forceRender = () => {
       if (pixiApp && pixiApp.renderer) {
-        pixiApp.renderer.render(pixiApp.stage);
+        pixiApp.render();
         console.log('🎯 Forced scene render completed');
       }
     };
@@ -1471,7 +1412,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Ambient Occlusion uniforms (performance-filtered and completely independent from shadows)
       uniforms.uAOEnabled = ambientOcclusionConfig.enabled && performanceSettings.enableAmbientOcclusion;
-      uniforms.uAOStrength = ambientOcclusionConfig.strength * 3;
+      uniforms.uAOStrength = ambientOcclusionConfig.strength;
       uniforms.uAORadius = ambientOcclusionConfig.radius;
       uniforms.uAOSamples = Math.min(ambientOcclusionConfig.samples, 
         performanceSettings.quality === 'low' ? 4 : 
@@ -1669,36 +1610,14 @@ const PixiDemo = (props: PixiDemoProps) => {
       const useOccluderMap = true;
       
       if (useOccluderMap) {
-        // CRITICAL FIX: Build sprite-specific occluder maps to respect z-order hierarchy
-        // Each sprite should only receive shadows from sprites in front of it
+        buildOccluderMap();
         
-        // FIXED: Process ALL sprites, not just rendered meshes (background sprites might not be in meshesRef)
-        const allSprites = sceneManagerRef.current?.getAllSprites() || [];
-        shadersRef.current.forEach((shader, index) => {
-          if (shader.uniforms && meshesRef.current[index]) {
-            const meshDef = (meshesRef.current[index] as any).definition;
-            if (meshDef) {
-              // Build occluder map containing only sprites that should cast shadows on this sprite
-              buildOccluderMapForSprite(meshDef.zOrder, meshDef.id);
-              
-              // Apply the sprite-specific occluder map
-              shader.uniforms.uUseOccluderMap = true;
-              shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
-              shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
-            }
-          }
-        });
-        
-        // ADDITIONAL FIX: Process sprites that have shaders but might not be in the mesh array
-        allSprites.forEach(sprite => {
-          if (sprite.mesh && sprite.mesh.shader && sprite.mesh.shader.uniforms) {
-            // Build occluder map for this sprite based on its z-order
-            buildOccluderMapForSprite(sprite.definition.zOrder, sprite.id);
-            
-            // Apply the sprite-specific occluder map
-            sprite.mesh.shader.uniforms.uUseOccluderMap = true;
-            sprite.mesh.shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
-            sprite.mesh.shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+        // Update all shaders to use single global occluder map
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uUseOccluderMap = true;
+            shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
+            shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
           }
         });
       } else {
@@ -1740,12 +1659,12 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
       
       // Single unified render call
-      pixiApp.renderer.render(pixiApp.stage);
+      pixiApp.render();
       
       // Force immediate render after updating lighting uniforms
       if (pixiApp && pixiApp.renderer) {
         // Forcing immediate render after lighting uniform updates
-        pixiApp.renderer.render(pixiApp.stage);
+        pixiApp.render();
       } else {
         console.warn('⚠️ Cannot render - pixiApp or renderer not available');
       }
@@ -1786,48 +1705,28 @@ const PixiDemo = (props: PixiDemoProps) => {
         // TRIGGER THE RENDER LOOP FOR UNLIMITED SHADOWS
         const useOccluderMap = true;
         if (useOccluderMap && occluderRenderTargetRef.current) {
-          // CRITICAL FIX: Build sprite-specific occluder maps in animation loop too
-          // FIXED: Process ALL sprites, not just rendered meshes (includes background sprites)
-          const allSprites = sceneManagerRef.current?.getAllSprites() || [];
+          // Triggering occluder map build from animation loop
+          buildOccluderMap();
           
-          shadersRef.current.forEach((shader, index) => {
-            if (shader.uniforms && meshesRef.current[index]) {
-              const meshDef = (meshesRef.current[index] as any).definition;
-              if (meshDef) {
-                // Build occluder map for this specific sprite's z-order
-                buildOccluderMapForSprite(meshDef.zOrder, meshDef.id);
-                
-                shader.uniforms.uUseOccluderMap = true;
-                shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
-                shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
-                
-                // Only enable directional shadows if there are actually enabled directional lights
-                const enabledDirectionalLights = lightsConfig.filter(light => light.enabled && light.type === 'directional');
-                shader.uniforms.uDir0CastsShadows = enabledDirectionalLights.length > 0 && enabledDirectionalLights[0].castsShadows;
-              }
-            }
-          });
-          
-          // ADDITIONAL FIX: Process sprites that have shaders but might not be in the mesh array
-          allSprites.forEach(sprite => {
-            if (sprite.mesh && sprite.mesh.shader && sprite.mesh.shader.uniforms) {
-              // Build occluder map for this sprite based on its z-order
-              buildOccluderMapForSprite(sprite.definition.zOrder, sprite.id);
+          // Update all shaders to use single global occluder map
+          shadersRef.current.forEach(shader => {
+            if (shader.uniforms) {
+              shader.uniforms.uUseOccluderMap = true;
+              shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
+              shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
               
-              // Apply the sprite-specific occluder map
-              sprite.mesh.shader.uniforms.uUseOccluderMap = true;
-              sprite.mesh.shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
-              sprite.mesh.shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+              // Only enable directional shadows if there are actually enabled directional lights
+              const enabledDirectionalLights = lightsConfig.filter(light => light.enabled && light.type === 'directional');
+              shader.uniforms.uDir0CastsShadows = enabledDirectionalLights.length > 0 && enabledDirectionalLights[0].castsShadows;
             }
           });
-          
           // Unlimited shadows applied from animation loop
         }
       }
       
       // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
       if (pixiApp && pixiApp.renderer) {
-        pixiApp.renderer.render(pixiApp.stage);
+        pixiApp.render();
       }
     };
 
