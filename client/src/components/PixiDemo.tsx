@@ -274,10 +274,12 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     const allCasters = sceneManagerRef.current?.getShadowCasters() || [];
     
+    
     // Unified system: include sprites that cast shadows & AO
     const allShadowCasters = allCasters.filter(caster => 
       caster.definition.castsShadows
     );
+    
     
     // Filter shadow casters based on zOrder hierarchy - only include casters at same level or above
     // Also exclude the current sprite being lit to prevent self-shadowing
@@ -636,21 +638,24 @@ const PixiDemo = (props: PixiDemoProps) => {
         });
       } catch (webglError) {
         console.warn('WebGL failed, trying Canvas fallback:', webglError);
-        // Fallback to Canvas renderer with mobile optimizations
-        app = new PIXI.Application({
-          width: shaderParams.canvasWidth,
-          height: shaderParams.canvasHeight,
-          backgroundColor: 0x1a1a1a,
-          antialias: false, // Disable for canvas
-          hello: false,
-          resolution: Math.min(performanceSettings.resolution, 0.75), // Lower resolution for canvas fallback
-          autoDensity: false,
-          forceCanvas: true, // Force Canvas renderer
-          powerPreference: 'low-power',
-          preserveDrawingBuffer: false,
-          clearBeforeRender: true,
-          autoStart: false // CRITICAL: Set to false, we'll call start() manually
-        });
+        try {
+          // Fallback to Canvas renderer with minimal settings
+          app = new PIXI.Application({
+            width: shaderParams.canvasWidth,
+            height: shaderParams.canvasHeight,
+            backgroundColor: 0x1a1a1a,
+            antialias: false, // Disable for canvas
+            hello: false,
+            resolution: 1, // Fixed resolution for Canvas
+            autoDensity: false,
+            forceCanvas: true, // Force Canvas renderer
+            autoStart: false // CRITICAL: Set to false, we'll call start() manually
+          });
+          console.log('✅ Canvas fallback successful');
+        } catch (canvasError) {
+          console.error('❌ Canvas fallback also failed:', canvasError);
+          throw new Error(`Both WebGL and Canvas failed. WebGL: ${(webglError as Error).message}, Canvas: ${(canvasError as Error).message}`);
+        }
       }
 
       // Access canvas using proper PIXI.js property
@@ -667,7 +672,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         canvas.tabIndex = 0;
         
         setPixiApp(app);
-        console.log('🎯 PIXI App created - waiting for scene to load before starting');
+        console.log('🎯 PIXI App created successfully!');
+        console.log(`   Renderer: ${app.renderer.type === PIXI.RENDERER_TYPE.WEBGL ? 'WebGL' : 'Canvas'}`);
+        console.log('   Waiting for scene to load before starting...');
         
         // Initialize adaptive quality system
         adaptiveQualityRef.current = new AdaptiveQuality(performanceSettings, (newSettings) => {

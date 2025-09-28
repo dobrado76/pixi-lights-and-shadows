@@ -560,9 +560,15 @@ export class SceneManager {
         const wasVisible = existingSprite.definition.visible;
         const oldZOrder = existingSprite.definition.zOrder;
         
-        // DEBUG: Log zOrder changes for block2
-        if (existingSprite.id === 'block2' && newDef.zOrder !== undefined && newDef.zOrder !== oldZOrder) {
-          console.log(`🐛 DEBUG: block2 zOrder update: ${oldZOrder} → ${newDef.zOrder}`);
+        // 🚨 CRITICAL DEBUG: Track zOrder corruption source
+        if (existingSprite.id === 'block2' || existingSprite.id === 'ball') {
+          console.log(`🔍 ID-Data mapping for ${existingSprite.id}:`, {
+            spriteId: existingSprite.id,
+            sceneKey: key,
+            receivedZOrder: newDef.zOrder,
+            currentZOrder: oldZOrder,
+            keysMatch: existingSprite.id === key
+          });
         }
         
         // Create a properly typed updated definition with explicit zOrder handling
