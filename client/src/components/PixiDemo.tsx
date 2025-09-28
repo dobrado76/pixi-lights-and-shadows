@@ -1656,7 +1656,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         console.warn('⚠️ Cannot render - pixiApp or renderer not available');
       }
     }
-  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig]);
+  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings]);
 
 
   // Animation loop
