@@ -681,8 +681,19 @@ export class SceneManager {
 
 
   // Get sprites sorted by zOrder (lowest to highest = back to front)
+  // When z-orders are equal, preserve scene.json declaration order
   getSpritesSortedByZOrder(): SceneSprite[] {
-    return this.getAllSprites().sort((a, b) => a.definition.zOrder - b.definition.zOrder);
+    const allSprites = this.getAllSprites();
+    return allSprites.sort((a, b) => {
+      // Primary sort: by zOrder
+      const zOrderDiff = a.definition.zOrder - b.definition.zOrder;
+      if (zOrderDiff !== 0) return zOrderDiff;
+      
+      // Secondary sort: preserve scene.json declaration order (Map insertion order)
+      const aIndex = allSprites.indexOf(a);
+      const bIndex = allSprites.indexOf(b);
+      return aIndex - bIndex;
+    });
   }
   
   // Legacy method kept for backward compatibility, now returns all sprites
