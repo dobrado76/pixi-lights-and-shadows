@@ -1619,14 +1619,20 @@ const PixiDemo = (props: PixiDemoProps) => {
       const useOccluderMap = true;
       
       if (useOccluderMap) {
-        buildOccluderMap();
-        
-        // Update all shaders to use single global occluder map
-        shadersRef.current.forEach(shader => {
-          if (shader.uniforms) {
-            shader.uniforms.uUseOccluderMap = true;
-            shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
-            shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+        // CRITICAL FIX: Build sprite-specific occluder maps to respect z-order hierarchy
+        // Each sprite should only receive shadows from sprites in front of it
+        shadersRef.current.forEach((shader, index) => {
+          if (shader.uniforms && meshesRef.current[index]) {
+            const meshDef = (meshesRef.current[index] as any).definition;
+            if (meshDef) {
+              // Build occluder map containing only sprites that should cast shadows on this sprite
+              buildOccluderMapForSprite(meshDef.zOrder, meshDef.id);
+              
+              // Apply the sprite-specific occluder map
+              shader.uniforms.uUseOccluderMap = true;
+              shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
+              shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+            }
           }
         });
       } else {
@@ -1714,19 +1720,22 @@ const PixiDemo = (props: PixiDemoProps) => {
         // TRIGGER THE RENDER LOOP FOR UNLIMITED SHADOWS
         const useOccluderMap = true;
         if (useOccluderMap && occluderRenderTargetRef.current) {
-          // Triggering occluder map build from animation loop
-          buildOccluderMap();
-          
-          // Update all shaders to use single global occluder map
-          shadersRef.current.forEach(shader => {
-            if (shader.uniforms) {
-              shader.uniforms.uUseOccluderMap = true;
-              shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
-              shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
-              
-              // Only enable directional shadows if there are actually enabled directional lights
-              const enabledDirectionalLights = lightsConfig.filter(light => light.enabled && light.type === 'directional');
-              shader.uniforms.uDir0CastsShadows = enabledDirectionalLights.length > 0 && enabledDirectionalLights[0].castsShadows;
+          // CRITICAL FIX: Build sprite-specific occluder maps in animation loop too
+          shadersRef.current.forEach((shader, index) => {
+            if (shader.uniforms && meshesRef.current[index]) {
+              const meshDef = (meshesRef.current[index] as any).definition;
+              if (meshDef) {
+                // Build occluder map for this specific sprite's z-order
+                buildOccluderMapForSprite(meshDef.zOrder, meshDef.id);
+                
+                shader.uniforms.uUseOccluderMap = true;
+                shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
+                shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+                
+                // Only enable directional shadows if there are actually enabled directional lights
+                const enabledDirectionalLights = lightsConfig.filter(light => light.enabled && light.type === 'directional');
+                shader.uniforms.uDir0CastsShadows = enabledDirectionalLights.length > 0 && enabledDirectionalLights[0].castsShadows;
+              }
             }
           });
           // Unlimited shadows applied from animation loop
