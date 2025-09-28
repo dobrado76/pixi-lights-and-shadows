@@ -1632,10 +1632,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       const useOccluderMap = true;
       
       if (useOccluderMap) {
-        // Build occluder map for the highest z-order sprite to include maximum valid shadow casters
-        const allSprites = sceneManagerRef.current?.getAllSprites() || [];
-        const maxZOrder = allSprites.length > 0 ? Math.max(...allSprites.map(s => s.definition.zOrder)) : 0;
-        buildOccluderMapForZOrder(maxZOrder);
+        // Build occluder map with ALL shadow casters - use very low z-order to ensure inclusion
+        // This prevents interdependence where one sprite's z-order affects others' shadows
+        buildOccluderMapForZOrder(-1000); // Fixed low value ensures ALL shadow casters are included
         
         // Update all shaders to use single global occluder map
         shadersRef.current.forEach(shader => {
@@ -1731,10 +1730,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         const useOccluderMap = true;
         if (useOccluderMap && occluderRenderTargetRef.current) {
           // Triggering occluder map build from animation loop
-          // Build occluder map for the highest z-order sprite to include maximum valid shadow casters
-        const allSprites = sceneManagerRef.current?.getAllSprites() || [];
-        const maxZOrder = allSprites.length > 0 ? Math.max(...allSprites.map(s => s.definition.zOrder)) : 0;
-        buildOccluderMapForZOrder(maxZOrder);
+          // Build occluder map with ALL shadow casters - use very low z-order to ensure inclusion
+        // This prevents interdependence where one sprite's z-order affects others' shadows
+        buildOccluderMapForZOrder(-1000); // Fixed low value ensures ALL shadow casters are included
           
           // Update all shaders to use single global occluder map
           shadersRef.current.forEach(shader => {
