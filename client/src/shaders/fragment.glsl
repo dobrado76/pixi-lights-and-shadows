@@ -366,12 +366,12 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     }
     // Note: Sprites at z=0+ get zOrderInfluence = 0.0 (no AO) unless overlapped by higher z sprites
     
-    // Apply bias to prevent self-occlusion: reduce occlusion strength for nearby samples
+    // Apply bias to prevent self-occlusion: only reduce very close samples
     float sampleDistance = length(sampleOffset);
     float biasReduction = 1.0;
-    if (sampleDistance < uAOBias * 2.0) {
-      // Gradually reduce occlusion strength for samples within bias range
-      biasReduction = smoothstep(0.0, uAOBias * 2.0, sampleDistance);
+    if (sampleDistance < uAOBias) {
+      // Only reduce occlusion for samples very close to prevent self-occlusion
+      biasReduction = smoothstep(0.0, uAOBias, sampleDistance) * 0.5 + 0.5;
     }
     
     // Apply both z-order filtering and bias reduction
