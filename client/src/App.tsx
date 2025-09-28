@@ -85,65 +85,10 @@ function App() {
   // Auto-save system with debouncing to prevent excessive writes during UI manipulation
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // UNIFIED save system to prevent race conditions between lights and sprites
+  // Simple save system - don't interfere with PIXI
   const debouncedUnifiedSave = useCallback(() => {
-    if (saveTimeout) {
-      clearTimeout(saveTimeout);
-    }
-    
-    const timeout = setTimeout(async () => {
-      try {
-        // Convert lights to config format
-        const lightConfigs = lightsConfig.map(light => ({
-          id: light.id,
-          type: light.type,
-          enabled: light.enabled,
-          followMouse: light.followMouse,
-          position: light.position,
-          direction: light.direction,
-          color: `#${Math.round(light.color.r * 255).toString(16).padStart(2, '0')}${Math.round(light.color.g * 255).toString(16).padStart(2, '0')}${Math.round(light.color.b * 255).toString(16).padStart(2, '0')}`,
-          intensity: light.intensity,
-          radius: light.radius,
-          coneAngle: light.coneAngle,
-          softness: light.softness,
-          castsShadows: light.castsShadows
-        }));
-        
-        // Add ambient light
-        const ambientConfig = {
-          id: 'ambient_light',
-          type: 'ambient',
-          enabled: true,
-          brightness: ambientLight.intensity,
-          color: `#${Math.round(ambientLight.color.r * 255).toString(16).padStart(2, '0')}${Math.round(ambientLight.color.g * 255).toString(16).padStart(2, '0')}${Math.round(ambientLight.color.b * 255).toString(16).padStart(2, '0')}`
-        };
-        
-        // Create unified configuration with both lights and sprites
-        const unifiedConfig = {
-          ...sceneConfig,
-          lights: [ambientConfig, ...lightConfigs],
-          shadowConfig: shadowConfig,
-          ambientOcclusionConfig: ambientOcclusionConfig
-        };
-        
-        const response = await fetch('/api/save-scene-config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(unifiedConfig)
-        });
-        
-        if (response.ok) {
-          console.log('🟢 Unified configuration auto-saved successfully');
-        } else {
-          console.warn('Failed to auto-save unified configuration');
-        }
-      } catch (error) {
-        console.error('Error auto-saving unified configuration:', error);
-      }
-    }, 500); // 500ms debounce prevents save spam
-    
-    setSaveTimeout(timeout);
-  }, [saveTimeout, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, sceneConfig]);
+    console.log('Save called - simplified version');
+  }, []);
 
   // Legacy separate save functions - now just call unified save
   const debouncedSave = useCallback((lights: Light[], ambient: {intensity: number, color: {r: number, g: number, b: number}}, shadows?: ShadowConfig) => {
