@@ -479,7 +479,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                     <input
                       type="range"
                       min="0"
-                      max="10"
+                      max="20"
                       step="0.5"
                       value={localAOConfig.bias}
                       onChange={(e) => {

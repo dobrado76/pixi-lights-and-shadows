@@ -158,10 +158,10 @@
       "image": "/textures/block2.png",
       "normal": "/textures/block2NormalMap.png",
       "position": {
-        "x": 327,
+        "x": 291,
         "y": 354
       },
-      "rotation": 6.161012259539983,
+      "rotation": 0.3665191429188092,
       "scale": 1.2,
       "zOrder": 0,
       "castsShadows": true,
@@ -308,9 +308,9 @@
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 10,
-    "radius": 35,
-    "samples": 16,
-    "bias": 10
+    "strength": 9.45,
+    "radius": 25,
+    "samples": 8,
+    "bias": 8
   }
 }
