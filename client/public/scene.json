@@ -246,7 +246,7 @@
       "enabled": true,
       "brightness": 0.6,
       "color": "0xffffff",
-      "x": 130,
+      "x": 140,
       "y": 240,
       "z": 90,
       "followMouse": false,
@@ -277,15 +277,15 @@
     }
   ],
   "performanceSettings": {
-    "quality": "high",
-    "resolution": 1,
-    "maxLights": 999,
+    "quality": "medium",
+    "resolution": 0.75,
+    "maxLights": 4,
     "enableShadows": true,
-    "enableAmbientOcclusion": true,
+    "enableAmbientOcclusion": false,
     "enableNormalMapping": true,
-    "enableLightMasks": true,
-    "textureScale": 1,
-    "fpsTarget": 60,
+    "enableLightMasks": false,
+    "textureScale": 0.75,
+    "fpsTarget": 45,
     "manualOverride": true
   },
   "shadowConfig": {
@@ -298,8 +298,8 @@
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 1.95,
-    "radius": 8,
+    "strength": 0.95,
+    "radius": 6,
     "samples": 16,
     "bias": 7.5
   }
