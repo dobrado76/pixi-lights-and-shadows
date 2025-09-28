@@ -636,6 +636,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       console.log('⚙️ Performance Settings:', performanceSettings);
       
       try {
+        console.log('Attempting PIXI WebGL initialization...');
         // First try WebGL with performance-optimized settings
         app = new PIXI.Application({
           width: shaderParams.canvasWidth,
@@ -649,29 +650,66 @@ const PixiDemo = (props: PixiDemoProps) => {
           powerPreference: deviceInfo.isMobile ? 'low-power' : 'high-performance',
           preserveDrawingBuffer: false,
           clearBeforeRender: true,
-          autoStart: false // CRITICAL: Set to false, we'll call start() manually
+          autoStart: true // Let PIXI handle ticker automatically
         });
+        console.log('✅ PIXI WebGL initialization successful');
       } catch (webglError) {
-        console.warn('WebGL failed, trying Canvas fallback:', webglError);
+        console.warn('❌ WebGL failed, trying Canvas fallback:', webglError);
         try {
-          // Fallback to Canvas renderer with mobile optimizations
+          // Fallback to Canvas renderer with minimal settings
           app = new PIXI.Application({
             width: shaderParams.canvasWidth,
             height: shaderParams.canvasHeight,
             backgroundColor: 0x1a1a1a,
             antialias: false, // Disable for canvas
             hello: false,
-            resolution: Math.min(performanceSettings.resolution, 0.75), // Lower resolution for canvas fallback
+            resolution: 1, // Force low resolution for maximum compatibility
             autoDensity: false,
             forceCanvas: true, // Force Canvas renderer
             powerPreference: 'low-power',
             preserveDrawingBuffer: false,
             clearBeforeRender: true,
-            autoStart: false // CRITICAL: Set to false, we'll call start() manually
+            autoStart: true // Let PIXI handle ticker automatically
           });
+          console.log('✅ PIXI Canvas fallback successful');
         } catch (canvasError) {
-          console.error('PIXI Application initialization failed:', canvasError);
-          throw new Error('Unable to auto-detect a suitable renderer');
+          console.error('❌ Both WebGL and Canvas initialization failed:', canvasError);
+          // FINAL FALLBACK: Create a minimal application
+          try {
+            app = new PIXI.Application({
+              width: 800, // Fixed minimal dimensions
+              height: 600,
+              backgroundColor: 0x1a1a1a,
+              antialias: false,
+              resolution: 1,
+              forceCanvas: true,
+              autoStart: false
+            });
+            console.log('✅ PIXI minimal fallback successful');
+          } catch (finalError) {
+            console.error('❌ All PIXI initialization attempts failed:', finalError);
+            // Create a dummy app object to prevent crashes
+            const canvas = document.createElement('canvas');
+            canvas.width = 800;
+            canvas.height = 600;
+            app = {
+              view: canvas,
+              stage: new PIXI.Container(),
+              renderer: { 
+                type: 'FALLBACK',
+                render: () => {
+                  console.log('Using fallback renderer - PIXI functionality limited');
+                }
+              },
+              ticker: { 
+                add: () => {}, 
+                remove: () => {}, 
+                start: () => {},
+                started: false 
+              }
+            } as any;
+            console.log('🚨 Using emergency fallback mode');
+          }
         }
       }
 
@@ -902,7 +940,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               
               // Force a render to ensure immediate visual feedback
               if (pixiApp) {
-                pixiApp.render();
+                pixiApp.renderer.render(pixiApp.stage);
               }
             }
           }
@@ -1164,8 +1202,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       console.log('🎯 NOW starting PIXI app with content loaded...');
       
       if (pixiApp) {
-        // Start PIXI app now that scene is ready
-        pixiApp.start();
+        // Start PIXI app now that scene is ready (ticker starts automatically)
         
         // SMART ACTIVATION: Trigger canvas focus + refresh RIGHT when scene is loaded!
         const canvas = (pixiApp as any).__canvas;
@@ -1190,11 +1227,11 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Force renders after activation
         requestAnimationFrame(() => {
-          pixiApp.render();
+          pixiApp.renderer.render(pixiApp.stage);
           console.log('🎯 Post-scene PIXI render completed');
           
           requestAnimationFrame(() => {
-            pixiApp.render();
+            pixiApp.renderer.render(pixiApp.stage);
             console.log('🎯 Final safety render completed');
           });
         });
@@ -1362,7 +1399,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
       
       // Trigger immediate render after sprite updates
-      pixiApp.render();
+      pixiApp.renderer.render(pixiApp.stage);
     } catch (error) {
     }
   }, [sceneConfig, pixiApp, JSON.stringify(sceneConfig.scene)]);
@@ -1376,7 +1413,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     // Force multiple renders to ensure scene displays immediately
     const forceRender = () => {
       if (pixiApp && pixiApp.renderer) {
-        pixiApp.render();
+        pixiApp.renderer.render(pixiApp.stage);
         console.log('🎯 Forced scene render completed');
       }
     };
@@ -1634,6 +1671,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       if (useOccluderMap) {
         // CRITICAL FIX: Build sprite-specific occluder maps to respect z-order hierarchy
         // Each sprite should only receive shadows from sprites in front of it
+        
+        // FIXED: Process ALL sprites, not just rendered meshes (background sprites might not be in meshesRef)
+        const allSprites = sceneManagerRef.current?.getAllSprites() || [];
         shadersRef.current.forEach((shader, index) => {
           if (shader.uniforms && meshesRef.current[index]) {
             const meshDef = (meshesRef.current[index] as any).definition;
@@ -1646,6 +1686,19 @@ const PixiDemo = (props: PixiDemoProps) => {
               shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
               shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
             }
+          }
+        });
+        
+        // ADDITIONAL FIX: Process sprites that have shaders but might not be in the mesh array
+        allSprites.forEach(sprite => {
+          if (sprite.mesh && sprite.mesh.shader && sprite.mesh.shader.uniforms) {
+            // Build occluder map for this sprite based on its z-order
+            buildOccluderMapForSprite(sprite.definition.zOrder, sprite.id);
+            
+            // Apply the sprite-specific occluder map
+            sprite.mesh.shader.uniforms.uUseOccluderMap = true;
+            sprite.mesh.shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
+            sprite.mesh.shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
           }
         });
       } else {
@@ -1687,12 +1740,12 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
       
       // Single unified render call
-      pixiApp.render();
+      pixiApp.renderer.render(pixiApp.stage);
       
       // Force immediate render after updating lighting uniforms
       if (pixiApp && pixiApp.renderer) {
         // Forcing immediate render after lighting uniform updates
-        pixiApp.render();
+        pixiApp.renderer.render(pixiApp.stage);
       } else {
         console.warn('⚠️ Cannot render - pixiApp or renderer not available');
       }
@@ -1734,6 +1787,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         const useOccluderMap = true;
         if (useOccluderMap && occluderRenderTargetRef.current) {
           // CRITICAL FIX: Build sprite-specific occluder maps in animation loop too
+          // FIXED: Process ALL sprites, not just rendered meshes (includes background sprites)
+          const allSprites = sceneManagerRef.current?.getAllSprites() || [];
+          
           shadersRef.current.forEach((shader, index) => {
             if (shader.uniforms && meshesRef.current[index]) {
               const meshDef = (meshesRef.current[index] as any).definition;
@@ -1751,13 +1807,27 @@ const PixiDemo = (props: PixiDemoProps) => {
               }
             }
           });
+          
+          // ADDITIONAL FIX: Process sprites that have shaders but might not be in the mesh array
+          allSprites.forEach(sprite => {
+            if (sprite.mesh && sprite.mesh.shader && sprite.mesh.shader.uniforms) {
+              // Build occluder map for this sprite based on its z-order
+              buildOccluderMapForSprite(sprite.definition.zOrder, sprite.id);
+              
+              // Apply the sprite-specific occluder map
+              sprite.mesh.shader.uniforms.uUseOccluderMap = true;
+              sprite.mesh.shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
+              sprite.mesh.shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+            }
+          });
+          
           // Unlimited shadows applied from animation loop
         }
       }
       
       // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
       if (pixiApp && pixiApp.renderer) {
-        pixiApp.render();
+        pixiApp.renderer.render(pixiApp.stage);
       }
     };
 
