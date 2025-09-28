@@ -286,13 +286,16 @@ const PixiDemo = (props: PixiDemoProps) => {
       (caster.definition.zOrder === currentSpriteZOrder && caster.id !== excludeSpriteId)
     );
     
+    // Z-order filtering now works correctly - sprites can cast shadows with 1 z-order gap
+    
     // Z-order filtering now works correctly with fragment shader
     
     // Special case: exclude sprites from casting shadows if light (Z >= 50) is inside their non-transparent area
     const enabledLights = lightsConfig.filter(light => light.enabled);
     relevantShadowCasters = relevantShadowCasters.filter(caster => {
       // Check if any enabled light with Z >= 50 is inside this caster's non-transparent area
-      const lightInside = enabledLights.some(light => isLightInsideSprite(light, caster));
+      const highZLights = enabledLights.filter(light => (light.position?.z || 0) >= 50);
+      const lightInside = highZLights.some(light => isLightInsideSprite(light, caster));
       return !lightInside; // Exclude caster if light is inside
     });
     
