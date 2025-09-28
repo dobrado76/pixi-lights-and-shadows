@@ -512,7 +512,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               // Handle masks
               if (light.mask) {
                 const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
-                // ✅ REMOVED: Don't override the performance-controlled HasMask setting
+                shader.uniforms[`${prefix}HasMask`] = performanceSettings.enableLightMasks; // ✅ Use performance setting
                 shader.uniforms[`${prefix}Mask`] = maskTexture;
                 shader.uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
                 shader.uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -547,7 +547,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               // Handle masks
               if (light.mask) {
                 const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
-                // ✅ REMOVED: Don't override the performance-controlled HasMask setting
+                shader.uniforms[`${prefix}HasMask`] = performanceSettings.enableLightMasks; // ✅ Use performance setting
                 shader.uniforms[`${prefix}Mask`] = maskTexture;
                 shader.uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
                 shader.uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
