@@ -641,8 +641,12 @@ export class SceneManager {
       .filter(sprite => {
         if (!sprite.definition.castsShadows) return false;
         
-        // Always include visible sprites (they cast shadows if within canvas)
-        if (sprite.definition.visible) return true;
+        // Check both definition visibility AND actual mesh visibility (z-order hidden sprites should not cast shadows)
+        const isDefinitionVisible = sprite.definition.visible;
+        const isMeshVisible = sprite.mesh ? sprite.mesh.visible : false;
+        
+        // Only include sprites that are both definition-visible AND mesh-visible (not hidden behind others)
+        if (isDefinitionVisible && isMeshVisible) return true;
         
         // For invisible sprites, only include if they're OFF-SCREEN but within shadow buffer
         const bounds = sprite.getBounds();

@@ -163,7 +163,7 @@
       },
       "rotation": 0.3665191429188092,
       "scale": 1.2,
-      "zOrder": 0,
+      "zOrder": -2,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
@@ -249,7 +249,7 @@
     {
       "id": "point_copy_1758529441818",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.6,
       "color": "0xffffff",
       "position": {
