@@ -185,7 +185,7 @@
     {
       "id": "mouse_light",
       "type": "point",
-      "enabled": true,
+      "enabled": false,
       "followMouse": true,
       "position": {
         "x": 250,

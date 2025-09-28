@@ -85,20 +85,6 @@ function App() {
   // Auto-save system with debouncing to prevent excessive writes during UI manipulation
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // Store refs to current state to avoid closure stale state issues
-  const currentStateRef = useRef<{
-    sceneConfig: { scene: Record<string, any> },
-    lightsConfig: Light[],
-    ambientLight: { intensity: number, color: { r: number, g: number, b: number } },
-    shadowConfig: any,
-    ambientOcclusionConfig: any
-  }>({ sceneConfig, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig });
-  
-  // Keep refs updated with current state
-  useEffect(() => {
-    currentStateRef.current = { sceneConfig, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig };
-  }, [sceneConfig, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig]);
-
   // UNIFIED save system to prevent race conditions between lights and sprites
   const debouncedUnifiedSave = useCallback(() => {
     if (saveTimeout) {
@@ -107,11 +93,8 @@ function App() {
     
     const timeout = setTimeout(async () => {
       try {
-        // ✅ Read CURRENT state at save time, not stale closure
-        const { sceneConfig: currentScene, lightsConfig: currentLights, ambientLight: currentAmbient, shadowConfig: currentShadow, ambientOcclusionConfig: currentAO } = currentStateRef.current;
-        
         // Convert lights to config format
-        const lightConfigs = currentLights.map(light => ({
+        const lightConfigs = lightsConfig.map(light => ({
           id: light.id,
           type: light.type,
           enabled: light.enabled,
@@ -131,19 +114,17 @@ function App() {
           id: 'ambient_light',
           type: 'ambient',
           enabled: true,
-          brightness: currentAmbient.intensity,
-          color: `#${Math.round(currentAmbient.color.r * 255).toString(16).padStart(2, '0')}${Math.round(currentAmbient.color.g * 255).toString(16).padStart(2, '0')}${Math.round(currentAmbient.color.b * 255).toString(16).padStart(2, '0')}`
+          brightness: ambientLight.intensity,
+          color: `#${Math.round(ambientLight.color.r * 255).toString(16).padStart(2, '0')}${Math.round(ambientLight.color.g * 255).toString(16).padStart(2, '0')}${Math.round(ambientLight.color.b * 255).toString(16).padStart(2, '0')}`
         };
         
         // Create unified configuration with both lights and sprites
         const unifiedConfig = {
-          ...currentScene,
+          ...sceneConfig,
           lights: [ambientConfig, ...lightConfigs],
-          shadowConfig: currentShadow,
-          ambientOcclusionConfig: currentAO
+          shadowConfig: shadowConfig,
+          ambientOcclusionConfig: ambientOcclusionConfig
         };
-        
-        console.log('💾 Saving CURRENT state - block2 zOrder:', currentScene.scene.block2?.zOrder);
         
         const response = await fetch('/api/save-scene-config', {
           method: 'POST',
@@ -162,7 +143,7 @@ function App() {
     }, 500); // 500ms debounce prevents save spam
     
     setSaveTimeout(timeout);
-  }, [saveTimeout]); // ✅ Removed dependencies to prevent closure issues
+  }, [saveTimeout, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, sceneConfig]);
 
   // Legacy separate save functions - now just call unified save
   const debouncedSave = useCallback((lights: Light[], ambient: {intensity: number, color: {r: number, g: number, b: number}}, shadows?: ShadowConfig) => {

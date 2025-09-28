@@ -633,7 +633,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           powerPreference: deviceInfo.isMobile ? 'low-power' : 'high-performance',
           preserveDrawingBuffer: false,
           clearBeforeRender: true,
-          autoStart: true // AUTO START: Let PIXI handle startup automatically
+          autoStart: false // CRITICAL: Set to false, we'll call start() manually
         });
       } catch (webglError) {
         console.warn('WebGL failed, trying Canvas fallback:', webglError);
@@ -648,7 +648,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             resolution: 1, // Fixed resolution for Canvas
             autoDensity: false,
             forceCanvas: true, // Force Canvas renderer
-            autoStart: true // AUTO START: Let PIXI handle startup automatically
+            autoStart: false // CRITICAL: Set to false, we'll call start() manually
           });
           console.log('✅ Canvas fallback successful');
         } catch (canvasError) {
