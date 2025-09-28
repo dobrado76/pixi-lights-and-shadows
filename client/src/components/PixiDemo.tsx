@@ -33,14 +33,16 @@ interface PixiDemoProps {
   shadowConfig: ShadowConfig;
   ambientOcclusionConfig: AmbientOcclusionConfig;
   sceneConfig: { scene: Record<string, any> };
+  performanceSettings: PerformanceSettings;
   onGeometryUpdate: (status: string) => void;
   onShaderUpdate: (status: string) => void;
   onMeshUpdate: (status: string) => void;
   onImmediateSpriteChange?: (spriteId: string, updates: any) => void;
+  onPerformanceUpdate?: (fps: { current: number; average: number }, settings: PerformanceSettings) => void;
 }
 
 const PixiDemo = (props: PixiDemoProps) => {
-  const { shaderParams, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, sceneConfig, onGeometryUpdate, onShaderUpdate, onMeshUpdate, onImmediateSpriteChange } = props;
+  const { shaderParams, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, sceneConfig, performanceSettings, onGeometryUpdate, onShaderUpdate, onMeshUpdate, onImmediateSpriteChange, onPerformanceUpdate } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
   
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
@@ -52,7 +54,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   
   // Performance monitoring and optimization
   const [deviceInfo] = useState(() => detectDevice());
-  const [performanceSettings, setPerformanceSettings] = useState<PerformanceSettings>(() => getOptimalSettings(detectDevice()));
   const [fpsData, setFpsData] = useState({ current: 60, average: 60 });
   const adaptiveQualityRef = useRef<AdaptiveQuality | null>(null);
   
@@ -671,7 +672,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Initialize adaptive quality system
         adaptiveQualityRef.current = new AdaptiveQuality(performanceSettings, (newSettings) => {
           console.log('🔧 Adaptive quality adjustment:', newSettings.quality);
-          setPerformanceSettings(newSettings);
+          // Note: Settings changes will be communicated via onPerformanceUpdate callback
         });
         
         // Store canvas reference for later activation when scene loads
@@ -1670,6 +1671,11 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         if (perfData.adjusted) {
           console.log(`📊 Performance adjusted: ${perfData.fps}fps avg, new quality: ${adaptiveQualityRef.current.getSettings().quality}`);
+        }
+        
+        // Report performance data back to parent
+        if (onPerformanceUpdate) {
+          onPerformanceUpdate({ current: perfData.fps, average: perfData.avgFps }, adaptiveQualityRef.current.getSettings());
         }
       }
       

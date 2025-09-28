@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import PixiDemo from './components/PixiDemo';
 import DynamicLightControls from './components/DynamicLightControls';
 import { DynamicSpriteControls } from './components/DynamicSpriteControls';
+import PerformanceMonitor from './components/PerformanceMonitor';
 import { Light, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
+import { detectDevice, getOptimalSettings, PerformanceSettings } from './utils/performance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -73,6 +75,11 @@ function App() {
   // Scene configuration state - sprites loaded from scene.json
   const [sceneConfig, setSceneConfig] = useState<{ scene: Record<string, any> }>({ scene: {} });
   const [sceneLoaded, setSceneLoaded] = useState<boolean>(false);
+
+  // Performance monitoring state
+  const [deviceInfo] = useState(() => detectDevice());
+  const [performanceSettings, setPerformanceSettings] = useState<PerformanceSettings>(() => getOptimalSettings(detectDevice()));
+  const [fpsData, setFpsData] = useState({ current: 60, average: 60 });
   
 
   // Auto-save system with debouncing to prevent excessive writes during UI manipulation
@@ -313,10 +320,15 @@ function App() {
                     shadowConfig={shadowConfig}
                     ambientOcclusionConfig={ambientOcclusionConfig}
                     sceneConfig={sceneConfig}
+                    performanceSettings={performanceSettings}
                     onGeometryUpdate={setGeometryStatus}
                     onShaderUpdate={setShaderStatus}
                     onMeshUpdate={setMeshStatus}
                     onImmediateSpriteChange={handleImmediateSpriteChange}
+                    onPerformanceUpdate={(fps, settings) => {
+                      setFpsData(fps);
+                      setPerformanceSettings(settings);
+                    }}
                   />
                 )}
               </div>
@@ -363,6 +375,16 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* Performance Monitor - Floating overlay */}
+      {lightsLoaded && sceneLoaded && (
+        <PerformanceMonitor
+          fps={fpsData}
+          deviceInfo={deviceInfo}
+          performanceSettings={performanceSettings}
+          onSettingsChange={setPerformanceSettings}
+        />
+      )}
 
       {/* Footer */}
       <footer className="border-t border-border bg-card/30 backdrop-blur-sm mt-12">
