@@ -243,7 +243,7 @@
     {
       "id": "point_copy_1758529441818",
       "type": "point",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.5,
       "color": "0xffffff",
       "x": 130,
