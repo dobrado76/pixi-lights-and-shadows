@@ -322,22 +322,19 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   // Check if AO is enabled globally
   if (!uAOEnabled) return 1.0;
   
-  // Check if current pixel is part of a sprite to reduce AO intensity on sprite pixels
+  // FIXED: Completely exclude sprite pixels from AO to prevent AO appearing on sprites
   vec2 mapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
   vec2 currentUV = pixelPos / uCanvasSize;
   vec2 bufferUV = uOccluderMapOffset / uCanvasSize;
   
-  float spritePixelReduction = 1.0; // Default: no reduction
   if (currentUV.x >= -bufferUV.x && currentUV.x <= 1.0 + bufferUV.x && 
       currentUV.y >= -bufferUV.y && currentUV.y <= 1.0 + bufferUV.y) {
     vec2 currentAdjustedUV = (currentUV * uCanvasSize + uOccluderMapOffset) / mapSize;
     float currentAlpha = texture2D(uOccluderMap, currentAdjustedUV).a;
     
-    // Reduce AO on sprite pixels but don't eliminate it completely (this preserves bias effects)
-    if (currentAlpha > 0.8) {
-      spritePixelReduction = 0.2; // Reduce AO on solid sprite pixels but keep bias visible
-    } else if (currentAlpha > 0.3) {
-      spritePixelReduction = 0.6; // Moderately reduce AO on semi-transparent areas
+    // If this pixel is part of a sprite, don't apply AO to it AT ALL
+    if (currentAlpha > 0.5) {
+      return 1.0; // No AO on sprite pixels - AO should only be UNDER/AROUND sprites
     }
   }
   
@@ -355,8 +352,8 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     // Break early if we've reached the desired sample count
     if (i >= uAOSamples) break;
     
-    // Generate sample offset in circular pattern - FIXED: Use actual index for all sample counts
-    float angle = float(i) * 6.28318530718 / 16.0; // Always distribute evenly over 16 max samples  
+    // Generate sample offset in circular pattern - FIXED: Use actual sample count for proper distribution
+    float angle = float(i) * 6.28318530718 / float(uAOSamples); // Distribute evenly over actual sample count
     vec2 sampleOffset = vec2(cos(angle), sin(angle)) * uAORadius;
     
     vec2 samplePos = pixelPos + sampleOffset;
@@ -405,7 +402,7 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   if (validSamples > 0.0) {
     float aoFactor = totalOcclusion / validSamples;
     float aoStrength = clamp(uAOStrength, 0.0, 10.0);
-    float aoEffect = 1.0 - (aoFactor * aoStrength * spritePixelReduction); // FIXED: Removed 0.3 weakening
+    float aoEffect = 1.0 - (aoFactor * aoStrength); // Clean AO calculation without sprite pixel reduction
     return clamp(aoEffect, 0.1, 1.0);
   }
   
