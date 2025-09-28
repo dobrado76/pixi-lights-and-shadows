@@ -163,7 +163,7 @@
       },
       "rotation": 0.5061454830783556,
       "scale": 1.2,
-      "zOrder": -1,
+      "zOrder": -2,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
@@ -278,7 +278,7 @@
         "z": 0
       },
       "color": "#ffffff",
-      "brightness": 0.8,
+      "brightness": 1.1,
       "radius": 400,
       "castsShadows": true
     },
