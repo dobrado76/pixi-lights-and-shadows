@@ -45,25 +45,42 @@ export interface ShaderParams {
 }
 
 function App() {
-  // Use centralized scene state manager
-  const {
-    sceneConfig,
-    lightsConfig,
-    ambientLight,
-    shadowConfig,
-    ambientOcclusionConfig,
-    performanceSettings: centralizedPerformanceSettings,
-    isLoaded,
-    updateSceneSprites,
-    updateLights,
-    updateAmbientLight,
-    updateShadowConfig,
-    updateAmbientOcclusionConfig,
-    updatePerformanceSettings,
-    triggerImmediateSpriteChange
-  } = useSceneState();
+  // TODO: Gradually integrate centralized scene state manager
+  // For now, keep the original state management working
+  console.log('🔧 App: Component rendering...');
+  
+  // External JSON-based lighting configuration system
+  // Lights are loaded from lights-config.json and auto-saved on changes
+  const [lightsConfig, setLightsConfig] = useState<Light[]>([]);
+  const [ambientLight, setAmbientLight] = useState<{intensity: number, color: {r: number, g: number, b: number}}>({
+    intensity: 0.3,
+    color: { r: 0.4, g: 0.4, b: 0.4 }
+  });
+  
+  // Shadow configuration state
+  const [shadowConfig, setShadowConfig] = useState<ShadowConfig>({
+    enabled: true,
+    strength: 0.7,
+    maxLength: 200,
+    height: 10,
+  });
 
-  // Legacy state - will be gradually removed as we migrate to centralized state
+  // Ambient Occlusion configuration state
+  const [ambientOcclusionConfig, setAmbientOcclusionConfig] = useState<AmbientOcclusionConfig>({
+    enabled: false,
+    strength: 0.3,
+    radius: 25,
+    samples: 8,
+    bias: 2.0,
+  });
+
+  // Scene configuration state
+  const [sceneConfig, setSceneConfig] = useState<{ scene: Record<string, any> }>({ scene: {} });
+  const [isLoaded, setSceneLoaded] = useState<boolean>(false);
+  
+  // Performance monitoring state
+  const [performanceSettings, setPerformanceSettings] = useState<PerformanceSettings & { manualOverride?: boolean }>(() => getOptimalSettings(detectDevice()));
+
   const [lightsLoaded, setLightsLoaded] = useState<boolean>(false);
 
   // Performance monitoring state
@@ -172,11 +189,45 @@ function App() {
   const [shaderStatus, setShaderStatus] = useState('Initializing...');
   const [meshStatus, setMeshStatus] = useState('Initializing...');
 
-  // Configuration loading is now handled by SceneStateManager
-  // This effect just syncs the legacy lightsLoaded state with centralized isLoaded
+  // Bootstrap: Load lighting and scene configuration from external JSON files on app start
   useEffect(() => {
-    setLightsLoaded(isLoaded);
-  }, [isLoaded]);
+    const loadConfigurations = async () => {
+      try {
+        const sceneResult = await fetch('/api/load-scene-config').then(res => res.json());
+        const lightsResult = await loadLightsConfig('/api/load-scene-config');
+        const ambientLightData = await loadAmbientLight('/api/load-scene-config');
+        
+        setLightsConfig(lightsResult.lights);
+        setAmbientLight(ambientLightData);
+        setSceneConfig(sceneResult);
+        
+        // Merge saved shadow config with defaults
+        if (lightsResult.shadowConfig) {
+          setShadowConfig(lightsResult.shadowConfig);
+        }
+        
+        // Load ambient occlusion config from scene.json
+        if (sceneResult.ambientOcclusionConfig) {
+          setAmbientOcclusionConfig(sceneResult.ambientOcclusionConfig);
+        }
+
+        // Load performance settings from scene.json
+        if (sceneResult.performanceSettings) {
+          setPerformanceSettings(sceneResult.performanceSettings);
+        }
+        
+        setLightsLoaded(true);
+        setSceneLoaded(true);
+        console.log('Loaded configurations:', { lights: lightsResult, ambient: ambientLightData, scene: sceneResult });
+      } catch (error) {
+        console.error('Failed to load configurations:', error);
+        setLightsLoaded(true);
+        setSceneLoaded(true);
+      }
+    };
+    
+    loadConfigurations();
+  }, []);
 
   // Auto-save shader params to localStorage whenever they change
   useEffect(() => {
@@ -185,39 +236,84 @@ function App() {
 
   // Handler for lights configuration changes
   const handleLightsChange = useCallback((newLights: Light[]) => {
-    updateLights(newLights);
-  }, [updateLights]);
+    setLightsConfig(newLights);
+    debouncedSave(newLights, ambientLight, shadowConfig);
+  }, [ambientLight, shadowConfig, debouncedSave]);
 
   // Handler for ambient light changes
   const handleAmbientChange = useCallback((newAmbient: {intensity: number, color: {r: number, g: number, b: number}}) => {
-    updateAmbientLight(newAmbient);
-  }, [updateAmbientLight]);
+    setAmbientLight(newAmbient);
+    debouncedSave(lightsConfig, newAmbient, shadowConfig);
+  }, [lightsConfig, shadowConfig, debouncedSave]);
 
   // Handler for shadow configuration changes
   const handleShadowConfigChange = useCallback((newShadowConfig: ShadowConfig) => {
-    updateShadowConfig(newShadowConfig);
-  }, [updateShadowConfig]);
+    setShadowConfig(newShadowConfig);
+    debouncedSave(lightsConfig, ambientLight, newShadowConfig);
+  }, [lightsConfig, ambientLight, debouncedSave]);
 
   // Handler for ambient occlusion configuration changes
   const handleAmbientOcclusionConfigChange = useCallback((newAOConfig: AmbientOcclusionConfig) => {
-    updateAmbientOcclusionConfig(newAOConfig);
-  }, [updateAmbientOcclusionConfig]);
+    setAmbientOcclusionConfig(newAOConfig);
+    const updatedSceneConfig = {
+      ...sceneConfig,
+      ambientOcclusionConfig: newAOConfig
+    };
+    setSceneConfig(updatedSceneConfig);
+    debouncedSceneSave(updatedSceneConfig);
+  }, [sceneConfig, debouncedSceneSave]);
 
   // Handler for scene configuration changes
   const handleSceneConfigChange = useCallback((newSceneConfig: { scene: Record<string, any> }) => {
     console.log('🔄 App: Scene config changed, triggering update...', Object.keys(newSceneConfig.scene));
-    updateSceneSprites(newSceneConfig.scene);
-  }, [updateSceneSprites]);
+    setSceneConfig(newSceneConfig);
+    debouncedSceneSave(newSceneConfig);
+  }, [debouncedSceneSave]);
 
   // Handler for performance settings changes with auto-save
   const handlePerformanceSettingsChange = useCallback((newSettings: PerformanceSettings & { manualOverride?: boolean }) => {
-    updatePerformanceSettings(newSettings);
-  }, [updatePerformanceSettings]);
+    const settingsWithOverride = { ...newSettings, manualOverride: true };
+    setPerformanceSettings(settingsWithOverride);
+    
+    const saveData = {
+      scene: sceneConfig.scene,
+      lights: lightsConfig,
+      performanceSettings: settingsWithOverride,
+      shadowConfig,
+      ambientOcclusionConfig
+    };
+    
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+    
+    const timeout = setTimeout(async () => {
+      try {
+        await fetch('/api/save-scene-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(saveData),
+        });
+        console.log('Performance settings auto-saved successfully');
+      } catch (error) {
+        console.error('Failed to save performance settings:', error);
+      }
+    }, 1000);
+    
+    setSaveTimeout(timeout);
+  }, [sceneConfig.scene, lightsConfig, shadowConfig, ambientOcclusionConfig, saveTimeout]);
 
   // Handler for immediate sprite changes (bypass React state for instant feedback)
   const handleImmediateSpriteChange = useCallback((spriteId: string, updates: any) => {
-    triggerImmediateSpriteChange(spriteId, updates);
-  }, [triggerImmediateSpriteChange]);
+    console.log(`🚀 App: Immediate sprite change for ${spriteId}:`, Object.keys(updates));
+    
+    const immediateUpdate = (window as any).__pixiImmediateUpdate;
+    if (immediateUpdate) {
+      immediateUpdate(spriteId, updates);
+    } else {
+      console.log('⚠️ Immediate update handler not yet available');
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -256,7 +352,7 @@ function App() {
               </div>
 
               <div className="pixi-canvas rounded-lg overflow-hidden glow" data-testid="pixi-container">
-                {lightsLoaded && isLoaded && (
+                {lightsLoaded && (
                   <PixiDemo
                     shaderParams={shaderParams}
                     lightsConfig={lightsConfig}
@@ -264,7 +360,7 @@ function App() {
                     shadowConfig={shadowConfig}
                     ambientOcclusionConfig={ambientOcclusionConfig}
                     sceneConfig={sceneConfig}
-                    performanceSettings={centralizedPerformanceSettings}
+                    performanceSettings={performanceSettings}
                     onGeometryUpdate={setGeometryStatus}
                     onShaderUpdate={setShaderStatus}
                     onMeshUpdate={setMeshStatus}
@@ -272,8 +368,8 @@ function App() {
                     onPerformanceUpdate={(fps, settings) => {
                       setFpsData(fps);
                       // Only update performance settings if not manually overridden
-                      if (!centralizedPerformanceSettings.manualOverride) {
-                        updatePerformanceSettings(settings);
+                      if (!performanceSettings.manualOverride) {
+                        setPerformanceSettings(settings);
                       }
                     }}
                   />
@@ -313,7 +409,7 @@ function App() {
               </TabsContent>
               
               <TabsContent value="sprites" className="mt-4">
-                {isLoaded && (
+                {lightsLoaded && (
                   <DynamicSpriteControls
                     sceneConfig={sceneConfig}
                     onSceneConfigChange={handleSceneConfigChange}
@@ -392,19 +488,19 @@ function App() {
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="font-medium text-muted-foreground">Quality Level:</span>
-                            <p className="text-foreground capitalize">{centralizedPerformanceSettings.quality}</p>
+                            <p className="text-foreground capitalize">{performanceSettings.quality}</p>
                           </div>
                           <div>
                             <span className="font-medium text-muted-foreground">Resolution Scale:</span>
-                            <p className="text-foreground">{centralizedPerformanceSettings.resolution}x</p>
+                            <p className="text-foreground">{performanceSettings.resolution}x</p>
                           </div>
                           <div>
                             <span className="font-medium text-muted-foreground">Max Lights:</span>
-                            <p className="text-foreground">{centralizedPerformanceSettings.maxLights}</p>
+                            <p className="text-foreground">{performanceSettings.maxLights}</p>
                           </div>
                           <div>
                             <span className="font-medium text-muted-foreground">Target FPS:</span>
-                            <p className="text-foreground">{centralizedPerformanceSettings.fpsTarget}</p>
+                            <p className="text-foreground">{performanceSettings.fpsTarget}</p>
                           </div>
                         </div>
 
@@ -416,9 +512,9 @@ function App() {
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                   type="checkbox"
-                                  checked={centralizedPerformanceSettings.enableShadows}
+                                  checked={performanceSettings.enableShadows}
                                   onChange={(e) => handlePerformanceSettingsChange({
-                                    ...centralizedPerformanceSettings,
+                                    ...performanceSettings,
                                     enableShadows: e.target.checked
                                   })}
                                   className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
@@ -431,9 +527,9 @@ function App() {
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                   type="checkbox"
-                                  checked={centralizedPerformanceSettings.enableAmbientOcclusion}
+                                  checked={performanceSettings.enableAmbientOcclusion}
                                   onChange={(e) => handlePerformanceSettingsChange({
-                                    ...centralizedPerformanceSettings,
+                                    ...performanceSettings,
                                     enableAmbientOcclusion: e.target.checked
                                   })}
                                   className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
@@ -446,9 +542,9 @@ function App() {
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                   type="checkbox"
-                                  checked={centralizedPerformanceSettings.enableNormalMapping}
+                                  checked={performanceSettings.enableNormalMapping}
                                   onChange={(e) => handlePerformanceSettingsChange({
-                                    ...centralizedPerformanceSettings,
+                                    ...performanceSettings,
                                     enableNormalMapping: e.target.checked
                                   })}
                                   className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
@@ -461,9 +557,9 @@ function App() {
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                   type="checkbox"
-                                  checked={centralizedPerformanceSettings.enableLightMasks}
+                                  checked={performanceSettings.enableLightMasks}
                                   onChange={(e) => handlePerformanceSettingsChange({
-                                    ...centralizedPerformanceSettings,
+                                    ...performanceSettings,
                                     enableLightMasks: e.target.checked
                                   })}
                                   className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
@@ -489,7 +585,7 @@ function App() {
                                 textureScale: 0.5,
                                 fpsTarget: 30
                               })}
-                              className={`px-3 py-1 text-xs rounded ${centralizedPerformanceSettings.quality === 'low' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                              className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'low' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                               data-testid="preset-low"
                             >
                               Low
@@ -506,7 +602,7 @@ function App() {
                                 textureScale: 0.75,
                                 fpsTarget: 45
                               })}
-                              className={`px-3 py-1 text-xs rounded ${centralizedPerformanceSettings.quality === 'medium' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                              className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'medium' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                               data-testid="preset-medium"
                             >
                               Medium
@@ -523,7 +619,7 @@ function App() {
                                 textureScale: 1.0,
                                 fpsTarget: 60
                               })}
-                              className={`px-3 py-1 text-xs rounded ${centralizedPerformanceSettings.quality === 'high' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                              className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'high' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                               data-testid="preset-high"
                             >
                               High
@@ -537,7 +633,7 @@ function App() {
                             {deviceInfo.isLowEnd && (
                               <p>• Low-end device - consider reducing light count for better performance</p>
                             )}
-                            {centralizedPerformanceSettings.quality === 'low' && (
+                            {performanceSettings.quality === 'low' && (
                               <p>• Low quality mode active - shadows and effects are simplified</p>
                             )}
                             {fpsData.average < 30 && (

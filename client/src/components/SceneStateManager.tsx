@@ -39,8 +39,11 @@ const SceneStateContext = createContext<SceneStateContextType | null>(null);
 
 // Hook to use the scene state context
 export const useSceneState = () => {
+  console.log('🔧 useSceneState: Hook called');
   const context = useContext(SceneStateContext);
+  console.log('🔧 useSceneState: Context value:', context);
   if (!context) {
+    console.error('🔧 useSceneState: Context is null! Provider not found.');
     throw new Error('useSceneState must be used within a SceneStateProvider');
   }
   return context;
@@ -51,6 +54,8 @@ interface SceneStateProviderProps {
 }
 
 export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
+  console.log('🔧 SceneStateProvider: Provider rendering...');
+  
   // Core scene state
   const [sceneConfig, setSceneConfig] = useState<SceneConfig>({ scene: {} });
   const [lightsConfig, setLightsConfig] = useState<Light[]>([]);
@@ -267,6 +272,8 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     updatePerformanceSettings,
     triggerImmediateSpriteChange
   };
+
+  console.log('🔧 SceneStateProvider: Providing context value:', { isLoaded, lightsCount: lightsConfig.length });
 
   return (
     <SceneStateContext.Provider value={contextValue}>
