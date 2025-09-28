@@ -12,6 +12,7 @@ export interface PerformanceSettings {
   enableLightMasks: boolean;
   textureScale: number;
   fpsTarget: number;
+  manualOverride?: boolean;
 }
 
 export interface DeviceInfo {
@@ -122,18 +123,35 @@ export const getOptimalSettings = (device: DeviceInfo): PerformanceSettings => {
       fpsTarget: 45
     };
   } else {
-    // Desktop devices
-    return {
-      quality: 'high',
-      resolution: 1.0,
-      maxLights: 8,
-      enableShadows: true,
-      enableAmbientOcclusion: true,
-      enableNormalMapping: true,
-      enableLightMasks: true,
-      textureScale: 1.0,
-      fpsTarget: 60
-    };
+    // Desktop devices - check for high-end capabilities
+    const isHighEnd = (device.cores && device.cores >= 12) || (device.gpuInfo && /RTX|GTX 16|GTX 20|GTX 30|GTX 40|RX 6|RX 7|Arc A/i.test(device.gpuInfo));
+    
+    if (isHighEnd) {
+      return {
+        quality: 'high',
+        resolution: 1.0,
+        maxLights: 8,
+        enableShadows: true,
+        enableAmbientOcclusion: true,
+        enableNormalMapping: true,
+        enableLightMasks: true,
+        textureScale: 1.0,
+        fpsTarget: 60
+      };
+    } else {
+      // Regular desktop - medium quality
+      return {
+        quality: 'medium',
+        resolution: 0.75,
+        maxLights: 4,
+        enableShadows: true,
+        enableAmbientOcclusion: false,
+        enableNormalMapping: true,
+        enableLightMasks: false,
+        textureScale: 0.75,
+        fpsTarget: 45
+      };
+    }
   }
 };
 

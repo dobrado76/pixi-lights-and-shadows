@@ -174,108 +174,18 @@
       }
     }
   },
-  "lights": [
-    {
-      "id": "ambient_light",
-      "type": "ambient",
-      "enabled": true,
-      "brightness": 0.3,
-      "color": "0xffffff"
-    },
-    {
-      "id": "mouse_light",
-      "type": "point",
-      "enabled": true,
-      "brightness": 0.7,
-      "color": "0xffffff",
-      "x": 250,
-      "y": 170,
-      "z": 70,
-      "followMouse": true,
-      "castsShadows": true,
-      "radius": 350
-    },
-    {
-      "id": "directional_light",
-      "type": "directional",
-      "enabled": true,
-      "brightness": 0.4,
-      "color": "0xffffff",
-      "directionX": 0.6427876096865394,
-      "directionY": -0.766044443118978,
-      "directionZ": -1,
-      "castsShadows": true
-    },
-    {
-      "id": "spotlight_1",
-      "type": "spotlight",
-      "enabled": true,
-      "brightness": 0.7,
-      "color": "0xf4f080",
-      "x": 200,
-      "y": 210,
-      "z": 80,
-      "directionX": 0,
-      "directionY": 1,
-      "directionZ": -1,
-      "castsShadows": true,
-      "radius": 780,
-      "coneAngle": 49,
-      "softness": 0.2
-    },
-    {
-      "id": "spotlight",
-      "type": "spotlight",
-      "enabled": false,
-      "brightness": 0.6,
-      "color": "0xffffff",
-      "x": 300,
-      "y": 250,
-      "z": 50,
-      "directionX": 0,
-      "directionY": 1,
-      "directionZ": -0.5,
-      "castsShadows": true,
-      "radius": 400,
-      "coneAngle": 43,
-      "softness": 0.5
-    },
-    {
-      "id": "point_copy_1758529441818",
-      "type": "point",
-      "enabled": false,
-      "brightness": 0.5,
-      "color": "0xffffff",
-      "x": 130,
-      "y": 240,
-      "z": 90,
-      "followMouse": false,
-      "castsShadows": true,
-      "radius": 400,
-      "mask": {
-        "image": "god-rays.png",
-        "offset": {
-          "x": 15,
-          "y": 25
-        },
-        "rotation": 0,
-        "scale": 1.4
-      }
-    },
-    {
-      "id": "point_1758536509084",
-      "type": "point",
-      "enabled": true,
-      "brightness": 0.9,
-      "color": "0xe12323",
-      "x": 210,
-      "y": 130,
-      "z": 50,
-      "followMouse": false,
-      "castsShadows": true,
-      "radius": 900
-    }
-  ],
+  "performanceSettings": {
+    "quality": "high",
+    "resolution": 1,
+    "maxLights": 8,
+    "enableShadows": true,
+    "enableAmbientOcclusion": true,
+    "enableNormalMapping": true,
+    "enableLightMasks": true,
+    "textureScale": 1,
+    "fpsTarget": 60,
+    "manualOverride": true
+  },
   "shadowConfig": {
     "enabled": true,
     "strength": 0.55,
@@ -290,17 +200,5 @@
     "radius": 8,
     "samples": 16,
     "bias": 7.5
-  },
-  "performanceSettings": {
-    "quality": "high",
-    "resolution": 1.0,
-    "maxLights": 8,
-    "enableShadows": true,
-    "enableAmbientOcclusion": true,
-    "enableNormalMapping": true,
-    "enableLightMasks": true,
-    "textureScale": 1.0,
-    "fpsTarget": 60,
-    "manualOverride": false
   }
 }
