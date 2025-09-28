@@ -355,16 +355,18 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     vec2 adjustedUV = (sampleUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
     float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     
-    // Z-ORDER HIERARCHY: Only sprites with lower z-order should receive AO
+    // Z-ORDER HIERARCHY: All sprites can receive AO for better visual effect
     // Background sprites (z < 0) get full AO from all sprites above them
-    // Sprites at z=0+ get NO AO unless there are sprites with higher z-order
+    // Foreground sprites (z >= 0) get partial AO from sprites at same/higher z-order  
     float zOrderInfluence = 0.0; // Default: no AO
     
     if (currentZ < 0.0) {
-      // Background sprites (z=-1) receive AO from all sprites above them
+      // Background sprites (z=-1) receive full AO from all sprites above them
       zOrderInfluence = 1.0;
+    } else {
+      // Foreground sprites receive reduced AO for subtle depth effect
+      zOrderInfluence = 0.3; // Reduced AO for foreground sprites
     }
-    // Note: Sprites at z=0+ get zOrderInfluence = 0.0 (no AO) unless overlapped by higher z sprites
     
     // Apply bias to prevent self-occlusion: only reduce very close samples
     float sampleDistance = length(sampleOffset);
