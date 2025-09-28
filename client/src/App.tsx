@@ -3,6 +3,7 @@ import PixiDemo from './components/PixiDemo';
 import DynamicLightControls from './components/DynamicLightControls';
 import { DynamicSpriteControls } from './components/DynamicSpriteControls';
 import PerformanceMonitor from './components/PerformanceMonitor';
+import { useSceneState } from './components/SceneStateManager';
 import { Light, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
 import { detectDevice, getOptimalSettings, PerformanceSettings } from './utils/performance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,37 +45,26 @@ export interface ShaderParams {
 }
 
 function App() {
-  // External JSON-based lighting configuration system
-  // Lights are loaded from lights-config.json and auto-saved on changes
-  const [lightsConfig, setLightsConfig] = useState<Light[]>([]);
-  const [ambientLight, setAmbientLight] = useState<{intensity: number, color: {r: number, g: number, b: number}}>({
-    intensity: 0.3,
-    color: { r: 0.4, g: 0.4, b: 0.4 }
-  });
+  // Use centralized scene state manager
+  const {
+    sceneConfig,
+    lightsConfig,
+    ambientLight,
+    shadowConfig,
+    ambientOcclusionConfig,
+    performanceSettings: centralizedPerformanceSettings,
+    isLoaded,
+    updateSceneSprites,
+    updateLights,
+    updateAmbientLight,
+    updateShadowConfig,
+    updateAmbientOcclusionConfig,
+    updatePerformanceSettings,
+    triggerImmediateSpriteChange
+  } = useSceneState();
+
+  // Legacy state - will be gradually removed as we migrate to centralized state
   const [lightsLoaded, setLightsLoaded] = useState<boolean>(false);
-  
-  // Shadow configuration state
-  // Global shadow configuration applied to all shadow-casting lights
-  const [shadowConfig, setShadowConfig] = useState<ShadowConfig>({
-    enabled: true,
-    strength: 0.7,        // 70% shadow opacity across all shadows
-    maxLength: 200,       // Maximum projection distance for shadow geometry
-    height: 10,           // Z-height used for shadow volume calculations
-    // Shadow sharpness removed - caused visual artifacts
-  });
-
-  // Ambient Occlusion configuration state (completely independent from shadows)
-  const [ambientOcclusionConfig, setAmbientOcclusionConfig] = useState<AmbientOcclusionConfig>({
-    enabled: false,
-    strength: 0.3,
-    radius: 25,
-    samples: 8,
-    bias: 2.0,
-  });
-
-  // Scene configuration state - sprites loaded from scene.json
-  const [sceneConfig, setSceneConfig] = useState<{ scene: Record<string, any> }>({ scene: {} });
-  const [sceneLoaded, setSceneLoaded] = useState<boolean>(false);
 
   // Performance monitoring state
   const [deviceInfo] = useState(() => detectDevice());
@@ -183,45 +173,11 @@ function App() {
   const [shaderStatus, setShaderStatus] = useState('Initializing...');
   const [meshStatus, setMeshStatus] = useState('Initializing...');
 
-  // Bootstrap: Load lighting and scene configuration from external JSON files on app start
+  // Configuration loading is now handled by SceneStateManager
+  // This effect just syncs the legacy lightsLoaded state with centralized isLoaded
   useEffect(() => {
-    const loadConfigurations = async () => {
-      try {
-        const sceneResult = await fetch('/api/load-scene-config').then(res => res.json());
-        const lightsResult = await loadLightsConfig('/api/load-scene-config');
-        const ambientLightData = await loadAmbientLight('/api/load-scene-config');
-        
-        setLightsConfig(lightsResult.lights);
-        setAmbientLight(ambientLightData);
-        setSceneConfig(sceneResult);
-        
-        // Merge saved shadow config with defaults - maintains backward compatibility
-        if (lightsResult.shadowConfig) {
-          setShadowConfig(lightsResult.shadowConfig);
-        }
-        
-        // Load ambient occlusion config from scene.json
-        if (sceneResult.ambientOcclusionConfig) {
-          setAmbientOcclusionConfig(sceneResult.ambientOcclusionConfig);
-        }
-
-        // Load performance settings from scene.json
-        if (sceneResult.performanceSettings) {
-          setPerformanceSettings(sceneResult.performanceSettings);
-        }
-        
-        setLightsLoaded(true);
-        setSceneLoaded(true);
-        console.log('Loaded configurations:', { lights: lightsResult, ambient: ambientLightData, scene: sceneResult, ao: sceneResult.ambientOcclusionConfig });
-      } catch (error) {
-        console.error('Failed to load configurations:', error);
-        setLightsLoaded(true); // Still set to true to proceed with fallbacks
-        setSceneLoaded(true);
-      }
-    };
-    
-    loadConfigurations();
-  }, []);
+    setLightsLoaded(isLoaded);
+  }, [isLoaded]);
 
   // Auto-save shader params to localStorage whenever they change
   useEffect(() => {
@@ -230,93 +186,39 @@ function App() {
 
   // Handler for lights configuration changes
   const handleLightsChange = useCallback((newLights: Light[]) => {
-    setLightsConfig(newLights);
-    debouncedSave(newLights, ambientLight, shadowConfig);
-  }, [ambientLight, shadowConfig, debouncedSave]);
+    updateLights(newLights);
+  }, [updateLights]);
 
   // Handler for ambient light changes
   const handleAmbientChange = useCallback((newAmbient: {intensity: number, color: {r: number, g: number, b: number}}) => {
-    setAmbientLight(newAmbient);
-    debouncedSave(lightsConfig, newAmbient, shadowConfig);
-  }, [lightsConfig, shadowConfig, debouncedSave]);
+    updateAmbientLight(newAmbient);
+  }, [updateAmbientLight]);
 
   // Handler for shadow configuration changes
   const handleShadowConfigChange = useCallback((newShadowConfig: ShadowConfig) => {
-    setShadowConfig(newShadowConfig);
-    debouncedSave(lightsConfig, ambientLight, newShadowConfig);
-  }, [lightsConfig, ambientLight, debouncedSave]);
+    updateShadowConfig(newShadowConfig);
+  }, [updateShadowConfig]);
 
   // Handler for ambient occlusion configuration changes
   const handleAmbientOcclusionConfigChange = useCallback((newAOConfig: AmbientOcclusionConfig) => {
-    setAmbientOcclusionConfig(newAOConfig);
-    console.log('AO config updated:', newAOConfig);
-    
-    // Auto-save AO config to scene.json
-    const updatedSceneConfig = {
-      ...sceneConfig,
-      ambientOcclusionConfig: newAOConfig
-    };
-    setSceneConfig(updatedSceneConfig);
-    debouncedSceneSave(updatedSceneConfig);
-  }, [sceneConfig, debouncedSceneSave]);
+    updateAmbientOcclusionConfig(newAOConfig);
+  }, [updateAmbientOcclusionConfig]);
 
   // Handler for scene configuration changes
   const handleSceneConfigChange = useCallback((newSceneConfig: { scene: Record<string, any> }) => {
     console.log('🔄 App: Scene config changed, triggering update...', Object.keys(newSceneConfig.scene));
-    setSceneConfig(newSceneConfig);
-    debouncedSceneSave(newSceneConfig);
-  }, [debouncedSceneSave]);
+    updateSceneSprites(newSceneConfig.scene);
+  }, [updateSceneSprites]);
 
   // Handler for performance settings changes with auto-save
   const handlePerformanceSettingsChange = useCallback((newSettings: PerformanceSettings & { manualOverride?: boolean }) => {
-    console.log('🔧 Performance settings changed:', newSettings);
-    const settingsWithOverride = { ...newSettings, manualOverride: true };
-    setPerformanceSettings(settingsWithOverride);
-    
-    // Save to scene.json - ensure lights are preserved
-    const saveData = {
-      scene: sceneConfig.scene,
-      lights: lightsConfig, // ✅ Preserve lights!
-      performanceSettings: settingsWithOverride,
-      shadowConfig,
-      ambientOcclusionConfig
-    };
-    
-    // Debounced save to prevent excessive writes
-    if (saveTimeout) {
-      clearTimeout(saveTimeout);
-    }
-    
-    const timeout = setTimeout(async () => {
-      try {
-        await fetch('/api/save-scene-config', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(saveData),
-        });
-        console.log('Performance settings auto-saved successfully');
-      } catch (error) {
-        console.error('Failed to save performance settings:', error);
-      }
-    }, 1000);
-    
-    setSaveTimeout(timeout);
-  }, [sceneConfig.scene, shadowConfig, ambientOcclusionConfig, saveTimeout]);
+    updatePerformanceSettings(newSettings);
+  }, [updatePerformanceSettings]);
 
   // Handler for immediate sprite changes (bypass React state for instant feedback)
   const handleImmediateSpriteChange = useCallback((spriteId: string, updates: any) => {
-    console.log(`🚀 App: Immediate sprite change for ${spriteId}:`, Object.keys(updates));
-    
-    // Call unified immediate update handler if available
-    const immediateUpdate = (window as any).__pixiImmediateUpdate;
-    if (immediateUpdate) {
-      immediateUpdate(spriteId, updates);
-    } else {
-      console.log('⚠️ Immediate update handler not yet available');
-    }
-  }, []);
+    triggerImmediateSpriteChange(spriteId, updates);
+  }, [triggerImmediateSpriteChange]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -355,7 +257,7 @@ function App() {
               </div>
 
               <div className="pixi-canvas rounded-lg overflow-hidden glow" data-testid="pixi-container">
-                {lightsLoaded && sceneLoaded && (
+                {lightsLoaded && isLoaded && (
                   <PixiDemo
                     shaderParams={shaderParams}
                     lightsConfig={lightsConfig}
@@ -412,7 +314,7 @@ function App() {
               </TabsContent>
               
               <TabsContent value="sprites" className="mt-4">
-                {sceneLoaded && (
+                {isLoaded && (
                   <DynamicSpriteControls
                     sceneConfig={sceneConfig}
                     onSceneConfigChange={handleSceneConfigChange}
