@@ -310,7 +310,7 @@
     "enabled": true,
     "strength": 9.45,
     "radius": 25,
-    "samples": 10,
+    "samples": 16,
     "bias": 0
   }
 }
