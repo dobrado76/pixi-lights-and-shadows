@@ -510,7 +510,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               shader.uniforms[`${prefix}Radius`] = light.radius || 200;
               
               // Handle masks
-              if (light.mask && performanceSettings.enableLightMasks) {
+              if (light.mask) {
                 const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
                 shader.uniforms[`${prefix}HasMask`] = true;
                 shader.uniforms[`${prefix}Mask`] = maskTexture;
@@ -545,7 +545,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               shader.uniforms[`${prefix}Softness`] = light.softness || 0.5;
               
               // Handle masks
-              if (light.mask && performanceSettings.enableLightMasks) {
+              if (light.mask) {
                 const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
                 shader.uniforms[`${prefix}HasMask`] = true;
                 shader.uniforms[`${prefix}Mask`] = maskTexture;
@@ -926,7 +926,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
             uniforms[`${prefix}Radius`] = light.radius || 200;
             
-            // ✅ Handle mask (always load, toggle with performance setting)
+            // Handle mask (performance-filtered)
             if (light.mask && performanceSettings.enableLightMasks) {
               console.log(`Loading mask for ${prefix}:`, light.mask);
               const maskPath = `/light_masks/${light.mask.image}`;
@@ -993,7 +993,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}ConeAngle`] = light.coneAngle || 30;
             uniforms[`${prefix}Softness`] = light.softness || 0.5;
             
-            // ✅ Handle mask (always load, toggle with performance setting)
+            // Handle mask (performance-filtered)
             if (light.mask && performanceSettings.enableLightMasks) {
               console.log(`Loading mask for ${prefix}:`, light.mask);
               const maskPath = `/light_masks/${light.mask.image}`;
@@ -1465,7 +1465,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Handle mask
         if (light.mask) {
           const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
-          // ✅ REMOVED: Don't override the performance-controlled HasMask setting
+          uniforms[`${prefix}HasMask`] = true;
           uniforms[`${prefix}Mask`] = maskTexture;
           uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
           uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -1516,7 +1516,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Handle mask
         if (light.mask) {
           const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
-          // ✅ REMOVED: Don't override the performance-controlled HasMask setting
+          uniforms[`${prefix}HasMask`] = true;
           uniforms[`${prefix}Mask`] = maskTexture;
           uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
           uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -1545,7 +1545,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Global shadow properties
       uniforms.uShadowHeight = shadowConfig.height; // Height of sprites above ground plane for shadow projection
       uniforms.uShadowMaxLength = shadowConfig.maxLength; // Maximum shadow length to prevent extremely long shadows
-      // ✅ REMOVED: Don't override the performance-controlled uShadowsEnabled from line 1409
+      uniforms.uShadowsEnabled = shadowConfig.enabled; // Global shadow enable/disable
       uniforms.uShadowStrength = shadowConfig.strength; // Global shadow strength/opacity
       uniforms.uShadowBias = shadowConfig.bias || 3.0; // Shadow bias to prevent self-shadowing artifacts
       // Removed shadow sharpness feature
@@ -1628,8 +1628,6 @@ const PixiDemo = (props: PixiDemoProps) => {
           const spriteData = (mesh as any).definition;
           mesh.shader.uniforms.uCurrentSpriteZOrder = spriteData.zOrder || 0;
           
-          // ✅ Apply performance setting for normal mapping
-          mesh.shader.uniforms.uUseNormalMap = spriteData.useNormalMap && performanceSettings.enableNormalMapping;
         }
 
         // Ensure mesh is properly positioned for rendering
@@ -1658,7 +1656,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         console.warn('⚠️ Cannot render - pixiApp or renderer not available');
       }
     }
-  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings]);
+  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig]);
 
 
   // Animation loop

@@ -243,7 +243,7 @@
     {
       "id": "point_copy_1758529441818",
       "type": "point",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.5,
       "color": "0xffffff",
       "x": 130,
@@ -279,7 +279,7 @@
   "performanceSettings": {
     "quality": "high",
     "resolution": 1,
-    "maxLights": 999,
+    "maxLights": 8,
     "enableShadows": true,
     "enableAmbientOcclusion": true,
     "enableNormalMapping": true,

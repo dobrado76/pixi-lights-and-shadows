@@ -46,7 +46,7 @@ const PerformanceMonitor = ({ fps, deviceInfo, performanceSettings, onSettingsCh
         break;
       case 'high':
         newSettings.resolution = 1.0;
-        newSettings.maxLights = 999; // No limit for high quality
+        newSettings.maxLights = 8;
         newSettings.enableShadows = true;
         newSettings.enableAmbientOcclusion = true;
         newSettings.enableNormalMapping = true;
