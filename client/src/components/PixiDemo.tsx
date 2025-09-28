@@ -1632,8 +1632,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       const useOccluderMap = true;
       
       if (useOccluderMap) {
-        // CRITICAL FIX: Build separate occluder map for background sprites only
-        buildOccluderMapForZOrder(-1); // Only for background sprites at z=-1
+        // Build occluder map for the highest z-order sprite to include maximum valid shadow casters
+        const allSprites = sceneManagerRef.current?.getAllSprites() || [];
+        const maxZOrder = allSprites.length > 0 ? Math.max(...allSprites.map(s => s.definition.zOrder)) : 0;
+        buildOccluderMapForZOrder(maxZOrder);
         
         // Update all shaders to use single global occluder map
         shadersRef.current.forEach(shader => {
@@ -1729,8 +1731,10 @@ const PixiDemo = (props: PixiDemoProps) => {
         const useOccluderMap = true;
         if (useOccluderMap && occluderRenderTargetRef.current) {
           // Triggering occluder map build from animation loop
-          // CRITICAL FIX: Build separate occluder map for background sprites only
-        buildOccluderMapForZOrder(-1); // Only for background sprites at z=-1
+          // Build occluder map for the highest z-order sprite to include maximum valid shadow casters
+        const allSprites = sceneManagerRef.current?.getAllSprites() || [];
+        const maxZOrder = allSprites.length > 0 ? Math.max(...allSprites.map(s => s.definition.zOrder)) : 0;
+        buildOccluderMapForZOrder(maxZOrder);
           
           // Update all shaders to use single global occluder map
           shadersRef.current.forEach(shader => {
