@@ -274,18 +274,26 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     const allCasters = sceneManagerRef.current?.getShadowCasters() || [];
     
-    
     // Unified system: include sprites that cast shadows & AO
     const allShadowCasters = allCasters.filter(caster => 
       caster.definition.castsShadows
     );
     
+    // Filter shadow casters based on zOrder hierarchy - only include casters at same level or above
+    // Also exclude the current sprite being lit to prevent self-shadowing
+    let relevantShadowCasters = allShadowCasters.filter(caster => 
+      caster.definition.zOrder >= currentSpriteZOrder && 
+      (!excludeSpriteId || caster.id !== excludeSpriteId)
+    );
     
-    // Include ALL shadow casters in occluder map - z-order filtering happens in shader
-    let relevantShadowCasters = allShadowCasters.filter(caster => {
-      const isNotExcluded = !excludeSpriteId || caster.id !== excludeSpriteId;
-      return isNotExcluded;
-    });
+    // DEBUG: Log z-order filtering
+    if (allShadowCasters.length > 0) {
+      console.log(`🌑 Shadow filtering for sprite at z=${currentSpriteZOrder}:`);
+      allShadowCasters.forEach(caster => {
+        const included = caster.definition.zOrder >= currentSpriteZOrder && (!excludeSpriteId || caster.id !== excludeSpriteId);
+        console.log(`  ${caster.id} (z=${caster.definition.zOrder}): ${included ? 'INCLUDED' : 'EXCLUDED'}`);
+      });
+    }
     
     // Special case: exclude sprites from casting shadows if light (Z >= 50) is inside their non-transparent area
     const enabledLights = lightsConfig.filter(light => light.enabled);
@@ -422,9 +430,9 @@ const PixiDemo = (props: PixiDemoProps) => {
     });
   };
   
-  // Build occluder map for specific z-order level (NOT global anymore)
-  const buildOccluderMapForZOrder = (spriteZOrder: number, excludeSpriteId?: string) => {
-    buildOccluderMapForSprite(spriteZOrder, excludeSpriteId);
+  // Build occluder map using all shadow casters for unified system
+  const buildOccluderMap = (excludeSpriteId?: string) => {
+    buildOccluderMapForSprite(-999, excludeSpriteId); // Use very low zOrder to include all casters
   };
 
   // Multi-pass lighting composer
@@ -637,24 +645,21 @@ const PixiDemo = (props: PixiDemoProps) => {
         });
       } catch (webglError) {
         console.warn('WebGL failed, trying Canvas fallback:', webglError);
-        try {
-          // Fallback to Canvas renderer with minimal settings
-          app = new PIXI.Application({
-            width: shaderParams.canvasWidth,
-            height: shaderParams.canvasHeight,
-            backgroundColor: 0x1a1a1a,
-            antialias: false, // Disable for canvas
-            hello: false,
-            resolution: 1, // Fixed resolution for Canvas
-            autoDensity: false,
-            forceCanvas: true, // Force Canvas renderer
-            autoStart: false // CRITICAL: Set to false, we'll call start() manually
-          });
-          console.log('✅ Canvas fallback successful');
-        } catch (canvasError) {
-          console.error('❌ Canvas fallback also failed:', canvasError);
-          throw new Error(`Both WebGL and Canvas failed. WebGL: ${(webglError as Error).message}, Canvas: ${(canvasError as Error).message}`);
-        }
+        // Fallback to Canvas renderer with mobile optimizations
+        app = new PIXI.Application({
+          width: shaderParams.canvasWidth,
+          height: shaderParams.canvasHeight,
+          backgroundColor: 0x1a1a1a,
+          antialias: false, // Disable for canvas
+          hello: false,
+          resolution: Math.min(performanceSettings.resolution, 0.75), // Lower resolution for canvas fallback
+          autoDensity: false,
+          forceCanvas: true, // Force Canvas renderer
+          powerPreference: 'low-power',
+          preserveDrawingBuffer: false,
+          clearBeforeRender: true,
+          autoStart: false // CRITICAL: Set to false, we'll call start() manually
+        });
       }
 
       // Access canvas using proper PIXI.js property
@@ -671,9 +676,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         canvas.tabIndex = 0;
         
         setPixiApp(app);
-        console.log('🎯 PIXI App created successfully!');
-        console.log(`   Renderer: ${app.renderer.type === PIXI.RENDERER_TYPE.WEBGL ? 'WebGL' : 'Canvas'}`);
-        console.log('   Waiting for scene to load before starting...');
+        console.log('🎯 PIXI App created - waiting for scene to load before starting');
         
         // Initialize adaptive quality system
         adaptiveQualityRef.current = new AdaptiveQuality(performanceSettings, (newSettings) => {
@@ -822,18 +825,7 @@ const PixiDemo = (props: PixiDemoProps) => {
                 (sprite.mesh as any).userData = (sprite.mesh as any).userData || {};
                 (sprite.mesh as any).userData.__immediateZOrder = updates.zOrder; // Mark as immediate
                 needsReSort = true;
-                
                 console.log(`⚡ Immediate zOrder: ${spriteId} → ${updates.zOrder}`);
-                
-                // CRITICAL FIX: Force immediate shadow system sync after zOrder change
-                // The shadow system was reading stale zOrder values from sprite definitions
-                // Force a micro-task to ensure shadow system sees updated values
-                setTimeout(() => {
-                  // Trigger a minimal re-render to sync shadow system with new zOrder
-                  if (pixiApp) {
-                    pixiApp.render();
-                  }
-                }, 0);
               }
               
               // Handle normal map changes - Update shader uniform without reloading texture
@@ -1429,7 +1421,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Ambient Occlusion uniforms (performance-filtered and completely independent from shadows)
       uniforms.uAOEnabled = ambientOcclusionConfig.enabled && performanceSettings.enableAmbientOcclusion;
-      uniforms.uAOStrength = ambientOcclusionConfig.strength;
+      uniforms.uAOStrength = ambientOcclusionConfig.strength * 3;
       uniforms.uAORadius = ambientOcclusionConfig.radius;
       uniforms.uAOSamples = Math.min(ambientOcclusionConfig.samples, 
         performanceSettings.quality === 'low' ? 4 : 
@@ -1626,47 +1618,35 @@ const PixiDemo = (props: PixiDemoProps) => {
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
       const useOccluderMap = true;
       
-      // Set global occluder map settings
-      shadersRef.current.forEach(shader => {
-        if (shader.uniforms) {
-          shader.uniforms.uUseOccluderMap = useOccluderMap;
-          shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
-        }
-      });
+      if (useOccluderMap) {
+        buildOccluderMap();
+        
+        // Update all shaders to use single global occluder map
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uUseOccluderMap = true;
+            shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
+            shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+          }
+        });
+      } else {
+        
+        // Update all shaders to use per-caster uniforms
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uUseOccluderMap = false;
+            shader.uniforms.uOccluderMapOffset = [0, 0]; // No offset when not using occlusion map
+            shader.uniforms.uOccluderMap = PIXI.Texture.EMPTY;
+          }
+        });
+      }
       
-      // Set shadow caster uniforms with z-order filtering per sprite
+      // UNIFIED RENDERING PATH: Set per-sprite settings and render directly (no more multi-pass complexity)
       meshesRef.current.forEach(mesh => {
+        // Set per-sprite zOrder settings (AO is now controlled via caster contribution, not per-sprite receive)
         if (mesh.shader && mesh.shader.uniforms && (mesh as any).definition) {
           const spriteData = (mesh as any).definition;
-          const spriteZOrder = spriteData.zOrder || 0;
-          mesh.shader.uniforms.uCurrentSpriteZOrder = spriteZOrder;
-          
-          // Get shadow casters that can affect this sprite (same z-level or higher)
-          const validCasters = shadowCasters.filter(caster => 
-            caster.definition.castsShadows && caster.definition.zOrder >= spriteZOrder
-          );
-          
-          // Set up to 3 shadow caster uniforms for this sprite
-          for (let i = 0; i < 3; i++) {
-            if (i < validCasters.length) {
-              const caster = validCasters[i];
-              const casterSize = caster.diffuseTexture ? 
-                [caster.diffuseTexture.width * (caster.definition.scale || 1), caster.diffuseTexture.height * (caster.definition.scale || 1)] :
-                [100, 100]; // fallback size
-              mesh.shader.uniforms[`uShadowCaster${i}Pos`] = [caster.definition.position.x, caster.definition.position.y];
-              mesh.shader.uniforms[`uShadowCaster${i}Size`] = casterSize;
-              mesh.shader.uniforms[`uShadowCaster${i}ZOrder`] = caster.definition.zOrder;
-            } else {
-              // Clear unused caster slots
-              mesh.shader.uniforms[`uShadowCaster${i}Pos`] = [-9999, -9999];
-              mesh.shader.uniforms[`uShadowCaster${i}Size`] = [0, 0];
-              mesh.shader.uniforms[`uShadowCaster${i}ZOrder`] = -9999;
-            }
-          }
-          
-          // Set count of valid casters
-          mesh.shader.uniforms.uShadowCasterCount = Math.min(validCasters.length, 3);
-          mesh.shader.uniforms.uUseOccluderMap = false; // Use per-caster approach
+          mesh.shader.uniforms.uCurrentSpriteZOrder = spriteData.zOrder || 0;
           
           // ✅ Apply performance setting for normal mapping
           mesh.shader.uniforms.uUseNormalMap = spriteData.useNormalMap && performanceSettings.enableNormalMapping;
@@ -1735,9 +1715,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         const useOccluderMap = true;
         if (useOccluderMap && occluderRenderTargetRef.current) {
           // Triggering occluder map build from animation loop
-          // Build occluder map with ALL shadow casters - use very low z-order to ensure inclusion
-        // This prevents interdependence where one sprite's z-order affects others' shadows
-        buildOccluderMapForZOrder(-1000); // Fixed low value ensures ALL shadow casters are included
+          buildOccluderMap();
           
           // Update all shaders to use single global occluder map
           shadersRef.current.forEach(shader => {

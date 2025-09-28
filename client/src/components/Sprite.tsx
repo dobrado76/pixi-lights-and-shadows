@@ -64,8 +64,6 @@ export class SceneSprite {
 
   constructor(id: string, definition: SpriteDefinition) {
     this.id = id;
-    
-    
     // Normalize sprite definition by applying sensible defaults
     this.definition = {
       image: definition.image,
@@ -559,13 +557,10 @@ export class SceneManager {
         const newDef = newSpriteData as SpriteDefinition;
         const wasVisible = existingSprite.definition.visible;
         const oldZOrder = existingSprite.definition.zOrder;
-        
-        
-        // Create a properly typed updated definition with explicit zOrder handling
+        // Create a properly typed updated definition
         const updatedDef: CompleteSpriteDefinition = {
           ...existingSprite.definition,
           ...newDef,
-          zOrder: newDef.zOrder ?? existingSprite.definition.zOrder,  // Ensure zOrder is properly preserved
           pivot: {
             preset: newDef.pivot?.preset || existingSprite.definition.pivot.preset,
             offsetX: newDef.pivot?.offsetX !== undefined ? newDef.pivot.offsetX : existingSprite.definition.pivot.offsetX,
@@ -681,19 +676,8 @@ export class SceneManager {
 
 
   // Get sprites sorted by zOrder (lowest to highest = back to front)
-  // When z-orders are equal, preserve scene.json declaration order
   getSpritesSortedByZOrder(): SceneSprite[] {
-    const allSprites = this.getAllSprites();
-    return allSprites.sort((a, b) => {
-      // Primary sort: by zOrder
-      const zOrderDiff = a.definition.zOrder - b.definition.zOrder;
-      if (zOrderDiff !== 0) return zOrderDiff;
-      
-      // Secondary sort: preserve scene.json declaration order (Map insertion order)
-      const aIndex = allSprites.indexOf(a);
-      const bIndex = allSprites.indexOf(b);
-      return aIndex - bIndex;
-    });
+    return this.getAllSprites().sort((a, b) => a.definition.zOrder - b.definition.zOrder);
   }
   
   // Legacy method kept for backward compatibility, now returns all sprites

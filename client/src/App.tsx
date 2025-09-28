@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PixiDemo from './components/PixiDemo';
 import DynamicLightControls from './components/DynamicLightControls';
 import { DynamicSpriteControls } from './components/DynamicSpriteControls';
 import PerformanceMonitor from './components/PerformanceMonitor';
-import { Light, LightConfig, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
+import { Light, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
 import { detectDevice, getOptimalSettings, PerformanceSettings } from './utils/performance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -85,80 +85,55 @@ function App() {
   // Auto-save system with debouncing to prevent excessive writes during UI manipulation
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // UNIFIED save system to prevent race conditions between lights and sprites
-  const debouncedUnifiedSave = useCallback(() => {
+  const debouncedSave = useCallback((lights: Light[], ambient: {intensity: number, color: {r: number, g: number, b: number}}, shadows?: ShadowConfig) => {
     if (saveTimeout) {
       clearTimeout(saveTimeout);
     }
     
     const timeout = setTimeout(async () => {
       try {
-        // Convert lights to config format
-        const lightConfigs = lightsConfig.map(light => ({
-          id: light.id,
-          type: light.type,
-          enabled: light.enabled,
-          followMouse: light.followMouse,
-          position: light.position,
-          direction: light.direction,
-          color: `#${Math.round(light.color.r * 255).toString(16).padStart(2, '0')}${Math.round(light.color.g * 255).toString(16).padStart(2, '0')}${Math.round(light.color.b * 255).toString(16).padStart(2, '0')}`,
-          brightness: light.intensity, // Map intensity back to brightness for JSON
-          radius: light.radius,
-          coneAngle: light.coneAngle,
-          softness: light.softness,
-          castsShadows: light.castsShadows
-        }));
-        
-        // Add ambient light
-        const ambientConfig = {
-          id: 'ambient_light',
-          type: 'ambient',
-          enabled: true,
-          brightness: ambientLight.intensity,
-          color: `#${Math.round(ambientLight.color.r * 255).toString(16).padStart(2, '0')}${Math.round(ambientLight.color.g * 255).toString(16).padStart(2, '0')}${Math.round(ambientLight.color.b * 255).toString(16).padStart(2, '0')}`
-        };
-        
-        // Create unified configuration with both lights and sprites
-        const unifiedConfig = {
-          ...sceneConfig,
-          lights: [ambientConfig, ...lightConfigs],
-          shadowConfig: shadowConfig,
-          ambientOcclusionConfig: ambientOcclusionConfig
-        };
-        
+        const success = await saveLightsConfig(lights, ambient, shadows);
+        if (success) {
+          console.log('Lights configuration auto-saved successfully');
+        } else {
+          console.warn('Failed to auto-save lights configuration');
+        }
+      } catch (error) {
+        console.error('Error auto-saving lights configuration:', error);
+      }
+    }, 500); // 500ms debounce prevents save spam during slider adjustments
+    
+    setSaveTimeout(timeout);
+  }, [saveTimeout]);
+
+  // Auto-save system for scene configuration
+  const [sceneTimeout, setSceneTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  const debouncedSceneSave = useCallback((sceneData: { scene: Record<string, any> }) => {
+    if (sceneTimeout) {
+      clearTimeout(sceneTimeout);
+    }
+    
+    const timeout = setTimeout(async () => {
+      try {
         const response = await fetch('/api/save-scene-config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(unifiedConfig)
+          body: JSON.stringify(sceneData)
         });
         
         if (response.ok) {
-          console.log('🟢 Unified configuration auto-saved successfully');
+          console.log('Scene configuration auto-saved successfully');
         } else {
-          console.warn('Failed to auto-save unified configuration');
+          console.warn('Failed to auto-save scene configuration');
         }
       } catch (error) {
-        console.error('Error auto-saving unified configuration:', error);
+        console.error('Error auto-saving scene configuration:', error);
       }
-    }, 500); // 500ms debounce prevents save spam
+    }, 500); // 500ms debounce
     
-    setSaveTimeout(timeout);
-  }, [saveTimeout, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, sceneConfig]);
-
-  // Legacy separate save functions - now just call unified save
-  const debouncedSave = useCallback((lights: Light[], ambient: {intensity: number, color: {r: number, g: number, b: number}}, shadows?: ShadowConfig) => {
-    // Update state and let unified save handle it
-    setLightsConfig(lights);
-    setAmbientLight(ambient);
-    if (shadows) setShadowConfig(shadows);
-    debouncedUnifiedSave();
-  }, [debouncedUnifiedSave]);
-
-  const debouncedSceneSave = useCallback((sceneData: { scene: Record<string, any> }) => {
-    // Update state and let unified save handle it
-    setSceneConfig(sceneData);
-    debouncedUnifiedSave();
-  }, [debouncedUnifiedSave]);
+    setSceneTimeout(timeout);
+  }, [sceneTimeout]);
 
   // Legacy shader params system - loads from localStorage for backward compatibility
   const getInitialParams = (): ShaderParams => {
@@ -298,16 +273,37 @@ function App() {
     const settingsWithOverride = { ...newSettings, manualOverride: true };
     setPerformanceSettings(settingsWithOverride);
     
-    // Update scene config with new performance settings
-    const updatedSceneConfig = {
-      ...sceneConfig,
-      performanceSettings: settingsWithOverride
+    // Save to scene.json - ensure lights are preserved
+    const saveData = {
+      scene: sceneConfig.scene,
+      lights: sceneConfig.lights || [], // ✅ Preserve lights!
+      performanceSettings: settingsWithOverride,
+      shadowConfig,
+      ambientOcclusionConfig
     };
-    setSceneConfig(updatedSceneConfig);
     
-    // Use unified save system to preserve all data
-    debouncedUnifiedSave();
-  }, [sceneConfig, debouncedUnifiedSave]);
+    // Debounced save to prevent excessive writes
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+    
+    const timeout = setTimeout(async () => {
+      try {
+        await fetch('/api/save-scene-config', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(saveData),
+        });
+        console.log('Performance settings auto-saved successfully');
+      } catch (error) {
+        console.error('Failed to save performance settings:', error);
+      }
+    }, 1000);
+    
+    setSaveTimeout(timeout);
+  }, [sceneConfig.scene, shadowConfig, ambientOcclusionConfig, saveTimeout]);
 
   // Handler for immediate sprite changes (bypass React state for instant feedback)
   const handleImmediateSpriteChange = useCallback((spriteId: string, updates: any) => {
