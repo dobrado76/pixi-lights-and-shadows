@@ -925,8 +925,8 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
             uniforms[`${prefix}Radius`] = light.radius || 200;
             
-            // Handle mask
-            if (light.mask) {
+            // Handle mask (performance-filtered)
+            if (light.mask && performanceSettings.enableLightMasks) {
               console.log(`Loading mask for ${prefix}:`, light.mask);
               const maskPath = `/light_masks/${light.mask.image}`;
               console.log(`Mask texture path: ${maskPath}`);
@@ -992,8 +992,8 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}ConeAngle`] = light.coneAngle || 30;
             uniforms[`${prefix}Softness`] = light.softness || 0.5;
             
-            // Handle mask
-            if (light.mask) {
+            // Handle mask (performance-filtered)
+            if (light.mask && performanceSettings.enableLightMasks) {
               console.log(`Loading mask for ${prefix}:`, light.mask);
               const maskPath = `/light_masks/${light.mask.image}`;
               console.log(`Mask texture path: ${maskPath}`);
@@ -1404,16 +1404,16 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uDir0CastsShadows = false; uniforms.uDir1CastsShadows = false;
       uniforms.uSpot0CastsShadows = false; uniforms.uSpot1CastsShadows = false; uniforms.uSpot2CastsShadows = false; uniforms.uSpot3CastsShadows = false;
 
-      // Add shadow system uniforms - fully data-driven from scene configuration
-      uniforms.uShadowsEnabled = shadowConfig.enabled;
+      // Add shadow system uniforms - performance-filtered from scene configuration
+      uniforms.uShadowsEnabled = shadowConfig.enabled && performanceSettings.enableShadows;
       uniforms.uShadowStrength = shadowConfig.strength || 0.5;
       uniforms.uShadowBias = shadowConfig.bias || 3.0;
       
-      // Ambient Occlusion uniforms (completely independent from shadows)
-      uniforms.uAOEnabled = ambientOcclusionConfig.enabled;
+      // Ambient Occlusion uniforms (performance-filtered and completely independent from shadows)
+      uniforms.uAOEnabled = ambientOcclusionConfig.enabled && performanceSettings.enableAmbientOcclusion;
       uniforms.uAOStrength = ambientOcclusionConfig.strength;
       uniforms.uAORadius = ambientOcclusionConfig.radius;
-      uniforms.uAOSamples = ambientOcclusionConfig.samples;
+      uniforms.uAOSamples = Math.min(ambientOcclusionConfig.samples, performanceSettings.quality === 'low' ? 4 : 8);
       uniforms.uAOBias = ambientOcclusionConfig.bias;
       
       
