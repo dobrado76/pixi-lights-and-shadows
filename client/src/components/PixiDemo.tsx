@@ -1417,6 +1417,12 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uAOSamples = Math.min(ambientOcclusionConfig.samples, performanceSettings.quality === 'low' ? 4 : 8);
       uniforms.uAOBias = ambientOcclusionConfig.bias;
       
+      // Debug AO bias uniform
+      if (ambientOcclusionConfig.bias !== (window as any).prevAOBias) {
+        console.log('🔧 AO Bias uniform set to:', ambientOcclusionConfig.bias);
+        (window as any).prevAOBias = ambientOcclusionConfig.bias;
+      }
+      
       // ✅ Global Light Masks Control (performance-filtered)
       uniforms.uMasksEnabled = performanceSettings.enableLightMasks;
       
