@@ -352,8 +352,8 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     // Break early if we've reached the desired sample count
     if (i >= uAOSamples) break;
     
-    // Generate sample offset in circular pattern - FIXED: Use 16 for even distribution
-    float angle = float(i) * 6.28318530718 / 16.0; // Always use 16 for consistent angular distribution
+    // Generate sample offset in circular pattern - PROPER FIX: Use actual sample count
+    float angle = float(i) * 6.28318530718 / float(uAOSamples); // Distribute evenly around full circle
     vec2 sampleOffset = vec2(cos(angle), sin(angle)) * uAORadius;
     
     vec2 samplePos = pixelPos + sampleOffset;
