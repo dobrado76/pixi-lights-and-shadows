@@ -163,7 +163,7 @@
       },
       "rotation": 0.5061454830783556,
       "scale": 1.2,
-      "zOrder": -1,
+      "zOrder": -2,
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,

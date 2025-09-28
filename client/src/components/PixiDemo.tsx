@@ -281,11 +281,9 @@ const PixiDemo = (props: PixiDemoProps) => {
     );
     
     
-    // Filter shadow casters based on zOrder hierarchy - only include casters at same level or above
-    // Also exclude the current sprite being lit to prevent self-shadowing
-    // CRITICAL Z-ORDER FIX: Only include casters that can affect this sprite
+    // Z-order filtering: only include casters that can affect this sprite
     let relevantShadowCasters = allShadowCasters.filter(caster => {
-      // Shadow casters can only affect sprites at same level or below (higher z-order numbers)
+      // Only sprites at same level or higher (in front) can cast shadows on this sprite
       const canCastShadow = caster.definition.zOrder >= currentSpriteZOrder;
       const isNotExcluded = !excludeSpriteId || caster.id !== excludeSpriteId;
       
@@ -1631,28 +1629,24 @@ const PixiDemo = (props: PixiDemoProps) => {
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
       const useOccluderMap = true;
       
-      // Set global occluder map settings for all shaders
+      // Set global occluder map settings
       shadersRef.current.forEach(shader => {
         if (shader.uniforms) {
           shader.uniforms.uUseOccluderMap = useOccluderMap;
           shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
-          if (!useOccluderMap) {
-            shader.uniforms.uOccluderMap = PIXI.Texture.EMPTY;
-          }
         }
       });
       
-      // PER-SPRITE SHADOW SYSTEM: Build occluder map for each sprite's z-order
+      // Build occluder map per-sprite with correct z-order filtering
       meshesRef.current.forEach(mesh => {
-        // Set per-sprite zOrder settings and build custom occluder map
         if (mesh.shader && mesh.shader.uniforms && (mesh as any).definition) {
           const spriteData = (mesh as any).definition;
           const spriteZOrder = spriteData.zOrder || 0;
           mesh.shader.uniforms.uCurrentSpriteZOrder = spriteZOrder;
           
-          // Build occluder map specific to this sprite's z-order hierarchy
+          // Build occluder map for this specific sprite's z-order
           if (useOccluderMap) {
-            buildOccluderMapForZOrder(spriteZOrder);
+            buildOccluderMapForSprite(spriteZOrder);
             mesh.shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
           }
           

@@ -178,7 +178,7 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
 }
 
 
-// Occluder map shadow calculation - with proper self-shadow avoidance
+// Occluder map shadow calculation - with proper self-shadow avoidance and z-order filtering
 float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
   
