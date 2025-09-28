@@ -512,7 +512,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               // Handle masks
               if (light.mask) {
                 const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
-                shader.uniforms[`${prefix}HasMask`] = true;
+                // ✅ REMOVED: Don't override the performance-controlled HasMask setting
                 shader.uniforms[`${prefix}Mask`] = maskTexture;
                 shader.uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
                 shader.uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -547,7 +547,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               // Handle masks
               if (light.mask) {
                 const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
-                shader.uniforms[`${prefix}HasMask`] = true;
+                // ✅ REMOVED: Don't override the performance-controlled HasMask setting
                 shader.uniforms[`${prefix}Mask`] = maskTexture;
                 shader.uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
                 shader.uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -926,14 +926,14 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
             uniforms[`${prefix}Radius`] = light.radius || 200;
             
-            // Handle mask (performance-filtered)
-            if (light.mask && performanceSettings.enableLightMasks) {
+            // ✅ Handle mask (always load, toggle with performance setting)
+            if (light.mask) {
               console.log(`Loading mask for ${prefix}:`, light.mask);
               const maskPath = `/light_masks/${light.mask.image}`;
               console.log(`Mask texture path: ${maskPath}`);
               
               const maskTexture = PIXI.Texture.from(maskPath);
-              uniforms[`${prefix}HasMask`] = true;
+              uniforms[`${prefix}HasMask`] = performanceSettings.enableLightMasks; // ✅ Controlled by performance setting
               uniforms[`${prefix}Mask`] = maskTexture;
               uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
               uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -941,7 +941,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
               
               console.log(`Mask uniforms for ${prefix}:`, {
-                hasMask: true,
+                hasMask: performanceSettings.enableLightMasks,
                 offset: [light.mask.offset.x, light.mask.offset.y],
                 rotation: light.mask.rotation,
                 scale: light.mask.scale
@@ -993,14 +993,14 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}ConeAngle`] = light.coneAngle || 30;
             uniforms[`${prefix}Softness`] = light.softness || 0.5;
             
-            // Handle mask (performance-filtered)
-            if (light.mask && performanceSettings.enableLightMasks) {
+            // ✅ Handle mask (always load, toggle with performance setting)
+            if (light.mask) {
               console.log(`Loading mask for ${prefix}:`, light.mask);
               const maskPath = `/light_masks/${light.mask.image}`;
               console.log(`Mask texture path: ${maskPath}`);
               
               const maskTexture = PIXI.Texture.from(maskPath);
-              uniforms[`${prefix}HasMask`] = true;
+              uniforms[`${prefix}HasMask`] = performanceSettings.enableLightMasks; // ✅ Controlled by performance setting
               uniforms[`${prefix}Mask`] = maskTexture;
               uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
               uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -1008,7 +1008,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
               
               console.log(`Mask uniforms for ${prefix}:`, {
-                hasMask: true,
+                hasMask: performanceSettings.enableLightMasks,
                 offset: [light.mask.offset.x, light.mask.offset.y],
                 rotation: light.mask.rotation,
                 scale: light.mask.scale
@@ -1465,7 +1465,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Handle mask
         if (light.mask) {
           const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
-          uniforms[`${prefix}HasMask`] = true;
+          // ✅ REMOVED: Don't override the performance-controlled HasMask setting
           uniforms[`${prefix}Mask`] = maskTexture;
           uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
           uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -1516,7 +1516,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Handle mask
         if (light.mask) {
           const maskTexture = PIXI.Texture.from(`/light_masks/${light.mask.image}`);
-          uniforms[`${prefix}HasMask`] = true;
+          // ✅ REMOVED: Don't override the performance-controlled HasMask setting
           uniforms[`${prefix}Mask`] = maskTexture;
           uniforms[`${prefix}MaskOffset`] = [light.mask.offset.x, light.mask.offset.y];
           uniforms[`${prefix}MaskRotation`] = light.mask.rotation;
@@ -1545,7 +1545,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Global shadow properties
       uniforms.uShadowHeight = shadowConfig.height; // Height of sprites above ground plane for shadow projection
       uniforms.uShadowMaxLength = shadowConfig.maxLength; // Maximum shadow length to prevent extremely long shadows
-      uniforms.uShadowsEnabled = shadowConfig.enabled; // Global shadow enable/disable
+      // ✅ REMOVED: Don't override the performance-controlled uShadowsEnabled from line 1409
       uniforms.uShadowStrength = shadowConfig.strength; // Global shadow strength/opacity
       uniforms.uShadowBias = shadowConfig.bias || 3.0; // Shadow bias to prevent self-shadowing artifacts
       // Removed shadow sharpness feature
@@ -1628,6 +1628,8 @@ const PixiDemo = (props: PixiDemoProps) => {
           const spriteData = (mesh as any).definition;
           mesh.shader.uniforms.uCurrentSpriteZOrder = spriteData.zOrder || 0;
           
+          // ✅ Apply performance setting for normal mapping
+          mesh.shader.uniforms.uUseNormalMap = spriteData.useNormalMap && performanceSettings.enableNormalMapping;
         }
 
         // Ensure mesh is properly positioned for rendering
@@ -1656,7 +1658,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         console.warn('⚠️ Cannot render - pixiApp or renderer not available');
       }
     }
-  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig]);
+  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings]);
 
 
   // Animation loop

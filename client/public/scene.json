@@ -279,7 +279,7 @@
   "performanceSettings": {
     "quality": "high",
     "resolution": 1,
-    "maxLights": 8,
+    "maxLights": 999,
     "enableShadows": true,
     "enableAmbientOcclusion": true,
     "enableNormalMapping": true,
