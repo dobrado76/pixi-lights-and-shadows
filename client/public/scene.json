@@ -188,9 +188,11 @@
       "enabled": true,
       "brightness": 0.7,
       "color": "0xffffff",
-      "x": 250,
-      "y": 170,
-      "z": 70,
+      "position": {
+        "x": 250,
+        "y": 170,
+        "z": 70
+      },
       "followMouse": true,
       "castsShadows": true,
       "radius": 350
@@ -212,9 +214,11 @@
       "enabled": true,
       "brightness": 0.7,
       "color": "0xf4f080",
-      "x": 200,
-      "y": 210,
-      "z": 80,
+      "position": {
+        "x": 200,
+        "y": 210,
+        "z": 80
+      },
       "directionX": 0,
       "directionY": 1,
       "directionZ": -1,
@@ -229,9 +233,11 @@
       "enabled": true,
       "brightness": 0.6,
       "color": "0xffffff",
-      "x": 300,
-      "y": 250,
-      "z": 50,
+      "position": {
+        "x": 300,
+        "y": 250,
+        "z": 50
+      },
       "directionX": 0,
       "directionY": 1,
       "directionZ": -0.5,
@@ -246,9 +252,11 @@
       "enabled": true,
       "brightness": 0.6,
       "color": "0xffffff",
-      "x": 140,
-      "y": 240,
-      "z": 90,
+      "position": {
+        "x": 140,
+        "y": 240,
+        "z": 90
+      },
       "followMouse": false,
       "castsShadows": true,
       "radius": 400,
@@ -268,9 +276,11 @@
       "enabled": true,
       "brightness": 0.9,
       "color": "0xe12323",
-      "x": 210,
-      "y": 130,
-      "z": 50,
+      "position": {
+        "x": 210,
+        "y": 130,
+        "z": 50
+      },
       "followMouse": false,
       "castsShadows": true,
       "radius": 900
