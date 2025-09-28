@@ -1,6 +1,6 @@
-# PIXI.js 2.5D Advanced Light and Shadow System
+# PIXI.js 2.5D Advanced Light and Shadow System v1.0.1
 
-A comprehensive React.js application showcasing advanced pseudo-3D shadow casting using PIXI.js primitives. Features a complete lighting system with unlimited sprite shadow casters, per-light shadow controls, performance optimization, and external JSON configuration management.
+A comprehensive React.js application showcasing advanced pseudo-3D shadow casting using PIXI.js primitives. Features a complete lighting system with unlimited sprite shadow casters, real-time performance controls, and external JSON configuration management.
 
 ## 🚀 Live Demo
 
@@ -37,6 +37,7 @@ Experience the full lighting and shadow system in action with interactive contro
 
 ### 🎭 Advanced Mask System
 - **Texture-Based Light Masking**: Apply custom mask textures to any light for complex lighting patterns
+- **Global Performance Control**: Real-time toggle for all light masks via performance settings
 - **Pixel-Perfect Scaling**: Scale 1.0 displays masks at their actual pixel dimensions
 - **Real-Time Transforms**: Live adjustment of mask offset, rotation, and scale
 - **Shadow-Aware Masking**: Masks only apply in fully lit areas, shadows override masks
@@ -50,7 +51,9 @@ Experience the full lighting and shadow system in action with interactive contro
 - **Development-Friendly**: Live editing with instant visual updates during development
 - **Easy Scene Sharing**: Complete scenes can be shared via single JSON file
 
-### 🎮 Interactive Controls
+### 🎮 Interactive Controls & Performance
+- **Real-Time Performance Toggles**: Instant control over Shadows, Ambient Occlusion, Normal Mapping, and Light Masks
+- **Adaptive Quality Settings**: Automatic performance optimization with manual override capability
 - **Real-Time Editing**: All lighting and shadow parameters update instantly
 - **Mouse Following**: Lights can track mouse movement for dynamic effects
 - **Drag & Drop**: Intuitive positioning of lights in the scene
@@ -532,7 +535,23 @@ Returns: Success/error status
 
 **Note**: In serverless environments, file persistence may be limited. Consider using a database for production deployments.
 
+## 📋 Changelog
+
+### v1.0.1 (Latest)
+- **Fixed Real-Time Performance Toggles**: All 4 performance controls (Shadows, AO, Normal Mapping, Light Masks) now work immediately
+- **Global Light Mask Control**: Added unified shader control for enabling/disabling all light masks via performance settings
+- **Resolved Light Save Issues**: Fixed data format inconsistency preventing certain lights from saving enabled state
+- **Enhanced Performance System**: Improved reliability of real-time performance adjustments with proper shader uniform updates
+
 ## 🌟 Performance Guidelines
+
+### Real-Time Performance Controls (v1.0.1)
+- **Enable Shadows**: Toggle all shadow casting on/off instantly
+- **Enable Ambient Occlusion**: Control subtle ambient darkening effects
+- **Enable Normal Mapping**: Switch between detailed and flat surface rendering
+- **Enable Light Masks**: Toggle all light pattern effects globally
+- **Adaptive Quality**: Automatic optimization based on hardware capabilities
+- **Manual Override**: User control overrides automatic performance adjustments
 
 ### Optimal Scene Setup
 - **Limit active lights**: 4-6 concurrent lights for best performance
