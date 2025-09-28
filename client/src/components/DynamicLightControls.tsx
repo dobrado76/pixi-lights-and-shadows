@@ -259,7 +259,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
       <div className="border-b border-border pb-2">
         <div className="flex items-center space-x-2 mb-1">
           <label className="text-xs text-muted-foreground min-w-[80px]">
-            Ambient: {localAmbient.intensity.toFixed(2)}
+            Ambient: {(localAmbient.intensity || 0).toFixed(2)}
           </label>
           <input
             type="range"
@@ -322,7 +322,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
           <>
             <div className="flex items-center space-x-2 mb-1">
               <label className="text-xs text-muted-foreground min-w-[80px]">
-                Strength: {localShadowConfig.strength.toFixed(2)}
+                Strength: {(localShadowConfig.strength || 0).toFixed(2)}
               </label>
               <input
                 type="range"
@@ -411,7 +411,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                 <>
                   <div className="flex items-center space-x-2 mb-1">
                     <label className="text-xs text-muted-foreground min-w-[70px]">
-                      Strength: {localAOConfig.strength.toFixed(2)}
+                      Strength: {(localAOConfig.strength || 0).toFixed(2)}
                     </label>
                     <input
                       type="range"
@@ -474,7 +474,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                   
                   <div className="flex items-center space-x-2 mb-1">
                     <label className="text-xs text-muted-foreground min-w-[70px]">
-                      Bias: {localAOConfig.bias.toFixed(1)}
+                      Bias: {(localAOConfig.bias || 0).toFixed(1)}
                     </label>
                     <input
                       type="range"
@@ -590,7 +590,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                 <div className="grid grid-cols-2 gap-2">
                   <div className="flex items-center space-x-1">
                     <label className="text-xs text-muted-foreground min-w-[40px]">
-                      I: {light.intensity.toFixed(1)}
+                      I: {(light.intensity || 0).toFixed(1)}
                     </label>
                     <input
                       type="range"
