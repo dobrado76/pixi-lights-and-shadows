@@ -19,8 +19,10 @@ export interface DeviceInfo {
   isTablet: boolean;
   isLowEnd: boolean;
   memory?: number;
+  memoryEstimate?: boolean; // True if memory is an estimate from browser API
   cores?: number;
   webglVersion: number;
+  gpuInfo?: string;
 }
 
 // Detect device capabilities
@@ -36,24 +38,46 @@ export const detectDevice = (): DeviceInfo => {
   // Estimate device performance
   let isLowEnd = false;
   let memory = 0;
+  let memoryEstimate = false;
   let cores = navigator.hardwareConcurrency || 4;
+  let gpuInfo = '';
   
   // Check for device memory API (only available on some browsers)
+  // Note: This API returns conservative estimates for privacy reasons
   if ('deviceMemory' in navigator) {
     memory = (navigator as any).deviceMemory || 0;
-    isLowEnd = memory <= 2; // 2GB or less considered low-end
+    memoryEstimate = true; // Browser API estimate, not actual RAM
+    
+    // Better heuristics: if we detect high core count, assume high-end system
+    if (cores >= 12) {
+      // High core count suggests workstation/gaming rig
+      isLowEnd = false;
+    } else {
+      isLowEnd = memory <= 2; // 2GB or less considered low-end
+    }
   } else {
     // Fallback heuristics for low-end detection
     isLowEnd = isMobile && cores <= 4;
   }
   
-  // Additional low-end indicators
+  // Get GPU information for better performance assessment
   if (gl) {
     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
     if (debugInfo) {
       const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+      gpuInfo = renderer;
+      
       // Common low-end mobile GPUs
-      isLowEnd = isLowEnd || /Adreno 3|Mali-4|PowerVR SGX/i.test(renderer);
+      const isLowEndGPU = /Adreno 3|Mali-4|PowerVR SGX/i.test(renderer);
+      
+      // High-end GPU indicators
+      const isHighEndGPU = /RTX|GTX 16|GTX 20|GTX 30|GTX 40|RX 6|RX 7|Arc A/i.test(renderer);
+      
+      if (isHighEndGPU) {
+        isLowEnd = false; // Override if high-end GPU detected
+      } else if (isLowEndGPU) {
+        isLowEnd = true;
+      }
     }
   }
   
@@ -62,8 +86,10 @@ export const detectDevice = (): DeviceInfo => {
     isTablet,
     isLowEnd,
     memory,
+    memoryEstimate,
     cores,
-    webglVersion: gl2 ? 2 : (gl ? 1 : 0)
+    webglVersion: gl2 ? 2 : (gl ? 1 : 0),
+    gpuInfo
   };
 };
 

@@ -338,12 +338,15 @@ function App() {
           {/* Right Column - Tabbed Controls */}
           <div>
             <Tabs defaultValue="lights" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="lights" data-testid="tab-lights">
                   💡 Lights ({lightsConfig.length})
                 </TabsTrigger>
                 <TabsTrigger value="sprites" data-testid="tab-sprites">
                   🎭 Sprites ({Object.keys(sceneConfig.scene || {}).length})
+                </TabsTrigger>
+                <TabsTrigger value="optimization" data-testid="tab-optimization">
+                  ⚡ Optimization
                 </TabsTrigger>
               </TabsList>
               
@@ -371,20 +374,145 @@ function App() {
                   />
                 )}
               </TabsContent>
+
+              <TabsContent value="optimization" className="mt-4">
+                <div className="space-y-6">
+                  {/* Device Information Section */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        📱 Device Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-muted-foreground">Device Type:</span>
+                          <p className="text-foreground">
+                            {deviceInfo.isMobile ? "Mobile" : deviceInfo.isTablet ? "Tablet" : "Desktop"}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Performance Tier:</span>
+                          <p className="text-foreground">
+                            {deviceInfo.isLowEnd ? "Low-End" : "High-End"}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Memory:</span>
+                          <p className="text-foreground">
+                            {deviceInfo.memory}GB
+                            {deviceInfo.memoryEstimate && (
+                              <span className="text-xs text-muted-foreground ml-1">(browser estimate)</span>
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">CPU Cores:</span>
+                          <p className="text-foreground">{deviceInfo.cores}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">WebGL Version:</span>
+                          <p className="text-foreground">WebGL {deviceInfo.webglVersion}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Current FPS:</span>
+                          <p className="text-foreground font-mono">
+                            {fpsData.current.toFixed(1)} fps (avg: {fpsData.average.toFixed(1)})
+                          </p>
+                        </div>
+                        {deviceInfo.gpuInfo && (
+                          <div className="col-span-2">
+                            <span className="font-medium text-muted-foreground">GPU:</span>
+                            <p className="text-foreground text-xs break-all">
+                              {deviceInfo.gpuInfo}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Performance Settings Section */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        ⚙️ Performance Optimization
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium text-muted-foreground">Quality Level:</span>
+                            <p className="text-foreground capitalize">{performanceSettings.quality}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-muted-foreground">Resolution Scale:</span>
+                            <p className="text-foreground">{performanceSettings.resolution}x</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-muted-foreground">Max Lights:</span>
+                            <p className="text-foreground">{performanceSettings.maxLights}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-muted-foreground">Target FPS:</span>
+                            <p className="text-foreground">{performanceSettings.fpsTarget}</p>
+                          </div>
+                        </div>
+
+                        <div className="border-t pt-4">
+                          <h4 className="font-medium text-foreground mb-3">Feature Availability</h4>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${performanceSettings.enableShadows ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                              <span>Shadows</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${performanceSettings.enableAmbientOcclusion ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                              <span>Ambient Occlusion</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${performanceSettings.enableNormalMapping ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                              <span>Normal Mapping</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${performanceSettings.enableLightMasks ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                              <span>Light Masks</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="border-t pt-4">
+                          <h4 className="font-medium text-foreground mb-3">Recommendations</h4>
+                          <div className="text-sm text-muted-foreground space-y-2">
+                            {deviceInfo.isMobile && (
+                              <p>• Mobile device detected - automatic quality reduction enabled</p>
+                            )}
+                            {deviceInfo.isLowEnd && (
+                              <p>• Low-end device - consider reducing light count for better performance</p>
+                            )}
+                            {performanceSettings.quality === 'low' && (
+                              <p>• Low quality mode active - shadows and effects are simplified</p>
+                            )}
+                            {fpsData.average < 30 && (
+                              <p>• Low FPS detected - automatic quality adjustment in progress</p>
+                            )}
+                            {!deviceInfo.isMobile && !deviceInfo.isLowEnd && (
+                              <p>• High-performance device - all features enabled for best quality</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
             </Tabs>
           </div>
         </div>
       </div>
 
-      {/* Performance Monitor - Floating overlay */}
-      {lightsLoaded && sceneLoaded && (
-        <PerformanceMonitor
-          fps={fpsData}
-          deviceInfo={deviceInfo}
-          performanceSettings={performanceSettings}
-          onSettingsChange={setPerformanceSettings}
-        />
-      )}
 
       {/* Footer */}
       <footer className="border-t border-border bg-card/30 backdrop-blur-sm mt-12">
