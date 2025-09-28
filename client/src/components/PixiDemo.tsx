@@ -283,14 +283,10 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     // Filter shadow casters based on zOrder hierarchy - only include casters at same level or above
     // Also exclude the current sprite being lit to prevent self-shadowing
-    // CRITICAL FIX: Strict z-order hierarchy enforcement
-    let relevantShadowCasters = allShadowCasters.filter(caster => {
-      const casterZ = caster.definition.zOrder;
-      const isAtSameLevelOrAbove = casterZ >= currentSpriteZOrder;
-      const isNotExcluded = !excludeSpriteId || caster.id !== excludeSpriteId;
-      
-      return isAtSameLevelOrAbove && isNotExcluded;
-    });
+    // Include ALL shadow casters in global map - z-order filtering happens per-sprite in uniforms
+    let relevantShadowCasters = allShadowCasters.filter(caster => 
+      !excludeSpriteId || caster.id !== excludeSpriteId
+    );
     
     // Special case: exclude sprites from casting shadows if light (Z >= 50) is inside their non-transparent area
     const enabledLights = lightsConfig.filter(light => light.enabled);
@@ -427,9 +423,9 @@ const PixiDemo = (props: PixiDemoProps) => {
     });
   };
   
-  // Build per-sprite occluder map respecting z-order hierarchy
-  const buildOccluderMap = (spriteZOrder: number, excludeSpriteId?: string) => {
-    buildOccluderMapForSprite(spriteZOrder, excludeSpriteId); // Use actual sprite zOrder for hierarchy
+  // Build single global occluder map containing all shadow casters
+  const buildOccluderMap = (excludeSpriteId?: string) => {
+    buildOccluderMapForSprite(-999, excludeSpriteId); // Use low zOrder to include all casters
   };
 
   // Multi-pass lighting composer
@@ -1632,13 +1628,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       const useOccluderMap = true;
       
       if (useOccluderMap) {
-        // Build occluder map for each sprite's z-order level
-        const allSprites = sceneManagerRef.current?.getAllSprites() || [];
-        allSprites.forEach(sprite => {
-          if (sprite.definition.visible) {
-            buildOccluderMap(sprite.definition.zOrder, sprite.id);
-          }
-        });
+        buildOccluderMap();
         
         // Update all shaders to use single global occluder map
         shadersRef.current.forEach(shader => {
@@ -1734,13 +1724,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         const useOccluderMap = true;
         if (useOccluderMap && occluderRenderTargetRef.current) {
           // Triggering occluder map build from animation loop
-          // Build occluder map for each sprite's z-order level
-        const allSprites = sceneManagerRef.current?.getAllSprites() || [];
-        allSprites.forEach(sprite => {
-          if (sprite.definition.visible) {
-            buildOccluderMap(sprite.definition.zOrder, sprite.id);
-          }
-        });
+          buildOccluderMap();
           
           // Update all shaders to use single global occluder map
           shadersRef.current.forEach(shader => {
