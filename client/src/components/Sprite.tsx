@@ -413,9 +413,9 @@ export class SceneSprite {
         case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
       }
       
-      // Apply offset relative to the selected preset
-      basePivotX += (pivot.offsetX || 0);
-      basePivotY += (pivot.offsetY || 0);
+      // Apply offset relative to the selected preset (invert to match expected direction)
+      basePivotX -= (pivot.offsetX || 0);
+      basePivotY -= (pivot.offsetY || 0);
       
       // Calculate world space pivot point for shader
       const worldPivotX = bounds.x + basePivotX * this.definition.scale;
