@@ -293,15 +293,16 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     // Z-order filtering now works correctly with fragment shader
     
+    // DISABLED: Light filtering that was causing shadow exclusions
     // Special case: exclude sprites from casting shadows if light (Z >= 50) is inside their non-transparent area
-    const enabledLights = lightsConfig.filter(light => light.enabled);
-    const beforeLightFilter = relevantShadowCasters.length;
-    relevantShadowCasters = relevantShadowCasters.filter(caster => {
-      // Check if any enabled light with Z >= 50 is inside this caster's non-transparent area
-      const highZLights = enabledLights.filter(light => (light.position?.z || 0) >= 50);
-      const lightInside = highZLights.some(light => isLightInsideSprite(light, caster));
-      return !lightInside; // Exclude caster if light is inside
-    });
+    // const enabledLights = lightsConfig.filter(light => light.enabled);
+    // const beforeLightFilter = relevantShadowCasters.length;
+    // relevantShadowCasters = relevantShadowCasters.filter(caster => {
+    //   // Check if any enabled light with Z >= 50 is inside this caster's non-transparent area
+    //   const highZLights = enabledLights.filter(light => (light.position?.z || 0) >= 50);
+    //   const lightInside = highZLights.some(light => isLightInsideSprite(light, caster));
+    //   return !lightInside; // Exclude caster if light is inside
+    // });
     
     // Light filtering completed
     
@@ -317,6 +318,11 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     // Shadow casters are now properly filtered by z-order
 
+    console.log(`🎯 FINAL RESULT: ${relevantShadowCasters.length} shadow casters will be rendered for sprite z=${currentSpriteZOrder}`);
+    if (relevantShadowCasters.length === 0) {
+      console.log(`❌ NO SHADOW CASTERS - this sprite will receive NO shadows!`);
+    }
+    
     // Create meshes with identical custom geometry to visual sprites
     relevantShadowCasters.forEach((caster, index) => {
       if (!caster.diffuseTexture) return;
@@ -434,10 +440,8 @@ const PixiDemo = (props: PixiDemoProps) => {
     });
   };
   
-  // Build occluder map using all shadow casters for unified system
-  const buildOccluderMap = (excludeSpriteId?: string) => {
-    buildOccluderMapForSprite(-999, excludeSpriteId); // Use very low zOrder to include all casters
-  };
+  // REMOVED: This function was using hardcoded -999 z-order instead of relative comparisons
+  // All calls should use buildOccluderMapForSprite() with actual sprite z-orders
 
   // Multi-pass lighting composer
   const renderMultiPass = (lights: Light[]) => {
@@ -649,21 +653,26 @@ const PixiDemo = (props: PixiDemoProps) => {
         });
       } catch (webglError) {
         console.warn('WebGL failed, trying Canvas fallback:', webglError);
-        // Fallback to Canvas renderer with mobile optimizations
-        app = new PIXI.Application({
-          width: shaderParams.canvasWidth,
-          height: shaderParams.canvasHeight,
-          backgroundColor: 0x1a1a1a,
-          antialias: false, // Disable for canvas
-          hello: false,
-          resolution: Math.min(performanceSettings.resolution, 0.75), // Lower resolution for canvas fallback
-          autoDensity: false,
-          forceCanvas: true, // Force Canvas renderer
-          powerPreference: 'low-power',
-          preserveDrawingBuffer: false,
-          clearBeforeRender: true,
-          autoStart: false // CRITICAL: Set to false, we'll call start() manually
-        });
+        try {
+          // Fallback to Canvas renderer with mobile optimizations
+          app = new PIXI.Application({
+            width: shaderParams.canvasWidth,
+            height: shaderParams.canvasHeight,
+            backgroundColor: 0x1a1a1a,
+            antialias: false, // Disable for canvas
+            hello: false,
+            resolution: Math.min(performanceSettings.resolution, 0.75), // Lower resolution for canvas fallback
+            autoDensity: false,
+            forceCanvas: true, // Force Canvas renderer
+            powerPreference: 'low-power',
+            preserveDrawingBuffer: false,
+            clearBeforeRender: true,
+            autoStart: false // CRITICAL: Set to false, we'll call start() manually
+          });
+        } catch (canvasError) {
+          console.error('PIXI Application initialization failed:', canvasError);
+          throw new Error('Unable to auto-detect a suitable renderer');
+        }
       }
 
       // Access canvas using proper PIXI.js property
