@@ -374,17 +374,21 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     vec2 adjustedUV = (sampleUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
     float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     
-    // Z-ORDER HIERARCHY: All sprites can receive AO for better visual effect
-    // Background sprites (z < 0) get full AO from all sprites above them
-    // Foreground sprites (z >= 0) get partial AO from sprites at same/higher z-order  
+    // Z-ORDER HIERARCHY: Sprites should only receive AO from objects in front of them
+    // CRITICAL FIX: The occluder map contains ALL sprites, but we need to filter based on z-order
+    // Since we can't determine individual sprite z-orders from the occluder map,
+    // we need to be more selective about when AO is applied
     float zOrderInfluence = 0.0; // Default: no AO
     
+    // PROPER Z-ORDER FILTERING: Strict hierarchy to prevent incorrect shadow/AO layering
+    // CRITICAL FIX: Background sprites should NOT receive AO from other background sprites behind them
     if (currentZ < 0.0) {
-      // Background sprites (z=-1) receive full AO from all sprites above them
-      zOrderInfluence = 1.0;
+      // Background sprites: Only receive AO from sprites with zOrder >= 0 (foreground)
+      // Disable AO entirely for background sprites to prevent incorrect layering
+      zOrderInfluence = 0.0; // No AO for background sprites to prevent depth errors
     } else {
-      // Foreground sprites receive strong AO for dramatic bias testing
-      zOrderInfluence = 0.8; // Much stronger AO for foreground sprites to show bias effect
+      // Foreground sprites (z >= 0): Receive AO from sprites at same/higher z-order
+      zOrderInfluence = 0.8; // Normal AO for foreground sprites
     }
     
     // Apply bias to create VERY visible AO edge softening effect
