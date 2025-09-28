@@ -368,12 +368,15 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
       zOrderInfluence = 0.3; // Reduced AO for foreground sprites
     }
     
-    // Apply bias to prevent self-occlusion: only reduce very close samples
+    // Apply bias to create visible AO edge softening effect
     float sampleDistance = length(sampleOffset);
     float biasReduction = 1.0;
-    if (sampleDistance < uAOBias) {
-      // Only reduce occlusion for samples very close to prevent self-occlusion
-      biasReduction = smoothstep(0.0, uAOBias, sampleDistance) * 0.5 + 0.5;
+    
+    // Make bias effect much more visible and dramatic
+    float biasRadius = uAOBias * 3.0; // Expand the bias range to make it more visible
+    if (sampleDistance < biasRadius) {
+      // Create a dramatic falloff that's clearly visible
+      biasReduction = smoothstep(0.0, biasRadius, sampleDistance) * 0.7 + 0.3;
     }
     
     // Apply both z-order filtering and bias reduction

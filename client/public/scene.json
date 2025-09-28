@@ -311,6 +311,6 @@
     "strength": 8.2,
     "radius": 20,
     "samples": 16,
-    "bias": 5
+    "bias": 4
   }
 }
