@@ -322,25 +322,6 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   // Check if AO is enabled globally
   if (!uAOEnabled) return 1.0;
   
-  // Check if current pixel is part of a sprite to reduce AO intensity on sprite pixels
-  vec2 mapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
-  vec2 currentUV = pixelPos / uCanvasSize;
-  vec2 bufferUV = uOccluderMapOffset / uCanvasSize;
-  
-  float spritePixelReduction = 1.0; // Default: no reduction
-  if (currentUV.x >= -bufferUV.x && currentUV.x <= 1.0 + bufferUV.x && 
-      currentUV.y >= -bufferUV.y && currentUV.y <= 1.0 + bufferUV.y) {
-    vec2 currentAdjustedUV = (currentUV * uCanvasSize + uOccluderMapOffset) / mapSize;
-    float currentAlpha = texture2D(uOccluderMap, currentAdjustedUV).a;
-    
-    // Reduce AO on sprite pixels but don't eliminate it completely (this preserves bias effects)
-    if (currentAlpha > 0.8) {
-      spritePixelReduction = 0.1; // Heavily reduce AO on solid sprite pixels
-    } else if (currentAlpha > 0.3) {
-      spritePixelReduction = 0.5; // Moderately reduce AO on semi-transparent areas
-    }
-  }
-  
   // CRITICAL: Only apply AO if there could be sprites above this one
   // If current sprite is at the highest z-order layer, it should receive no AO
   float currentZ = uCurrentSpriteZOrder;
@@ -348,7 +329,8 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   float totalOcclusion = 0.0;
   float validSamples = 0.0;
   
-  // Use occluder map to sample geometry proximity
+  // Use occluder map to sample geometry proximity, but only consider it as AO
+  // if the current sprite is at a low enough z-order to potentially be occluded
   vec2 expandedMapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
   
   for (int i = 0; i < 16; i++) {
@@ -373,28 +355,23 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
     vec2 adjustedUV = (sampleUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
     float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     
-    // Z-ORDER HIERARCHY: All sprites can receive AO for better visual effect
+    // Z-ORDER HIERARCHY: Only sprites with lower z-order should receive AO
     // Background sprites (z < 0) get full AO from all sprites above them
-    // Foreground sprites (z >= 0) get partial AO from sprites at same/higher z-order  
+    // Sprites at z=0+ get NO AO unless there are sprites with higher z-order
     float zOrderInfluence = 0.0; // Default: no AO
     
     if (currentZ < 0.0) {
-      // Background sprites (z=-1) receive full AO from all sprites above them
+      // Background sprites (z=-1) receive AO from all sprites above them
       zOrderInfluence = 1.0;
-    } else {
-      // Foreground sprites receive strong AO for dramatic bias testing
-      zOrderInfluence = 0.8; // Much stronger AO for foreground sprites to show bias effect
     }
+    // Note: Sprites at z=0+ get zOrderInfluence = 0.0 (no AO) unless overlapped by higher z sprites
     
-    // Apply bias to create VERY visible AO edge softening effect
+    // Apply bias to prevent self-occlusion: reduce occlusion strength for nearby samples
     float sampleDistance = length(sampleOffset);
     float biasReduction = 1.0;
-    
-    // Make bias effect dramatic and visible but more reasonable
-    float biasRadius = uAOBias * 3.0; // Visible but not excessive
-    if (sampleDistance < biasRadius) {
-      // Create clear falloff effect
-      biasReduction = smoothstep(0.0, biasRadius, sampleDistance) * 0.8 + 0.2;
+    if (sampleDistance < uAOBias * 2.0) {
+      // Gradually reduce occlusion strength for samples within bias range
+      biasReduction = smoothstep(0.0, uAOBias * 2.0, sampleDistance);
     }
     
     // Apply both z-order filtering and bias reduction
@@ -405,7 +382,7 @@ float calculateAmbientOcclusion(vec2 pixelPos) {
   if (validSamples > 0.0) {
     float aoFactor = totalOcclusion / validSamples;
     float aoStrength = clamp(uAOStrength, 0.0, 10.0);
-    float aoEffect = 1.0 - (aoFactor * aoStrength * spritePixelReduction * 0.3); // Apply sprite pixel reduction
+    float aoEffect = 1.0 - (aoFactor * aoStrength); // Removed 0.8 scaling - use full strength
     return clamp(aoEffect, 0.1, 1.0);
   }
   
