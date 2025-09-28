@@ -165,9 +165,9 @@ export class SceneSprite {
         case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
       }
       
-      // Apply offset relative to the selected preset
-      basePivotX += (pivot.offsetX || 0);
-      basePivotY += (pivot.offsetY || 0);
+      // Apply offset relative to the selected preset (invert to match expected direction)
+      basePivotX -= (pivot.offsetX || 0);
+      basePivotY -= (pivot.offsetY || 0);
     }
     
     // Scale the pivot point
@@ -256,9 +256,9 @@ export class SceneSprite {
         case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
       }
       
-      // Apply offset relative to the selected preset
-      basePivotX += (pivot.offsetX || 0);
-      basePivotY += (pivot.offsetY || 0);
+      // Apply offset relative to the selected preset (invert to match expected direction)
+      basePivotX -= (pivot.offsetX || 0);
+      basePivotY -= (pivot.offsetY || 0);
     }
     
     const worldPivotX = x + basePivotX * this.definition.scale;
@@ -380,9 +380,9 @@ export class SceneSprite {
         case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
       }
       
-      // Apply offset relative to the selected preset
-      basePivotX += (pivot.offsetX || 0);
-      basePivotY += (pivot.offsetY || 0);
+      // Apply offset relative to the selected preset (invert to match expected direction)
+      basePivotX -= (pivot.offsetX || 0);
+      basePivotY -= (pivot.offsetY || 0);
     }
     
     // Since position (x,y) is now the pivot location, calculate top-left corner

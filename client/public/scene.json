@@ -54,7 +54,7 @@
       "useNormalMap": true,
       "pivot": {
         "preset": "middle-center",
-        "offsetX": 10,
+        "offsetX": 16,
         "offsetY": 10
       }
     },
