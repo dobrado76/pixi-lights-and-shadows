@@ -1592,7 +1592,6 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Use enabled flag for existence, intensity for visibility (physics-correct approach)
         uniforms[`${prefix}Enabled`] = light.enabled; // Controls whether light exists
-        uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Controls light strength
         uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
         uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
         uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
