@@ -179,8 +179,8 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.2,
-      "color": "0x7a7a7a"
+      "brightness": 0.3,
+      "color": "0x666666"
     },
     {
       "id": "mouse_light",
@@ -189,8 +189,8 @@
       "brightness": 0.7,
       "color": "0xffffff",
       "position": {
-        "x": 150,
-        "y": 290,
+        "x": 250,
+        "y": 170,
         "z": 70
       },
       "followMouse": true,
@@ -200,11 +200,11 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": false,
-      "brightness": 0.4,
+      "enabled": true,
+      "brightness": 0.3,
       "color": "0xffffff",
-      "directionX": 0.5000000000000001,
-      "directionY": -0.8660254037844386,
+      "directionX": 0.6427876096865394,
+      "directionY": -0.766044443118978,
       "directionZ": -1,
       "castsShadows": true
     },
@@ -294,7 +294,6 @@
     "enableAmbientOcclusion": true,
     "enableNormalMapping": true,
     "enableLightMasks": true,
-    "enablePCSS": false,
     "textureScale": 1,
     "fpsTarget": 60,
     "capFpsTo60": true,
@@ -302,7 +301,7 @@
   },
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.45,
+    "strength": 0.6,
     "maxLength": 200,
     "height": 10
   },
@@ -311,6 +310,6 @@
     "strength": 4.8,
     "radius": 5,
     "samples": 8,
-    "bias": 11.5
+    "bias": 20
   }
 }

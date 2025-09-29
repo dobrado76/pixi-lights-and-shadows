@@ -132,10 +132,6 @@ const PixiDemo = (props: PixiDemoProps) => {
     if (currentLightHash !== lastLightConfigHashRef.current) {
       uniformsDirtyRef.current = true;
       lastLightConfigHashRef.current = currentLightHash;
-      
-      // ✅ AGGRESSIVE FIX: Always rebuild occluder map when lights change
-      // Ensures directional light shadows work regardless of initialization state
-      occluderMapDirtyRef.current = true;
     }
     
     // Check if shadow casters changed (affects occluder map)
@@ -364,9 +360,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       caster.definition.castsShadows
     );
     
-    // Filter shadow casters based on zOrder hierarchy 
-    // For directional lights: include ALL sprites except self (same-level shadows allowed)
-    // For point/spot lights: only include casters at same level or above (traditional hierarchy)
+    // Filter shadow casters based on zOrder hierarchy - only include casters at same level or above
     // Also exclude the current sprite being lit to prevent self-shadowing
     let relevantShadowCasters = allShadowCasters.filter(caster => 
       caster.definition.zOrder >= currentSpriteZOrder && 
@@ -1040,7 +1034,6 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
             uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
             uniforms[`${prefix}Radius`] = light.radius || 200;
-            uniforms[`${prefix}LightSize`] = light.lightSize || 10; // PCSS light size
             
             // ✅ Handle mask (always load, toggle with performance setting)
             if (light.mask) {
@@ -1081,7 +1074,6 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
             uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
             uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
-            uniforms[`${prefix}LightSize`] = light.lightSize || 5; // PCSS light size for directional lights
           });
           
           // Spotlights (performance-limited) - pass lights with stable slot assignment
@@ -1104,7 +1096,6 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}Radius`] = light.radius || 150;
             uniforms[`${prefix}ConeAngle`] = light.coneAngle || 30;
             uniforms[`${prefix}Softness`] = light.softness || 0.5;
-            uniforms[`${prefix}LightSize`] = light.lightSize || 8; // PCSS light size for spotlights
             
             // ✅ Handle mask (always load, toggle with performance setting)
             if (light.mask) {
@@ -1497,8 +1488,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uPoint0CastsShadows = false; uniforms.uPoint1CastsShadows = false; uniforms.uPoint2CastsShadows = false; uniforms.uPoint3CastsShadows = false;
       uniforms.uDir0CastsShadows = false; uniforms.uDir1CastsShadows = false;
       uniforms.uSpot0CastsShadows = false; uniforms.uSpot1CastsShadows = false; uniforms.uSpot2CastsShadows = false; uniforms.uSpot3CastsShadows = false;
-      
-      // Initialize all light sizes for PCSS (will be overridden with actual values below)
 
       // Add shadow system uniforms - performance-filtered from scene configuration
       uniforms.uShadowsEnabled = shadowConfig.enabled && performanceSettings.enableShadows;
@@ -1521,9 +1510,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // ✅ Global Light Masks Control (performance-filtered)
       uniforms.uMasksEnabled = performanceSettings.enableLightMasks;
-      
-      // ⚠️ PCSS DISABLED - System needs complete rewrite
-      uniforms.uPCSSEnabled = false; // performanceSettings.enablePCSS;
       
       
       // Per-sprite AO settings will be set individually for each sprite
@@ -1550,11 +1536,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       allPointLights.slice(0, 4).forEach((light, slotIdx) => {
         const prefix = `uPoint${slotIdx}`;
         
-        // ✅ CRITICAL FIX: Use original enabled state to control actual visibility
-        const isActuallyEnabled = (light as any).originalEnabled;
-        
-        uniforms[`${prefix}Enabled`] = true; // Always enabled for structure creation
-        uniforms[`${prefix}Intensity`] = isActuallyEnabled ? light.intensity : 0; // Use original state for intensity
+        // Use enabled flag for existence, intensity for visibility (physics-correct approach)
+        uniforms[`${prefix}Enabled`] = light.enabled; // Controls whether light exists
+        uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Controls light strength
         uniforms[`${prefix}Position`] = [
           light.followMouse ? mousePos.x : light.position.x,
           light.followMouse ? mousePos.y : light.position.y,
@@ -1587,9 +1571,6 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Shadow casting flag for point lights
         uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
-        
-        // ✅ CRITICAL FIX: Use actual lightSize from UI sliders, not hardcoded values!
-        uniforms[`${prefix}LightSize`] = light.lightSize || 10;
       });
       
       // Directional Lights (up to 2) - pass ALL lights with stable slot assignment
@@ -1598,27 +1579,22 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Use enabled flag for existence, intensity for visibility (physics-correct approach)
         uniforms[`${prefix}Enabled`] = light.enabled; // Controls whether light exists
+        uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Controls light strength
         uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
         uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
-        uniforms[`${prefix}Intensity`] = isActuallyEnabled ? light.intensity : 0; // Use original state for intensity
+        uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
         
         // Shadow casting flag for directional lights
         uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
-        
-        
-        // ✅ CRITICAL FIX: Use actual lightSize from UI sliders, not hardcoded values!
-        uniforms[`${prefix}LightSize`] = light.lightSize || 5;
       });
       
       // Spotlights (up to 4) - pass ALL lights with stable slot assignment
       allSpotlights.slice(0, 4).forEach((light, slotIdx) => {
         const prefix = `uSpot${slotIdx}`;
         
-        // ✅ CRITICAL FIX: Use original enabled state to control actual visibility
-        const isActuallyEnabled = (light as any).originalEnabled;
-        
-        uniforms[`${prefix}Enabled`] = true; // Always enabled for structure creation
-        uniforms[`${prefix}Intensity`] = isActuallyEnabled ? light.intensity : 0; // Use original state for intensity
+        // Use enabled flag for existence, intensity for visibility (physics-correct approach)
+        uniforms[`${prefix}Enabled`] = light.enabled; // Controls whether light exists
+        uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Controls light strength
         uniforms[`${prefix}Position`] = [
           light.followMouse ? mousePos.x : light.position.x,
           light.followMouse ? mousePos.y : light.position.y,
@@ -1646,9 +1622,6 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Shadow casting flag for spotlights
         uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
-        
-        // ✅ CRITICAL FIX: Use actual lightSize from UI sliders, not hardcoded values!
-        uniforms[`${prefix}LightSize`] = light.lightSize || 8;
       });
 
       // Add other dynamic uniforms

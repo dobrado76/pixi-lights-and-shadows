@@ -10,7 +10,6 @@ export interface PerformanceSettings {
   enableAmbientOcclusion: boolean;
   enableNormalMapping: boolean;
   enableLightMasks: boolean;
-  enablePCSS: boolean;
   textureScale: number;
   fpsTarget: number;
   capFpsTo60: boolean;
@@ -108,7 +107,6 @@ export const getOptimalSettings = (device: DeviceInfo): PerformanceSettings => {
       enableAmbientOcclusion: false,
       enableNormalMapping: false,
       enableLightMasks: false,
-      enablePCSS: false,
       textureScale: 0.5,
       fpsTarget: 30,
       capFpsTo60: true
@@ -123,7 +121,6 @@ export const getOptimalSettings = (device: DeviceInfo): PerformanceSettings => {
       enableAmbientOcclusion: false,
       enableNormalMapping: true,
       enableLightMasks: false,
-      enablePCSS: false,
       textureScale: 0.75,
       fpsTarget: 45,
       capFpsTo60: true
@@ -141,7 +138,6 @@ export const getOptimalSettings = (device: DeviceInfo): PerformanceSettings => {
         enableAmbientOcclusion: true,
         enableNormalMapping: true,
         enableLightMasks: true,
-        enablePCSS: true,
         textureScale: 1.0,
         fpsTarget: 60,
         capFpsTo60: true
@@ -156,7 +152,6 @@ export const getOptimalSettings = (device: DeviceInfo): PerformanceSettings => {
         enableAmbientOcclusion: false,
         enableNormalMapping: true,
         enableLightMasks: false,
-        enablePCSS: false,
         textureScale: 0.75,
         fpsTarget: 45,
         capFpsTo60: true

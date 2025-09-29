@@ -35,18 +35,12 @@ uniform bool uPoint3HasMask; uniform sampler2D uPoint3Mask; uniform vec2 uPoint3
 // Point Light Shadow Casting Flags
 uniform bool uPoint0CastsShadows; uniform bool uPoint1CastsShadows; uniform bool uPoint2CastsShadows; uniform bool uPoint3CastsShadows;
 
-// Point Light Sizes (for PCSS - Percentage-Closer Soft Shadows)
-uniform float uPoint0LightSize; uniform float uPoint1LightSize; uniform float uPoint2LightSize; uniform float uPoint3LightSize;
-
 // Directional Lights (0-1) 
 uniform bool uDir0Enabled; uniform vec3 uDir0Direction; uniform vec3 uDir0Color; uniform float uDir0Intensity;
 uniform bool uDir1Enabled; uniform vec3 uDir1Direction; uniform vec3 uDir1Color; uniform float uDir1Intensity;
 
 // Directional Light Shadow Casting Flags
 uniform bool uDir0CastsShadows; uniform bool uDir1CastsShadows;
-
-// Directional Light Sizes (for PCSS)
-uniform float uDir0LightSize; uniform float uDir1LightSize;
 
 // Spotlights (0-3)
 uniform bool uSpot0Enabled; uniform vec3 uSpot0Position; uniform vec3 uSpot0Direction; uniform vec3 uSpot0Color; uniform float uSpot0Intensity; uniform float uSpot0Radius; uniform float uSpot0ConeAngle; uniform float uSpot0Softness;
@@ -63,17 +57,11 @@ uniform bool uSpot3HasMask; uniform sampler2D uSpot3Mask; uniform vec2 uSpot3Mas
 // Spotlight Shadow Casting Flags
 uniform bool uSpot0CastsShadows; uniform bool uSpot1CastsShadows; uniform bool uSpot2CastsShadows; uniform bool uSpot3CastsShadows;
 
-// Spotlight Light Sizes (for PCSS)
-uniform float uSpot0LightSize; uniform float uSpot1LightSize; uniform float uSpot2LightSize; uniform float uSpot3LightSize;
-
 // Shadow Caster Uniforms - integrated shadow calculation with zOrder hierarchy
 uniform float uShadowStrength; // Global shadow strength
 uniform bool uShadowsEnabled;
 // Global Light Mask Control
 uniform bool uMasksEnabled; // Global toggle for all light masks
-
-// Global PCSS Control
-uniform bool uPCSSEnabled; // Global toggle for PCSS (Percentage-Closer Soft Shadows)
 uniform float uShadowMaxLength; // Maximum shadow length to prevent extremely long shadows
 uniform float uShadowBias; // Pixels to offset shadow ray to prevent self-shadowing
 uniform float uCurrentSpriteZOrder; // Z-order of current sprite (used for shadows and AO hierarchy)
@@ -121,189 +109,6 @@ float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offse
   return texture2D(maskTexture, maskUV).r; // Use red channel as mask
 }
 
-// PCSS (Percentage-Closer Soft Shadows) Constants and Helper Functions
-const int PCF_SAMPLES = 16; // Number of samples for soft shadows. Higher = softer but slower.
-
-// PCSS Step 1: Blocker Search Function
-// This function searches the occluder map to find the average depth of shadow casters
-float findBlocker(sampler2D occluderMap, vec2 lightPos, vec2 pixelPos, float lightRadius, float lightSize) {
-  float blockerDepth = 0.0;
-  int blockerCount = 0;
-  
-  // Convert lightSize to normalized search radius
-  float searchRadius = (lightSize / uCanvasSize.x) * 0.002; // Scale factor for search
-  
-  vec2 lightToPixel = pixelPos - lightPos;
-  float pixelDistance = length(lightToPixel);
-  
-  // For point lights, we need to sample around the light direction
-  vec2 lightDirection = normalize(lightToPixel);
-  
-  for (int i = 0; i < PCF_SAMPLES; i++) {
-    float angle = float(i) / float(PCF_SAMPLES) * 6.283185; // 2 * PI
-    vec2 offset = vec2(cos(angle), sin(angle)) * searchRadius;
-    
-    // Sample position in occluder map space
-    vec2 sampleWorldPos = pixelPos + offset * uCanvasSize.x;
-    
-    // Convert to occluder map UV coordinates
-    vec2 occluderUV = (sampleWorldPos + uOccluderMapOffset) / (uCanvasSize + 2.0 * uOccluderMapOffset);
-    
-    if (occluderUV.x >= 0.0 && occluderUV.x <= 1.0 && occluderUV.y >= 0.0 && occluderUV.y <= 1.0) {
-      float occluder = texture2D(occluderMap, occluderUV).a;
-      
-      // If occluder is present, it's a potential blocker
-      if (occluder > 0.5) {
-        // Estimate blocker distance (simplified - using sample distance)
-        blockerDepth += length(sampleWorldPos - lightPos);
-        blockerCount++;
-      }
-    }
-  }
-  
-  if (blockerCount > 0) {
-    return blockerDepth / float(blockerCount);
-  }
-  return pixelDistance; // No blocker found, use pixel distance
-}
-
-// PCSS Step 2: PCF Filtering Function
-// This function takes multiple samples from the occluder map in a radius and averages them
-float pcfFilter(sampler2D occluderMap, vec2 lightPos, vec2 pixelPos, float lightRadius, float filterRadius) {
-  float shadow = 0.0;
-  
-  for (int i = 0; i < PCF_SAMPLES; i++) {
-    float angle = float(i) / float(PCF_SAMPLES) * 6.283185; // 2 * PI
-    vec2 offset = vec2(cos(angle), sin(angle)) * filterRadius;
-    
-    // Sample position in world space
-    vec2 sampleWorldPos = pixelPos + offset;
-    
-    // Convert to occluder map UV coordinates
-    vec2 occluderUV = (sampleWorldPos + uOccluderMapOffset) / (uCanvasSize + 2.0 * uOccluderMapOffset);
-    
-    if (occluderUV.x >= 0.0 && occluderUV.x <= 1.0 && occluderUV.y >= 0.0 && occluderUV.y <= 1.0) {
-      float occluder = texture2D(occluderMap, occluderUV).a;
-      
-      // If occluder is present, this sample is in shadow
-      if (occluder > 0.5) {
-        shadow += 1.0;
-      }
-    }
-  }
-  
-  return 1.0 - (shadow / float(PCF_SAMPLES)); // Return light factor (1.0 = fully lit, 0.0 = fully shadowed)
-}
-
-// True PCSS Function for Point/Spot Lights using Occluder Map
-float calculatePCSSShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightRadius, float lightSize) {
-  if (!uShadowsEnabled) return 1.0;
-  
-  vec2 rayDir = pixelPos - lightPos;
-  float receiverDistance = length(rayDir);
-  
-  if (receiverDistance < 0.001) return 1.0; // Same position as light
-  
-  rayDir /= receiverDistance; // Normalize
-  
-  // Step 1: Blocker Search - Find average depth of occluders
-  float blockerSearchRadius = lightSize * 0.25; // Increased responsiveness to lightSize
-  blockerSearchRadius = clamp(blockerSearchRadius, 1.0, 25.0); // Wider range
-  
-  float avgBlockerDistance = 0.0;
-  float numBlockers = 0.0;
-  int searchSamples = 8;
-  
-  for (int i = 0; i < 8; i++) {
-    float angle = float(i) / float(searchSamples) * 6.283185;
-    vec2 searchOffset = vec2(cos(angle), sin(angle)) * blockerSearchRadius;
-    vec2 searchPos = pixelPos + searchOffset;
-    
-    // Cast ray from light to search position
-    vec2 lightToSearch = searchPos - lightPos;
-    float searchDistance = length(lightToSearch);
-    
-    if (searchDistance > 0.001) {
-      vec2 searchRayDir = lightToSearch / searchDistance;
-      float stepSize = 3.0;
-      
-      // Ray-march to find first occluder
-      for (int j = 1; j < 20; j++) {
-        float distance = float(j) * stepSize;
-        if (distance >= searchDistance) break;
-        
-        vec2 checkPos = lightPos + searchRayDir * distance;
-        vec2 checkUV = (checkPos + uOccluderMapOffset) / (uCanvasSize + 2.0 * uOccluderMapOffset);
-        
-        if (checkUV.x >= 0.0 && checkUV.x <= 1.0 && checkUV.y >= 0.0 && checkUV.y <= 1.0) {
-          float occluder = texture2D(uOccluderMap, checkUV).a;
-          if (occluder > 0.5) {
-            avgBlockerDistance += distance;
-            numBlockers += 1.0;
-            break;
-          }
-        }
-      }
-    }
-  }
-  
-  // If no blockers found, fully lit
-  if (numBlockers < 0.1) return 1.0;
-  
-  avgBlockerDistance /= numBlockers;
-  
-  // Step 2: Penumbra Estimation
-  // penumbra = (receiverDistance - avgBlockerDistance) * lightSize / avgBlockerDistance
-  float penumbra = (receiverDistance - avgBlockerDistance) * lightSize / avgBlockerDistance;
-  penumbra = max(penumbra, 0.0);
-  
-  // Convert to filter radius - make more responsive to lightSize
-  float filterRadius = penumbra * 0.15 + (lightSize * 0.1); // Direct lightSize influence + penumbra
-  filterRadius = clamp(filterRadius, 0.5, 15.0); // Expanded range for better control
-  
-  // Step 3: PCF with variable filter size
-  float shadow = 0.0;
-  int pcfSamples = 12;
-  
-  for (int i = 0; i < 12; i++) {
-    float angle = float(i) / float(pcfSamples) * 6.283185;
-    vec2 offset = vec2(cos(angle), sin(angle)) * filterRadius;
-    vec2 samplePos = pixelPos + offset;
-    
-    // Cast shadow ray from light to sample position
-    vec2 lightToSample = samplePos - lightPos;
-    float sampleDistance = length(lightToSample);
-    
-    if (sampleDistance > 0.001) {
-      vec2 sampleRayDir = lightToSample / sampleDistance;
-      float stepSize = 2.5;
-      bool inShadow = false;
-      
-      for (int j = 1; j < 30; j++) {
-        float distance = float(j) * stepSize;
-        if (distance >= sampleDistance * 0.98) break; // Stop before receiver
-        
-        vec2 checkPos = lightPos + sampleRayDir * distance;
-        vec2 checkUV = (checkPos + uOccluderMapOffset) / (uCanvasSize + 2.0 * uOccluderMapOffset);
-        
-        if (checkUV.x >= 0.0 && checkUV.x <= 1.0 && checkUV.y >= 0.0 && checkUV.y <= 1.0) {
-          float occluder = texture2D(uOccluderMap, checkUV).a;
-          if (occluder > 0.5) {
-            inShadow = true;
-            break;
-          }
-        }
-      }
-      
-      if (inShadow) {
-        shadow += 1.0;
-      }
-    }
-  }
-  
-  return 1.0 - (shadow / float(pcfSamples));
-}
-
 
 // Directional light shadow calculation using occluder map - specialized for parallel rays
 float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) {
@@ -328,16 +133,20 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
     
     vec2 samplePos = pixelPos + rayDir * distance;
     
-    // ✅ FIXED: Use same UV calculation as working point light shadows
-    vec2 occluderUV = (samplePos + uOccluderMapOffset) / (uCanvasSize + 2.0 * uOccluderMapOffset);
+    // Convert world position to UV coordinates
+    vec2 occluderUV = samplePos / uCanvasSize;
     
-    // Check bounds for the occluder map
-    if (occluderUV.x < 0.0 || occluderUV.x > 1.0 || occluderUV.y < 0.0 || occluderUV.y > 1.0) {
+    // Check bounds - allow expanded area for off-screen shadow casting
+    vec2 expandedMapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
+    vec2 bufferUV = uOccluderMapOffset / uCanvasSize;
+    if (occluderUV.x < -bufferUV.x || occluderUV.x > 1.0 + bufferUV.x || 
+        occluderUV.y < -bufferUV.y || occluderUV.y > 1.0 + bufferUV.y) {
       continue;
     }
     
-    // Sample occluder map directly (UV is already adjusted)
-    float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
+    // Sample occluder map alpha (adjust UV for expanded map offset)
+    vec2 adjustedUV = (occluderUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
+    float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     
     // If we hit an occluder, cast shadow with distance-based softness
     if (occluderAlpha > 0.0) {
@@ -369,16 +178,9 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
 }
 
 
-// Occluder map shadow calculation - with proper self-shadow avoidance and PCSS support
-float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightRadius, float lightSize) {
+// Occluder map shadow calculation - with proper self-shadow avoidance
+float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
-  
-  // PCSS DISABLED - Using hard shadows only
-  // if (uPCSSEnabled && lightSize > 0.0) {
-  //   return calculatePCSSShadowOccluderMap(lightPos, pixelPos, lightRadius, lightSize);
-  // }
-  
-  // Use normal hard shadow calculation (when PCSS is off OR lightSize is 0)
   
   vec2 rayDir = pixelPos - lightPos;
   float rayLength = length(rayDir);
@@ -508,11 +310,11 @@ float calculateDirectionalShadowUnified(vec2 lightDirection, vec2 pixelPos) {
 }
 
 // Unified shadow calculation using occluder map
-float calculateShadowUnified(vec2 lightPos, vec2 pixelPos, float lightRadius, float lightSize) {
+float calculateShadowUnified(vec2 lightPos, vec2 pixelPos) {
   if (!uShadowsEnabled) return 1.0;
   
   // Use occluder map approach for all point/spot light shadows
-  return calculateShadowOccluderMap(lightPos, pixelPos, lightRadius, lightSize);
+  return calculateShadowOccluderMap(lightPos, pixelPos);
 }
 
 // Ambient Occlusion calculation - respects z-order hierarchy (only higher z-order sprites cast AO)
@@ -719,7 +521,7 @@ void main(void) {
     // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
     if (uPoint0CastsShadows) {
-      shadowFactor = calculateShadowUnified(uPoint0Position.xy, worldPos.xy, uPoint0Radius, uPoint0LightSize);
+      shadowFactor = calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -753,7 +555,7 @@ void main(void) {
     // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
     if (uPoint1CastsShadows) {
-      shadowFactor = calculateShadowUnified(uPoint1Position.xy, worldPos.xy, uPoint1Radius, uPoint1LightSize);
+      shadowFactor = calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -787,7 +589,7 @@ void main(void) {
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
     if (uPoint2CastsShadows && intensity > 0.0) {
-      shadowFactor = calculateShadowUnified(uPoint2Position.xy, worldPos.xy, uPoint2Radius, uPoint2LightSize);
+      shadowFactor = calculateShadowUnified(uPoint2Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -821,7 +623,7 @@ void main(void) {
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
     if (uPoint3CastsShadows && intensity > 0.0) {
-      shadowFactor = calculateShadowUnified(uPoint3Position.xy, worldPos.xy, uPoint3Radius, uPoint3LightSize);
+      shadowFactor = calculateShadowUnified(uPoint3Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -920,7 +722,7 @@ void main(void) {
     // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
     if (uSpot0CastsShadows) {
-      shadowFactor = calculateShadowUnified(uSpot0Position.xy, worldPos.xy, uSpot0Radius, uSpot0LightSize);
+      shadowFactor = calculateShadowUnified(uSpot0Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -967,7 +769,7 @@ void main(void) {
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
     if (uSpot1CastsShadows && intensity > 0.0) {
-      shadowFactor = calculateShadowUnified(uSpot1Position.xy, worldPos.xy, uSpot1Radius, uSpot1LightSize);
+      shadowFactor = calculateShadowUnified(uSpot1Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -1014,7 +816,7 @@ void main(void) {
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
     if (uSpot2CastsShadows && intensity > 0.0) {
-      shadowFactor = calculateShadowUnified(uSpot2Position.xy, worldPos.xy, uSpot2Radius, uSpot2LightSize);
+      shadowFactor = calculateShadowUnified(uSpot2Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -1061,7 +863,7 @@ void main(void) {
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
     if (uSpot3CastsShadows && intensity > 0.0) {
-      shadowFactor = calculateShadowUnified(uSpot3Position.xy, worldPos.xy, uSpot3Radius, uSpot3LightSize);
+      shadowFactor = calculateShadowUnified(uSpot3Position.xy, worldPos.xy);
     }
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
