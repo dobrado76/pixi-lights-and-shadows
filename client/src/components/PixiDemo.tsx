@@ -1708,18 +1708,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
             shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
             
-            // CRITICAL: Ensure directional light shadows work from the start
-            const allDirectionalLights = lightsConfig.filter(light => light.type === 'directional');
-            if (allDirectionalLights.length > 0) {
-              const dirLight = allDirectionalLights[0];
-              shader.uniforms.uDir0Enabled = dirLight.enabled;
-              shader.uniforms.uDir0Direction = [dirLight.direction.x, dirLight.direction.y, dirLight.direction.z];
-              shader.uniforms.uDir0Color = [dirLight.color.r, dirLight.color.g, dirLight.color.b];
-              shader.uniforms.uDir0Intensity = dirLight.enabled ? dirLight.intensity : 0;
-              shader.uniforms.uDir0CastsShadows = dirLight.enabled && dirLight.castsShadows;
-              
-              // Initial directional light setup complete
-            }
+            // Occluder map setup complete - directional lights handled by normal uniform flow
           }
         });
       } else {
@@ -1825,27 +1814,19 @@ const PixiDemo = (props: PixiDemoProps) => {
       const enabledDirectionalLights = lightsConfig.filter(light => light.enabled && light.type === 'directional');
       const allDirectionalLights = lightsConfig.filter(light => light.type === 'directional');
       
-      // FORCE COMPLETE DIRECTIONAL LIGHT SETUP EVERY FRAME
+      // Only update shadow casting flag to fix original issue
       shadersRef.current.forEach(shader => {
         if (shader.uniforms) {
-          // Set ALL directional light uniforms, not just shadows
-          if (allDirectionalLights.length > 0) {
-            const dirLight = allDirectionalLights[0];
-            shader.uniforms.uDir0Enabled = dirLight.enabled;
-            shader.uniforms.uDir0Direction = [dirLight.direction.x, dirLight.direction.y, dirLight.direction.z];
-            shader.uniforms.uDir0Color = [dirLight.color.r, dirLight.color.g, dirLight.color.b];
-            shader.uniforms.uDir0Intensity = dirLight.enabled ? dirLight.intensity : 0;
-            shader.uniforms.uDir0CastsShadows = dirLight.enabled && dirLight.castsShadows;
-            
-            // Directional light uniforms now properly synced every frame
-          }
+          shader.uniforms.uDir0CastsShadows = enabledDirectionalLights.length > 0 && enabledDirectionalLights[0].castsShadows;
         }
       });
       
-      // CRITICAL FIX: Force occluder map rebuild when directional lights are enabled
-      // Directional lights need the occluder map to calculate shadows properly
-      if (enabledDirectionalLights.length > 0) {
-        occluderMapDirtyRef.current = true; // Force rebuild every frame when directional lights exist
+      // CRITICAL FIX: Force occluder map rebuild when directional lights change state
+      // This ensures shadows work immediately when directional lights are toggled
+      const currentDirLightState = enabledDirectionalLights.length > 0;
+      if (lastDirectionalLightStateRef.current !== currentDirLightState) {
+        occluderMapDirtyRef.current = true; // Force rebuild when state changes
+        lastDirectionalLightStateRef.current = currentDirLightState;
       }
       
       // Reset dirty flag
