@@ -195,8 +195,7 @@
       },
       "followMouse": true,
       "castsShadows": true,
-      "radius": 350,
-      "lightSize": 10
+      "radius": 350
     },
     {
       "id": "directional_light",
@@ -207,8 +206,7 @@
       "directionX": 0.6427876096865394,
       "directionY": -0.766044443118978,
       "directionZ": -1,
-      "castsShadows": true,
-      "lightSize": 5
+      "castsShadows": true
     },
     {
       "id": "spotlight_1",
@@ -227,8 +225,7 @@
       "castsShadows": true,
       "radius": 1090,
       "coneAngle": 58,
-      "softness": 0.2,
-      "lightSize": 8
+      "softness": 0.2
     },
     {
       "id": "spotlight",
@@ -247,8 +244,7 @@
       "castsShadows": true,
       "radius": 400,
       "coneAngle": 43,
-      "softness": 0.5,
-      "lightSize": 8
+      "softness": 0.5
     },
     {
       "id": "point_copy_1758529441818",
@@ -272,8 +268,7 @@
         },
         "rotation": 0,
         "scale": 1.4
-      },
-      "lightSize": 12
+      }
     },
     {
       "id": "point_1758536509084",
@@ -288,8 +283,7 @@
       },
       "followMouse": false,
       "castsShadows": true,
-      "radius": 900,
-      "lightSize": 10
+      "radius": 900
     }
   ],
   "performanceSettings": {
