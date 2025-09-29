@@ -1578,8 +1578,19 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
       });
       
-      // REMOVED: Duplicate directional light uniform setting that conflicts with Section 1
-      // Directional lights are already handled in lines 1068-1077 using "BYPASS ENABLED FLAG" approach
+      // Directional Lights (up to 2) - RUNTIME UPDATES - pass ALL lights with stable slot assignment
+      allDirectionalLights.slice(0, 2).forEach((light, slotIdx) => {
+        const prefix = `uDir${slotIdx}`;
+        
+        // Use enabled flag for existence, intensity for visibility (physics-correct approach)
+        uniforms[`${prefix}Enabled`] = light.enabled; // Controls whether light exists
+        uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Controls light strength
+        uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
+        uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
+        
+        // Shadow casting flag for directional lights
+        uniforms[`${prefix}CastsShadows`] = light.enabled && light.castsShadows;
+      });
       
       // Spotlights (up to 4) - pass ALL lights with stable slot assignment
       allSpotlights.slice(0, 4).forEach((light, slotIdx) => {
