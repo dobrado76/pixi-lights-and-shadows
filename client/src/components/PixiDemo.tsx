@@ -1070,8 +1070,8 @@ const PixiDemo = (props: PixiDemoProps) => {
             const prefix = `uDir${slotIdx}`;
 
             
-            // BYPASS ENABLED FLAG - always set enabled=true, use intensity=0 for disabled lights
-            uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - let intensity control visibility
+            // Use enabled flag for existence, intensity for visibility (consistent with runtime)
+            uniforms[`${prefix}Enabled`] = light.enabled; // Controls whether light exists - FIXED TO MATCH RUNTIME
             uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
             uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
             uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
