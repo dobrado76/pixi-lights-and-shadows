@@ -1494,10 +1494,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uDir0CastsShadows = false; uniforms.uDir1CastsShadows = false;
       uniforms.uSpot0CastsShadows = false; uniforms.uSpot1CastsShadows = false; uniforms.uSpot2CastsShadows = false; uniforms.uSpot3CastsShadows = false;
       
-      // Initialize all light sizes for PCSS
-      uniforms.uPoint0LightSize = 10; uniforms.uPoint1LightSize = 10; uniforms.uPoint2LightSize = 10; uniforms.uPoint3LightSize = 10;
-      uniforms.uDir0LightSize = 5; uniforms.uDir1LightSize = 5;
-      uniforms.uSpot0LightSize = 8; uniforms.uSpot1LightSize = 8; uniforms.uSpot2LightSize = 8; uniforms.uSpot3LightSize = 8;
+      // Initialize all light sizes for PCSS (will be overridden with actual values below)
 
       // Add shadow system uniforms - performance-filtered from scene configuration
       uniforms.uShadowsEnabled = shadowConfig.enabled && performanceSettings.enableShadows;
@@ -1584,6 +1581,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Shadow casting flag for point lights
         uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
+        
+        // ✅ CRITICAL FIX: Use actual lightSize from UI sliders, not hardcoded values!
+        uniforms[`${prefix}LightSize`] = light.lightSize || 10;
       });
       
       // Directional Lights (up to 2) - pass ALL lights with stable slot assignment
@@ -1599,6 +1599,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Shadow casting flag for directional lights
         uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
+        
+        // ✅ CRITICAL FIX: Use actual lightSize from UI sliders, not hardcoded values!
+        uniforms[`${prefix}LightSize`] = light.lightSize || 5;
       });
       
       // Spotlights (up to 4) - pass ALL lights with stable slot assignment
@@ -1635,6 +1638,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Shadow casting flag for spotlights
         uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
+        
+        // ✅ CRITICAL FIX: Use actual lightSize from UI sliders, not hardcoded values!
+        uniforms[`${prefix}LightSize`] = light.lightSize || 8;
       });
 
       // Add other dynamic uniforms

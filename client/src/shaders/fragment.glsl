@@ -207,8 +207,8 @@ float calculatePCSSShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightRa
   rayDir /= receiverDistance; // Normalize
   
   // Step 1: Blocker Search - Find average depth of occluders
-  float blockerSearchRadius = lightSize * 0.1; // Search radius proportional to light size
-  blockerSearchRadius = clamp(blockerSearchRadius, 2.0, 15.0);
+  float blockerSearchRadius = lightSize * 0.25; // Increased responsiveness to lightSize
+  blockerSearchRadius = clamp(blockerSearchRadius, 1.0, 25.0); // Wider range
   
   float avgBlockerDistance = 0.0;
   float numBlockers = 0.0;
@@ -257,9 +257,9 @@ float calculatePCSSShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightRa
   float penumbra = (receiverDistance - avgBlockerDistance) * lightSize / avgBlockerDistance;
   penumbra = max(penumbra, 0.0);
   
-  // Convert to filter radius - scale down for controllable softness
-  float filterRadius = penumbra * 0.08; // Much smaller scaling
-  filterRadius = clamp(filterRadius, 0.5, 8.0); // Smaller max radius
+  // Convert to filter radius - make more responsive to lightSize
+  float filterRadius = penumbra * 0.15 + (lightSize * 0.1); // Direct lightSize influence + penumbra
+  filterRadius = clamp(filterRadius, 0.5, 15.0); // Expanded range for better control
   
   // Step 3: PCF with variable filter size
   float shadow = 0.0;
