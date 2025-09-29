@@ -71,13 +71,13 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
     }
     
     // Always update React state, but delay for visual-heavy changes to prevent conflicts
-    if (updates.zOrder !== undefined || updates.useNormalMap !== undefined) {
-      // Delay React state update to let immediate visual change settle
+    if (updates.zOrder !== undefined) {
+      // Only delay React state update for zOrder changes
       setTimeout(() => {
         onSceneConfigChange(newConfig);
       }, 100); // Short delay to avoid overriding immediate changes
     } else {
-      // Immediate React state update for other changes
+      // Immediate React state update for other changes (including useNormalMap)
       onSceneConfigChange(newConfig);
     }
   };
