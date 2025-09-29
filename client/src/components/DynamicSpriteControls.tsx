@@ -20,6 +20,10 @@ interface SpriteConfig {
   castsShadows: boolean;
   visible: boolean;
   useNormalMap?: boolean;
+  metallic?: number;
+  smoothness?: number;
+  metallicMap?: string;
+  smoothnessMap?: string;
   pivot?: {
     preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
     offsetX?: number;
@@ -319,6 +323,41 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                               checked={sprite.useNormalMap ?? true}
                               onCheckedChange={(checked) => updateSpriteConfig(spriteId, { useNormalMap: checked })}
                               data-testid={`switch-use-normal-map-${spriteId}`}
+                            />
+                          </div>
+                        </div>
+
+                        {/* PBR Material Properties */}
+                        <div className="space-y-2 pt-2 border-t border-border/50">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-xs text-card-foreground">Metallic</Label>
+                              <span className="text-xs text-muted-foreground">{((sprite.metallic ?? 0.0) * 100).toFixed(0)}%</span>
+                            </div>
+                            <Slider
+                              value={[sprite.metallic ?? 0.0]}
+                              onValueChange={([value]) => updateSpriteConfig(spriteId, { metallic: value })}
+                              min={0.0}
+                              max={1.0}
+                              step={0.01}
+                              className="w-full"
+                              data-testid={`slider-metallic-${spriteId}`}
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-xs text-card-foreground">Smoothness</Label>
+                              <span className="text-xs text-muted-foreground">{((sprite.smoothness ?? 0.5) * 100).toFixed(0)}%</span>
+                            </div>
+                            <Slider
+                              value={[sprite.smoothness ?? 0.5]}
+                              onValueChange={([value]) => updateSpriteConfig(spriteId, { smoothness: value })}
+                              min={0.0}
+                              max={1.0}
+                              step={0.01}
+                              className="w-full"
+                              data-testid={`slider-smoothness-${spriteId}`}
                             />
                           </div>
                         </div>
