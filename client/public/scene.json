@@ -1,326 +1,224 @@
 {
-  "scene": {
-    "background": {
-      "image": "/textures/BGTextureTest.jpg",
-      "normal": "/textures/BGTextureNORM.jpg",
-      "position": {
-        "x": 0,
-        "y": 0
-      },
-      "rotation": 0,
-      "scale": 1,
-      "zOrder": -1,
-      "castsShadows": false,
-      "visible": false,
+  "materials": [
+    {
+      "name": "ballMaterial",
+      "image": "/textures/ball.png",
+      "normal": "/textures/ballN.png",
       "useNormalMap": true,
-      "pivot": {
-        "preset": "top-left",
-        "offsetX": 0,
-        "offsetY": 0
-      },
-      "receivesAO": false
+      "metallic": 0.15,
+      "smoothness": 0.2
     },
-    "background2": {
+    {
+      "name": "fabricBackground",
       "image": "/textures/white-fabric-texture-background.jpg",
       "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
-      "position": {
-        "x": 0,
-        "y": 0
-      },
-      "rotation": 0,
-      "scale": 1,
-      "zOrder": -1,
-      "castsShadows": false,
-      "visible": true,
       "useNormalMap": false,
-      "metallic": 0,
-      "smoothness": 0.3,
-      "pivot": {
-        "preset": "top-left",
-        "offsetX": 0,
-        "offsetY": 0
+      "metallic": 0.0,
+      "smoothness": 0.3
+    },
+    {
+      "name": "test1Material",
+      "image": "/textures/test1.png",
+      "normal": "/textures/test1Normal.png",
+      "useNormalMap": true,
+      "metallic": 0.0,
+      "smoothness": 0.5
+    },
+    {
+      "name": "test2Material",
+      "image": "/textures/test2.png",
+      "normal": "/textures/test2Normal.png",
+      "useNormalMap": true,
+      "metallic": 0.4,
+      "smoothness": 0.33
+    }
+  ],
+  "scene": {
+    "background": {
+      "material": {
+        "image": "/textures/BGTextureTest.jpg",
+        "normal": "/textures/BGTextureNORM.jpg",
+        "useNormalMap": true,
+        "metallic": 0.0,
+        "smoothness": 0.5
+      },
+      "transform": {
+        "position": { "x": 0, "y": 0 },
+        "rotation": 0,
+        "scale": 1
+      },
+      "sprite": {
+        "pivot": {
+          "preset": "top-left",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": -1,
+        "castsShadows": false,
+        "visible": false
+      }
+    },
+    "background2": {
+      "material": "fabricBackground",
+      "transform": {
+        "position": { "x": 0, "y": 0 },
+        "rotation": 0,
+        "scale": 1
+      },
+      "sprite": {
+        "pivot": {
+          "preset": "top-left",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": -1,
+        "castsShadows": false,
+        "visible": true
       }
     },
     "ball": {
-      "image": "/textures/ball.png",
-      "normal": "/textures/ballN.png",
-      "position": {
-        "x": 138,
-        "y": 86
+      "material": "ballMaterial",
+      "transform": {
+        "position": { "x": 138, "y": 86 },
+        "rotation": 0,
+        "scale": 1
       },
-      "rotation": 0,
-      "scale": 1,
-      "zOrder": 0,
-      "castsShadows": true,
-      "visible": true,
-      "useNormalMap": true,
-      "metallic": 0.13,
-      "smoothness": 0.17,
-      "pivot": {
-        "preset": "middle-center",
-        "offsetX": 0,
-        "offsetY": 0
+      "sprite": {
+        "pivot": {
+          "preset": "middle-center",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": 0,
+        "castsShadows": true,
+        "visible": true
       }
     },
     "ball2": {
-      "image": "/textures/ball.png",
-      "normal": "/textures/ballN.png",
-      "position": {
-        "x": 87,
-        "y": 309
+      "material": "ballMaterial",
+      "transform": {
+        "position": { "x": 87, "y": 309 },
+        "rotation": 0,
+        "scale": 1
       },
-      "rotation": 0,
-      "scale": 1,
-      "zOrder": 0,
-      "castsShadows": true,
-      "visible": true,
-      "useNormalMap": true,
-      "metallic": 0.09,
-      "smoothness": 0.15,
-      "pivot": {
-        "preset": "custom-offset",
-        "offsetX": 0,
-        "offsetY": 0
+      "sprite": {
+        "pivot": {
+          "preset": "custom-offset",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": 0,
+        "castsShadows": true,
+        "visible": true
       }
     },
     "test1": {
-      "image": "/textures/test1.png",
-      "normal": "/textures/test1Normal.png",
-      "position": {
-        "x": 82,
-        "y": 420
+      "material": "test1Material",
+      "transform": {
+        "position": { "x": 82, "y": 420 },
+        "rotation": 0,
+        "scale": 1
       },
-      "rotation": 0,
-      "scale": 1,
-      "zOrder": 2,
-      "castsShadows": true,
-      "visible": false,
-      "useNormalMap": true,
-      "pivot": {
-        "preset": "middle-center",
-        "offsetX": 0,
-        "offsetY": 0
+      "sprite": {
+        "pivot": {
+          "preset": "middle-center",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": 2,
+        "castsShadows": true,
+        "visible": false
       }
     },
     "test2": {
-      "image": "/textures/test2.png",
-      "normal": "/textures/test2Normal.png",
-      "position": {
-        "x": 98,
-        "y": 444
+      "material": "test2Material",
+      "transform": {
+        "position": { "x": 98, "y": 444 },
+        "rotation": 0,
+        "scale": 1
       },
-      "rotation": 0,
-      "scale": 1,
-      "zOrder": 2,
-      "castsShadows": true,
-      "visible": true,
-      "useNormalMap": true,
-      "metallic": 0.4,
-      "smoothness": 0.33,
-      "pivot": {
-        "preset": "top-left",
-        "offsetX": 0,
-        "offsetY": 0
+      "sprite": {
+        "pivot": {
+          "preset": "top-left",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": 2,
+        "castsShadows": true,
+        "visible": true
       }
     },
     "test3": {
-      "image": "/textures/test3.png",
-      "normal": "/textures/test3Normal.png",
-      "position": {
-        "x": 144,
-        "y": 318
+      "material": {
+        "image": "/textures/test3.png",
+        "normal": "/textures/test3Normal.png",
+        "useNormalMap": true,
+        "metallic": 0.0,
+        "smoothness": 0.5
       },
-      "rotation": 0,
-      "scale": 1,
-      "zOrder": 2,
-      "castsShadows": true,
-      "receiveShadows": false,
-      "visible": false,
-      "useNormalMap": true,
-      "pivot": {
-        "preset": "top-left",
-        "offsetX": 0,
-        "offsetY": 0
+      "transform": {
+        "position": { "x": 293, "y": 424 },
+        "rotation": 0,
+        "scale": 1
+      },
+      "sprite": {
+        "pivot": {
+          "preset": "middle-center",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": 2,
+        "castsShadows": true,
+        "visible": true
       }
     },
     "block": {
-      "image": "/textures/block.png",
-      "normal": "/textures/blockNormalMap.jpg",
-      "position": {
-        "x": 254,
-        "y": 95
+      "material": {
+        "image": "/textures/blocks.png",
+        "normal": "/textures/blocksNormal.png",
+        "useNormalMap": true,
+        "metallic": 0.0,
+        "smoothness": 0.5
       },
-      "rotation": 0,
-      "scale": 1,
-      "zOrder": 0,
-      "castsShadows": true,
-      "visible": true,
-      "useNormalMap": true,
-      "metallic": 0.38,
-      "smoothness": 0.5,
-      "pivot": {
-        "preset": "top-left",
-        "offsetX": 0,
-        "offsetY": 0
+      "transform": {
+        "position": { "x": 178, "y": 368 },
+        "rotation": 0,
+        "scale": 1
+      },
+      "sprite": {
+        "pivot": {
+          "preset": "middle-center",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": 1,
+        "castsShadows": true,
+        "visible": true
       }
     },
     "block2": {
-      "image": "/textures/block2.png",
-      "normal": "/textures/block2NormalMap.png",
-      "position": {
-        "x": 280,
-        "y": 382
+      "material": {
+        "image": "/textures/blocks.png",
+        "normal": "/textures/blocksNormal.png",
+        "useNormalMap": true,
+        "metallic": 0.0,
+        "smoothness": 0.5
       },
-      "rotation": 0.4886921905584123,
-      "scale": 1.1,
-      "zOrder": 1,
-      "castsShadows": true,
-      "visible": true,
-      "useNormalMap": true,
-      "metallic": 0.19,
-      "smoothness": 0.62,
-      "pivot": {
-        "preset": "middle-center",
-        "offsetX": 0,
-        "offsetY": 0
-      }
-    }
-  },
-  "lights": [
-    {
-      "id": "ambient_light",
-      "type": "ambient",
-      "enabled": true,
-      "brightness": 0.3,
-      "color": "0x787878"
-    },
-    {
-      "id": "mouse_light",
-      "type": "point",
-      "enabled": true,
-      "brightness": 0.7,
-      "color": "0xffffff",
-      "position": {
-        "x": 250,
-        "y": 170,
-        "z": 70
-      },
-      "followMouse": true,
-      "castsShadows": true,
-      "radius": 270
-    },
-    {
-      "id": "directional_light",
-      "type": "directional",
-      "brightness": 0.3,
-      "color": "0xffffff",
-      "directionX": 0.3420201433256688,
-      "directionY": -0.9396926207859083,
-      "directionZ": -1,
-      "castsShadows": true
-    },
-    {
-      "id": "spotlight_1",
-      "type": "spotlight",
-      "enabled": true,
-      "brightness": 0.9,
-      "color": "0xf4f080",
-      "position": {
-        "x": 180,
-        "y": 210,
-        "z": 80
-      },
-      "directionX": 0,
-      "directionY": 1,
-      "directionZ": -1,
-      "castsShadows": true,
-      "radius": 480,
-      "coneAngle": 58,
-      "softness": 0.2
-    },
-    {
-      "id": "spotlight",
-      "type": "spotlight",
-      "enabled": false,
-      "brightness": 0.5,
-      "color": "0xffffff",
-      "position": {
-        "x": 300,
-        "y": 250,
-        "z": 50
-      },
-      "directionX": 0,
-      "directionY": 1,
-      "directionZ": -0.5,
-      "castsShadows": true,
-      "radius": 400,
-      "coneAngle": 43,
-      "softness": 0.5
-    },
-    {
-      "id": "point_copy_1758529441818",
-      "type": "point",
-      "enabled": false,
-      "brightness": 0.6,
-      "color": "0xffffff",
-      "position": {
-        "x": 140,
-        "y": 240,
-        "z": 90
-      },
-      "followMouse": false,
-      "castsShadows": true,
-      "radius": 400,
-      "mask": {
-        "image": "god-rays.png",
-        "offset": {
-          "x": 15,
-          "y": 25
-        },
+      "transform": {
+        "position": { "x": 235, "y": 368 },
         "rotation": 0,
-        "scale": 1.4
-      }
-    },
-    {
-      "id": "point_1758536509084",
-      "type": "point",
-      "enabled": true,
-      "brightness": 1,
-      "color": "0xe12323",
-      "position": {
-        "x": 210,
-        "y": 130,
-        "z": 50
+        "scale": 1
       },
-      "followMouse": false,
-      "castsShadows": true,
-      "radius": 700
+      "sprite": {
+        "pivot": {
+          "preset": "middle-center",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": 1,
+        "castsShadows": true,
+        "visible": true
+      }
     }
-  ],
-  "performanceSettings": {
-    "quality": "high",
-    "resolution": 1,
-    "maxLights": 999,
-    "enableShadows": true,
-    "enableAmbientOcclusion": true,
-    "enableNormalMapping": true,
-    "enableLightMasks": true,
-    "textureScale": 1,
-    "fpsTarget": 60,
-    "capFpsTo60": true,
-    "manualOverride": true
-  },
-  "shadowConfig": {
-    "enabled": true,
-    "strength": 0.6,
-    "maxLength": 130,
-    "height": 10
-  },
-  "ambientOcclusionConfig": {
-    "enabled": true,
-    "strength": 4.2,
-    "radius": 5,
-    "samples": 8,
-    "bias": 20
   }
 }

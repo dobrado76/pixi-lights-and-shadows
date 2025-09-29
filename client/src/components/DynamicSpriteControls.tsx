@@ -9,7 +9,54 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 
-interface SpriteConfig {
+// ECS Component Interfaces
+interface MaterialComponent {
+  image: string;
+  normal?: string;
+  useNormalMap?: boolean;
+  metallic?: number;
+  smoothness?: number;
+  metallicMap?: string;
+  smoothnessMap?: string;
+}
+
+interface TransformComponent {
+  position: { x: number; y: number };
+  rotation?: number;
+  scale?: number;
+}
+
+interface SpriteComponent {
+  pivot?: {
+    preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'custom-offset';
+    offsetX?: number;
+    offsetY?: number;
+  };
+  zOrder: number;
+  castsShadows: boolean;
+  visible: boolean;
+}
+
+// ECS Entity Structure
+interface SpriteEntity {
+  id: string;
+  material: MaterialComponent | string; // Can be inline component or material name reference
+  transform: TransformComponent;
+  sprite: SpriteComponent;
+}
+
+// Material Definition for reuse
+interface MaterialDefinition extends MaterialComponent {
+  name: string;
+}
+
+interface SceneConfig {
+  materials?: MaterialDefinition[]; // Array of reusable materials
+  scene: Record<string, SpriteEntity>;
+}
+
+// Legacy support - convert to ECS structure when needed
+interface LegacySpriteConfig {
   id: string;
   image: string;
   normal?: string;
@@ -25,20 +72,78 @@ interface SpriteConfig {
   metallicMap?: string;
   smoothnessMap?: string;
   pivot?: {
-    preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+    preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'custom-offset';
     offsetX?: number;
     offsetY?: number;
   };
-}
-
-interface SceneConfig {
-  scene: Record<string, SpriteConfig>;
 }
 
 interface DynamicSpriteControlsProps {
   sceneConfig: SceneConfig;
   onSceneConfigChange: (newConfig: SceneConfig) => void;
   onImmediateSpriteChange?: (spriteId: string, updates: any) => void;
+}
+
+// Helper functions for ECS material system
+function resolveMaterial(materialRef: MaterialComponent | string, materials?: MaterialDefinition[]): MaterialComponent {
+  if (typeof materialRef === 'string') {
+    // It's a material name reference
+    const material = materials?.find(m => m.name === materialRef);
+    if (!material) {
+      console.warn(`Material '${materialRef}' not found, using default`);
+      return { image: '/textures/default.png' };
+    }
+    return material;
+  }
+  // It's an inline material component
+  return materialRef;
+}
+
+function convertLegacyToECS(legacy: LegacySpriteConfig): SpriteEntity {
+  return {
+    id: legacy.id,
+    material: {
+      image: legacy.image,
+      normal: legacy.normal,
+      useNormalMap: legacy.useNormalMap,
+      metallic: legacy.metallic,
+      smoothness: legacy.smoothness,
+      metallicMap: legacy.metallicMap,
+      smoothnessMap: legacy.smoothnessMap,
+    },
+    transform: {
+      position: legacy.position,
+      rotation: legacy.rotation,
+      scale: legacy.scale,
+    },
+    sprite: {
+      pivot: legacy.pivot,
+      zOrder: legacy.zOrder,
+      castsShadows: legacy.castsShadows,
+      visible: legacy.visible,
+    }
+  };
+}
+
+function convertECSToLegacy(entity: SpriteEntity, materials?: MaterialDefinition[]): LegacySpriteConfig {
+  const material = resolveMaterial(entity.material, materials);
+  return {
+    id: entity.id,
+    image: material.image,
+    normal: material.normal,
+    useNormalMap: material.useNormalMap,
+    metallic: material.metallic,
+    smoothness: material.smoothness,
+    metallicMap: material.metallicMap,
+    smoothnessMap: material.smoothnessMap,
+    position: entity.transform.position,
+    rotation: entity.transform.rotation,
+    scale: entity.transform.scale,
+    pivot: entity.sprite.pivot,
+    zOrder: entity.sprite.zOrder,
+    castsShadows: entity.sprite.castsShadows,
+    visible: entity.sprite.visible,
+  };
 }
 
 export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImmediateSpriteChange }: DynamicSpriteControlsProps) {
@@ -54,16 +159,49 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
     setExpandedSprites(newExpanded);
   };
 
-  const updateSpriteConfig = (spriteId: string, updates: Partial<SpriteConfig>) => {
+  const updateSpriteConfig = (spriteId: string, updates: any) => {
     const currentSprite = sceneConfig.scene[spriteId];
+    
+    // Handle component-based updates
+    const newSprite = { ...currentSprite };
+    
+    // Update material component properties
+    if ('metallic' in updates || 'smoothness' in updates || 'useNormalMap' in updates) {
+      const currentMaterial = resolveMaterial(currentSprite.material, sceneConfig.materials);
+      newSprite.material = {
+        ...currentMaterial,
+        ...(updates.metallic !== undefined && { metallic: updates.metallic }),
+        ...(updates.smoothness !== undefined && { smoothness: updates.smoothness }),
+        ...(updates.useNormalMap !== undefined && { useNormalMap: updates.useNormalMap }),
+      };
+    }
+    
+    // Update transform component properties
+    if ('position' in updates || 'rotation' in updates || 'scale' in updates) {
+      newSprite.transform = {
+        ...currentSprite.transform,
+        ...(updates.position && { position: updates.position }),
+        ...(updates.rotation !== undefined && { rotation: updates.rotation }),
+        ...(updates.scale !== undefined && { scale: updates.scale }),
+      };
+    }
+    
+    // Update sprite component properties
+    if ('zOrder' in updates || 'castsShadows' in updates || 'visible' in updates || 'pivot' in updates) {
+      newSprite.sprite = {
+        ...currentSprite.sprite,
+        ...(updates.zOrder !== undefined && { zOrder: updates.zOrder }),
+        ...(updates.castsShadows !== undefined && { castsShadows: updates.castsShadows }),
+        ...(updates.visible !== undefined && { visible: updates.visible }),
+        ...(updates.pivot && { pivot: updates.pivot }),
+      };
+    }
+    
     const newConfig = {
       ...sceneConfig,
       scene: {
         ...sceneConfig.scene,
-        [spriteId]: {
-          ...currentSprite,
-          ...updates
-        }
+        [spriteId]: newSprite
       }
     };
     
@@ -97,8 +235,9 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 max-h-[600px] overflow-y-auto">
-        {sprites.map(([spriteId, sprite]) => {
+        {sprites.map(([spriteId, entity]) => {
           const isExpanded = expandedSprites.has(spriteId);
+          const material = resolveMaterial(entity.material, sceneConfig.materials);
           
           return (
             <Collapsible key={spriteId} open={isExpanded} onOpenChange={() => toggleExpanded(spriteId)}>
@@ -107,7 +246,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                   <CardHeader className="py-1 cursor-pointer hover:bg-accent/50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        {sprite.visible ? (
+                        {entity.sprite.visible ? (
                           <Eye className="h-4 w-4 text-green-500" />
                         ) : (
                           <EyeOff className="h-4 w-4 text-red-500" />
@@ -118,7 +257,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                       </div>
                       <div className="flex items-center gap-2">
                         <Switch
-                          checked={sprite.visible}
+                          checked={entity.sprite.visible}
                           onCheckedChange={(checked) => updateSpriteConfig(spriteId, { visible: checked })}
                           onClick={(e) => e.stopPropagation()}
                           data-testid={`switch-visible-${spriteId}`}
@@ -135,7 +274,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                 
                 <CollapsibleContent>
                   <CardContent className="pt-0 space-y-2">
-                    {sprite.visible && (
+                    {entity.sprite.visible && (
                       <>
                         {/* Position Controls */}
                         <div className="space-y-2">
@@ -144,12 +283,12 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                             <div className="space-y-1">
                               <div className="flex items-center justify-between">
                                 <Label className="text-xs text-muted-foreground">X</Label>
-                                <span className="text-xs text-muted-foreground">{Math.round(sprite.position.x)}</span>
+                                <span className="text-xs text-muted-foreground">{Math.round(entity.transform.position.x)}</span>
                               </div>
                               <Slider
-                                value={[sprite.position.x]}
+                                value={[entity.transform.position.x]}
                                 onValueChange={([value]) => updateSpriteConfig(spriteId, {
-                                  position: { ...sprite.position, x: value }
+                                  position: { ...entity.transform.position, x: value }
                                 })}
                                 min={-200}
                                 max={800}
@@ -161,12 +300,12 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                             <div className="space-y-1">
                               <div className="flex items-center justify-between">
                                 <Label className="text-xs text-muted-foreground">Y</Label>
-                                <span className="text-xs text-muted-foreground">{Math.round(sprite.position.y)}</span>
+                                <span className="text-xs text-muted-foreground">{Math.round(entity.transform.position.y)}</span>
                               </div>
                               <Slider
-                                value={[sprite.position.y]}
+                                value={[entity.transform.position.y]}
                                 onValueChange={([value]) => updateSpriteConfig(spriteId, {
-                                  position: { ...sprite.position, y: value }
+                                  position: { ...entity.transform.position, y: value }
                                 })}
                                 min={-200}
                                 max={600}
