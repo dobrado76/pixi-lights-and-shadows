@@ -687,6 +687,25 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                         Z: {light.position.z}
                       </span>
                     </div>
+                    {/* Row 5: Light Size (Soft Shadows) - Only show if shadows are enabled */}
+                    {light.castsShadows !== false && (
+                      <div className="flex items-center space-x-1">
+                        <label className="text-xs text-muted-foreground min-w-[60px]">
+                          Light Size: {(light.lightSize || 10).toFixed(0)}
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="50"
+                          step="1"
+                          value={light.lightSize || 10}
+                          onChange={(e) => updateLight(light.id, { lightSize: parseFloat(e.target.value) })}
+                          className="flex-1"
+                          data-testid={`slider-${light.id}-light-size`}
+                        />
+                        <span className="text-xs text-muted-foreground">PCSS</span>
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -729,6 +748,25 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                       />
                       <label className="text-xs text-muted-foreground">Cast Shadows</label>
                     </div>
+                    {/* Light Size (Soft Shadows) - Only show if shadows are enabled */}
+                    {light.castsShadows !== false && (
+                      <div className="flex items-center space-x-1">
+                        <label className="text-xs text-muted-foreground min-w-[60px]">
+                          Light Size: {(light.lightSize || 5).toFixed(0)}
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="50"
+                          step="1"
+                          value={light.lightSize || 5}
+                          onChange={(e) => updateLight(light.id, { lightSize: parseFloat(e.target.value) })}
+                          className="flex-1"
+                          data-testid={`slider-${light.id}-light-size`}
+                        />
+                        <span className="text-xs text-muted-foreground">PCSS</span>
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -851,6 +889,25 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                         Z: {light.position.z}
                       </span>
                     </div>
+                    {/* Light Size (Soft Shadows) - Only show if shadows are enabled */}
+                    {light.castsShadows !== false && (
+                      <div className="flex items-center space-x-1">
+                        <label className="text-xs text-muted-foreground min-w-[60px]">
+                          Light Size: {(light.lightSize || 8).toFixed(0)}
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="50"
+                          step="1"
+                          value={light.lightSize || 8}
+                          onChange={(e) => updateLight(light.id, { lightSize: parseFloat(e.target.value) })}
+                          className="flex-1"
+                          data-testid={`slider-${light.id}-light-size`}
+                        />
+                        <span className="text-xs text-muted-foreground">PCSS</span>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
