@@ -570,13 +570,9 @@ void main(void) {
   // Sample all material textures with standard UV coordinates
   vec4 diffuseColor = texture2D(uDiffuse, uv);
   
-  // Sample PBR material properties
-  float metallicSample = texture2D(uMetallic, uv).r;
-  float smoothnessSample = texture2D(uSmoothness, uv).r;
-  
-  // Combine texture and scalar values for final material properties
-  float finalMetallic = metallicSample * uMetallicValue;
-  float finalSmoothness = smoothnessSample * uSmoothnessValue;
+  // Use scalar PBR material properties (texture support can be added later)
+  float finalMetallic = uMetallicValue;
+  float finalSmoothness = uSmoothnessValue;
   
   // Use normal map if enabled, otherwise use flat normal (0, 0, 1)
   vec3 normal;
@@ -598,8 +594,9 @@ void main(void) {
     normal = vec3(0.0, 0.0, 1.0); // Flat normal pointing outward
   }
   
-  // Calculate view direction for PBR (camera at origin looking down -Z)
-  vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
+  // Calculate view direction for PBR (from surface to camera)
+  // In 2.5D, camera is at infinite distance in +Z direction
+  vec3 viewDir = vec3(0.0, 0.0, 1.0); // Already normalized
   
   // Use actual world position from vertex shader (includes container transforms)
   vec2 worldPos = vWorldPos;
@@ -692,9 +689,10 @@ void main(void) {
     // Removed Y-flip branch that was causing triangular light shapes
     float attenuation = 1.0 - clamp(lightDistance / uPoint1Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
-    float normalDot = max(dot(normal, lightDir), 0.0);
     
-    float intensity = normalDot * uPoint1Intensity * attenuation;
+    // Use PBR lighting calculation for final color
+    vec3 pbrContribution = calculatePBR(diffuseColor.rgb, normal, lightDir, uPoint1Color, 
+                                       uPoint1Intensity * attenuation, finalMetallic, finalSmoothness, viewDir);
     
     // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
@@ -702,16 +700,20 @@ void main(void) {
       shadowFactor = calculateShadowUnified(uPoint1Position.xy, worldPos.xy);
     }
     
+    // Calculate traditional intensity for mask compatibility
+    float normalDot = max(dot(normal, lightDir), 0.0);
+    float intensity = normalDot * uPoint1Intensity * attenuation;
+    
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uMasksEnabled && uPoint1HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uPoint1Mask, worldPos.xy, uPoint1Position.xy, uPoint1MaskOffset, uPoint1MaskRotation, uPoint1MaskScale, uPoint1MaskSize);
-      intensity *= maskValue; // Apply mask only where there's no shadow
+      pbrContribution *= maskValue; // Apply mask to PBR
     }
     
     // Apply THIS light's shadow
-    intensity *= shadowFactor;
+    pbrContribution *= shadowFactor;
     
-    finalColor += diffuseColor.rgb * uPoint1Color * intensity;
+    finalColor += pbrContribution;
   }
   
   // Point Light 2
