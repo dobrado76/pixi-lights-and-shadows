@@ -3,7 +3,11 @@ varying vec2 vTextureCoord;
 varying vec2 vWorldPos; // Actual world position from vertex shader
 uniform sampler2D uDiffuse;
 uniform sampler2D uNormal;
-uniform bool uUseNormalMap; // Flag to control whether to use normal map or default flat normals
+uniform sampler2D uMetallic;      // Metallic texture map (R channel = metallic)
+uniform sampler2D uSmoothness;    // Smoothness texture map (R channel = smoothness)
+uniform bool uUseNormalMap;       // Flag to control whether to use normal map or default flat normals
+uniform float uMetallicValue;     // Scalar metallic value (0.0-1.0)
+uniform float uSmoothnessValue;   // Scalar smoothness value (0.0-1.0)
 uniform vec2 uSpritePos;
 uniform vec2 uSpriteSize;
 // Self-shadow avoidance for occluder map
@@ -482,12 +486,97 @@ vec2 rotateUV(vec2 uv, float rotation) {
   return rotated + pivotUV;
 }
 
+// ======= PBR (Physically Based Rendering) Functions =======
+
+// Fresnel-Schlick approximation for metallic surfaces
+vec3 fresnelSchlick(float cosTheta, vec3 F0) {
+  return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+// Distribution term (Trowbridge-Reitz GGX)
+float distributionGGX(vec3 N, vec3 H, float roughness) {
+  float a = roughness * roughness;
+  float a2 = a * a;
+  float NdotH = max(dot(N, H), 0.0);
+  float NdotH2 = NdotH * NdotH;
+  
+  float num = a2;
+  float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+  denom = 3.14159265 * denom * denom;
+  
+  return num / denom;
+}
+
+// Geometry function (Smith's method)
+float geometrySchlickGGX(float NdotV, float roughness) {
+  float r = (roughness + 1.0);
+  float k = (r * r) / 8.0;
+  
+  float num = NdotV;
+  float denom = NdotV * (1.0 - k) + k;
+  
+  return num / denom;
+}
+
+float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
+  float NdotV = max(dot(N, V), 0.0);
+  float NdotL = max(dot(N, L), 0.0);
+  float ggx2 = geometrySchlickGGX(NdotV, roughness);
+  float ggx1 = geometrySchlickGGX(NdotL, roughness);
+  
+  return ggx1 * ggx2;
+}
+
+// PBR lighting calculation for a single light
+vec3 calculatePBR(vec3 albedo, vec3 normal, vec3 lightDir, vec3 lightColor, float lightIntensity, 
+                  float metallic, float smoothness, vec3 viewDir) {
+  // Convert smoothness to roughness
+  float roughness = 1.0 - smoothness;
+  roughness = max(roughness, 0.04); // Prevent division by zero
+  
+  // Metallic workflow - interpolate between dielectric (0.04) and albedo F0
+  vec3 F0 = mix(vec3(0.04), albedo, metallic);
+  
+  // Calculate halfway vector
+  vec3 H = normalize(viewDir + lightDir);
+  
+  // Calculate PBR terms
+  float NDF = distributionGGX(normal, H, roughness);
+  float G = geometrySmith(normal, viewDir, lightDir, roughness);
+  vec3 F = fresnelSchlick(max(dot(H, viewDir), 0.0), F0);
+  
+  // BRDF specular term
+  vec3 numerator = NDF * G * F;
+  float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * max(dot(normal, lightDir), 0.0);
+  vec3 specular = numerator / max(denominator, 0.001);
+  
+  // Energy conservation - diffuse and specular can't exceed 1.0
+  vec3 kS = F; // Fresnel represents the specular contribution
+  vec3 kD = vec3(1.0) - kS; // Remaining energy goes to diffuse
+  kD *= 1.0 - metallic; // Metals have no diffuse
+  
+  // Lambert diffuse
+  vec3 diffuse = kD * albedo / 3.14159265;
+  
+  // Combine diffuse and specular
+  float NdotL = max(dot(normal, lightDir), 0.0);
+  return (diffuse + specular) * lightColor * lightIntensity * NdotL;
+}
+
 void main(void) {
   // Use UV coordinates directly since geometry is already rotated
   vec2 uv = vTextureCoord;
   
-  // Sample textures with standard UV coordinates
+  // Sample all material textures with standard UV coordinates
   vec4 diffuseColor = texture2D(uDiffuse, uv);
+  
+  // Sample PBR material properties
+  float metallicSample = texture2D(uMetallic, uv).r;
+  float smoothnessSample = texture2D(uSmoothness, uv).r;
+  
+  // Combine texture and scalar values for final material properties
+  float finalMetallic = metallicSample * uMetallicValue;
+  float finalSmoothness = smoothnessSample * uSmoothnessValue;
   
   // Use normal map if enabled, otherwise use flat normal (0, 0, 1)
   vec3 normal;
@@ -508,6 +597,9 @@ void main(void) {
   } else {
     normal = vec3(0.0, 0.0, 1.0); // Flat normal pointing outward
   }
+  
+  // Calculate view direction for PBR (camera at origin looking down -Z)
+  vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
   
   // Use actual world position from vertex shader (includes container transforms)
   vec2 worldPos = vWorldPos;
@@ -561,9 +653,9 @@ void main(void) {
       safeNormal = vec3(0.0, 0.0, 1.0); // Flat surface normal
     }
     
-    float normalDot = max(dot(safeNormal, lightDir), 0.0);
-    
-    float intensity = normalDot * uPoint0Intensity * attenuation;
+    // Use PBR lighting calculation instead of simple Lambert
+    vec3 pbrContribution = calculatePBR(diffuseColor.rgb, safeNormal, lightDir, uPoint0Color, 
+                                       uPoint0Intensity * attenuation, finalMetallic, finalSmoothness, viewDir);
     
     // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
@@ -574,13 +666,13 @@ void main(void) {
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uMasksEnabled && uPoint0HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uPoint0Mask, worldPos.xy, uPoint0Position.xy, uPoint0MaskOffset, uPoint0MaskRotation, uPoint0MaskScale, uPoint0MaskSize);
-      intensity *= maskValue; // Apply mask only where there's no shadow
+      pbrContribution *= maskValue; // Apply mask only where there's no shadow
     }
     
-    // Apply THIS light's shadow
-    intensity *= shadowFactor;
+    // Apply shadow to PBR contribution
+    pbrContribution *= shadowFactor;
     
-    finalColor += diffuseColor.rgb * uPoint0Color * intensity;
+    finalColor += pbrContribution;
   }
   
   // Point Light 1
