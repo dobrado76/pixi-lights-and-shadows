@@ -200,7 +200,7 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "brightness": 0.2,
+      "brightness": 0.3,
       "color": "0xffffff",
       "directionX": 0.3420201433256688,
       "directionY": -0.9396926207859083,
