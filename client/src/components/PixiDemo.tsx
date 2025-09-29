@@ -765,6 +765,10 @@ const PixiDemo = (props: PixiDemoProps) => {
           // Note: Settings changes will be communicated via onPerformanceUpdate callback
         });
         
+        // UNCAP FPS: Remove browser refresh rate limitation to see true performance
+        app.ticker.maxFPS = 0; // 0 = uncapped
+        app.ticker.minFPS = 0; // Allow unlimited FPS
+        
         // Store canvas reference for later activation when scene loads
         (app as any).__canvas = canvas;
         console.log('PIXI App initialized successfully');
@@ -1753,6 +1757,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       if (adaptiveQualityRef.current) {
         const perfData = adaptiveQualityRef.current.update();
         setFpsData({ current: perfData.fps, average: perfData.avgFps });
+        
+        // Log high FPS to show performance improvements
+        if (frameCountRef.current % 300 === 0 && perfData.fps > 60) { // Every ~5 seconds at 60fps
+          console.log(`🚀 High Performance: ${perfData.fps}fps current, ${perfData.avgFps}fps average (UNCAPPED)`);
+        }
         
         if (perfData.adjusted) {
           console.log(`📊 Performance adjusted: ${perfData.fps}fps avg, new quality: ${adaptiveQualityRef.current.getSettings().quality}`);
