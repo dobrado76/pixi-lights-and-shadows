@@ -939,6 +939,28 @@ const PixiDemo = (props: PixiDemoProps) => {
                 console.log(`⚡ Immediate normal map: ${spriteId} → ${updates.useNormalMap}`);
               }
               
+              // Handle metallic changes - Update shader uniform immediately  
+              if (updates.metallic !== undefined) {
+                sprite.definition.metallic = updates.metallic;
+                if (sprite.shader) {
+                  sprite.shader.uniforms.uMetallicValue = updates.metallic;
+                  (sprite.shader as any).userData = (sprite.shader as any).userData || {};
+                  (sprite.shader as any).userData.__immediateMetallic = updates.metallic; // Mark as immediate
+                }
+                console.log(`⚡ Immediate metallic: ${spriteId} → ${updates.metallic}`);
+              }
+              
+              // Handle smoothness changes - Update shader uniform immediately
+              if (updates.smoothness !== undefined) {
+                sprite.definition.smoothness = updates.smoothness;
+                if (sprite.shader) {
+                  sprite.shader.uniforms.uSmoothnessValue = updates.smoothness;
+                  (sprite.shader as any).userData = (sprite.shader as any).userData || {};
+                  (sprite.shader as any).userData.__immediateSmoothness = updates.smoothness; // Mark as immediate
+                }
+                console.log(`⚡ Immediate smoothness: ${spriteId} → ${updates.smoothness}`);
+              }
+              
               // Handle position changes
               if (updates.position) {
                 sprite.updateTransform({
@@ -1739,9 +1761,21 @@ const PixiDemo = (props: PixiDemoProps) => {
             mesh.shader.uniforms.uUseNormalMap = spriteData.useNormalMap && performanceSettings.enableNormalMapping;
           }
           
-          // Set PBR material properties
-          mesh.shader.uniforms.uMetallicValue = spriteData.metallic || 0.0;
-          mesh.shader.uniforms.uSmoothnessValue = spriteData.smoothness || 0.5;
+          // Set PBR material properties - PRESERVE IMMEDIATE CHANGES
+          const hasImmediateMetallic = (mesh.shader as any).userData?.__immediateMetallic !== undefined;
+          const hasImmediateSmoothness = (mesh.shader as any).userData?.__immediateSmoothness !== undefined;
+          
+          if (hasImmediateMetallic) {
+            console.log(`🔒 Preserving immediate metallic change for sprite`);
+          } else {
+            mesh.shader.uniforms.uMetallicValue = spriteData.metallic || 0.0;
+          }
+          
+          if (hasImmediateSmoothness) {
+            console.log(`🔒 Preserving immediate smoothness change for sprite`);
+          } else {
+            mesh.shader.uniforms.uSmoothnessValue = spriteData.smoothness || 0.5;
+          }
         }
 
         // Ensure mesh is properly positioned for rendering
