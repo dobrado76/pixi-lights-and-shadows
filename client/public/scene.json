@@ -337,7 +337,7 @@
     "enableAmbientOcclusion": true,
     "enableNormalMapping": true,
     "enableLightMasks": true,
-    "enablePCSS": false,
+    "enablePCSS": true,
     "textureScale": 1,
     "fpsTarget": 60,
     "capFpsTo60": true,

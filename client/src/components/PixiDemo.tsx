@@ -1521,8 +1521,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       // ✅ Global Light Masks Control (performance-filtered)
       uniforms.uMasksEnabled = performanceSettings.enableLightMasks;
       
-      // ✅ Global PCSS Control (performance-filtered)
-      uniforms.uPCSSEnabled = performanceSettings.enablePCSS;
+      // ⚠️ PCSS TEMPORARILY DISABLED - System needs proper implementation
+      uniforms.uPCSSEnabled = false; // performanceSettings.enablePCSS;
       
       
       // Per-sprite AO settings will be set individually for each sprite

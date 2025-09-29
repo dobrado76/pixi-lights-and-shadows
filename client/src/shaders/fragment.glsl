@@ -293,11 +293,11 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
 float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightRadius, float lightSize) {
   if (!uShadowsEnabled) return 1.0;
   
-  // Use PCSS only if globally enabled AND lightSize is properly set (> 0)
-  // If PCSS is enabled but lightSize is 0, fall back to normal hard shadows
-  if (uPCSSEnabled && lightSize > 0.0) {
-    return calculatePCSSShadowOccluderMap(lightPos, pixelPos, lightRadius, lightSize);
-  }
+  // PCSS TEMPORARILY DISABLED - Implementation causes shadow system failures
+  // TODO: Fix PCSS to work without breaking normal shadows
+  // if (uPCSSEnabled && lightSize > 0.0) {
+  //   return calculatePCSSShadowOccluderMap(lightPos, pixelPos, lightRadius, lightSize);
+  // }
   
   // Use normal hard shadow calculation (when PCSS is off OR lightSize is 0)
   
