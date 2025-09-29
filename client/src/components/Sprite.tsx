@@ -98,8 +98,8 @@ export class SceneSprite {
   }
 
   /**
-   * Loads diffuse and normal textures asynchronously.
-   * Generates flat normal texture for sprites without normal maps or when useNormalMap is disabled.
+   * Loads all material textures asynchronously (diffuse, normal, metallic, smoothness).
+   * Generates default textures for missing maps to ensure consistent shader behavior.
    */
   async loadTextures(): Promise<void> {
     this.diffuseTexture = PIXI.Texture.from(this.definition.image);
@@ -114,7 +114,23 @@ export class SceneSprite {
       this.normalTexture = this.createFlatNormalTexture();
     }
     
-    // Wait for textures to load
+    // Load metallic map texture if specified, otherwise create default white texture
+    if (this.definition.metallicMap && this.definition.metallicMap !== '') {
+      this.metallicTexture = PIXI.Texture.from(this.definition.metallicMap);
+    } else {
+      // Generate white texture (RGB 255,255,255) - will use scalar value from uniform
+      this.metallicTexture = this.createSolidTexture(255, 255, 255);
+    }
+    
+    // Load smoothness map texture if specified, otherwise create default gray texture
+    if (this.definition.smoothnessMap && this.definition.smoothnessMap !== '') {
+      this.smoothnessTexture = PIXI.Texture.from(this.definition.smoothnessMap);
+    } else {
+      // Generate gray texture (RGB 128,128,128) - will use scalar value from uniform
+      this.smoothnessTexture = this.createSolidTexture(128, 128, 128);
+    }
+    
+    // Wait for all textures to load
     const promises = [new Promise(resolve => {
       if (this.diffuseTexture!.baseTexture.valid) resolve(true);
       else this.diffuseTexture!.baseTexture.on('loaded', resolve);
@@ -125,6 +141,22 @@ export class SceneSprite {
       promises.push(new Promise(resolve => {
         if (this.normalTexture!.baseTexture.valid) resolve(true);
         else this.normalTexture!.baseTexture.on('loaded', resolve);
+      }));
+    }
+    
+    // Wait for metallic texture if it was loaded from file
+    if (this.definition.metallicMap && this.definition.metallicMap !== '') {
+      promises.push(new Promise(resolve => {
+        if (this.metallicTexture!.baseTexture.valid) resolve(true);
+        else this.metallicTexture!.baseTexture.on('loaded', resolve);
+      }));
+    }
+    
+    // Wait for smoothness texture if it was loaded from file
+    if (this.definition.smoothnessMap && this.definition.smoothnessMap !== '') {
+      promises.push(new Promise(resolve => {
+        if (this.smoothnessTexture!.baseTexture.valid) resolve(true);
+        else this.smoothnessTexture!.baseTexture.on('loaded', resolve);
       }));
     }
     
@@ -238,8 +270,8 @@ export class SceneSprite {
   }
 
   createShader(vertexShader: string, fragmentShader: string, uniforms: any): PIXI.Shader {
-    if (!this.diffuseTexture || !this.normalTexture) {
-      throw new Error('Textures must be loaded before creating shader');
+    if (!this.diffuseTexture || !this.normalTexture || !this.metallicTexture || !this.smoothnessTexture) {
+      throw new Error('All textures must be loaded before creating shader');
     }
 
     const { x, y } = this.definition.position;
@@ -281,7 +313,11 @@ export class SceneSprite {
     const shaderUniforms = {
       uDiffuse: this.diffuseTexture,
       uNormal: this.normalTexture,
+      uMetallic: this.metallicTexture,          // Metallic texture map
+      uSmoothness: this.smoothnessTexture,      // Smoothness texture map
       uUseNormalMap: this.definition.useNormalMap, // Flag to control normal map usage in shader
+      uMetallicValue: this.definition.metallic,    // Scalar metallic value (0.0-1.0)
+      uSmoothnessValue: this.definition.smoothness, // Scalar smoothness value (0.0-1.0)
       uSpritePos: [x, y],
       uSpriteSize: [width, height],
       uRotation: this.definition.rotation, // Pass rotation to fragment shader
@@ -488,6 +524,22 @@ export class SceneSprite {
     
     // Standard flat normal: RGB(128,128,255) = normalized [0,0,1] normal vector
     ctx.fillStyle = 'rgb(128, 128, 255)';
+    ctx.fillRect(0, 0, 1, 1);
+    
+    return PIXI.Texture.from(canvas);
+  }
+
+  /**
+   * Generates 1x1 solid color texture for PBR material defaults.
+   * Used for metallic/smoothness maps when no texture is provided.
+   */
+  private createSolidTexture(r: number, g: number, b: number): PIXI.Texture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    const ctx = canvas.getContext('2d')!;
+    
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
     ctx.fillRect(0, 0, 1, 1);
     
     return PIXI.Texture.from(canvas);
