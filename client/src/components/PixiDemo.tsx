@@ -1810,6 +1810,12 @@ const PixiDemo = (props: PixiDemoProps) => {
         }
       });
       
+      // CRITICAL FIX: Force occluder map rebuild when directional lights toggle
+      // Directional lights need the occluder map to calculate shadows properly
+      if (enabledDirectionalLights.length > 0) {
+        occluderMapDirtyRef.current = true; // Force rebuild to ensure directional shadows work
+      }
+      
       // Reset dirty flag
       if (uniformsDirtyRef.current) {
         uniformsDirtyRef.current = false;
