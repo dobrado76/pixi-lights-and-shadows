@@ -132,6 +132,15 @@ const PixiDemo = (props: PixiDemoProps) => {
     if (currentLightHash !== lastLightConfigHashRef.current) {
       uniformsDirtyRef.current = true;
       lastLightConfigHashRef.current = currentLightHash;
+      
+      // ✅ CRITICAL FIX: Rebuild occluder map when directional lights are toggled
+      // Directional lights depend on occluder map for shadow calculations
+      const hasDirectionalLights = lightsConfig.some(light => 
+        light.type === 'directional' && light.enabled && light.castsShadows
+      );
+      if (hasDirectionalLights) {
+        occluderMapDirtyRef.current = true;
+      }
     }
     
     // Check if shadow casters changed (affects occluder map)
