@@ -115,8 +115,8 @@
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
-      "metallic": 0.51,
-      "smoothness": 0.46,
+      "metallic": 0.4,
+      "smoothness": 0.33,
       "pivot": {
         "preset": "top-left",
         "offsetX": 0,

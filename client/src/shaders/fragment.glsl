@@ -604,9 +604,8 @@ void main(void) {
   }
   
   // Calculate view direction for PBR (from surface to camera)
-  // In 2.5D, use dynamic view direction based on world position
-  vec3 cameraPos = vec3(400.0, 300.0, 500.0); // Camera position above scene
-  vec3 viewDir = normalize(cameraPos - worldPos3D);
+  // For 2.5D, use consistent view direction to avoid ring artifacts
+  vec3 viewDir = vec3(0.0, 0.0, 1.0); // Camera looking straight down at surface
   
   // Debug: Log world position for first point light (if enabled)
   #ifdef DEBUG_POSITIONS
