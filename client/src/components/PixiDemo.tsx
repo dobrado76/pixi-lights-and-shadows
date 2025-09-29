@@ -1729,8 +1729,15 @@ const PixiDemo = (props: PixiDemoProps) => {
           const spriteData = (mesh as any).definition;
           mesh.shader.uniforms.uCurrentSpriteZOrder = spriteData.zOrder || 0;
           
-          // ✅ Apply performance setting for normal mapping
-          mesh.shader.uniforms.uUseNormalMap = spriteData.useNormalMap && performanceSettings.enableNormalMapping;
+          // ✅ Apply performance setting for normal mapping - PRESERVE IMMEDIATE CHANGES
+          const hasImmediateNormalMap = (mesh.shader as any).userData?.__immediateNormalMap !== undefined;
+          if (hasImmediateNormalMap) {
+            // Keep immediate change, don't overwrite with sprite definition
+            console.log(`🔒 Preserving immediate normal map change for sprite`);
+          } else {
+            // Use sprite definition value
+            mesh.shader.uniforms.uUseNormalMap = spriteData.useNormalMap && performanceSettings.enableNormalMapping;
+          }
         }
 
         // Ensure mesh is properly positioned for rendering
