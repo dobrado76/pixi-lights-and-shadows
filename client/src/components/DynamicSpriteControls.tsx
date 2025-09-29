@@ -84,19 +84,9 @@ interface DynamicSpriteControlsProps {
   onImmediateSpriteChange?: (spriteId: string, updates: any) => void;
 }
 
-// Helper functions for ECS material system
-function resolveMaterial(materialRef: MaterialComponent | string, materials?: MaterialDefinition[]): MaterialComponent {
-  if (typeof materialRef === 'string') {
-    // It's a material name reference
-    const material = materials?.find(m => m.name === materialRef);
-    if (!material) {
-      console.warn(`Material '${materialRef}' not found, using default`);
-      return { image: '/textures/default.png' };
-    }
-    return material;
-  }
-  // It's an inline material component
-  return materialRef;
+// Helper functions for ECS material system - all materials are now inline
+function getMaterial(materialObj: any): MaterialComponent {
+  return materialObj || { image: '/textures/default.png' };
 }
 
 function convertLegacyToECS(legacy: LegacySpriteConfig): SpriteEntity {
@@ -125,8 +115,8 @@ function convertLegacyToECS(legacy: LegacySpriteConfig): SpriteEntity {
   };
 }
 
-function convertECSToLegacy(entity: SpriteEntity, materials?: MaterialDefinition[]): LegacySpriteConfig {
-  const material = resolveMaterial(entity.material, materials);
+function convertECSToLegacy(entity: SpriteEntity): LegacySpriteConfig {
+  const material = getMaterial(entity.material);
   return {
     id: entity.id,
     image: material.image,
@@ -167,7 +157,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
     
     // Update material component properties
     if ('metallic' in updates || 'smoothness' in updates || 'useNormalMap' in updates) {
-      const currentMaterial = resolveMaterial(currentSprite.material, sceneConfig.materials);
+      const currentMaterial = getMaterial(currentSprite.material);
       newSprite.material = {
         ...currentMaterial,
         ...(updates.metallic !== undefined && { metallic: updates.metallic }),
@@ -237,7 +227,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
       <CardContent className="space-y-2 max-h-[600px] overflow-y-auto">
         {sprites.map(([spriteId, entity]) => {
           const isExpanded = expandedSprites.has(spriteId);
-          const material = resolveMaterial(entity.material, sceneConfig.materials);
+          const material = getMaterial(entity.material);
           
           return (
             <Collapsible key={spriteId} open={isExpanded} onOpenChange={() => toggleExpanded(spriteId)}>
@@ -321,10 +311,10 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <Label className="text-xs font-medium text-muted-foreground">Rotation</Label>
-                            <span className="text-xs text-muted-foreground">{Math.round(((sprite.rotation || 0) * 180 / Math.PI + 360) % 360)}°</span>
+                            <span className="text-xs text-muted-foreground">{Math.round(((entity.transform.rotation || 0) * 180 / Math.PI + 360) % 360)}°</span>
                           </div>
                           <Slider
-                            value={[((sprite.rotation || 0) * 180 / Math.PI + 360) % 360]}
+                            value={[((entity.transform.rotation || 0) * 180 / Math.PI + 360) % 360]}
                             onValueChange={([value]) => updateSpriteConfig(spriteId, {
                               rotation: value * Math.PI / 180
                             })}
@@ -340,10 +330,10 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <Label className="text-xs font-medium text-muted-foreground">Scale</Label>
-                            <span className="text-xs text-muted-foreground">{((sprite.scale || 1) * 100).toFixed(0)}%</span>
+                            <span className="text-xs text-muted-foreground">{((entity.transform.scale || 1) * 100).toFixed(0)}%</span>
                           </div>
                           <Slider
-                            value={[sprite.scale || 1]}
+                            value={[entity.transform.scale || 1]}
                             onValueChange={([value]) => updateSpriteConfig(spriteId, {
                               scale: value
                             })}
@@ -360,13 +350,13 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                           <div className="flex items-center justify-between gap-2">
                             <Label className="text-xs font-medium text-muted-foreground">Pivot</Label>
                             <Select
-                              value={sprite.pivot?.preset || 'middle-center'}
+                              value={entity.sprite.pivot?.preset || 'middle-center'}
                               onValueChange={(value: string) => {
                                 updateSpriteConfig(spriteId, {
                                   pivot: {
                                     preset: value as any,
-                                    offsetX: sprite.pivot?.offsetX || 0,
-                                    offsetY: sprite.pivot?.offsetY || 0
+                                    offsetX: entity.sprite.pivot?.offsetX || 0,
+                                    offsetY: entity.sprite.pivot?.offsetY || 0
                                   }
                                 });
                               }}
@@ -395,12 +385,12 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                               <Label className="text-xs text-muted-foreground">Offset X</Label>
                               <Input
                                 type="number"
-                                value={sprite.pivot?.offsetX || 0}
+                                value={entity.sprite.pivot?.offsetX || 0}
                                 onChange={(e) => updateSpriteConfig(spriteId, {
                                   pivot: {
-                                    preset: sprite.pivot?.preset || 'middle-center',
+                                    preset: entity.sprite.pivot?.preset || 'middle-center',
                                     offsetX: parseFloat(e.target.value) || 0,
-                                    offsetY: sprite.pivot?.offsetY || 0
+                                    offsetY: entity.sprite.pivot?.offsetY || 0
                                   }
                                 })}
                                 className="h-8 text-xs"
@@ -411,11 +401,11 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                               <Label className="text-xs text-muted-foreground">Offset Y</Label>
                               <Input
                                 type="number"
-                                value={sprite.pivot?.offsetY || 0}
+                                value={entity.sprite.pivot?.offsetY || 0}
                                 onChange={(e) => updateSpriteConfig(spriteId, {
                                   pivot: {
-                                    preset: sprite.pivot?.preset || 'middle-center',
-                                    offsetX: sprite.pivot?.offsetX || 0,
+                                    preset: entity.sprite.pivot?.preset || 'middle-center',
+                                    offsetX: entity.sprite.pivot?.offsetX || 0,
                                     offsetY: parseFloat(e.target.value) || 0
                                   }
                                 })}
@@ -431,11 +421,11 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                           <div className="flex items-center justify-between">
                             <Label className="text-xs font-medium text-muted-foreground">Z-Order (Depth)</Label>
                             <span className="text-xs text-muted-foreground">
-                              z:{sprite.zOrder} • {sprite.zOrder < 0 ? 'Behind' : sprite.zOrder === 0 ? 'Default' : 'Front'}
+                              z:{entity.sprite.zOrder} • {entity.sprite.zOrder < 0 ? 'Behind' : entity.sprite.zOrder === 0 ? 'Default' : 'Front'}
                             </span>
                           </div>
                           <Slider
-                            value={[sprite.zOrder]}
+                            value={[entity.sprite.zOrder]}
                             onValueChange={([value]) => updateSpriteConfig(spriteId, { zOrder: value })}
                             min={-10}
                             max={10}
@@ -450,7 +440,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                           <div className="flex items-center justify-between">
                             <Label className="text-xs text-card-foreground">Casts Shadows & AO</Label>
                             <Switch
-                              checked={sprite.castsShadows}
+                              checked={entity.sprite.castsShadows}
                               onCheckedChange={(checked) => updateSpriteConfig(spriteId, { castsShadows: checked })}
                               data-testid={`switch-casts-shadows-${spriteId}`}
                             />
@@ -459,7 +449,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                           <div className="flex items-center justify-between">
                             <Label className="text-xs text-card-foreground">Use Normal Map</Label>
                             <Switch
-                              checked={sprite.useNormalMap ?? true}
+                              checked={material.useNormalMap ?? true}
                               onCheckedChange={(checked) => updateSpriteConfig(spriteId, { useNormalMap: checked })}
                               data-testid={`switch-use-normal-map-${spriteId}`}
                             />
@@ -471,10 +461,10 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <Label className="text-xs text-card-foreground">Metallic</Label>
-                              <span className="text-xs text-muted-foreground">{((sprite.metallic ?? 0.0) * 100).toFixed(0)}%</span>
+                              <span className="text-xs text-muted-foreground">{((material.metallic ?? 0.0) * 100).toFixed(0)}%</span>
                             </div>
                             <Slider
-                              value={[sprite.metallic ?? 0.0]}
+                              value={[material.metallic ?? 0.0]}
                               onValueChange={([value]) => updateSpriteConfig(spriteId, { metallic: value })}
                               min={0.0}
                               max={1.0}
@@ -487,10 +477,10 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <Label className="text-xs text-card-foreground">Smoothness</Label>
-                              <span className="text-xs text-muted-foreground">{((sprite.smoothness ?? 0.5) * 100).toFixed(0)}%</span>
+                              <span className="text-xs text-muted-foreground">{((material.smoothness ?? 0.5) * 100).toFixed(0)}%</span>
                             </div>
                             <Slider
-                              value={[sprite.smoothness ?? 0.5]}
+                              value={[material.smoothness ?? 0.5]}
                               onValueChange={([value]) => updateSpriteConfig(spriteId, { smoothness: value })}
                               min={0.0}
                               max={1.0}
@@ -504,16 +494,16 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                         {/* Texture Info */}
                         <div className="space-y-1 pt-2 border-t border-border/50">
                           <div className="text-xs text-muted-foreground break-all">
-                            <div><span className="font-medium">Diffuse:</span> {sprite.image}</div>
-                            {sprite.normal && (
-                              <div><span className="font-medium">Normal:</span> {sprite.normal}</div>
+                            <div><span className="font-medium">Diffuse:</span> {material.image}</div>
+                            {material.normal && (
+                              <div><span className="font-medium">Normal:</span> {material.normal}</div>
                             )}
                           </div>
                         </div>
                       </>
                     )}
                     
-                    {!sprite.visible && (
+                    {!entity.sprite.visible && (
                       <div className="text-center text-muted-foreground text-sm py-4">
                         <EyeOff className="h-6 w-6 mx-auto mb-2 opacity-50" />
                         Sprite is hidden - enable visibility to access controls

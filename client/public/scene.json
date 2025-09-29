@@ -171,7 +171,7 @@
     "block": {
       "material": {
         "image": "/textures/block.png",
-        "normal": "/textures/blocksNormal.png",
+        "normal": "/textures/blockNormalMap.png",
         "useNormalMap": true,
         "metallic": 0.0,
         "smoothness": 0.5
@@ -195,7 +195,7 @@
     "block2": {
       "material": {
         "image": "/textures/block2.png",
-        "normal": "/textures/block2Normal.png",
+        "normal": "/textures/block2NormalMap.png",
         "useNormalMap": true,
         "metallic": 0.0,
         "smoothness": 0.5
@@ -245,9 +245,11 @@
       "type": "directional",
       "brightness": 0.3,
       "color": "0xffffff",
-      "directionX": 0.3420201433256688,
-      "directionY": -0.9396926207859083,
-      "directionZ": -1,
+      "direction": {
+        "x": 0.3420201433256688,
+        "y": -0.9396926207859083,
+        "z": -1
+      },
       "castsShadows": true
     },
     {
@@ -261,9 +263,11 @@
         "y": 210,
         "z": 80
       },
-      "directionX": 0,
-      "directionY": 1,
-      "directionZ": -1,
+      "direction": {
+        "x": 0,
+        "y": 1,
+        "z": -1
+      },
       "castsShadows": true,
       "radius": 480,
       "coneAngle": 58,
@@ -280,9 +284,11 @@
         "y": 250,
         "z": 50
       },
-      "directionX": 0,
-      "directionY": 1,
-      "directionZ": -0.5,
+      "direction": {
+        "x": 0,
+        "y": 1,
+        "z": -0.5
+      },
       "castsShadows": true,
       "radius": 400,
       "coneAngle": 43,
