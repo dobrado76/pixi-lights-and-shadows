@@ -195,76 +195,113 @@ float pcfFilter(sampler2D occluderMap, vec2 lightPos, vec2 pixelPos, float light
   return 1.0 - (shadow / float(PCF_SAMPLES)); // Return light factor (1.0 = fully lit, 0.0 = fully shadowed)
 }
 
-// PCSS Function for Point/Spot Lights using Occluder Map
+// True PCSS Function for Point/Spot Lights using Occluder Map
 float calculatePCSSShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightRadius, float lightSize) {
   if (!uShadowsEnabled) return 1.0;
   
   vec2 rayDir = pixelPos - lightPos;
-  float rayLength = length(rayDir);
+  float receiverDistance = length(rayDir);
   
-  if (rayLength < 0.001) return 1.0; // Same position as light
+  if (receiverDistance < 0.001) return 1.0; // Same position as light
   
-  rayDir /= rayLength; // Normalize
+  rayDir /= receiverDistance; // Normalize
   
-  // Controlled soft shadow using lightSize to determine filter radius
-  float filterRadius = lightSize * 0.5; // Reduced scaling for more controlled softness
+  // Step 1: Blocker Search - Find average depth of occluders
+  float blockerSearchRadius = lightSize * 0.1; // Search radius proportional to light size
+  blockerSearchRadius = clamp(blockerSearchRadius, 2.0, 15.0);
   
-  // PCF with variable filter size for soft shadows
-  // Clamp filter radius to reasonable bounds
-  filterRadius = clamp(filterRadius, 1.0, 20.0);
+  float avgBlockerDistance = 0.0;
+  float numBlockers = 0.0;
+  int searchSamples = 8;
   
-  float shadow = 0.0;
-  int samples = 12; // Reduced samples for better performance
-  
-  for (int i = 0; i < 12; i++) {
-    if (i >= samples) break; // WebGL compatibility
-    float angle = float(i) / float(samples) * 6.283185; // 2 * PI
-    vec2 offset = vec2(cos(angle), sin(angle)) * filterRadius;
+  for (int i = 0; i < 8; i++) {
+    float angle = float(i) / float(searchSamples) * 6.283185;
+    vec2 searchOffset = vec2(cos(angle), sin(angle)) * blockerSearchRadius;
+    vec2 searchPos = pixelPos + searchOffset;
     
-    // Sample position in world space
-    vec2 sampleWorldPos = pixelPos + offset;
+    // Cast ray from light to search position
+    vec2 lightToSearch = searchPos - lightPos;
+    float searchDistance = length(lightToSearch);
     
-    // Convert to occluder map UV coordinates
-    vec2 occluderUV = (sampleWorldPos + uOccluderMapOffset) / (uCanvasSize + 2.0 * uOccluderMapOffset);
-    
-    if (occluderUV.x >= 0.0 && occluderUV.x <= 1.0 && occluderUV.y >= 0.0 && occluderUV.y <= 1.0) {
-      float occluder = texture2D(uOccluderMap, occluderUV).a;
+    if (searchDistance > 0.001) {
+      vec2 searchRayDir = lightToSearch / searchDistance;
+      float stepSize = 3.0;
       
-      // Cast ray from light to sample position to check for occlusion
-      vec2 lightToSample = sampleWorldPos - lightPos;
-      float sampleDistance = length(lightToSample);
-      
-      if (sampleDistance > 0.001) {
-        vec2 sampleRayDir = lightToSample / sampleDistance;
+      // Ray-march to find first occluder
+      for (int j = 1; j < 20; j++) {
+        float distance = float(j) * stepSize;
+        if (distance >= searchDistance) break;
         
-        // Simple ray-march check for occlusion
-        float stepSize = 2.0;
-        bool occluded = false;
+        vec2 checkPos = lightPos + searchRayDir * distance;
+        vec2 checkUV = (checkPos + uOccluderMapOffset) / (uCanvasSize + 2.0 * uOccluderMapOffset);
         
-        for (int j = 1; j < 25; j++) {
-          float distance = float(j) * stepSize;
-          if (distance >= sampleDistance) break;
-          
-          vec2 checkPos = lightPos + sampleRayDir * distance;
-          vec2 checkUV = (checkPos + uOccluderMapOffset) / (uCanvasSize + 2.0 * uOccluderMapOffset);
-          
-          if (checkUV.x >= 0.0 && checkUV.x <= 1.0 && checkUV.y >= 0.0 && checkUV.y <= 1.0) {
-            float checkOccluder = texture2D(uOccluderMap, checkUV).a;
-            if (checkOccluder > 0.5) {
-              occluded = true;
-              break;
-            }
+        if (checkUV.x >= 0.0 && checkUV.x <= 1.0 && checkUV.y >= 0.0 && checkUV.y <= 1.0) {
+          float occluder = texture2D(uOccluderMap, checkUV).a;
+          if (occluder > 0.5) {
+            avgBlockerDistance += distance;
+            numBlockers += 1.0;
+            break;
           }
-        }
-        
-        if (occluded) {
-          shadow += 1.0;
         }
       }
     }
   }
   
-  return 1.0 - (shadow / float(samples));
+  // If no blockers found, fully lit
+  if (numBlockers < 0.1) return 1.0;
+  
+  avgBlockerDistance /= numBlockers;
+  
+  // Step 2: Penumbra Estimation
+  // penumbra = (receiverDistance - avgBlockerDistance) * lightSize / avgBlockerDistance
+  float penumbra = (receiverDistance - avgBlockerDistance) * lightSize / avgBlockerDistance;
+  penumbra = max(penumbra, 0.0);
+  
+  // Convert to filter radius - scale down for controllable softness
+  float filterRadius = penumbra * 0.08; // Much smaller scaling
+  filterRadius = clamp(filterRadius, 0.5, 8.0); // Smaller max radius
+  
+  // Step 3: PCF with variable filter size
+  float shadow = 0.0;
+  int pcfSamples = 12;
+  
+  for (int i = 0; i < 12; i++) {
+    float angle = float(i) / float(pcfSamples) * 6.283185;
+    vec2 offset = vec2(cos(angle), sin(angle)) * filterRadius;
+    vec2 samplePos = pixelPos + offset;
+    
+    // Cast shadow ray from light to sample position
+    vec2 lightToSample = samplePos - lightPos;
+    float sampleDistance = length(lightToSample);
+    
+    if (sampleDistance > 0.001) {
+      vec2 sampleRayDir = lightToSample / sampleDistance;
+      float stepSize = 2.5;
+      bool inShadow = false;
+      
+      for (int j = 1; j < 30; j++) {
+        float distance = float(j) * stepSize;
+        if (distance >= sampleDistance * 0.98) break; // Stop before receiver
+        
+        vec2 checkPos = lightPos + sampleRayDir * distance;
+        vec2 checkUV = (checkPos + uOccluderMapOffset) / (uCanvasSize + 2.0 * uOccluderMapOffset);
+        
+        if (checkUV.x >= 0.0 && checkUV.x <= 1.0 && checkUV.y >= 0.0 && checkUV.y <= 1.0) {
+          float occluder = texture2D(uOccluderMap, checkUV).a;
+          if (occluder > 0.5) {
+            inShadow = true;
+            break;
+          }
+        }
+      }
+      
+      if (inShadow) {
+        shadow += 1.0;
+      }
+    }
+  }
+  
+  return 1.0 - (shadow / float(pcfSamples));
 }
 
 

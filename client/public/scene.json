@@ -193,7 +193,7 @@
         "y": 290,
         "z": 70
       },
-      "followMouse": false,
+      "followMouse": true,
       "castsShadows": true,
       "radius": 350
     },
