@@ -1844,7 +1844,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         pixiApp.ticker.remove(ticker);
       }
     };
-  }, [pixiApp]);
+  }, [pixiApp, performanceSettings]);
 
   // Mouse tracking
   useEffect(() => {
