@@ -328,20 +328,16 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
     
     vec2 samplePos = pixelPos + rayDir * distance;
     
-    // Convert world position to UV coordinates
-    vec2 occluderUV = samplePos / uCanvasSize;
+    // ✅ FIXED: Use same UV calculation as working point light shadows
+    vec2 occluderUV = (samplePos + uOccluderMapOffset) / (uCanvasSize + 2.0 * uOccluderMapOffset);
     
-    // Check bounds - allow expanded area for off-screen shadow casting
-    vec2 expandedMapSize = uCanvasSize + 2.0 * uOccluderMapOffset;
-    vec2 bufferUV = uOccluderMapOffset / uCanvasSize;
-    if (occluderUV.x < -bufferUV.x || occluderUV.x > 1.0 + bufferUV.x || 
-        occluderUV.y < -bufferUV.y || occluderUV.y > 1.0 + bufferUV.y) {
+    // Check bounds for the occluder map
+    if (occluderUV.x < 0.0 || occluderUV.x > 1.0 || occluderUV.y < 0.0 || occluderUV.y > 1.0) {
       continue;
     }
     
-    // Sample occluder map alpha (adjust UV for expanded map offset)
-    vec2 adjustedUV = (occluderUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
-    float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
+    // Sample occluder map directly (UV is already adjusted)
+    float occluderAlpha = texture2D(uOccluderMap, occluderUV).a;
     
     // If we hit an occluder, cast shadow with distance-based softness
     if (occluderAlpha > 0.0) {

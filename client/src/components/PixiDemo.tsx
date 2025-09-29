@@ -1603,6 +1603,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Shadow casting flag for directional lights
         uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
         
+        
         // ✅ CRITICAL FIX: Use actual lightSize from UI sliders, not hardcoded values!
         uniforms[`${prefix}LightSize`] = light.lightSize || 5;
       });
