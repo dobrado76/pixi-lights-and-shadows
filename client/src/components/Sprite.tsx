@@ -584,27 +584,12 @@ export class SceneManager {
     // Clean slate for new scene
     this.sprites.clear();
     
-    // Helper function to resolve material references
-    const resolveMaterial = (material: any, materials: any[]): any => {
-      if (typeof material === 'string') {
-        // It's a reference to a material in the materials array
-        const found = materials?.find(m => m.name === material);
-        if (!found) {
-          console.warn(`Material '${material}' not found, using default`);
-          return { image: '', normal: '', useNormalMap: false, metallic: 0, smoothness: 0.5 };
-        }
-        return found;
-      }
-      // It's an inline material object
-      return material || {};
-    };
-    
     // Parallel sprite creation and texture loading
     for (const [key, entityData] of Object.entries(sceneData.scene)) {
       const entity = entityData as any;
       
-      // Extract components from ECS structure
-      const material = resolveMaterial(entity.material, sceneData.materials);
+      // Extract components from ECS structure - all materials are now inline
+      const material = entity.material || {};
       const transform = entity.transform || { position: { x: 0, y: 0 }, rotation: 0, scale: 1 };
       const spriteComponent = entity.sprite || { pivot: { preset: 'middle-center', offsetX: 0, offsetY: 0 }, zOrder: 0, castsShadows: true, visible: true };
       
