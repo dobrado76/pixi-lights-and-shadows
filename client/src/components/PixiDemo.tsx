@@ -1289,7 +1289,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Apply shadow texture uniforms to all sprite shaders (already done above)
 
       // FORCE DIRECTIONAL LIGHT SHADOW SETUP AFTER SHADERS ARE CREATED
-      const directionalLight = lightsConfig.find(light => light.type === 'directional' && light.enabled);
+      const directionalLight = lightsConfig.find(light => light.type === 'directional');
       if (directionalLight && directionalLight.castsShadows) {
         
         // Apply directional shadow uniforms to ALL created shaders
@@ -1631,7 +1631,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uCanvasSize = [shaderParams.canvasWidth, shaderParams.canvasHeight];
       
       // FORCE DIRECTIONAL LIGHT SHADOW SETUP - BYPASS BROKEN useEffect
-      const directionalLight = lightsConfig.find(light => light.type === 'directional' && light.enabled);
+      const directionalLight = lightsConfig.find(light => light.type === 'directional');
       if (directionalLight) {
         uniforms.uDir0CastsShadows = directionalLight.castsShadows || false;
       }
