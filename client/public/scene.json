@@ -1,32 +1,5 @@
 {
   "scene": {
-    "background": {
-      "material": {
-        "image": "/textures/BGTextureTest.jpg",
-        "normal": "/textures/BGTextureNORM.jpg",
-        "useNormalMap": true,
-        "metallic": 0,
-        "smoothness": 0.5
-      },
-      "transform": {
-        "position": {
-          "x": 0,
-          "y": 0
-        },
-        "rotation": 0,
-        "scale": 1
-      },
-      "sprite": {
-        "pivot": {
-          "preset": "top-left",
-          "offsetX": 0,
-          "offsetY": 0
-        },
-        "zOrder": -1,
-        "castsShadows": false,
-        "visible": false
-      }
-    },
     "background2": {
       "material": {
         "image": "/textures/white-fabric-texture-background.jpg",
