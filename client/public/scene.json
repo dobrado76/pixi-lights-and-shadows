@@ -76,7 +76,7 @@
       "visible": true,
       "useNormalMap": true,
       "metallic": 0.09,
-      "smoothness": 0.14,
+      "smoothness": 0.17,
       "pivot": {
         "preset": "custom-offset",
         "offsetX": 0,
@@ -178,7 +178,7 @@
       "visible": true,
       "useNormalMap": true,
       "metallic": 0.19,
-      "smoothness": 0.51,
+      "smoothness": 0.62,
       "pivot": {
         "preset": "middle-center",
         "offsetX": 0,
