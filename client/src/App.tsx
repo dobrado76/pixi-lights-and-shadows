@@ -566,6 +566,21 @@ function App() {
                                 />
                               </label>
                             </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Cap FPS to 60</span>
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={performanceSettings.capFpsTo60}
+                                  onChange={(e) => handlePerformanceSettingsChange({
+                                    ...performanceSettings,
+                                    capFpsTo60: e.target.checked
+                                  })}
+                                  className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                  data-testid="toggle-cap-fps-60"
+                                />
+                              </label>
+                            </div>
                           </div>
                         </div>
 
@@ -582,7 +597,8 @@ function App() {
                                 enableNormalMapping: false,
                                 enableLightMasks: false,
                                 textureScale: 0.5,
-                                fpsTarget: 30
+                                fpsTarget: 30,
+                                capFpsTo60: false
                               })}
                               className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'low' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                               data-testid="preset-low"
@@ -599,7 +615,8 @@ function App() {
                                 enableNormalMapping: true,
                                 enableLightMasks: false,
                                 textureScale: 0.75,
-                                fpsTarget: 45
+                                fpsTarget: 45,
+                                capFpsTo60: false
                               })}
                               className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'medium' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                               data-testid="preset-medium"
@@ -616,7 +633,8 @@ function App() {
                                 enableNormalMapping: true,
                                 enableLightMasks: true,
                                 textureScale: 1.0,
-                                fpsTarget: 60
+                                fpsTarget: 60,
+                                capFpsTo60: false
                               })}
                               className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'high' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                               data-testid="preset-high"

@@ -1819,18 +1819,21 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
     };
 
-    // Option 1: Use PIXI ticker (capped by requestAnimationFrame)
+    // Use PIXI ticker (capped by requestAnimationFrame)
     pixiApp.ticker.add(ticker);
     
-    // Option 2: UNCAPPED high-frequency timer for true performance testing
+    // High-frequency timer for UNCAPPED performance
     const runUncapped = () => {
       if (!isRunning) return;
       ticker(); // Run our update logic
       uncappedTimer = setTimeout(runUncapped, 1); // ~1000 FPS theoretical max
     };
     
-    // UNCAPPED mode enabled for maximum performance
-    runUncapped();
+    // Use capped or uncapped mode based on performance settings  
+    if (!performanceSettings?.capFpsTo60) {
+      runUncapped(); // UNCAPPED mode for maximum performance
+    }
+    // If capFpsTo60 is true, only use the PIXI ticker (capped to browser refresh rate)
 
     return () => {
       isRunning = false;
