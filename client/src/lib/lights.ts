@@ -39,6 +39,7 @@ export interface LightConfig {
   followMouse?: boolean;
   castsShadows?: boolean; // Enable/disable shadow casting for this light
   mask?: MaskConfig; // mask configuration object
+  lightSize?: number; // The radius of the light source for soft shadow calculations (PCSS)
 }
 
 // Shadow configuration interface
@@ -99,6 +100,9 @@ export interface Light {
   
   // Mask properties
   mask?: MaskConfig; // mask configuration object
+  
+  // PCSS (Percentage-Closer Soft Shadows) properties
+  lightSize?: number; // The radius of the light source for soft shadow calculations
 }
 
 export const createDefaultLight = (type: LightType, id?: string): Light => {
@@ -118,6 +122,7 @@ export const createDefaultLight = (type: LightType, id?: string): Light => {
       return {
         ...baseLight,
         radius: 200,
+        lightSize: 10, // Default to moderate soft shadows
       };
       
     case 'directional':
@@ -125,6 +130,7 @@ export const createDefaultLight = (type: LightType, id?: string): Light => {
         ...baseLight,
         direction: { x: 1, y: 1, z: -1 }, // Default angle equivalent to previous 315°
         intensity: 0.5,
+        lightSize: 5, // Directional lights tend to be smaller/harder
       };
       
     case 'spotlight':
@@ -135,6 +141,7 @@ export const createDefaultLight = (type: LightType, id?: string): Light => {
         coneAngle: 30,
         softness: 0.5,
         intensity: 2.0,
+        lightSize: 8, // Moderate softness for spotlights
       };
       
     default:
@@ -201,6 +208,7 @@ export const convertConfigToLight = (config: LightConfig): Light => {
   if (config.radius !== undefined) light.radius = config.radius;
   if (config.coneAngle !== undefined) light.coneAngle = config.coneAngle;
   if (config.softness !== undefined) light.softness = config.softness;
+  if (config.lightSize !== undefined) light.lightSize = config.lightSize;
   if (config.mask !== undefined) {
     if (typeof config.mask === 'string') {
       // Handle legacy string format
