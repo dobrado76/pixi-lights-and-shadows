@@ -348,8 +348,8 @@ export const convertLightToConfig = (light: Light): LightConfig => {
 export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity: number, color: {r: number, g: number, b: number}}, shadowConfig?: ShadowConfig, currentScene?: any): Promise<boolean> => {
   try {
     // Use provided scene data instead of fetching (eliminates race conditions)
-    if (!currentScene) {
-      throw new Error('Current scene data must be provided to saveLightsConfig');
+    if (!currentScene || !currentScene.scene) {
+      throw new Error('Current scene data with .scene property must be provided to saveLightsConfig');
     }
 
     // Convert lights back to config format
