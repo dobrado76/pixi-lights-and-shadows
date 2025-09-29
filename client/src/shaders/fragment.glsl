@@ -653,7 +653,11 @@ void main(void) {
       safeNormal = vec3(0.0, 0.0, 1.0); // Flat surface normal
     }
     
-    // Use PBR lighting calculation instead of simple Lambert
+    // Calculate traditional intensity for mask compatibility
+    float normalDot = max(dot(safeNormal, lightDir), 0.0);
+    float intensity = normalDot * uPoint0Intensity * attenuation;
+    
+    // Use PBR lighting calculation for final color
     vec3 pbrContribution = calculatePBR(diffuseColor.rgb, safeNormal, lightDir, uPoint0Color, 
                                        uPoint0Intensity * attenuation, finalMetallic, finalSmoothness, viewDir);
     
@@ -663,10 +667,11 @@ void main(void) {
       shadowFactor = calculateShadowUnified(uPoint0Position.xy, worldPos.xy);
     }
     
-    // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
+    // Apply mask ONLY in fully lit areas (shadowFactor == 1.0) - using traditional intensity for compatibility
     if (uMasksEnabled && uPoint0HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uPoint0Mask, worldPos.xy, uPoint0Position.xy, uPoint0MaskOffset, uPoint0MaskRotation, uPoint0MaskScale, uPoint0MaskSize);
-      pbrContribution *= maskValue; // Apply mask only where there's no shadow
+      intensity *= maskValue; // Apply mask to intensity for compatibility
+      pbrContribution *= maskValue; // Also apply mask to PBR
     }
     
     // Apply shadow to PBR contribution

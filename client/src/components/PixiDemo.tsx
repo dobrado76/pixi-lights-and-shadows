@@ -1738,6 +1738,10 @@ const PixiDemo = (props: PixiDemoProps) => {
             // Use sprite definition value
             mesh.shader.uniforms.uUseNormalMap = spriteData.useNormalMap && performanceSettings.enableNormalMapping;
           }
+          
+          // Set PBR material properties
+          mesh.shader.uniforms.uMetallicValue = spriteData.metallic || 0.0;
+          mesh.shader.uniforms.uSmoothnessValue = spriteData.smoothness || 0.5;
         }
 
         // Ensure mesh is properly positioned for rendering
