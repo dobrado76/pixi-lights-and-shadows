@@ -532,9 +532,9 @@ vec3 calculatePBR(vec3 albedo, vec3 normal, vec3 lightDir, vec3 lightColor, floa
                   float metallic, float smoothness, vec3 viewDir) {
   // Convert smoothness to roughness
   float roughness = 1.0 - smoothness;
-  roughness = max(roughness, 0.04); // Keep original minimum roughness
+  roughness = max(roughness, 0.04); // Prevent division by zero
   
-  // Metallic workflow - keep original F0 calculation  
+  // Metallic workflow - interpolate between dielectric (0.04) and albedo F0
   vec3 F0 = mix(vec3(0.04), albedo, metallic);
   
   // Calculate halfway vector
@@ -545,13 +545,10 @@ vec3 calculatePBR(vec3 albedo, vec3 normal, vec3 lightDir, vec3 lightColor, floa
   float G = geometrySmith(normal, viewDir, lightDir, roughness);
   vec3 F = fresnelSchlick(max(dot(H, viewDir), 0.0), F0);
   
-  // BRDF specular term - dramatically reduce intensity to eliminate ring artifacts
+  // BRDF specular term
   vec3 numerator = NDF * G * F;
   float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * max(dot(normal, lightDir), 0.0);
   vec3 specular = numerator / max(denominator, 0.001);
-  
-  // Drastically reduce specular contribution to eliminate ring artifacts while keeping slider functionality
-  specular *= 0.1 * metallic; // Only show specular on highly metallic surfaces
   
   // Energy conservation - diffuse and specular can't exceed 1.0
   vec3 kS = F; // Fresnel represents the specular contribution
@@ -607,8 +604,9 @@ void main(void) {
   }
   
   // Calculate view direction for PBR (from surface to camera)
-  // For 2.5D, use a simpler orthographic view direction
-  vec3 viewDir = vec3(0.0, 0.0, 1.0); // Orthographic camera pointing down
+  // In 2.5D, use dynamic view direction based on world position
+  vec3 cameraPos = vec3(400.0, 300.0, 500.0); // Camera position above scene
+  vec3 viewDir = normalize(cameraPos - worldPos3D);
   
   // Debug: Log world position for first point light (if enabled)
   #ifdef DEBUG_POSITIONS
@@ -662,9 +660,9 @@ void main(void) {
     float normalDot = max(dot(safeNormal, lightDir), 0.0);
     float intensity = normalDot * uPoint0Intensity * attenuation;
     
-    // Use PBR lighting calculation for final color
+    // Use PBR lighting calculation for final color (boost intensity for PBR energy conservation)
     vec3 pbrContribution = calculatePBR(diffuseColor.rgb, safeNormal, lightDir, uPoint0Color, 
-                                       uPoint0Intensity * attenuation * 1.2, finalMetallic, finalSmoothness, viewDir);
+                                       uPoint0Intensity * attenuation * 2.0, finalMetallic, finalSmoothness, viewDir);
     
     // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
@@ -698,9 +696,9 @@ void main(void) {
     float attenuation = 1.0 - clamp(lightDistance / uPoint1Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    // Use PBR lighting calculation for final color
+    // Use PBR lighting calculation for final color (boost intensity for PBR energy conservation)
     vec3 pbrContribution = calculatePBR(diffuseColor.rgb, normal, lightDir, uPoint1Color, 
-                                       uPoint1Intensity * attenuation * 1.2, finalMetallic, finalSmoothness, viewDir);
+                                       uPoint1Intensity * attenuation * 2.0, finalMetallic, finalSmoothness, viewDir);
     
     // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
@@ -737,9 +735,9 @@ void main(void) {
     float attenuation = 1.0 - clamp(lightDistance / uPoint2Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    // Use PBR lighting calculation
+    // Use PBR lighting calculation (boost intensity for PBR energy conservation)
     vec3 pbrContribution = calculatePBR(diffuseColor.rgb, normal, lightDir, uPoint2Color, 
-                                       uPoint2Intensity * attenuation * 1.2, finalMetallic, finalSmoothness, viewDir);
+                                       uPoint2Intensity * attenuation * 2.0, finalMetallic, finalSmoothness, viewDir);
     
     // Calculate traditional intensity for shadow check compatibility
     float normalDot = max(dot(normal, lightDir), 0.0);
@@ -776,9 +774,9 @@ void main(void) {
     float attenuation = 1.0 - clamp(lightDistance / uPoint3Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    // Use PBR lighting calculation
+    // Use PBR lighting calculation (boost intensity for PBR energy conservation)
     vec3 pbrContribution = calculatePBR(diffuseColor.rgb, normal, lightDir, uPoint3Color, 
-                                       uPoint3Intensity * attenuation * 1.2, finalMetallic, finalSmoothness, viewDir);
+                                       uPoint3Intensity * attenuation * 2.0, finalMetallic, finalSmoothness, viewDir);
     
     // Calculate traditional intensity for shadow check compatibility
     float normalDot = max(dot(normal, lightDir), 0.0);
@@ -813,9 +811,9 @@ void main(void) {
       safeNormal = vec3(0.0, 0.0, 1.0); // Flat surface normal
     }
     
-    // Use PBR lighting calculation for directional light
+    // Use PBR lighting calculation for directional light (boost intensity for PBR energy conservation)
     vec3 pbrContribution = calculatePBR(diffuseColor.rgb, safeNormal, lightDir, uDir0Color, 
-                                       uDir0Intensity * 1.2, finalMetallic, finalSmoothness, viewDir);
+                                       uDir0Intensity * 2.0, finalMetallic, finalSmoothness, viewDir);
     
     // Calculate shadow for directional light (infinite range, always calculate shadows)
     float shadowFactor = 1.0;

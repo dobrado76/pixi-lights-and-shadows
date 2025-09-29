@@ -54,8 +54,8 @@
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
-      "metallic": 0.78,
-      "smoothness": 0.2,
+      "metallic": 0.06,
+      "smoothness": 0.15,
       "pivot": {
         "preset": "middle-center",
         "offsetX": 0,
