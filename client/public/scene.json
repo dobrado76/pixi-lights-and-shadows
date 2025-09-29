@@ -190,7 +190,7 @@
       "color": "0xffffff",
       "position": {
         "x": 150,
-        "y": 270,
+        "y": 290,
         "z": 70
       },
       "followMouse": false,
@@ -294,7 +294,7 @@
     "enableAmbientOcclusion": true,
     "enableNormalMapping": true,
     "enableLightMasks": true,
-    "enablePCSS": false,
+    "enablePCSS": true,
     "textureScale": 1,
     "fpsTarget": 60,
     "capFpsTo60": true,
