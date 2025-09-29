@@ -1290,12 +1290,14 @@ const PixiDemo = (props: PixiDemoProps) => {
 
       // FORCE DIRECTIONAL LIGHT SHADOW SETUP AFTER SHADERS ARE CREATED
       const directionalLight = lightsConfig.find(light => light.type === 'directional');
-      if (directionalLight && directionalLight.castsShadows) {
+      if (directionalLight) {
+        // Use SAME logic as runtime updates - only enable shadows if light is enabled AND casts shadows
+        const shouldCastShadows = directionalLight.enabled && directionalLight.castsShadows;
         
         // Apply directional shadow uniforms to ALL created shaders
         shadersRef.current.forEach(shader => {
           if (shader.uniforms) {
-            shader.uniforms.uDir0CastsShadows = true;
+            shader.uniforms.uDir0CastsShadows = shouldCastShadows;
           }
         });
       }
