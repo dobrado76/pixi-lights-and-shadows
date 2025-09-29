@@ -728,8 +728,13 @@ void main(void) {
     // Removed Y-flip branch that was causing triangular light shapes
     float attenuation = 1.0 - clamp(lightDistance / uPoint2Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
-    float normalDot = max(dot(normal, lightDir), 0.0);
     
+    // Use PBR lighting calculation
+    vec3 pbrContribution = calculatePBR(diffuseColor.rgb, normal, lightDir, uPoint2Color, 
+                                       uPoint2Intensity * attenuation, finalMetallic, finalSmoothness, viewDir);
+    
+    // Calculate traditional intensity for shadow check compatibility
+    float normalDot = max(dot(normal, lightDir), 0.0);
     float intensity = normalDot * uPoint2Intensity * attenuation;
     
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
@@ -741,13 +746,13 @@ void main(void) {
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uMasksEnabled && uPoint2HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uPoint2Mask, worldPos.xy, uPoint2Position.xy, uPoint2MaskOffset, uPoint2MaskRotation, uPoint2MaskScale, uPoint2MaskSize);
-      intensity *= maskValue; // Apply mask only where there's no shadow
+      pbrContribution *= maskValue;
     }
     
     // Apply THIS light's shadow
-    intensity *= shadowFactor;
+    pbrContribution *= shadowFactor;
     
-    finalColor += diffuseColor.rgb * uPoint2Color * intensity;
+    finalColor += pbrContribution;
   }
   
   // Point Light 3
@@ -762,8 +767,13 @@ void main(void) {
     // Removed Y-flip branch that was causing triangular light shapes
     float attenuation = 1.0 - clamp(lightDistance / uPoint3Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
-    float normalDot = max(dot(normal, lightDir), 0.0);
     
+    // Use PBR lighting calculation
+    vec3 pbrContribution = calculatePBR(diffuseColor.rgb, normal, lightDir, uPoint3Color, 
+                                       uPoint3Intensity * attenuation, finalMetallic, finalSmoothness, viewDir);
+    
+    // Calculate traditional intensity for shadow check compatibility
+    float normalDot = max(dot(normal, lightDir), 0.0);
     float intensity = normalDot * uPoint3Intensity * attenuation;
     
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
@@ -775,13 +785,13 @@ void main(void) {
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
     if (uMasksEnabled && uPoint3HasMask && shadowFactor >= 0.99) {
       float maskValue = sampleMask(uPoint3Mask, worldPos.xy, uPoint3Position.xy, uPoint3MaskOffset, uPoint3MaskRotation, uPoint3MaskScale, uPoint3MaskSize);
-      intensity *= maskValue; // Apply mask only where there's no shadow
+      pbrContribution *= maskValue;
     }
     
     // Apply THIS light's shadow
-    intensity *= shadowFactor;
+    pbrContribution *= shadowFactor;
     
-    finalColor += diffuseColor.rgb * uPoint3Color * intensity;
+    finalColor += pbrContribution;
   }
   
   // Directional Light 0
@@ -795,8 +805,9 @@ void main(void) {
       safeNormal = vec3(0.0, 0.0, 1.0); // Flat surface normal
     }
     
-    float normalDot = max(dot(safeNormal, lightDir), 0.0);
-    float intensity = normalDot * uDir0Intensity;
+    // Use PBR lighting calculation for directional light
+    vec3 pbrContribution = calculatePBR(diffuseColor.rgb, safeNormal, lightDir, uDir0Color, 
+                                       uDir0Intensity, finalMetallic, finalSmoothness, viewDir);
     
     // Calculate shadow for directional light (infinite range, always calculate shadows)
     float shadowFactor = 1.0;
@@ -805,9 +816,9 @@ void main(void) {
     }
     
     // Apply THIS light's shadow
-    intensity *= shadowFactor;
+    pbrContribution *= shadowFactor;
     
-    finalColor += diffuseColor.rgb * uDir0Color * intensity;
+    finalColor += pbrContribution;
   }
   
   // Directional Light 1
