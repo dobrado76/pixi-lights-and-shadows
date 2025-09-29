@@ -1826,7 +1826,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     const runUncapped = () => {
       if (!isRunning) return;
       ticker(); // Run our update logic
-      uncappedTimer = setTimeout(runUncapped, 1); // ~1000 FPS theoretical max
+      uncappedTimer = setTimeout(runUncapped, 8); // ~120 FPS for better responsiveness
     };
     
     // Use capped or uncapped mode based on performance settings  

@@ -301,13 +301,13 @@
   },
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.7,
+    "strength": 0.6,
     "maxLength": 200,
     "height": 10
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 4.95,
+    "strength": 4.8,
     "radius": 5,
     "samples": 8,
     "bias": 20
