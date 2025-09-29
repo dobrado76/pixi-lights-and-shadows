@@ -1,5 +1,32 @@
 {
   "scene": {
+    "background": {
+      "material": {
+        "image": "/textures/BGTextureTest.jpg",
+        "normal": "/textures/BGTextureNORM.jpg",
+        "useNormalMap": true,
+        "metallic": 0,
+        "smoothness": 0.5
+      },
+      "transform": {
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "rotation": 0,
+        "scale": 1
+      },
+      "sprite": {
+        "pivot": {
+          "preset": "top-left",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": -1,
+        "castsShadows": false,
+        "visible": false
+      }
+    },
     "background2": {
       "material": {
         "image": "/textures/white-fabric-texture-background.jpg",
@@ -33,7 +60,7 @@
         "normal": "/textures/ballN.png",
         "useNormalMap": true,
         "metallic": 0.15,
-        "smoothness": 0.2
+        "smoothness": 0.16
       },
       "transform": {
         "position": {
@@ -60,7 +87,7 @@
         "normal": "/textures/ballN.png",
         "useNormalMap": true,
         "metallic": 0.15,
-        "smoothness": 0.2
+        "smoothness": 0.14
       },
       "transform": {
         "position": {
@@ -113,8 +140,8 @@
         "image": "/textures/test2.png",
         "normal": "/textures/test2Normal.png",
         "useNormalMap": true,
-        "metallic": 0.4,
-        "smoothness": 0.33
+        "metallic": 0.7,
+        "smoothness": 0.45
       },
       "transform": {
         "position": {
@@ -165,22 +192,22 @@
     "block": {
       "material": {
         "image": "/textures/block.png",
-        "normal": "/textures/blockNormalMap.png",
+        "normal": "/textures/blockNormalMap.jpg",
         "useNormalMap": true,
         "metallic": 0,
         "smoothness": 0.5
       },
       "transform": {
         "position": {
-          "x": 178,
-          "y": 368
+          "x": 269,
+          "y": 95
         },
         "rotation": 0,
         "scale": 1
       },
       "sprite": {
         "pivot": {
-          "preset": "middle-center",
+          "preset": "top-left",
           "offsetX": 0,
           "offsetY": 0
         },
@@ -194,16 +221,16 @@
         "image": "/textures/block2.png",
         "normal": "/textures/block2NormalMap.png",
         "useNormalMap": true,
-        "metallic": 0,
+        "metallic": 0.34,
         "smoothness": 0.5
       },
       "transform": {
         "position": {
-          "x": 235,
-          "y": 368
+          "x": 291,
+          "y": 351
         },
-        "rotation": 0,
-        "scale": 1
+        "rotation": 0.24434609527920614,
+        "scale": 1.3
       },
       "sprite": {
         "pivot": {

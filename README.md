@@ -42,6 +42,14 @@ Experience the full lighting and shadow system in action with interactive contro
 - **Real-Time Transforms**: Live adjustment of mask offset, rotation, and scale
 - **Shadow-Aware Masking**: Masks only apply in fully lit areas, shadows override masks
 
+### ✨ Unity-Style PBR Material System
+- **Physically Based Rendering**: Complete PBR implementation with metallic and smoothness properties
+- **Inline Material Architecture**: Simplified ECS structure with materials embedded directly in sprite components
+- **Metallic Workflow**: Industry-standard metallic/roughness PBR pipeline
+- **Real-Time Material Editing**: Live adjustment of metallic and smoothness values with instant visual feedback
+- **Material Property Integration**: Seamless integration with lighting, shadows, and normal mapping systems
+- **Performance Optimized**: Efficient GPU utilization for real-time PBR calculations
+
 ### 📄 Unified JSON Configuration System
 - **Single Configuration File**: Everything stored in `scene.json` - sprites, lights, and shadow settings in one place
 - **Real-Time UI Editing**: All scene objects and lighting parameters editable through interactive controls
@@ -67,69 +75,79 @@ Experience the full lighting and shadow system in action with interactive contro
 
 ## 📁 Configuration System
 
-### Unified Configuration (`client/public/scene.json`)
+### Unified ECS Configuration (`client/public/scene.json`)
 
-All scene, lighting, shadow, and performance data is stored in a single JSON file with five main sections:
+All scene, lighting, shadow, and performance data is stored in a single JSON file using an Entity Component System (ECS) architecture with five main sections:
 
 ```json
 {
   "scene": {
     "background": {
-      "image": "/textures/BGTextureTest.jpg", 
-      "normal": "/textures/BGTextureNORM.jpg",
-      "position": { "x": 0, "y": 0 },
-      "rotation": 0,
-      "scale": 1,
-      "zOrder": -1,
-      "castsShadows": false,
-      "visible": false,
-      "useNormalMap": true,
-      "pivot": { "preset": "top-left", "offsetX": 0, "offsetY": 0 },
-      "receivesAO": false
+      "material": {
+        "image": "/textures/BGTextureTest.jpg",
+        "normal": "/textures/BGTextureNORM.jpg", 
+        "useNormalMap": true,
+        "metallic": 0,
+        "smoothness": 0.5
+      },
+      "transform": {
+        "position": { "x": 0, "y": 0 },
+        "rotation": 0,
+        "scale": 1
+      },
+      "sprite": {
+        "pivot": { "preset": "top-left", "offsetX": 0, "offsetY": 0 },
+        "zOrder": -1,
+        "castsShadows": false,
+        "visible": false
+      }
     },
     "block2": {
-      "image": "/textures/block2.png",
-      "normal": "/textures/block2NormalMap.png", 
-      "position": { "x": 291, "y": 354 },
-      "rotation": 0.3665191429188092,
-      "scale": 1.2,
-      "zOrder": 0,
-      "castsShadows": true,
-      "visible": true,
-      "useNormalMap": true,
-      "pivot": { "preset": "middle-center", "offsetX": 0, "offsetY": 0 }
+      "material": {
+        "image": "/textures/block2.png",
+        "normal": "/textures/block2NormalMap.png",
+        "useNormalMap": true,
+        "metallic": 0.34,
+        "smoothness": 0.5
+      },
+      "transform": {
+        "position": { "x": 291, "y": 351 },
+        "rotation": 0.24434609527920614,
+        "scale": 1.3
+      },
+      "sprite": {
+        "pivot": { "preset": "middle-center", "offsetX": 0, "offsetY": 0 },
+        "zOrder": 1,
+        "castsShadows": true,
+        "visible": true
+      }
     }
   },
   "lights": [
     {
       "id": "mouse_light",
-      "type": "point", 
+      "type": "point",
       "enabled": true,
-      "brightness": 0.7,
-      "color": "0xffffff",
       "position": { "x": 250, "y": 170, "z": 70 },
+      "direction": { "x": 0, "y": 0, "z": 0 },
+      "color": { "r": 1, "g": 1, "b": 1 },
+      "intensity": 0.7,
       "followMouse": true,
       "castsShadows": true,
-      "radius": 350
+      "radius": 270
     },
     {
-      "id": "spotlight_1",
+      "id": "spotlight_1", 
       "type": "spotlight",
-      "enabled": true, 
-      "brightness": 0.7,
-      "color": "0xf4f080",
-      "position": { "x": 200, "y": 210, "z": 80 },
-      "directionX": 0, "directionY": 1, "directionZ": -1,
+      "enabled": true,
+      "position": { "x": 180, "y": 210, "z": 80 },
+      "direction": { "x": 0, "y": 1, "z": -1 },
+      "color": { "r": 0.956, "g": 0.941, "b": 0.502 },
+      "intensity": 0.9,
       "castsShadows": true,
-      "radius": 780,
-      "coneAngle": 49,
-      "softness": 0.2,
-      "mask": {
-        "image": "god-rays.png",
-        "offset": { "x": 15, "y": 25 },
-        "rotation": 0,
-        "scale": 1.4
-      }
+      "radius": 480,
+      "coneAngle": 58,
+      "softness": 0.2
     }
   ],
   "performanceSettings": {
@@ -142,38 +160,44 @@ All scene, lighting, shadow, and performance data is stored in a single JSON fil
     "enableLightMasks": true,
     "textureScale": 1,
     "fpsTarget": 60,
+    "capFpsTo60": true,
     "manualOverride": true
   },
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.55,
-    "maxLength": 280,
-    "height": 8,
-    "bias": 3
+    "strength": 0.6,
+    "maxLength": 130,
+    "height": 10
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 1.95,
-    "radius": 8,
-    "samples": 16,
-    "bias": 7.5
+    "strength": 4.8,
+    "radius": 5,
+    "samples": 8,
+    "bias": 20
   }
 }
 ```
 
-### Scene Object Properties
+### ECS Component Structure
+
+#### Material Component
 - **image**: Path to diffuse texture (relative to public/)
 - **normal**: Path to normal map texture for surface detail
-- **position**: X,Y coordinates in screen space (relative to pivot point)
+- **useNormalMap**: Whether to apply normal mapping for this sprite
+- **metallic**: Metallic property for PBR rendering (0.0 = dielectric, 1.0 = metallic)
+- **smoothness**: Surface smoothness for PBR rendering (0.0 = rough, 1.0 = mirror-like)
+
+#### Transform Component
+- **position**: X,Y coordinates in screen space (relative to sprite's pivot point)
 - **rotation**: Rotation angle in radians (sprite rotates around pivot point)
 - **scale**: Size multiplier (1.0 = original size, scales around pivot point)
-- **zOrder**: Rendering order (lower values render first)
-- **castsShadows**: Whether object blocks light and casts shadows
-- **receiveShadows**: Whether object receives shadows from other objects (optional)
-- **visible**: Whether object is rendered
-- **useNormalMap**: Whether to apply normal mapping
-- **receivesAO**: Whether object receives ambient occlusion effects (optional)
+
+#### Sprite Component
 - **pivot**: Anchor point configuration that determines scaling and rotation center
+- **zOrder**: Rendering order (lower values render first, allows negative values)
+- **castsShadows**: Whether object blocks light and casts shadows
+- **visible**: Whether object is rendered in the scene
 
 #### Pivot System
 The pivot system determines how sprites are positioned, scaled, and rotated:
@@ -204,16 +228,16 @@ If no pivot is specified, sprites use `"top-left"` pivot, meaning the position c
 
 ### Light Properties
 - **id**: Unique identifier for the light
-- **type**: Light type (`point`, `spotlight`, `directional`, `ambient`)
+- **type**: Light type (`point`, `spotlight`, `directional`)
 - **enabled**: Whether the light is active
-- **brightness**: Light intensity multiplier
-- **color**: Hex color value (e.g., "0xffffff")
-- **position**: 3D position object with x, y, z coordinates (point/spotlight only)
-- **directionX, directionY, directionZ**: Light direction (directional/spotlight only)
+- **position**: 3D position object with x, y, z coordinates
+- **direction**: 3D direction object with x, y, z components (directional/spotlight only)
+- **color**: RGB color object with r, g, b components (0.0 - 1.0 range)
+- **intensity**: Light intensity multiplier
 - **radius**: Attenuation distance (point/spotlight only)
-- **coneAngle**: Spotlight cone angle in degrees
-- **softness**: Spotlight edge softness (0.0 - 1.0)
-- **followMouse**: Whether light tracks mouse cursor
+- **coneAngle**: Spotlight cone angle in degrees (spotlight only)
+- **softness**: Spotlight edge softness (0.0 - 1.0, spotlight only)
+- **followMouse**: Whether light tracks mouse cursor (point lights only)
 - **castsShadows**: Whether this light casts shadows
 
 ### Mask Properties
