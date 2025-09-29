@@ -10,6 +10,8 @@ import * as PIXI from 'pixi.js';
 export interface SpriteDefinition {
   image: string;
   normal?: string;                    // Optional normal map texture
+  metallicMap?: string;               // Optional metallic map texture (R channel = metallic)
+  smoothnessMap?: string;             // Optional smoothness map texture (R channel = smoothness)
   position?: { x: number; y: number };
   rotation?: number;                  // Radians
   scale?: number;
@@ -17,6 +19,8 @@ export interface SpriteDefinition {
   castsShadows?: boolean;             // Participates in shadow casting & ambient occlusion
   visible?: boolean;                  // Controls sprite visibility without deletion
   useNormalMap?: boolean;             // Whether to use normal mapping for this sprite
+  metallic?: number;                  // Metallic value 0.0-1.0 (0 = dielectric, 1 = metal)
+  smoothness?: number;                // Smoothness value 0.0-1.0 (0 = rough, 1 = mirror-like)
   pivot?: {                           // Optional pivot point for rotation and scaling
     preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'custom-offset';
     offsetX?: number;
@@ -28,6 +32,8 @@ export interface SpriteDefinition {
 interface CompleteSpriteDefinition {
   image: string;
   normal: string;                     // Always present (empty string = auto-generate flat normal)
+  metallicMap: string;                // Always present (empty string = use scalar value only)
+  smoothnessMap: string;              // Always present (empty string = use scalar value only)
   position: { x: number; y: number };
   rotation: number;
   scale: number;
@@ -35,6 +41,8 @@ interface CompleteSpriteDefinition {
   castsShadows: boolean;              // Participates in shadow casting & ambient occlusion
   visible: boolean;
   useNormalMap: boolean;
+  metallic: number;                   // Always present (0.0-1.0, default 0.0 = dielectric)
+  smoothness: number;                 // Always present (0.0-1.0, default 0.5 = semi-rough)
   pivot: {                            // Always present with defaults applied
     preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'custom-offset';
     offsetX: number;
@@ -58,9 +66,11 @@ export class SceneSprite {
   public mesh: PIXI.Mesh | null = null;           // Final rendered mesh
   public shader: PIXI.Shader | null = null;       // Compiled shader program
   public geometry: PIXI.Geometry | null = null;   // Vertex/UV/index buffers
-  public diffuseTexture: PIXI.Texture | null = null;  // Main color texture
-  public normalTexture: PIXI.Texture | null = null;   // Normal map or generated flat normal
-  public needsMeshCreation: boolean = false;      // Flag indicating mesh needs to be created
+  public diffuseTexture: PIXI.Texture | null = null;    // Main color texture
+  public normalTexture: PIXI.Texture | null = null;     // Normal map or generated flat normal
+  public metallicTexture: PIXI.Texture | null = null;   // Metallic map or generated white texture
+  public smoothnessTexture: PIXI.Texture | null = null; // Smoothness map or generated gray texture
+  public needsMeshCreation: boolean = false;            // Flag indicating mesh needs to be created
 
   constructor(id: string, definition: SpriteDefinition) {
     this.id = id;
@@ -68,6 +78,8 @@ export class SceneSprite {
     this.definition = {
       image: definition.image,
       normal: definition.normal || '',                 // Empty = generate flat normal
+      metallicMap: definition.metallicMap || '',       // Empty = use scalar value only
+      smoothnessMap: definition.smoothnessMap || '',   // Empty = use scalar value only
       position: definition.position || { x: 0, y: 0 }, // Top-left origin
       rotation: definition.rotation || 0,              // No rotation
       scale: definition.scale || 1,                    // 1:1 pixel scale
@@ -75,6 +87,8 @@ export class SceneSprite {
       castsShadows: definition.castsShadows ?? true,   // Most sprites cast shadows & AO
       visible: definition.visible ?? true,             // Visible by default
       useNormalMap: definition.useNormalMap ?? true,   // Use normal mapping by default
+      metallic: definition.metallic ?? 0.0,            // Default 0.0 = dielectric (non-metal)
+      smoothness: definition.smoothness ?? 0.5,        // Default 0.5 = semi-rough surface
       pivot: { 
         preset: definition.pivot?.preset || 'middle-center', 
         offsetX: definition.pivot?.offsetX || 0, 
