@@ -80,6 +80,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   const uniformsDirtyRef = useRef<boolean>(true);
   const occluderMapDirtyRef = useRef<boolean>(true);
   const shadowCastersDirtyRef = useRef<boolean>(true);
+  const lastDirectionalLightStateRef = useRef<boolean | null>(null);
 
   // Performance optimization utilities
   const createLightConfigHash = (lights: Light[], ambient: any, shadow: any, ao: any, performance: any) => {
@@ -1816,8 +1817,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // CRITICAL FIX: Force occluder map rebuild when directional lights toggle
       // Directional lights need the occluder map to calculate shadows properly
-      if (enabledDirectionalLights.length > 0) {
-        occluderMapDirtyRef.current = true; // Force rebuild to ensure directional shadows work
+      // Track changes in directional light state, not just current state
+      const currentDirectionalLightState = enabledDirectionalLights.length > 0;
+      if (!lastDirectionalLightStateRef.current || lastDirectionalLightStateRef.current !== currentDirectionalLightState) {
+        occluderMapDirtyRef.current = true; // Force rebuild when directional light state changes
+        lastDirectionalLightStateRef.current = currentDirectionalLightState;
       }
       
       // Reset dirty flag
