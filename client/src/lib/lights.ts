@@ -345,11 +345,12 @@ export const convertLightToConfig = (light: Light): LightConfig => {
 };
 
 // Save lights configuration to scene.json
-export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity: number, color: {r: number, g: number, b: number}}, shadowConfig?: ShadowConfig): Promise<boolean> => {
+export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity: number, color: {r: number, g: number, b: number}}, shadowConfig?: ShadowConfig, currentScene?: any): Promise<boolean> => {
   try {
-    // First, load the current scene config to preserve sprites
-    const sceneResponse = await fetch('/api/load-scene-config');
-    const currentScene = await sceneResponse.json();
+    // Use provided scene data instead of fetching (eliminates race conditions)
+    if (!currentScene) {
+      throw new Error('Current scene data must be provided to saveLightsConfig');
+    }
 
     // Convert lights back to config format
     const lightConfigs = lights.map(convertLightToConfig);

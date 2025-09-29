@@ -103,7 +103,7 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     
     const timeout = setTimeout(async () => {
       try {
-        const success = await saveLightsConfig(lights, ambient, shadows);
+        const success = await saveLightsConfig(lights, ambient, shadows, sceneConfig);
         if (success) {
           console.log('Lights configuration auto-saved successfully');
         } else {
@@ -115,7 +115,7 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     }, 500);
     
     setSaveTimeout(timeout);
-  }, [saveTimeout]);
+  }, [saveTimeout, sceneConfig]);
 
   // Debounced save for scene configuration
   const debouncedSaveScene = useCallback((fullSceneData: SceneConfig) => {
