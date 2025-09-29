@@ -257,7 +257,25 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
     vec2 adjustedUV = (occluderUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
     float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
     if (occluderAlpha > 0.5) {
-      return 1.0 - uShadowStrength; // Apply shadow strength: 0=no shadow, 1=full shadow
+      // Calculate shadow length from light to pixel (like directional lights)
+      float shadowLength = rayLength - distance; // Distance from occluder to receiver (pixel)
+      
+      // Limit shadow by max shadow length (same logic as directional lights)
+      if (shadowLength > uShadowMaxLength) {
+        return 1.0; // Shadow is longer than max allowed
+      }
+      
+      // Gradual fade-out towards max shadow length to avoid hard cutoffs (same as directional)
+      float maxLengthFade = 1.0 - smoothstep(uShadowMaxLength * 0.7, uShadowMaxLength, shadowLength);
+      if (maxLengthFade <= 0.0) return 1.0; // Completely faded out
+      
+      // Apply shadow strength with distance-based softness (enhanced like directional)
+      float normalizedDistance = shadowLength / uShadowMaxLength;
+      float distanceFade = exp(-normalizedDistance * 2.0);
+      
+      float finalShadowStrength = uShadowStrength * distanceFade * maxLengthFade;
+      
+      return 1.0 - clamp(finalShadowStrength, 0.0, uShadowStrength);
     }
   }
   
