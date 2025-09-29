@@ -80,7 +80,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   const uniformsDirtyRef = useRef<boolean>(true);
   const occluderMapDirtyRef = useRef<boolean>(true);
   const shadowCastersDirtyRef = useRef<boolean>(true);
-  const lastDirectionalLightStateRef = useRef<boolean | null>(null);
 
   // Performance optimization utilities
   const createLightConfigHash = (lights: Light[], ambient: any, shadow: any, ao: any, performance: any) => {
@@ -1070,14 +1069,14 @@ const PixiDemo = (props: PixiDemoProps) => {
             const prefix = `uDir${slotIdx}`;
 
             
-            // Use enabled flag for existence, intensity for visibility (consistent with runtime)
-            uniforms[`${prefix}Enabled`] = light.enabled; // Controls whether light exists - FIXED TO MATCH RUNTIME
+            // Directional lights are ALWAYS enabled (like ambient light) - intensity=0 disables
+            uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - directional light is always on
             uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
             uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
-            uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
+            uniforms[`${prefix}Intensity`] = light.intensity; // Use actual intensity (can be 0 to disable)
             
-            // Shadow casting flag for directional lights (CRITICAL - was missing!)
-            uniforms[`${prefix}CastsShadows`] = light.enabled && light.castsShadows;
+            // Shadow casting flag for directional lights
+            uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
           });
           
           // Spotlights (performance-limited) - pass lights with stable slot assignment
@@ -1579,18 +1578,18 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
       });
       
-      // Directional Lights (up to 2) - RUNTIME UPDATES - pass ALL lights with stable slot assignment
+      // Directional Lights (up to 2) - RUNTIME UPDATES - always enabled like ambient light
       allDirectionalLights.slice(0, 2).forEach((light, slotIdx) => {
         const prefix = `uDir${slotIdx}`;
         
-        // Use enabled flag for existence, intensity for visibility (physics-correct approach)
-        uniforms[`${prefix}Enabled`] = light.enabled; // Controls whether light exists
-        uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Controls light strength
+        // Directional lights are ALWAYS enabled (like ambient light) - intensity=0 disables
+        uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - directional light is always on
+        uniforms[`${prefix}Intensity`] = light.intensity; // Use actual intensity (can be 0 to disable)
         uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
         uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
         
         // Shadow casting flag for directional lights
-        uniforms[`${prefix}CastsShadows`] = light.enabled && light.castsShadows;
+        uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
       });
       
       // Spotlights (up to 4) - pass ALL lights with stable slot assignment
@@ -1810,24 +1809,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         });
       }
       
-      // Always update directional light shadows when lights change (fix for toggle bug)
-      const enabledDirectionalLights = lightsConfig.filter(light => light.enabled && light.type === 'directional');
-      const allDirectionalLights = lightsConfig.filter(light => light.type === 'directional');
-      
-      // Only update shadow casting flag to fix original issue
-      shadersRef.current.forEach(shader => {
-        if (shader.uniforms) {
-          shader.uniforms.uDir0CastsShadows = enabledDirectionalLights.length > 0 && enabledDirectionalLights[0].castsShadows;
-        }
-      });
-      
-      // CRITICAL FIX: Force occluder map rebuild when directional lights change state
-      // This ensures shadows work immediately when directional lights are toggled
-      const currentDirLightState = enabledDirectionalLights.length > 0;
-      if (lastDirectionalLightStateRef.current !== currentDirLightState) {
-        occluderMapDirtyRef.current = true; // Force rebuild when state changes
-        lastDirectionalLightStateRef.current = currentDirLightState;
-      }
+      // Directional lights are always enabled - no state tracking needed
       
       // Reset dirty flag
       if (uniformsDirtyRef.current) {

@@ -242,7 +242,6 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
             data-testid="dropdown-light-type"
           >
             <option value="point">Point</option>
-            <option value="directional">Directional</option>
             <option value="spotlight">Spotlight</option>
           </select>
           <button
@@ -295,6 +294,94 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
           />
         </div>
       </div>
+
+      {/* Directional Light Control (always enabled, like ambient) */}
+      {(() => {
+        const directionalLight = localLights.find(light => light.type === 'directional');
+        if (!directionalLight) return null;
+        
+        const directionAngle = Math.atan2(directionalLight.direction.y, directionalLight.direction.x) * 180 / Math.PI + 180;
+        
+        return (
+          <div className="border-b border-border pb-2">
+            <div className="mb-2">
+              <span className="text-xs font-medium text-foreground">Directional Light</span>
+            </div>
+            
+            {/* Intensity */}
+            <div className="flex items-center space-x-2 mb-1">
+              <label className="text-xs text-muted-foreground min-w-[80px]">
+                Intensity: {directionalLight.intensity.toFixed(2)}
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="5"
+                step="0.1"
+                value={directionalLight.intensity}
+                onChange={(e) => updateLight(directionalLight.id, { intensity: parseFloat(e.target.value) })}
+                className="flex-1"
+                data-testid="slider-directional-intensity"
+              />
+            </div>
+            
+            {/* Direction */}
+            <div className="flex items-center space-x-2 mb-1">
+              <label className="text-xs text-muted-foreground min-w-[80px]">
+                Direction: {directionAngle.toFixed(0)}°
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="360"
+                step="1"
+                value={directionAngle}
+                onChange={(e) => {
+                  const angle = parseFloat(e.target.value);
+                  const radians = (angle - 180) * Math.PI / 180;
+                  const newDirection = {
+                    x: Math.cos(radians),
+                    y: Math.sin(radians),
+                    z: directionalLight.direction.z
+                  };
+                  updateLight(directionalLight.id, { direction: newDirection });
+                }}
+                className="flex-1"
+                data-testid="slider-directional-direction"
+              />
+            </div>
+            
+            {/* Color */}
+            <div className="flex items-center space-x-2 mb-1">
+              <label className="text-xs text-muted-foreground min-w-[80px]">
+                Color:
+              </label>
+              <input
+                type="color"
+                value={rgbToHex(directionalLight.color.r, directionalLight.color.g, directionalLight.color.b)}
+                onChange={(e) => {
+                  const rgb = hexToRgb(e.target.value);
+                  updateLight(directionalLight.id, { color: rgb });
+                }}
+                className="w-20 h-6 rounded border border-border cursor-pointer"
+                data-testid="color-directional-light"
+              />
+            </div>
+            
+            {/* Cast Shadows */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={directionalLight.castsShadows || false}
+                onChange={(e) => updateLight(directionalLight.id, { castsShadows: e.target.checked })}
+                className="w-3 h-3"
+                data-testid="checkbox-directional-cast-shadows"
+              />
+              <label className="text-xs text-muted-foreground">Cast Shadows</label>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Shadow Configuration Panel */}
       <div className="border-b border-border pb-2">
@@ -501,8 +588,8 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
         )}
       </div>
 
-      {/* Compact Light Controls */}
-      {localLights.map((light) => {
+      {/* Compact Light Controls - exclude directional lights (they have their own section) */}
+      {localLights.filter(light => light.type !== 'directional').map((light) => {
         // Calculate angle from direction for directional lights
         const directionAngle = light.type === 'directional' 
           ? Math.atan2(light.direction.y, light.direction.x) * 180 / Math.PI + 180
