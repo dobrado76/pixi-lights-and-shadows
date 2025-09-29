@@ -69,6 +69,87 @@ const PixiDemo = (props: PixiDemoProps) => {
   const occluderRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
   const occluderContainerRef = useRef<PIXI.Container | null>(null);
   const occluderSpritesRef = useRef<PIXI.Sprite[]>([]);
+  
+  // Performance optimization caches with dirty flags
+  const lastUniformsRef = useRef<any>({});
+  const lastShadowCastersRef = useRef<any[]>([]);
+  const frameCountRef = useRef<number>(0);
+  const lastLightConfigHashRef = useRef<string>('');
+  
+  // Dirty flags for performance optimization
+  const uniformsDirtyRef = useRef<boolean>(true);
+  const occluderMapDirtyRef = useRef<boolean>(true);
+  const shadowCastersDirtyRef = useRef<boolean>(true);
+
+  // Performance optimization utilities
+  const createLightConfigHash = (lights: Light[], ambient: any, shadow: any, ao: any, performance: any) => {
+    return JSON.stringify({
+      lights: lights.map(l => ({ 
+        id: l.id, enabled: l.enabled, type: l.type, 
+        position: l.position, intensity: l.intensity, 
+        color: l.color, radius: l.radius,
+        direction: l.direction, castsShadows: l.castsShadows
+      })),
+      ambient: { intensity: ambient.intensity, color: ambient.color },
+      shadow: { enabled: shadow.enabled && performance.enableShadows, strength: shadow.strength },
+      ao: { enabled: ao.enabled && performance.enableAmbientOcclusion, strength: ao.strength },
+      quality: performance.quality
+    });
+  };
+
+  const areUniformsEqual = (a: any, b: any): boolean => {
+    for (const key in a) {
+      if (a[key] !== b[key]) {
+        if (Array.isArray(a[key]) && Array.isArray(b[key])) {
+          if (a[key].length !== b[key].length) return false;
+          for (let i = 0; i < a[key].length; i++) {
+            if (a[key][i] !== b[key][i]) return false;
+          }
+        } else {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  const areShadowCastersEqual = (a: any[], b: any[]): boolean => {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i].id !== b[i].id || a[i].zOrder !== b[i].zOrder || a[i].castsShadows !== b[i].castsShadows) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Dirty flag management for performance optimization
+  const checkAndUpdateDirtyFlags = () => {
+    const currentLightHash = createLightConfigHash(lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings);
+    const currentShadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
+    
+    // Check if lighting configuration changed (affects uniforms)
+    if (currentLightHash !== lastLightConfigHashRef.current) {
+      uniformsDirtyRef.current = true;
+      lastLightConfigHashRef.current = currentLightHash;
+    }
+    
+    // Check if shadow casters changed (affects occluder map)
+    if (!areShadowCastersEqual(currentShadowCasters, lastShadowCastersRef.current)) {
+      occluderMapDirtyRef.current = true;
+      shadowCastersDirtyRef.current = true;
+      lastShadowCastersRef.current = [...currentShadowCasters];
+    }
+  };
+
+  const markUniformsDirty = () => {
+    uniformsDirtyRef.current = true;
+  };
+
+  const markOccluderMapDirty = () => {
+    occluderMapDirtyRef.current = true;
+    shadowCastersDirtyRef.current = true;
+  };
 
   /**
    * Creates shadow volume geometry by projecting caster corners away from light.
@@ -813,6 +894,18 @@ const PixiDemo = (props: PixiDemoProps) => {
         // UNIFIED IMMEDIATE UPDATE SYSTEM for ALL UI controls
         const immediateUpdateHandler = (spriteId: string, updates: any) => {
           console.log(`🚀 IMMEDIATE UPDATE for ${spriteId}:`, Object.keys(updates));
+          
+          // Smart dirty flag optimization - only mark dirty what actually changed
+          const positionChanged = 'position' in updates;
+          const transformChanged = 'rotation' in updates || 'scale' in updates || 'zOrder' in updates;
+          const shadowChanged = 'castsShadows' in updates;
+          const visibilityChanged = 'visible' in updates;
+          
+          if (positionChanged || transformChanged || shadowChanged || visibilityChanged) {
+            occluderMapDirtyRef.current = true;
+            shadowCastersDirtyRef.current = true;
+          }
+          
           if (sceneManagerRef.current && sceneContainerRef.current) {
             const sprite = sceneManagerRef.current.getSprite(spriteId);
             if (sprite && sprite.mesh) {
@@ -1385,7 +1478,8 @@ const PixiDemo = (props: PixiDemoProps) => {
 
   // Dynamic shader uniform updates for real-time lighting changes
   useEffect(() => {
-    // Lighting update effect - cleaned up for performance
+    // UI modification detected - mark uniforms as dirty
+    uniformsDirtyRef.current = true;
     
     if (shadersRef.current.length === 0) return;
     
@@ -1670,13 +1764,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Single unified render call
       pixiApp.render();
       
-      // Force immediate render after updating lighting uniforms
-      if (pixiApp && pixiApp.renderer) {
-        // Forcing immediate render after lighting uniform updates
-        pixiApp.render();
-      } else {
-        console.warn('⚠️ Cannot render - pixiApp or renderer not available');
-      }
+      // Render is handled by animation loop - no need for double rendering
     }
   }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings]);
 
@@ -1686,6 +1774,8 @@ const PixiDemo = (props: PixiDemoProps) => {
     if (!pixiApp || !pixiApp.ticker) return;
 
     const ticker = () => {
+      frameCountRef.current++;
+      
       // Performance monitoring and adaptive quality
       if (adaptiveQualityRef.current) {
         const perfData = adaptiveQualityRef.current.update();
@@ -1693,6 +1783,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         if (perfData.adjusted) {
           console.log(`📊 Performance adjusted: ${perfData.fps}fps avg, new quality: ${adaptiveQualityRef.current.getSettings().quality}`);
+          // Performance change affects uniforms
+          uniformsDirtyRef.current = true;
         }
         
         // Report performance data back to parent
@@ -1701,36 +1793,38 @@ const PixiDemo = (props: PixiDemoProps) => {
         }
       }
       
+      // Update time uniform every frame (this is cheap)
       if (shadersRef.current.length > 0 && shadersRef.current[0].uniforms) {
         shadersRef.current[0].uniforms.uTime += 0.02;
       }
       
-      // Trigger shadow system check and render loop every frame
-      const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
-      // Always build occluder map in unified system
-      {
-        // Unlimited shadows: ${shadowCasters.length} casters detected
+      // Check for changes and update dirty flags
+      checkAndUpdateDirtyFlags();
+      
+      // Only rebuild occluder map if shadow casters changed
+      if (occluderMapDirtyRef.current && occluderRenderTargetRef.current) {
+        buildOccluderMap();
+        occluderMapDirtyRef.current = false;
         
-        // TRIGGER THE RENDER LOOP FOR UNLIMITED SHADOWS
-        const useOccluderMap = true;
-        if (useOccluderMap && occluderRenderTargetRef.current) {
-          // Triggering occluder map build from animation loop
-          buildOccluderMap();
-          
-          // Update all shaders to use single global occluder map
-          shadersRef.current.forEach(shader => {
-            if (shader.uniforms) {
-              shader.uniforms.uUseOccluderMap = true;
-              shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
-              shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
-              
-              // Only enable directional shadows if there are actually enabled directional lights
-              const enabledDirectionalLights = lightsConfig.filter(light => light.enabled && light.type === 'directional');
-              shader.uniforms.uDir0CastsShadows = enabledDirectionalLights.length > 0 && enabledDirectionalLights[0].castsShadows;
-            }
-          });
-          // Unlimited shadows applied from animation loop
-        }
+        // Update shader uniforms to use occluder map
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uUseOccluderMap = true;
+            shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
+            shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
+          }
+        });
+      }
+      
+      // Only update directional light shadows if lighting changed
+      if (uniformsDirtyRef.current) {
+        const enabledDirectionalLights = lightsConfig.filter(light => light.enabled && light.type === 'directional');
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uDir0CastsShadows = enabledDirectionalLights.length > 0 && enabledDirectionalLights[0].castsShadows;
+          }
+        });
+        uniformsDirtyRef.current = false;
       }
       
       // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
