@@ -811,7 +811,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       console.log('🌑 Occluder render target initialized for unlimited shadow casters');
       } else {
-        throw new Error('Canvas element not found');
+        console.warn('Canvas element not available for PIXI initialization');
+        return; // Exit gracefully instead of throwing
       }
     } catch (error) {
       console.error('PIXI Application initialization failed:', error);

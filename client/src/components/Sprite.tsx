@@ -641,8 +641,27 @@ export class SceneManager {
     for (const [key, newSpriteData] of Object.entries(sceneData.scene)) {
       const existingSprite = this.sprites.get(key);
       if (existingSprite) {
-        // Update the sprite's definition
-        const newDef = newSpriteData as SpriteDefinition;
+        // Extract data from ECS structure
+        const entityData = newSpriteData as any;
+        const material = entityData.material;
+        const transform = entityData.transform;
+        const spriteComponent = entityData.sprite;
+        
+        // Convert ECS structure to flat SpriteDefinition format
+        const newDef: SpriteDefinition = {
+          image: material.image || '',
+          normal: material.normal || '',
+          useNormalMap: material.useNormalMap ?? false,
+          metallic: material.metallic ?? 0.0,
+          smoothness: material.smoothness ?? 0.5,
+          position: transform.position,
+          rotation: transform.rotation,
+          scale: transform.scale,
+          zOrder: spriteComponent.zOrder,
+          castsShadows: spriteComponent.castsShadows,
+          visible: spriteComponent.visible,
+          pivot: spriteComponent.pivot
+        };
         const wasVisible = existingSprite.definition.visible;
         const oldZOrder = existingSprite.definition.zOrder;
         // Create a properly typed updated definition
