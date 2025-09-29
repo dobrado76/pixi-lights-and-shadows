@@ -1034,6 +1034,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
             uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
             uniforms[`${prefix}Radius`] = light.radius || 200;
+            uniforms[`${prefix}LightSize`] = light.lightSize || 10; // PCSS light size
             
             // ✅ Handle mask (always load, toggle with performance setting)
             if (light.mask) {
@@ -1074,6 +1075,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
             uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
             uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
+            uniforms[`${prefix}LightSize`] = light.lightSize || 5; // PCSS light size for directional lights
           });
           
           // Spotlights (performance-limited) - pass lights with stable slot assignment
@@ -1096,6 +1098,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`${prefix}Radius`] = light.radius || 150;
             uniforms[`${prefix}ConeAngle`] = light.coneAngle || 30;
             uniforms[`${prefix}Softness`] = light.softness || 0.5;
+            uniforms[`${prefix}LightSize`] = light.lightSize || 8; // PCSS light size for spotlights
             
             // ✅ Handle mask (always load, toggle with performance setting)
             if (light.mask) {
@@ -1488,6 +1491,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uPoint0CastsShadows = false; uniforms.uPoint1CastsShadows = false; uniforms.uPoint2CastsShadows = false; uniforms.uPoint3CastsShadows = false;
       uniforms.uDir0CastsShadows = false; uniforms.uDir1CastsShadows = false;
       uniforms.uSpot0CastsShadows = false; uniforms.uSpot1CastsShadows = false; uniforms.uSpot2CastsShadows = false; uniforms.uSpot3CastsShadows = false;
+      
+      // Initialize all light sizes for PCSS
+      uniforms.uPoint0LightSize = 10; uniforms.uPoint1LightSize = 10; uniforms.uPoint2LightSize = 10; uniforms.uPoint3LightSize = 10;
+      uniforms.uDir0LightSize = 5; uniforms.uDir1LightSize = 5;
+      uniforms.uSpot0LightSize = 8; uniforms.uSpot1LightSize = 8; uniforms.uSpot2LightSize = 8; uniforms.uSpot3LightSize = 8;
 
       // Add shadow system uniforms - performance-filtered from scene configuration
       uniforms.uShadowsEnabled = shadowConfig.enabled && performanceSettings.enableShadows;
