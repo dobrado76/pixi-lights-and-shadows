@@ -13,6 +13,13 @@ export interface PerformanceSettings {
   textureScale: number;
   fpsTarget: number;
   manualOverride?: boolean;
+  // Enhanced mobile settings
+  shaderPrecision?: 'lowp' | 'mediump' | 'highp';
+  enableViewportCulling?: boolean;
+  frameSkipThreshold?: number;
+  updateFrequencyScale?: number;
+  enableProgressiveEnhancement?: boolean;
+  enableRenderTargetPooling?: boolean;
 }
 
 export interface DeviceInfo {
@@ -24,6 +31,14 @@ export interface DeviceInfo {
   cores?: number;
   webglVersion: number;
   gpuInfo?: string;
+  // Enhanced mobile detection
+  batteryLevel?: number;
+  isCharging?: boolean;
+  thermalState?: 'nominal' | 'fair' | 'serious' | 'critical';
+  gpuTier?: 'low' | 'medium' | 'high' | 'ultra';
+  supportedTextureCompression?: string[];
+  maxTextureSize?: number;
+  isLowPowerMode?: boolean;
 }
 
 // Detect device capabilities
