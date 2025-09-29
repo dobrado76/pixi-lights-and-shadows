@@ -33,6 +33,7 @@ const PerformanceMonitor = ({ fps, deviceInfo, performanceSettings, onSettingsCh
         newSettings.enableAmbientOcclusion = false;
         newSettings.enableNormalMapping = false;
         newSettings.enableLightMasks = false;
+        newSettings.enablePCSS = false;
         newSettings.fpsTarget = 30;
         break;
       case 'medium':
@@ -42,6 +43,7 @@ const PerformanceMonitor = ({ fps, deviceInfo, performanceSettings, onSettingsCh
         newSettings.enableAmbientOcclusion = false;
         newSettings.enableNormalMapping = true;
         newSettings.enableLightMasks = false;
+        newSettings.enablePCSS = false;
         newSettings.fpsTarget = 45;
         break;
       case 'high':
@@ -51,11 +53,22 @@ const PerformanceMonitor = ({ fps, deviceInfo, performanceSettings, onSettingsCh
         newSettings.enableAmbientOcclusion = true;
         newSettings.enableNormalMapping = true;
         newSettings.enableLightMasks = true;
+        newSettings.enablePCSS = true;
         newSettings.fpsTarget = 60;
         break;
     }
 
     onSettingsChange(newSettings);
+  };
+
+  const toggleSetting = (setting: keyof PerformanceSettings) => {
+    const newSettings = { ...performanceSettings };
+    if (typeof newSettings[setting] === 'boolean') {
+      (newSettings as any)[setting] = !(newSettings as any)[setting];
+      // Mark as manual override when user manually toggles settings
+      newSettings.manualOverride = true;
+      onSettingsChange(newSettings);
+    }
   };
 
   const getFpsColor = () => {
@@ -139,17 +152,77 @@ const PerformanceMonitor = ({ fps, deviceInfo, performanceSettings, onSettingsCh
             <span className="text-gray-400">Max Lights:</span>
             <span data-testid="setting-max-lights">{performanceSettings.maxLights}</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-gray-400">Shadows:</span>
-            <span data-testid="setting-shadows">{performanceSettings.enableShadows ? '✓' : '✗'}</span>
+            <button
+              onClick={() => toggleSetting('enableShadows')}
+              className={`w-6 h-3 rounded-full transition-colors ${
+                performanceSettings.enableShadows ? 'bg-green-500' : 'bg-gray-600'
+              }`}
+              data-testid="toggle-shadows"
+            >
+              <div className={`w-2 h-2 bg-white rounded-full transition-transform ${
+                performanceSettings.enableShadows ? 'translate-x-3' : 'translate-x-0.5'
+              }`} />
+            </button>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">PCSS:</span>
+            <button
+              onClick={() => toggleSetting('enablePCSS')}
+              className={`w-6 h-3 rounded-full transition-colors ${
+                performanceSettings.enablePCSS ? 'bg-blue-500' : 'bg-gray-600'
+              }`}
+              data-testid="toggle-pcss"
+              disabled={!performanceSettings.enableShadows}
+              title={!performanceSettings.enableShadows ? 'Enable shadows first' : 'Toggle soft shadows (PCSS)'}
+            >
+              <div className={`w-2 h-2 bg-white rounded-full transition-transform ${
+                performanceSettings.enablePCSS ? 'translate-x-3' : 'translate-x-0.5'
+              }`} />
+            </button>
+          </div>
+          <div className="flex justify-between items-center">
             <span className="text-gray-400">AO:</span>
-            <span data-testid="setting-ao">{performanceSettings.enableAmbientOcclusion ? '✓' : '✗'}</span>
+            <button
+              onClick={() => toggleSetting('enableAmbientOcclusion')}
+              className={`w-6 h-3 rounded-full transition-colors ${
+                performanceSettings.enableAmbientOcclusion ? 'bg-green-500' : 'bg-gray-600'
+              }`}
+              data-testid="toggle-ao"
+            >
+              <div className={`w-2 h-2 bg-white rounded-full transition-transform ${
+                performanceSettings.enableAmbientOcclusion ? 'translate-x-3' : 'translate-x-0.5'
+              }`} />
+            </button>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-gray-400">Normal Maps:</span>
-            <span data-testid="setting-normals">{performanceSettings.enableNormalMapping ? '✓' : '✗'}</span>
+            <button
+              onClick={() => toggleSetting('enableNormalMapping')}
+              className={`w-6 h-3 rounded-full transition-colors ${
+                performanceSettings.enableNormalMapping ? 'bg-green-500' : 'bg-gray-600'
+              }`}
+              data-testid="toggle-normals"
+            >
+              <div className={`w-2 h-2 bg-white rounded-full transition-transform ${
+                performanceSettings.enableNormalMapping ? 'translate-x-3' : 'translate-x-0.5'
+              }`} />
+            </button>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Light Masks:</span>
+            <button
+              onClick={() => toggleSetting('enableLightMasks')}
+              className={`w-6 h-3 rounded-full transition-colors ${
+                performanceSettings.enableLightMasks ? 'bg-green-500' : 'bg-gray-600'
+              }`}
+              data-testid="toggle-masks"
+            >
+              <div className={`w-2 h-2 bg-white rounded-full transition-transform ${
+                performanceSettings.enableLightMasks ? 'translate-x-3' : 'translate-x-0.5'
+              }`} />
+            </button>
           </div>
           {deviceInfo.memory && (
             <div className="flex justify-between">

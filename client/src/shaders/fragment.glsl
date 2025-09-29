@@ -71,6 +71,9 @@ uniform float uShadowStrength; // Global shadow strength
 uniform bool uShadowsEnabled;
 // Global Light Mask Control
 uniform bool uMasksEnabled; // Global toggle for all light masks
+
+// Global PCSS Control
+uniform bool uPCSSEnabled; // Global toggle for PCSS (Percentage-Closer Soft Shadows)
 uniform float uShadowMaxLength; // Maximum shadow length to prevent extremely long shadows
 uniform float uShadowBias; // Pixels to offset shadow ray to prevent self-shadowing
 uniform float uCurrentSpriteZOrder; // Z-order of current sprite (used for shadows and AO hierarchy)
@@ -194,19 +197,11 @@ float pcfFilter(sampler2D occluderMap, vec2 lightPos, vec2 pixelPos, float light
 
 // PCSS Function for Point/Spot Lights using Occluder Map
 float calculatePCSSShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightRadius, float lightSize) {
-  if (!uShadowsEnabled || lightSize <= 0.0) {
-    // Fallback to original hard shadow calculation when PCSS is disabled
-    vec2 lightToPixel = pixelPos - lightPos;
-    float pixelDistance = length(lightToPixel);
-    float normalizedDistance = pixelDistance / lightRadius;
-    
-    // Simple occluder map lookup for hard shadows
-    vec2 occluderUV = (pixelPos + uOccluderMapOffset) / (uCanvasSize + 2.0 * uOccluderMapOffset);
-    if (occluderUV.x >= 0.0 && occluderUV.x <= 1.0 && occluderUV.y >= 0.0 && occluderUV.y <= 1.0) {
-      float occluder = texture2D(uOccluderMap, occluderUV).a;
-      return occluder > 0.5 ? 0.0 : 1.0;
-    }
-    return 1.0;
+  if (!uShadowsEnabled || !uPCSSEnabled) return 1.0;
+  
+  // If lightSize is 0, skip PCSS and return no shadow (fully lit)
+  if (lightSize <= 0.0) {
+    return 1.0; // No shadows when lightSize is 0
   }
   
   // PCSS Step 1: Blocker Search
@@ -300,12 +295,12 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
 float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightRadius, float lightSize) {
   if (!uShadowsEnabled) return 1.0;
   
-  // Use PCSS if lightSize is specified and greater than 0
-  if (lightSize > 0.0) {
+  // Use PCSS if globally enabled and lightSize is specified and greater than 0
+  if (uPCSSEnabled && lightSize > 0.0) {
     return calculatePCSSShadowOccluderMap(lightPos, pixelPos, lightRadius, lightSize);
   }
   
-  // Fall back to original hard shadow calculation when lightSize is 0
+  // Original hard shadow calculation when lightSize is 0
   
   vec2 rayDir = pixelPos - lightPos;
   float rayLength = length(rayDir);
