@@ -203,18 +203,16 @@
       "enabled": true,
       "brightness": 0.3,
       "color": "0xffffff",
-      "direction": {
-        "x": 0.6427876096865394,
-        "y": -0.766044443118978,
-        "z": -1
-      },
+      "directionX": 0.6427876096865394,
+      "directionY": -0.766044443118978,
+      "directionZ": -1,
       "castsShadows": true
     },
     {
       "id": "spotlight_1",
       "type": "spotlight",
       "enabled": true,
-      "brightness": 0.7,
+      "brightness": 0.9,
       "color": "0xf4f080",
       "position": {
         "x": 200,
@@ -225,8 +223,8 @@
       "directionY": 1,
       "directionZ": -1,
       "castsShadows": true,
-      "radius": 780,
-      "coneAngle": 49,
+      "radius": 1090,
+      "coneAngle": 58,
       "softness": 0.2
     },
     {
@@ -276,7 +274,7 @@
       "id": "point_1758536509084",
       "type": "point",
       "enabled": true,
-      "brightness": 0.9,
+      "brightness": 1,
       "color": "0xe12323",
       "position": {
         "x": 210,
@@ -310,9 +308,9 @@
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 4.5,
+    "strength": 4.95,
     "radius": 5,
-    "samples": 16,
+    "samples": 8,
     "bias": 20
   }
 }

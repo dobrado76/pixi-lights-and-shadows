@@ -47,7 +47,6 @@ export interface ShaderParams {
 function App() {
   // TODO: Gradually integrate centralized scene state manager
   // For now, keep the original state management working
-  console.log('🔧 App: Component rendering...');
   
   // External JSON-based lighting configuration system
   // Lights are loaded from lights-config.json and auto-saved on changes

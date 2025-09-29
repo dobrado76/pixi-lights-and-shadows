@@ -286,14 +286,14 @@ const PixiDemo = (props: PixiDemoProps) => {
       (!excludeSpriteId || caster.id !== excludeSpriteId)
     );
     
-    // DEBUG: Log z-order filtering
-    if (allShadowCasters.length > 0) {
-      console.log(`🌑 Shadow filtering for sprite at z=${currentSpriteZOrder}:`);
-      allShadowCasters.forEach(caster => {
-        const included = caster.definition.zOrder >= currentSpriteZOrder && (!excludeSpriteId || caster.id !== excludeSpriteId);
-        console.log(`  ${caster.id} (z=${caster.definition.zOrder}): ${included ? 'INCLUDED' : 'EXCLUDED'}`);
-      });
-    }
+    // DEBUG: Log z-order filtering (disabled for performance)
+    // if (allShadowCasters.length > 0) {
+    //   console.log(`🌑 Shadow filtering for sprite at z=${currentSpriteZOrder}:`);
+    //   allShadowCasters.forEach(caster => {
+    //     const included = caster.definition.zOrder >= currentSpriteZOrder && (!excludeSpriteId || caster.id !== excludeSpriteId);
+    //     console.log(`  ${caster.id} (z=${caster.definition.zOrder}): ${included ? 'INCLUDED' : 'EXCLUDED'}`);
+    //   });
+    // }
     
     // Special case: exclude sprites from casting shadows if light (Z >= 50) is inside their non-transparent area
     const enabledLights = lightsConfig.filter(light => light.enabled);
