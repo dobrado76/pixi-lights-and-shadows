@@ -197,27 +197,70 @@ float pcfFilter(sampler2D occluderMap, vec2 lightPos, vec2 pixelPos, float light
 
 // PCSS Function for Point/Spot Lights using Occluder Map
 float calculatePCSSShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightRadius, float lightSize) {
-  if (!uShadowsEnabled || !uPCSSEnabled) return 1.0;
+  if (!uShadowsEnabled) return 1.0;
   
-  // This function should only be called when lightSize > 0
-  // Removed problematic fallback that was breaking shadows
+  vec2 rayDir = pixelPos - lightPos;
+  float rayLength = length(rayDir);
   
-  // PCSS Step 1: Blocker Search
-  float avgBlockerDepth = findBlocker(uOccluderMap, lightPos, pixelPos, lightRadius, lightSize);
+  if (rayLength < 0.001) return 1.0; // Same position as light
   
-  // PCSS Step 2: Calculate Penumbra Size
-  vec2 lightToPixel = pixelPos - lightPos;
-  float pixelDistance = length(lightToPixel);
+  rayDir /= rayLength; // Normalize
   
-  // Penumbra size increases as the distance between the receiver and blocker grows
-  float penumbraSize = (pixelDistance - avgBlockerDepth) * lightSize / avgBlockerDepth;
-  penumbraSize = max(penumbraSize, 0.0); // Ensure non-negative
+  // Simple soft shadow using variable PCF filter size based on lightSize
+  float filterRadius = lightSize * 2.0; // Scale lightSize to filter radius
   
-  // Convert penumbra size to filter radius in world space
-  float filterRadius = penumbraSize * 0.1; // Scale factor for filter size
+  // PCF with variable filter size for soft shadows
+  float shadow = 0.0;
+  int samples = 16;
   
-  // PCSS Step 3: PCF Filtering
-  return pcfFilter(uOccluderMap, lightPos, pixelPos, lightRadius, filterRadius);
+  for (int i = 0; i < 16; i++) {
+    float angle = float(i) / 16.0 * 6.283185; // 2 * PI
+    vec2 offset = vec2(cos(angle), sin(angle)) * filterRadius;
+    
+    // Sample position in world space
+    vec2 sampleWorldPos = pixelPos + offset;
+    
+    // Convert to occluder map UV coordinates
+    vec2 occluderUV = (sampleWorldPos + uOccluderMapOffset) / (uCanvasSize + 2.0 * uOccluderMapOffset);
+    
+    if (occluderUV.x >= 0.0 && occluderUV.x <= 1.0 && occluderUV.y >= 0.0 && occluderUV.y <= 1.0) {
+      float occluder = texture2D(uOccluderMap, occluderUV).a;
+      
+      // Cast ray from light to sample position to check for occlusion
+      vec2 lightToSample = sampleWorldPos - lightPos;
+      float sampleDistance = length(lightToSample);
+      
+      if (sampleDistance > 0.001) {
+        vec2 sampleRayDir = lightToSample / sampleDistance;
+        
+        // Simple ray-march check for occlusion
+        float stepSize = 2.0;
+        bool occluded = false;
+        
+        for (int j = 1; j < 50; j++) {
+          float distance = float(j) * stepSize;
+          if (distance >= sampleDistance) break;
+          
+          vec2 checkPos = lightPos + sampleRayDir * distance;
+          vec2 checkUV = (checkPos + uOccluderMapOffset) / (uCanvasSize + 2.0 * uOccluderMapOffset);
+          
+          if (checkUV.x >= 0.0 && checkUV.x <= 1.0 && checkUV.y >= 0.0 && checkUV.y <= 1.0) {
+            float checkOccluder = texture2D(uOccluderMap, checkUV).a;
+            if (checkOccluder > 0.5) {
+              occluded = true;
+              break;
+            }
+          }
+        }
+        
+        if (occluded) {
+          shadow += 1.0;
+        }
+      }
+    }
+  }
+  
+  return 1.0 - (shadow / float(samples));
 }
 
 
@@ -293,11 +336,10 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
 float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightRadius, float lightSize) {
   if (!uShadowsEnabled) return 1.0;
   
-  // PCSS TEMPORARILY DISABLED - Implementation causes shadow system failures
-  // TODO: Fix PCSS to work without breaking normal shadows
-  // if (uPCSSEnabled && lightSize > 0.0) {
-  //   return calculatePCSSShadowOccluderMap(lightPos, pixelPos, lightRadius, lightSize);
-  // }
+  // Use PCSS only if globally enabled AND lightSize is properly set (> 0)
+  if (uPCSSEnabled && lightSize > 0.0) {
+    return calculatePCSSShadowOccluderMap(lightPos, pixelPos, lightRadius, lightSize);
+  }
   
   // Use normal hard shadow calculation (when PCSS is off OR lightSize is 0)
   
