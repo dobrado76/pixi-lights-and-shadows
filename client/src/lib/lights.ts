@@ -181,12 +181,12 @@ export const convertConfigToLight = (config: LightConfig): Light => {
       z: config.position?.z || 0
     },
     direction: {
-      x: config.directionX || 0,
-      y: config.directionY || 0,
-      z: config.directionZ || 0
+      x: (config as any).direction?.x || config.directionX || 0,
+      y: (config as any).direction?.y || config.directionY || 0,
+      z: (config as any).direction?.z || config.directionZ || 0
     },
-    color: hexToRgb(config.color),
-    intensity: config.brightness,
+    color: (config as any).color?.r !== undefined ? (config as any).color : hexToRgb(config.color as string),
+    intensity: (config as any).intensity || config.brightness || 1,
     followMouse: config.followMouse,
     castsShadows: config.castsShadows !== undefined ? config.castsShadows : true // Default to true
   };
