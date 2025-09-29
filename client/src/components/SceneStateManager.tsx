@@ -42,10 +42,6 @@ export const useSceneState = () => {
   console.log('🔧 useSceneState: Hook called');
   const context = useContext(SceneStateContext);
   console.log('🔧 useSceneState: Context value:', context);
-  if (!context) {
-    console.error('🔧 useSceneState: Context is null! Provider not found.');
-    throw new Error('useSceneState must be used within a SceneStateProvider');
-  }
   return context;
 };
 
@@ -98,7 +94,9 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
   
   // Keep ref updated whenever sceneConfig changes
   useEffect(() => {
+    console.log('📌 Updating sceneConfigRef, sceneConfig:', sceneConfig);
     sceneConfigRef.current = sceneConfig;
+    console.log('📌 sceneConfigRef.current now:', sceneConfigRef.current);
   }, [sceneConfig]);
 
   // Debounced save for lights configuration
