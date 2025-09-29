@@ -179,8 +179,8 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.31,
-      "color": "0xffffff"
+      "brightness": 0.2,
+      "color": "0x7a7a7a"
     },
     {
       "id": "mouse_light",
@@ -200,11 +200,11 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": false,
+      "enabled": true,
       "brightness": 0.4,
       "color": "0xffffff",
-      "directionX": 0.5000000000000001,
-      "directionY": -0.8660254037844386,
+      "directionX": 6.123233995736766e-17,
+      "directionY": -1,
       "directionZ": -1,
       "castsShadows": true
     },
@@ -294,7 +294,7 @@
     "enableAmbientOcclusion": true,
     "enableNormalMapping": true,
     "enableLightMasks": true,
-    "enablePCSS": true,
+    "enablePCSS": false,
     "textureScale": 1,
     "fpsTarget": 60,
     "capFpsTo60": true,
