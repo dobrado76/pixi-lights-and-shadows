@@ -598,7 +598,7 @@ function App() {
                                 enableLightMasks: false,
                                 textureScale: 0.5,
                                 fpsTarget: 30,
-                                capFpsTo60: false
+                                capFpsTo60: true
                               })}
                               className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'low' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                               data-testid="preset-low"
@@ -616,7 +616,7 @@ function App() {
                                 enableLightMasks: false,
                                 textureScale: 0.75,
                                 fpsTarget: 45,
-                                capFpsTo60: false
+                                capFpsTo60: true
                               })}
                               className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'medium' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                               data-testid="preset-medium"
@@ -634,7 +634,7 @@ function App() {
                                 enableLightMasks: true,
                                 textureScale: 1.0,
                                 fpsTarget: 60,
-                                capFpsTo60: false
+                                capFpsTo60: true
                               })}
                               className={`px-3 py-1 text-xs rounded ${performanceSettings.quality === 'high' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                               data-testid="preset-high"

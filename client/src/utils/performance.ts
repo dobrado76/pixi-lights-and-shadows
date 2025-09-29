@@ -109,7 +109,7 @@ export const getOptimalSettings = (device: DeviceInfo): PerformanceSettings => {
       enableLightMasks: false,
       textureScale: 0.5,
       fpsTarget: 30,
-      capFpsTo60: false
+      capFpsTo60: true
     };
   } else if (device.isMobile) {
     // Standard mobile devices
@@ -123,7 +123,7 @@ export const getOptimalSettings = (device: DeviceInfo): PerformanceSettings => {
       enableLightMasks: false,
       textureScale: 0.75,
       fpsTarget: 45,
-      capFpsTo60: false
+      capFpsTo60: true
     };
   } else {
     // Desktop devices - check for high-end capabilities
@@ -140,7 +140,7 @@ export const getOptimalSettings = (device: DeviceInfo): PerformanceSettings => {
         enableLightMasks: true,
         textureScale: 1.0,
         fpsTarget: 60,
-        capFpsTo60: false
+        capFpsTo60: true
       };
     } else {
       // Regular desktop - medium quality
@@ -154,7 +154,7 @@ export const getOptimalSettings = (device: DeviceInfo): PerformanceSettings => {
         enableLightMasks: false,
         textureScale: 0.75,
         fpsTarget: 45,
-        capFpsTo60: false
+        capFpsTo60: true
       };
     }
   }

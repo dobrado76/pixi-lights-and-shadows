@@ -86,7 +86,7 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     enableLightMasks: true,
     textureScale: 1,
     fpsTarget: 60,
-    capFpsTo60: false,
+    capFpsTo60: true,
     manualOverride: false
   });
   const [isLoaded, setIsLoaded] = useState(false);
