@@ -301,7 +301,7 @@
   "shadowConfig": {
     "enabled": true,
     "strength": 0.6,
-    "maxLength": 120,
+    "maxLength": 150,
     "height": 10
   },
   "ambientOcclusionConfig": {

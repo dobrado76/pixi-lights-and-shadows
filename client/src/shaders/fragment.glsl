@@ -144,6 +144,22 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
       continue;
     }
     
+    // SELF-SHADOW AVOIDANCE: Check if sample position is within current sprite bounds
+    // Skip if sample is within the receiver sprite's AABB (prevent self-shadowing)
+    if (samplePos.x >= uReceiverMin.x && samplePos.x <= uReceiverMax.x && 
+        samplePos.y >= uReceiverMin.y && samplePos.y <= uReceiverMax.y) {
+      
+      // Calculate sprite size to avoid applying fix to background sprites  
+      vec2 spriteSize = uReceiverMax - uReceiverMin;
+      float spriteArea = spriteSize.x * spriteSize.y;
+      bool isBackgroundSprite = spriteArea > 400000.0; // Background is ~480,000 pixels
+      
+      // Skip self-shadow samples for non-background sprites (prevents sprites from shadowing themselves)
+      if (!isBackgroundSprite) {
+        continue; // Skip this sample - don't let sprite shadow itself
+      }
+    }
+    
     // Sample occluder map alpha (adjust UV for expanded map offset)
     vec2 adjustedUV = (occluderUV * uCanvasSize + uOccluderMapOffset) / expandedMapSize;
     float occluderAlpha = texture2D(uOccluderMap, adjustedUV).a;
