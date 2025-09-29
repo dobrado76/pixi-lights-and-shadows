@@ -144,19 +144,32 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
       continue;
     }
     
-    // SELF-SHADOW AVOIDANCE: Check if sample position is within current sprite bounds
-    // Skip if sample is within the receiver sprite's AABB (prevent self-shadowing)
-    if (samplePos.x >= uReceiverMin.x && samplePos.x <= uReceiverMax.x && 
-        samplePos.y >= uReceiverMin.y && samplePos.y <= uReceiverMax.y) {
+    // ADVANCED SELF-SHADOW AVOIDANCE: Use ray-AABB intersection like point/spot lights
+    // Calculate if this sample distance falls within the sprite's self-intersection interval
+    vec2 spriteSize = uReceiverMax - uReceiverMin;
+    float spriteArea = spriteSize.x * spriteSize.y;
+    bool isBackgroundSprite = spriteArea > 400000.0; // Background is ~480,000 pixels
+    
+    if (!isBackgroundSprite) {
+      // Calculate ray-AABB intersection for self-shadow avoidance
+      vec2 invDir = vec2(
+        abs(rayDir.x) > 0.0001 ? 1.0 / rayDir.x : 1000000.0,
+        abs(rayDir.y) > 0.0001 ? 1.0 / rayDir.y : 1000000.0
+      );
       
-      // Calculate sprite size to avoid applying fix to background sprites  
-      vec2 spriteSize = uReceiverMax - uReceiverMin;
-      float spriteArea = spriteSize.x * spriteSize.y;
-      bool isBackgroundSprite = spriteArea > 400000.0; // Background is ~480,000 pixels
+      vec2 t1 = (uReceiverMin - pixelPos) * invDir;
+      vec2 t2 = (uReceiverMax - pixelPos) * invDir; 
       
-      // Skip self-shadow samples for non-background sprites (prevents sprites from shadowing themselves)
-      if (!isBackgroundSprite) {
-        continue; // Skip this sample - don't let sprite shadow itself
+      vec2 tNear = min(t1, t2);
+      vec2 tFar = max(t1, t2);
+      
+      float tEnterSelf = max(max(tNear.x, tNear.y), 0.0);
+      float tExitSelf = min(min(tFar.x, tFar.y), maxDistance);
+      
+      // Skip samples within the self-intersection interval (with small epsilon)
+      float eps = 2.0;
+      if (distance > tEnterSelf - eps && distance < tExitSelf + eps) {
+        continue; // Skip self-shadow samples - prevents artifacts
       }
     }
     
