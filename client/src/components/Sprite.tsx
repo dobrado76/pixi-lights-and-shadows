@@ -459,7 +459,6 @@ export class SceneSprite {
       const newGeometry = this.createGeometry();
       this.mesh.geometry = newGeometry;
       
-      console.log(`🔄 Updated transform for ${this.id}: pos(${bounds.x},${bounds.y}) scale(${this.definition.scale}) rot(${this.definition.rotation})`);
     }
   }
 

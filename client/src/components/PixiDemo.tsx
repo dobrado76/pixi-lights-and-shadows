@@ -1030,9 +1030,9 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             // ✅ Handle mask (always load, toggle with performance setting)
             if (light.mask) {
-              console.log(`Loading mask for ${prefix}:`, light.mask);
+
               const maskPath = `/light_masks/${light.mask.image}`;
-              console.log(`Mask texture path: ${maskPath}`);
+
               
               const maskTexture = PIXI.Texture.from(maskPath);
               uniforms[`${prefix}HasMask`] = performanceSettings.enableLightMasks; // ✅ Controlled by performance setting
@@ -1042,16 +1042,11 @@ const PixiDemo = (props: PixiDemoProps) => {
               uniforms[`${prefix}MaskScale`] = light.mask.scale; // Use scale directly (1.0 = 100%)
               uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
               
-              console.log(`Mask uniforms for ${prefix}:`, {
-                hasMask: performanceSettings.enableLightMasks,
-                offset: [light.mask.offset.x, light.mask.offset.y],
-                rotation: light.mask.rotation,
-                scale: light.mask.scale
-              });
+
               
               // Validate texture loading
               maskTexture.baseTexture.on('loaded', () => {
-                console.log(`Mask texture loaded successfully: ${maskPath} (${maskTexture.width}x${maskTexture.height})`);
+                // Mask texture loaded successfully
               });
               maskTexture.baseTexture.on('error', () => {
                 console.error(`Failed to load mask texture: ${maskPath}`);
@@ -1097,9 +1092,9 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             // ✅ Handle mask (always load, toggle with performance setting)
             if (light.mask) {
-              console.log(`Loading mask for ${prefix}:`, light.mask);
+
               const maskPath = `/light_masks/${light.mask.image}`;
-              console.log(`Mask texture path: ${maskPath}`);
+
               
               const maskTexture = PIXI.Texture.from(maskPath);
               uniforms[`${prefix}HasMask`] = performanceSettings.enableLightMasks; // ✅ Controlled by performance setting
@@ -1109,16 +1104,11 @@ const PixiDemo = (props: PixiDemoProps) => {
               uniforms[`${prefix}MaskScale`] = light.mask.scale; // Use scale directly (1.0 = 100%)
               uniforms[`${prefix}MaskSize`] = [maskTexture.width, maskTexture.height];
               
-              console.log(`Mask uniforms for ${prefix}:`, {
-                hasMask: performanceSettings.enableLightMasks,
-                offset: [light.mask.offset.x, light.mask.offset.y],
-                rotation: light.mask.rotation,
-                scale: light.mask.scale
-              });
+
               
               // Validate texture loading
               maskTexture.baseTexture.on('loaded', () => {
-                console.log(`Mask texture loaded successfully: ${maskPath} (${maskTexture.width}x${maskTexture.height})`);
+                // Mask texture loaded successfully
               });
               maskTexture.baseTexture.on('error', () => {
                 console.error(`Failed to load mask texture: ${maskPath}`);
@@ -1135,13 +1125,6 @@ const PixiDemo = (props: PixiDemoProps) => {
             uniforms[`uSpot${i}CastsShadows`] = false;
           }
 
-          console.log('DEBUG: All lights config:', lightsConfig.map(l => ({id: l.id, type: l.type, enabled: l.enabled})));
-          console.log('DEBUG: Point lights found (all):', allPointLights.map(l => ({id: l.id, enabled: l.enabled})));
-          console.log('Expanded Lights:', { 
-            pointLights: allPointLights.length, 
-            directionalLights: allDirectionalLights.length, 
-            spotlights: allSpotlights.length 
-          });
 
           return uniforms;
         };
@@ -1203,7 +1186,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Log all sprite information from scene (including invisible ones)
       allSprites.forEach(sprite => {
         const bounds = sprite.getBounds();
-        console.log(`${sprite.id} actual dimensions:`, bounds.width, bounds.height);
       });
 
       // Create shadow casters for occluder map system
@@ -1237,11 +1219,8 @@ const PixiDemo = (props: PixiDemoProps) => {
 
       // Store references
       meshesRef.current = spriteMeshes;
-      console.log('🎯 DEBUG: Set meshesRef.current to', spriteMeshes.length, 'meshes');
       
       // CRITICAL FIX: NOW start PIXI app AFTER scene is loaded - this is the key!
-      console.log('🎯 Scene fully loaded with', spriteMeshes.length, 'sprites');
-      console.log('🎯 NOW starting PIXI app with content loaded...');
       
       if (pixiApp) {
         // Start PIXI app now that scene is ready
@@ -1265,17 +1244,14 @@ const PixiDemo = (props: PixiDemoProps) => {
           });
           
           canvas.dispatchEvent(mouseMoveEvent);
-          console.log('🎯 SMART ACTIVATION: Canvas focused + mouse simulated RIGHT after scene load');
         }
         
         // Force renders after activation
         requestAnimationFrame(() => {
           pixiApp.render();
-          console.log('🎯 Post-scene PIXI render completed');
           
           requestAnimationFrame(() => {
             pixiApp.render();
-            console.log('🎯 Final safety render completed');
           });
         });
       }
@@ -1451,14 +1427,12 @@ const PixiDemo = (props: PixiDemoProps) => {
   useEffect(() => {
     if (!pixiApp || meshesRef.current.length === 0) return;
     
-    console.log('🎯 Scene fully loaded with', meshesRef.current.length, 'sprites - triggering render');
     
     // Force multiple renders to ensure scene displays immediately
     const forceRender = () => {
       if (pixiApp && pixiApp.renderer) {
         pixiApp.render();
-        console.log('🎯 Forced scene render completed');
-      }
+          }
     };
     
     // Immediate render
@@ -1524,7 +1498,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Debug AO bias uniform
       if (ambientOcclusionConfig.bias !== (window as any).prevAOBias) {
-        console.log('🔧 AO Bias uniform set to:', ambientOcclusionConfig.bias);
         (window as any).prevAOBias = ambientOcclusionConfig.bias;
       }
       
