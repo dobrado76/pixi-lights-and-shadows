@@ -708,60 +708,39 @@ const PixiDemo = (props: PixiDemoProps) => {
       console.log('📱 Device Info:', deviceInfo);
       console.log('⚙️ Performance Settings:', performanceSettings);
       
-      // Check WebGL support before creating application
-      const hasWebGL = (() => {
-        try {
-          const canvas = document.createElement('canvas');
-          return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
-        } catch (e) {
-          return false;
-        }
-      })();
-      
-      console.log('🔍 WebGL Support:', hasWebGL);
-      
       try {
-        if (hasWebGL) {
-          // First try WebGL with performance-optimized settings
-          app = new PIXI.Application({
-            width: shaderParams.canvasWidth,
-            height: shaderParams.canvasHeight,
-            backgroundColor: 0x1a1a1a,
-            antialias: performanceSettings.quality !== 'low',
-            hello: false,
-            resolution: performanceSettings.resolution,
-            autoDensity: false,
-            forceCanvas: false,
-            powerPreference: deviceInfo.isMobile ? 'low-power' : 'high-performance',
-            preserveDrawingBuffer: false,
-            clearBeforeRender: true,
-            autoStart: false // CRITICAL: Set to false, we'll call start() manually
-          });
-        } else {
-          throw new Error('WebGL not supported, using Canvas fallback');
-        }
+        // First try WebGL with performance-optimized settings
+        app = new PIXI.Application({
+          width: shaderParams.canvasWidth,
+          height: shaderParams.canvasHeight,
+          backgroundColor: 0x1a1a1a,
+          antialias: performanceSettings.quality !== 'low',
+          hello: false,
+          resolution: performanceSettings.resolution,
+          autoDensity: false,
+          forceCanvas: false,
+          powerPreference: deviceInfo.isMobile ? 'low-power' : 'high-performance',
+          preserveDrawingBuffer: false,
+          clearBeforeRender: true,
+          autoStart: false // CRITICAL: Set to false, we'll call start() manually
+        });
       } catch (webglError) {
         console.warn('WebGL failed, trying Canvas fallback:', webglError);
-        try {
-          // Fallback to Canvas renderer with mobile optimizations
-          app = new PIXI.Application({
-            width: shaderParams.canvasWidth,
-            height: shaderParams.canvasHeight,
-            backgroundColor: 0x1a1a1a,
-            antialias: false, // Disable for canvas
-            hello: false,
-            resolution: Math.min(performanceSettings.resolution, 0.75), // Lower resolution for canvas fallback
-            autoDensity: false,
-            forceCanvas: true, // Force Canvas renderer
-            powerPreference: 'low-power',
-            preserveDrawingBuffer: false,
-            clearBeforeRender: true,
-            autoStart: false // CRITICAL: Set to false, we'll call start() manually
-          });
-        } catch (canvasError) {
-          console.error('Both WebGL and Canvas renderers failed:', canvasError);
-          throw new Error('Unable to create PIXI renderer - both WebGL and Canvas failed');
-        }
+        // Fallback to Canvas renderer with mobile optimizations
+        app = new PIXI.Application({
+          width: shaderParams.canvasWidth,
+          height: shaderParams.canvasHeight,
+          backgroundColor: 0x1a1a1a,
+          antialias: false, // Disable for canvas
+          hello: false,
+          resolution: Math.min(performanceSettings.resolution, 0.75), // Lower resolution for canvas fallback
+          autoDensity: false,
+          forceCanvas: true, // Force Canvas renderer
+          powerPreference: 'low-power',
+          preserveDrawingBuffer: false,
+          clearBeforeRender: true,
+          autoStart: false // CRITICAL: Set to false, we'll call start() manually
+        });
       }
 
       // Access canvas using proper PIXI.js property
@@ -796,7 +775,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Store canvas reference for later activation when scene loads
         (app as any).__canvas = canvas;
         console.log('PIXI App initialized successfully');
-        console.log('Renderer type:', app.renderer.type === 1 ? 'WebGL' : 'Canvas');
+        console.log('Renderer type:', app.renderer.type === PIXI.RENDERER_TYPE.WEBGL ? 'WebGL' : 'Canvas');
         console.log('Ticker started:', app.ticker.started);
         
         // Initialize render targets for multi-pass rendering

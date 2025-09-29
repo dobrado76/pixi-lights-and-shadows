@@ -655,18 +655,13 @@ void main(void) {
       safeNormal = vec3(0.0, 0.0, 1.0); // Flat surface normal
     }
     
-    // Use simplified material response to avoid ring artifacts
-    float normalDot = max(dot(safeNormal, lightDir), 0.0);
-    
-    // Simple metallic/smoothness response without complex PBR
-    vec3 baseColor = diffuseColor.rgb;
-    float reflectivity = finalMetallic * finalSmoothness * 0.8;
-    vec3 materialResponse = mix(baseColor, uPoint0Color * baseColor, reflectivity);
-    
-    vec3 pbrContribution = materialResponse * normalDot * uPoint0Intensity * attenuation * 2.0;
-    
     // Calculate traditional intensity for mask compatibility
+    float normalDot = max(dot(safeNormal, lightDir), 0.0);
     float intensity = normalDot * uPoint0Intensity * attenuation;
+    
+    // Use PBR lighting calculation for final color (boost intensity for PBR energy conservation)
+    vec3 pbrContribution = calculatePBR(diffuseColor.rgb, safeNormal, lightDir, uPoint0Color, 
+                                       uPoint0Intensity * attenuation * 2.0, finalMetallic, finalSmoothness, viewDir);
     
     // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
@@ -700,15 +695,9 @@ void main(void) {
     float attenuation = 1.0 - clamp(lightDistance / uPoint1Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    // Use simplified material response to avoid ring artifacts
-    float normalDot = max(dot(normal, lightDir), 0.0);
-    
-    // Simple metallic/smoothness response without complex PBR
-    vec3 baseColor = diffuseColor.rgb;
-    float reflectivity = finalMetallic * finalSmoothness * 0.8;
-    vec3 materialResponse = mix(baseColor, uPoint1Color * baseColor, reflectivity);
-    
-    vec3 pbrContribution = materialResponse * normalDot * uPoint1Intensity * attenuation * 2.0;
+    // Use PBR lighting calculation for final color (boost intensity for PBR energy conservation)
+    vec3 pbrContribution = calculatePBR(diffuseColor.rgb, normal, lightDir, uPoint1Color, 
+                                       uPoint1Intensity * attenuation * 2.0, finalMetallic, finalSmoothness, viewDir);
     
     // Calculate shadow for THIS light - temporarily remove intensity check
     float shadowFactor = 1.0;
@@ -717,6 +706,7 @@ void main(void) {
     }
     
     // Calculate traditional intensity for mask compatibility
+    float normalDot = max(dot(normal, lightDir), 0.0);
     float intensity = normalDot * uPoint1Intensity * attenuation;
     
     // Apply mask ONLY in fully lit areas (shadowFactor == 1.0)
@@ -744,18 +734,13 @@ void main(void) {
     float attenuation = 1.0 - clamp(lightDistance / uPoint2Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    // Use simplified material response to avoid ring artifacts
-    float normalDot2 = max(dot(normal, lightDir), 0.0);
-    
-    // Simple metallic/smoothness response without complex PBR
-    vec3 baseColor = diffuseColor.rgb;
-    float reflectivity = finalMetallic * finalSmoothness * 0.8;
-    vec3 materialResponse = mix(baseColor, uPoint2Color * baseColor, reflectivity);
-    
-    vec3 pbrContribution = materialResponse * normalDot2 * uPoint2Intensity * attenuation * 2.0;
+    // Use PBR lighting calculation (boost intensity for PBR energy conservation)
+    vec3 pbrContribution = calculatePBR(diffuseColor.rgb, normal, lightDir, uPoint2Color, 
+                                       uPoint2Intensity * attenuation * 2.0, finalMetallic, finalSmoothness, viewDir);
     
     // Calculate traditional intensity for shadow check compatibility
-    float intensity = normalDot2 * uPoint2Intensity * attenuation;
+    float normalDot = max(dot(normal, lightDir), 0.0);
+    float intensity = normalDot * uPoint2Intensity * attenuation;
     
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
@@ -788,18 +773,13 @@ void main(void) {
     float attenuation = 1.0 - clamp(lightDistance / uPoint3Radius, 0.0, 1.0);
     attenuation = attenuation * attenuation;
     
-    // Use simplified material response to avoid ring artifacts
-    float normalDot3 = max(dot(normal, lightDir), 0.0);
-    
-    // Simple metallic/smoothness response without complex PBR
-    vec3 baseColor = diffuseColor.rgb;
-    float reflectivity = finalMetallic * finalSmoothness * 0.8;
-    vec3 materialResponse = mix(baseColor, uPoint3Color * baseColor, reflectivity);
-    
-    vec3 pbrContribution = materialResponse * normalDot3 * uPoint3Intensity * attenuation * 2.0;
+    // Use PBR lighting calculation (boost intensity for PBR energy conservation)
+    vec3 pbrContribution = calculatePBR(diffuseColor.rgb, normal, lightDir, uPoint3Color, 
+                                       uPoint3Intensity * attenuation * 2.0, finalMetallic, finalSmoothness, viewDir);
     
     // Calculate traditional intensity for shadow check compatibility
-    float intensity = normalDot3 * uPoint3Intensity * attenuation;
+    float normalDot = max(dot(normal, lightDir), 0.0);
+    float intensity = normalDot * uPoint3Intensity * attenuation;
     
     // Calculate shadow ONLY if this light reaches this pixel (has intensity > 0)
     float shadowFactor = 1.0;
@@ -819,9 +799,7 @@ void main(void) {
     finalColor += pbrContribution;
   }
   
-  // Directional Light 0 - DISABLED to remove ring artifacts
-  // TODO: Re-enable when PBR directional lighting is fixed
-  /*
+  // Directional Light 0
   if (uDir0Enabled) {
     // Directional lights: parallel rays from infinite distance with normal mapping
     vec3 lightDir = normalize(vec3(uDir0Direction.x, -uDir0Direction.y, -uDir0Direction.z)); // Fix X-axis direction
@@ -847,7 +825,6 @@ void main(void) {
     
     finalColor += pbrContribution;
   }
-  */
   
   // Directional Light 1
   if (uDir1Enabled) {
