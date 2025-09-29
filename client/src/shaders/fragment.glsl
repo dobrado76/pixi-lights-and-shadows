@@ -206,15 +206,19 @@ float calculatePCSSShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightRa
   
   rayDir /= rayLength; // Normalize
   
-  // Simple soft shadow using variable PCF filter size based on lightSize
-  float filterRadius = lightSize * 2.0; // Scale lightSize to filter radius
+  // Controlled soft shadow using lightSize to determine filter radius
+  float filterRadius = lightSize * 0.5; // Reduced scaling for more controlled softness
   
   // PCF with variable filter size for soft shadows
-  float shadow = 0.0;
-  int samples = 16;
+  // Clamp filter radius to reasonable bounds
+  filterRadius = clamp(filterRadius, 1.0, 20.0);
   
-  for (int i = 0; i < 16; i++) {
-    float angle = float(i) / 16.0 * 6.283185; // 2 * PI
+  float shadow = 0.0;
+  int samples = 12; // Reduced samples for better performance
+  
+  for (int i = 0; i < 12; i++) {
+    if (i >= samples) break; // WebGL compatibility
+    float angle = float(i) / float(samples) * 6.283185; // 2 * PI
     vec2 offset = vec2(cos(angle), sin(angle)) * filterRadius;
     
     // Sample position in world space
@@ -237,7 +241,7 @@ float calculatePCSSShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightRa
         float stepSize = 2.0;
         bool occluded = false;
         
-        for (int j = 1; j < 50; j++) {
+        for (int j = 1; j < 25; j++) {
           float distance = float(j) * stepSize;
           if (distance >= sampleDistance) break;
           

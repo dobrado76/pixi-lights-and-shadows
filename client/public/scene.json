@@ -186,21 +186,21 @@
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
-      "brightness": 0.7,
+      "brightness": 0.3,
       "color": "0xffffff",
       "position": {
-        "x": 250,
-        "y": 170,
+        "x": 150,
+        "y": 270,
         "z": 70
       },
-      "followMouse": true,
+      "followMouse": false,
       "castsShadows": true,
       "radius": 350
     },
     {
       "id": "directional_light",
       "type": "directional",
-      "enabled": true,
+      "enabled": false,
       "brightness": 0.4,
       "color": "0xffffff",
       "directionX": 0.5000000000000001,
@@ -294,7 +294,7 @@
     "enableAmbientOcclusion": true,
     "enableNormalMapping": true,
     "enableLightMasks": true,
-    "enablePCSS": true,
+    "enablePCSS": false,
     "textureScale": 1,
     "fpsTarget": 60,
     "capFpsTo60": true,
@@ -311,6 +311,6 @@
     "strength": 4.8,
     "radius": 5,
     "samples": 8,
-    "bias": 20
+    "bias": 11.5
   }
 }
