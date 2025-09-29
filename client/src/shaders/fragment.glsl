@@ -530,13 +530,12 @@ float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 // PBR lighting calculation for a single light
 vec3 calculatePBR(vec3 albedo, vec3 normal, vec3 lightDir, vec3 lightColor, float lightIntensity, 
                   float metallic, float smoothness, vec3 viewDir) {
-  // Convert smoothness to roughness with better range mapping
+  // Convert smoothness to roughness
   float roughness = 1.0 - smoothness;
-  roughness = max(roughness, 0.08); // Higher minimum to reduce harsh highlights
-  roughness = roughness * roughness; // Square for more intuitive control
+  roughness = max(roughness, 0.04); // Keep original minimum roughness
   
-  // Metallic workflow - more conservative F0 for realistic materials
-  vec3 F0 = mix(vec3(0.04), albedo * 0.7, metallic); // Reduce metallic intensity
+  // Metallic workflow - keep original F0 calculation  
+  vec3 F0 = mix(vec3(0.04), albedo, metallic);
   
   // Calculate halfway vector
   vec3 H = normalize(viewDir + lightDir);
@@ -546,13 +545,13 @@ vec3 calculatePBR(vec3 albedo, vec3 normal, vec3 lightDir, vec3 lightColor, floa
   float G = geometrySmith(normal, viewDir, lightDir, roughness);
   vec3 F = fresnelSchlick(max(dot(H, viewDir), 0.0), F0);
   
-  // BRDF specular term with intensity reduction
+  // BRDF specular term - reduce intensity to prevent ring artifacts
   vec3 numerator = NDF * G * F;
   float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * max(dot(normal, lightDir), 0.0);
   vec3 specular = numerator / max(denominator, 0.001);
   
-  // Reduce specular intensity for more realistic look at low metallic values
-  specular *= 0.5 + 0.5 * metallic; // Scale specular by metallic amount
+  // Moderate specular reduction to prevent artifacts without making surfaces grainy
+  specular *= 0.7;
   
   // Energy conservation - diffuse and specular can't exceed 1.0
   vec3 kS = F; // Fresnel represents the specular contribution
@@ -562,9 +561,9 @@ vec3 calculatePBR(vec3 albedo, vec3 normal, vec3 lightDir, vec3 lightColor, floa
   // Lambert diffuse
   vec3 diffuse = kD * albedo / 3.14159265;
   
-  // Combine diffuse and specular with better balance
+  // Combine diffuse and specular
   float NdotL = max(dot(normal, lightDir), 0.0);
-  return (diffuse + specular * 0.8) * lightColor * lightIntensity * NdotL; // Reduce overall specular contribution
+  return (diffuse + specular) * lightColor * lightIntensity * NdotL;
 }
 
 void main(void) {
