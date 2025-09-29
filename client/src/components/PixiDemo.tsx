@@ -1765,10 +1765,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         const perfData = adaptiveQualityRef.current.update();
         setFpsData({ current: perfData.fps, average: perfData.avgFps });
         
-        // Log high FPS to show performance improvements
-        if (frameCountRef.current % 300 === 0 && perfData.fps > 60) { // Every ~5 seconds at 60fps
-          console.log(`🚀 High Performance: ${perfData.fps}fps current, ${perfData.avgFps}fps average (UNCAPPED)`);
-        }
+        // FPS logging disabled for maximum performance
         
         if (perfData.adjusted) {
           console.log(`📊 Performance adjusted: ${perfData.fps}fps avg, new quality: ${adaptiveQualityRef.current.getSettings().quality}`);
@@ -1832,9 +1829,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       uncappedTimer = setTimeout(runUncapped, 1); // ~1000 FPS theoretical max
     };
     
-    // Uncomment to enable UNCAPPED mode:
+    // UNCAPPED mode enabled for maximum performance
     runUncapped();
-    console.log('🚀 UNCAPPED FPS MODE: Running at maximum possible frequency');
 
     return () => {
       isRunning = false;
