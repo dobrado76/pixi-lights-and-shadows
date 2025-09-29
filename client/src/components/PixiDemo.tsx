@@ -769,6 +769,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         app.ticker.maxFPS = 0; // 0 = uncapped
         app.ticker.minFPS = 0; // Allow unlimited FPS
         
+        // DEBUG: Log ticker settings to verify they're applied
+        console.log('🚀 FPS UNCAP: maxFPS =', app.ticker.maxFPS, 'minFPS =', app.ticker.minFPS);
+        
         // Store canvas reference for later activation when scene loads
         (app as any).__canvas = canvas;
         console.log('PIXI App initialized successfully');
@@ -1746,10 +1749,14 @@ const PixiDemo = (props: PixiDemoProps) => {
   }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings]);
 
 
-  // Animation loop
+  // Animation loop with UNCAPPED FPS
   useEffect(() => {
     if (!pixiApp || !pixiApp.ticker) return;
 
+    // BYPASS requestAnimationFrame limitation with high-frequency timer
+    let uncappedTimer: NodeJS.Timeout | null = null;
+    let isRunning = true;
+    
     const ticker = () => {
       frameCountRef.current++;
       
@@ -1815,9 +1822,25 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
     };
 
+    // Option 1: Use PIXI ticker (capped by requestAnimationFrame)
     pixiApp.ticker.add(ticker);
+    
+    // Option 2: UNCAPPED high-frequency timer for true performance testing
+    const runUncapped = () => {
+      if (!isRunning) return;
+      ticker(); // Run our update logic
+      uncappedTimer = setTimeout(runUncapped, 1); // ~1000 FPS theoretical max
+    };
+    
+    // Uncomment to enable UNCAPPED mode:
+    runUncapped();
+    console.log('🚀 UNCAPPED FPS MODE: Running at maximum possible frequency');
 
     return () => {
+      isRunning = false;
+      if (uncappedTimer) {
+        clearTimeout(uncappedTimer);
+      }
       if (pixiApp?.ticker) {
         pixiApp.ticker.remove(ticker);
       }
