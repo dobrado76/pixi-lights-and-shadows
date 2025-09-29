@@ -545,13 +545,13 @@ vec3 calculatePBR(vec3 albedo, vec3 normal, vec3 lightDir, vec3 lightColor, floa
   float G = geometrySmith(normal, viewDir, lightDir, roughness);
   vec3 F = fresnelSchlick(max(dot(H, viewDir), 0.0), F0);
   
-  // BRDF specular term - reduce intensity to prevent ring artifacts
+  // BRDF specular term - dramatically reduce intensity to eliminate ring artifacts
   vec3 numerator = NDF * G * F;
   float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * max(dot(normal, lightDir), 0.0);
   vec3 specular = numerator / max(denominator, 0.001);
   
-  // Moderate specular reduction to prevent artifacts without making surfaces grainy
-  specular *= 0.7;
+  // Drastically reduce specular contribution to eliminate ring artifacts while keeping slider functionality
+  specular *= 0.1 * metallic; // Only show specular on highly metallic surfaces
   
   // Energy conservation - diffuse and specular can't exceed 1.0
   vec3 kS = F; // Fresnel represents the specular contribution
