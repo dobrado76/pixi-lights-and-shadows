@@ -199,10 +199,8 @@ float pcfFilter(sampler2D occluderMap, vec2 lightPos, vec2 pixelPos, float light
 float calculatePCSSShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightRadius, float lightSize) {
   if (!uShadowsEnabled || !uPCSSEnabled) return 1.0;
   
-  // If lightSize is 0, skip PCSS and return no shadow (fully lit)
-  if (lightSize <= 0.0) {
-    return 1.0; // No shadows when lightSize is 0
-  }
+  // This function should only be called when lightSize > 0
+  // Removed problematic fallback that was breaking shadows
   
   // PCSS Step 1: Blocker Search
   float avgBlockerDepth = findBlocker(uOccluderMap, lightPos, pixelPos, lightRadius, lightSize);
@@ -295,12 +293,13 @@ float calculateDirectionalShadowOccluderMap(vec2 lightDirection, vec2 pixelPos) 
 float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos, float lightRadius, float lightSize) {
   if (!uShadowsEnabled) return 1.0;
   
-  // Use PCSS if globally enabled and lightSize is specified and greater than 0
+  // Use PCSS only if globally enabled AND lightSize is properly set (> 0)
+  // If PCSS is enabled but lightSize is 0, fall back to normal hard shadows
   if (uPCSSEnabled && lightSize > 0.0) {
     return calculatePCSSShadowOccluderMap(lightPos, pixelPos, lightRadius, lightSize);
   }
   
-  // Original hard shadow calculation when lightSize is 0
+  // Use normal hard shadow calculation (when PCSS is off OR lightSize is 0)
   
   vec2 rayDir = pixelPos - lightPos;
   float rayLength = length(rayDir);
