@@ -1802,14 +1802,16 @@ const PixiDemo = (props: PixiDemoProps) => {
         });
       }
       
-      // Only update directional light shadows if lighting changed
+      // Always update directional light shadows when lights change (fix for toggle bug)
+      const enabledDirectionalLights = lightsConfig.filter(light => light.enabled && light.type === 'directional');
+      shadersRef.current.forEach(shader => {
+        if (shader.uniforms) {
+          shader.uniforms.uDir0CastsShadows = enabledDirectionalLights.length > 0 && enabledDirectionalLights[0].castsShadows;
+        }
+      });
+      
+      // Reset dirty flag
       if (uniformsDirtyRef.current) {
-        const enabledDirectionalLights = lightsConfig.filter(light => light.enabled && light.type === 'directional');
-        shadersRef.current.forEach(shader => {
-          if (shader.uniforms) {
-            shader.uniforms.uDir0CastsShadows = enabledDirectionalLights.length > 0 && enabledDirectionalLights[0].castsShadows;
-          }
-        });
         uniformsDirtyRef.current = false;
       }
       
