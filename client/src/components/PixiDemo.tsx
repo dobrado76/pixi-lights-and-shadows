@@ -360,7 +360,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       caster.definition.castsShadows
     );
     
-    // Filter shadow casters based on zOrder hierarchy - only include casters at same level or above
+    // Filter shadow casters based on zOrder hierarchy 
+    // For directional lights: include ALL sprites except self (same-level shadows allowed)
+    // For point/spot lights: only include casters at same level or above (traditional hierarchy)
     // Also exclude the current sprite being lit to prevent self-shadowing
     let relevantShadowCasters = allShadowCasters.filter(caster => 
       caster.definition.zOrder >= currentSpriteZOrder && 

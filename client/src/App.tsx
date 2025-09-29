@@ -78,7 +78,14 @@ function App() {
   const [isLoaded, setSceneLoaded] = useState<boolean>(false);
   
   // Performance monitoring state
-  const [performanceSettings, setPerformanceSettings] = useState<PerformanceSettings & { manualOverride?: boolean }>(() => getOptimalSettings(detectDevice()));
+  const [performanceSettings, setPerformanceSettings] = useState<PerformanceSettings & { manualOverride?: boolean }>(() => {
+    const settings = getOptimalSettings(detectDevice());
+    // Ensure enablePCSS is always present (backward compatibility)
+    if (settings.enablePCSS === undefined) {
+      settings.enablePCSS = settings.quality === 'high';
+    }
+    return settings;
+  });
 
   const [lightsLoaded, setLightsLoaded] = useState<boolean>(false);
 
@@ -522,6 +529,22 @@ function App() {
                               </label>
                             </div>
                             <div className="flex items-center justify-between">
+                              <span className="text-sm">PCSS (Soft Shadows)</span>
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={performanceSettings.enablePCSS || false}
+                                  disabled={!performanceSettings.enableShadows}
+                                  onChange={(e) => handlePerformanceSettingsChange({
+                                    ...performanceSettings,
+                                    enablePCSS: e.target.checked
+                                  })}
+                                  className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded disabled:opacity-50"
+                                  data-testid="toggle-pcss"
+                                />
+                              </label>
+                            </div>
+                            <div className="flex items-center justify-between">
                               <span className="text-sm">Ambient Occlusion</span>
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <input
@@ -596,6 +619,7 @@ function App() {
                                 enableAmbientOcclusion: false,
                                 enableNormalMapping: false,
                                 enableLightMasks: false,
+                                enablePCSS: false,
                                 textureScale: 0.5,
                                 fpsTarget: 30,
                                 capFpsTo60: true
@@ -614,6 +638,7 @@ function App() {
                                 enableAmbientOcclusion: false,
                                 enableNormalMapping: true,
                                 enableLightMasks: false,
+                                enablePCSS: false,
                                 textureScale: 0.75,
                                 fpsTarget: 45,
                                 capFpsTo60: true
@@ -632,6 +657,7 @@ function App() {
                                 enableAmbientOcclusion: true,
                                 enableNormalMapping: true,
                                 enableLightMasks: true,
+                                enablePCSS: true,
                                 textureScale: 1.0,
                                 fpsTarget: 60,
                                 capFpsTo60: true
