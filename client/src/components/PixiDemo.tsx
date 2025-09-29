@@ -1479,18 +1479,10 @@ const PixiDemo = (props: PixiDemoProps) => {
     const createLightUniforms = () => {
       const uniforms: any = {};
       
-      // ✅ WORKAROUND: Temporarily enable all lights during initialization to ensure structures are created
-      // Store original enabled states
-      const lightsWithTempEnabled = lightsConfig.map(light => ({
-        ...light,
-        originalEnabled: light.enabled,
-        enabled: true // Temporarily enable ALL lights during structure creation
-      }));
-      
-      // Get all lights by type (all temporarily enabled - let shader handle via intensity)
-      const allPointLights = lightsWithTempEnabled.filter(light => light.type === 'point');
-      const allDirectionalLights = lightsWithTempEnabled.filter(light => light.type === 'directional');
-      const allSpotlights = lightsWithTempEnabled.filter(light => light.type === 'spotlight');
+      // Get all lights by type (enabled and disabled - let shader handle via intensity)
+      const allPointLights = lightsConfig.filter(light => light.type === 'point');
+      const allDirectionalLights = lightsConfig.filter(light => light.type === 'directional');
+      const allSpotlights = lightsConfig.filter(light => light.type === 'spotlight');
       
       // Initialize all lights as disabled
       uniforms.uPoint0Enabled = false; uniforms.uPoint1Enabled = false; uniforms.uPoint2Enabled = false; uniforms.uPoint3Enabled = false;
@@ -1604,10 +1596,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       allDirectionalLights.slice(0, 2).forEach((light, slotIdx) => {
         const prefix = `uDir${slotIdx}`;
         
-        // ✅ CRITICAL FIX: Use original enabled state to control actual visibility
-        const isActuallyEnabled = (light as any).originalEnabled;
-        
-        uniforms[`${prefix}Enabled`] = true; // Always enabled for structure creation
+        // Use enabled flag for existence, intensity for visibility (physics-correct approach)
+        uniforms[`${prefix}Enabled`] = light.enabled; // Controls whether light exists
         uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
         uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
         uniforms[`${prefix}Intensity`] = isActuallyEnabled ? light.intensity : 0; // Use original state for intensity
