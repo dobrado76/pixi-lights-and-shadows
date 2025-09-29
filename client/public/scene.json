@@ -1,38 +1,4 @@
 {
-  "materials": [
-    {
-      "name": "ballMaterial",
-      "image": "/textures/ball.png",
-      "normal": "/textures/ballN.png",
-      "useNormalMap": true,
-      "metallic": 0.15,
-      "smoothness": 0.2
-    },
-    {
-      "name": "fabricBackground",
-      "image": "/textures/white-fabric-texture-background.jpg",
-      "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
-      "useNormalMap": false,
-      "metallic": 0.0,
-      "smoothness": 0.3
-    },
-    {
-      "name": "test1Material",
-      "image": "/textures/test1.png",
-      "normal": "/textures/test1Normal.png",
-      "useNormalMap": true,
-      "metallic": 0.0,
-      "smoothness": 0.5
-    },
-    {
-      "name": "test2Material",
-      "image": "/textures/test2.png",
-      "normal": "/textures/test2Normal.png",
-      "useNormalMap": true,
-      "metallic": 0.4,
-      "smoothness": 0.33
-    }
-  ],
   "scene": {
     "background": {
       "material": {
@@ -59,7 +25,13 @@
       }
     },
     "background2": {
-      "material": "fabricBackground",
+      "material": {
+        "image": "/textures/white-fabric-texture-background.jpg",
+        "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
+        "useNormalMap": false,
+        "metallic": 0.0,
+        "smoothness": 0.3
+      },
       "transform": {
         "position": { "x": 0, "y": 0 },
         "rotation": 0,
@@ -77,7 +49,13 @@
       }
     },
     "ball": {
-      "material": "ballMaterial",
+      "material": {
+        "image": "/textures/ball.png",
+        "normal": "/textures/ballN.png",
+        "useNormalMap": true,
+        "metallic": 0.15,
+        "smoothness": 0.2
+      },
       "transform": {
         "position": { "x": 138, "y": 86 },
         "rotation": 0,
@@ -95,7 +73,13 @@
       }
     },
     "ball2": {
-      "material": "ballMaterial",
+      "material": {
+        "image": "/textures/ball.png",
+        "normal": "/textures/ballN.png",
+        "useNormalMap": true,
+        "metallic": 0.15,
+        "smoothness": 0.2
+      },
       "transform": {
         "position": { "x": 87, "y": 309 },
         "rotation": 0,
@@ -113,7 +97,13 @@
       }
     },
     "test1": {
-      "material": "test1Material",
+      "material": {
+        "image": "/textures/test1.png",
+        "normal": "/textures/test1Normal.png",
+        "useNormalMap": true,
+        "metallic": 0.0,
+        "smoothness": 0.5
+      },
       "transform": {
         "position": { "x": 82, "y": 420 },
         "rotation": 0,
@@ -131,7 +121,13 @@
       }
     },
     "test2": {
-      "material": "test2Material",
+      "material": {
+        "image": "/textures/test2.png",
+        "normal": "/textures/test2Normal.png",
+        "useNormalMap": true,
+        "metallic": 0.4,
+        "smoothness": 0.33
+      },
       "transform": {
         "position": { "x": 98, "y": 444 },
         "rotation": 0,
