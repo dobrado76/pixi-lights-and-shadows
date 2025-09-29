@@ -898,15 +898,42 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Set PIXI container reference for direct updates
         sceneManagerRef.current.setPixiContainer(sceneContainerRef.current);
         
-        // UNIFIED IMMEDIATE UPDATE SYSTEM for ALL UI controls
+        // UNIFIED IMMEDIATE UPDATE SYSTEM for ALL UI controls - ECS COMPATIBLE
         const immediateUpdateHandler = (spriteId: string, updates: any) => {
           console.log(`🚀 IMMEDIATE UPDATE for ${spriteId}:`, Object.keys(updates));
           
+          // Extract flat properties from ECS structure for immediate updates
+          const flatUpdates: any = {};
+          
+          // Copy direct properties (non-ECS)
+          Object.keys(updates).forEach(key => {
+            if (!['material', 'transform', 'sprite'].includes(key)) {
+              flatUpdates[key] = updates[key];
+            }
+          });
+          
+          // Handle material component updates (metallic, smoothness, useNormalMap)
+          if (updates.material) {
+            Object.assign(flatUpdates, updates.material);
+          }
+          
+          // Handle transform component updates (position, rotation, scale)
+          if (updates.transform) {
+            Object.assign(flatUpdates, updates.transform);
+          }
+          
+          // Handle sprite component updates (zOrder, castsShadows, visible, pivot)
+          if (updates.sprite) {
+            Object.assign(flatUpdates, updates.sprite);
+          }
+          
+          console.log(`🔄 Flattened updates for immediate processing:`, Object.keys(flatUpdates));
+          
           // Smart dirty flag optimization - only mark dirty what actually changed
-          const positionChanged = 'position' in updates;
-          const transformChanged = 'rotation' in updates || 'scale' in updates || 'zOrder' in updates;
-          const shadowChanged = 'castsShadows' in updates;
-          const visibilityChanged = 'visible' in updates;
+          const positionChanged = 'position' in flatUpdates;
+          const transformChanged = 'rotation' in flatUpdates || 'scale' in flatUpdates || 'zOrder' in flatUpdates;
+          const shadowChanged = 'castsShadows' in flatUpdates;
+          const visibilityChanged = 'visible' in flatUpdates;
           
           if (positionChanged || transformChanged || shadowChanged || visibilityChanged) {
             occluderMapDirtyRef.current = true;
@@ -919,52 +946,52 @@ const PixiDemo = (props: PixiDemoProps) => {
               let needsReSort = false;
               
               // Handle zOrder changes - Mark as immediate to prevent React override
-              if (updates.zOrder !== undefined) {
-                sprite.definition.zOrder = updates.zOrder;
-                sprite.mesh.zIndex = updates.zOrder;
+              if (flatUpdates.zOrder !== undefined) {
+                sprite.definition.zOrder = flatUpdates.zOrder;
+                sprite.mesh.zIndex = flatUpdates.zOrder;
                 (sprite.mesh as any).userData = (sprite.mesh as any).userData || {};
-                (sprite.mesh as any).userData.__immediateZOrder = updates.zOrder; // Mark as immediate
+                (sprite.mesh as any).userData.__immediateZOrder = flatUpdates.zOrder; // Mark as immediate
                 needsReSort = true;
-                console.log(`⚡ Immediate zOrder: ${spriteId} → ${updates.zOrder}`);
+                console.log(`⚡ Immediate zOrder: ${spriteId} → ${flatUpdates.zOrder}`);
               }
               
               // Handle normal map changes - Update shader uniform without reloading texture
-              if (updates.useNormalMap !== undefined) {
-                sprite.definition.useNormalMap = updates.useNormalMap;
+              if (flatUpdates.useNormalMap !== undefined) {
+                sprite.definition.useNormalMap = flatUpdates.useNormalMap;
                 if (sprite.shader) {
-                  sprite.shader.uniforms.uUseNormalMap = updates.useNormalMap;
+                  sprite.shader.uniforms.uUseNormalMap = flatUpdates.useNormalMap;
                   (sprite.shader as any).userData = (sprite.shader as any).userData || {};
-                  (sprite.shader as any).userData.__immediateNormalMap = updates.useNormalMap; // Mark as immediate
+                  (sprite.shader as any).userData.__immediateNormalMap = flatUpdates.useNormalMap; // Mark as immediate
                 }
-                console.log(`⚡ Immediate normal map: ${spriteId} → ${updates.useNormalMap}`);
+                console.log(`⚡ Immediate normal map: ${spriteId} → ${flatUpdates.useNormalMap}`);
               }
               
               // Handle metallic changes - Update shader uniform immediately  
-              if (updates.metallic !== undefined) {
-                sprite.definition.metallic = updates.metallic;
+              if (flatUpdates.metallic !== undefined) {
+                sprite.definition.metallic = flatUpdates.metallic;
                 if (sprite.shader) {
-                  sprite.shader.uniforms.uMetallicValue = updates.metallic;
+                  sprite.shader.uniforms.uMetallicValue = flatUpdates.metallic;
                   (sprite.shader as any).userData = (sprite.shader as any).userData || {};
-                  (sprite.shader as any).userData.__immediateMetallic = updates.metallic; // Mark as immediate
+                  (sprite.shader as any).userData.__immediateMetallic = flatUpdates.metallic; // Mark as immediate
                 }
-                console.log(`⚡ Immediate metallic: ${spriteId} → ${updates.metallic}`);
+                console.log(`⚡ Immediate metallic: ${spriteId} → ${flatUpdates.metallic}`);
               }
               
               // Handle smoothness changes - Update shader uniform immediately
-              if (updates.smoothness !== undefined) {
-                sprite.definition.smoothness = updates.smoothness;
+              if (flatUpdates.smoothness !== undefined) {
+                sprite.definition.smoothness = flatUpdates.smoothness;
                 if (sprite.shader) {
-                  sprite.shader.uniforms.uSmoothnessValue = updates.smoothness;
+                  sprite.shader.uniforms.uSmoothnessValue = flatUpdates.smoothness;
                   (sprite.shader as any).userData = (sprite.shader as any).userData || {};
-                  (sprite.shader as any).userData.__immediateSmoothness = updates.smoothness; // Mark as immediate
+                  (sprite.shader as any).userData.__immediateSmoothness = flatUpdates.smoothness; // Mark as immediate
                 }
-                console.log(`⚡ Immediate smoothness: ${spriteId} → ${updates.smoothness}`);
+                console.log(`⚡ Immediate smoothness: ${spriteId} → ${flatUpdates.smoothness}`);
               }
               
               // Handle position changes
-              if (updates.position) {
+              if (flatUpdates.position) {
                 sprite.updateTransform({
-                  position: updates.position,
+                  position: flatUpdates.position,
                   rotation: sprite.definition.rotation || 0,
                   scale: sprite.definition.scale || 1
                 });
@@ -972,16 +999,16 @@ const PixiDemo = (props: PixiDemoProps) => {
               }
               
               // Handle visibility changes - Update mesh.visible instead of recreating
-              if (updates.visible !== undefined) {
-                sprite.definition.visible = updates.visible;
-                sprite.mesh.visible = updates.visible;
-                console.log(`⚡ Immediate visibility: ${spriteId} → ${updates.visible}`);
+              if (flatUpdates.visible !== undefined) {
+                sprite.definition.visible = flatUpdates.visible;
+                sprite.mesh.visible = flatUpdates.visible;
+                console.log(`⚡ Immediate visibility: ${spriteId} → ${flatUpdates.visible}`);
               }
               
               // Handle shadow casting changes
-              if (updates.castsShadows !== undefined) {
-                sprite.definition.castsShadows = updates.castsShadows;
-                console.log(`⚡ Immediate castsShadows: ${spriteId} → ${updates.castsShadows}`);
+              if (flatUpdates.castsShadows !== undefined) {
+                sprite.definition.castsShadows = flatUpdates.castsShadows;
+                console.log(`⚡ Immediate castsShadows: ${spriteId} → ${flatUpdates.castsShadows}`);
               }
               
               // Handle AO casting changes

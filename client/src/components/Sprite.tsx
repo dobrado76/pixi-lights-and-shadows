@@ -584,9 +584,47 @@ export class SceneManager {
     // Clean slate for new scene
     this.sprites.clear();
     
+    // Helper function to resolve material references
+    const resolveMaterial = (material: any, materials: any[]): any => {
+      if (typeof material === 'string') {
+        // It's a reference to a material in the materials array
+        const found = materials?.find(m => m.name === material);
+        if (!found) {
+          console.warn(`Material '${material}' not found, using default`);
+          return { image: '', normal: '', useNormalMap: false, metallic: 0, smoothness: 0.5 };
+        }
+        return found;
+      }
+      // It's an inline material object
+      return material || {};
+    };
+    
     // Parallel sprite creation and texture loading
-    for (const [key, spriteData] of Object.entries(sceneData.scene)) {
-      const sprite = new SceneSprite(key, spriteData as SpriteDefinition);
+    for (const [key, entityData] of Object.entries(sceneData.scene)) {
+      const entity = entityData as any;
+      
+      // Extract components from ECS structure
+      const material = resolveMaterial(entity.material, sceneData.materials);
+      const transform = entity.transform || { position: { x: 0, y: 0 }, rotation: 0, scale: 1 };
+      const spriteComponent = entity.sprite || { pivot: { preset: 'middle-center', offsetX: 0, offsetY: 0 }, zOrder: 0, castsShadows: true, visible: true };
+      
+      // Convert ECS structure back to flat SpriteDefinition format
+      const flatSpriteData: SpriteDefinition = {
+        image: material.image || '',
+        normal: material.normal || '',
+        useNormalMap: material.useNormalMap ?? false,
+        metallic: material.metallic ?? 0.0,
+        smoothness: material.smoothness ?? 0.5,
+        position: transform.position,
+        rotation: transform.rotation,
+        scale: transform.scale,
+        zOrder: spriteComponent.zOrder,
+        castsShadows: spriteComponent.castsShadows,
+        visible: spriteComponent.visible,
+        pivot: spriteComponent.pivot
+      };
+      
+      const sprite = new SceneSprite(key, flatSpriteData);
       await sprite.loadTextures();
       this.sprites.set(key, sprite);
     }
