@@ -115,8 +115,8 @@
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
-      "metallic": 0.32,
-      "smoothness": 0.16,
+      "metallic": 0.51,
+      "smoothness": 0.46,
       "pivot": {
         "preset": "top-left",
         "offsetX": 0,
@@ -156,8 +156,8 @@
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
-      "metallic": 0.15,
-      "smoothness": 0.24,
+      "metallic": 0.38,
+      "smoothness": 0.5,
       "pivot": {
         "preset": "top-left",
         "offsetX": 0,
@@ -177,8 +177,8 @@
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
-      "metallic": 0.7,
-      "smoothness": 0.6,
+      "metallic": 0.19,
+      "smoothness": 0.51,
       "pivot": {
         "preset": "middle-center",
         "offsetX": 0,
