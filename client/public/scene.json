@@ -33,6 +33,8 @@
       "castsShadows": false,
       "visible": true,
       "useNormalMap": false,
+      "metallic": 0.0,
+      "smoothness": 0.3,
       "pivot": {
         "preset": "top-left",
         "offsetX": 0,
@@ -52,6 +54,8 @@
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
+      "metallic": 0.05,
+      "smoothness": 0.9,
       "pivot": {
         "preset": "middle-center",
         "offsetX": 0,
@@ -71,6 +75,8 @@
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
+      "metallic": 0.4,
+      "smoothness": 0.85,
       "pivot": {
         "preset": "custom-offset",
         "offsetX": 0,
@@ -109,6 +115,8 @@
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
+      "metallic": 0.1,
+      "smoothness": 0.6,
       "pivot": {
         "preset": "top-left",
         "offsetX": 0,
@@ -148,6 +156,8 @@
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
+      "metallic": 0.0,
+      "smoothness": 0.2,
       "pivot": {
         "preset": "top-left",
         "offsetX": 0,
@@ -167,6 +177,8 @@
       "castsShadows": true,
       "visible": true,
       "useNormalMap": true,
+      "metallic": 0.7,
+      "smoothness": 0.6,
       "pivot": {
         "preset": "middle-center",
         "offsetX": 0,
