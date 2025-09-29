@@ -87,8 +87,8 @@ uniform float uAOBias; // Bias to prevent self-occlusion
 // AO is now calculated for all sprites - no per-sprite toggle needed in shader
 
 // Function to sample mask with transforms
-float sampleMask(sampler2D maskTexture, vec2 worldPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
-  vec2 relativePos = worldPos - lightPos;
+float sampleMask(sampler2D maskTexture, vec2 pixelPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
+  vec2 relativePos = pixelPos - lightPos;
   
   // Apply offset
   relativePos -= offset;
@@ -570,6 +570,15 @@ void main(void) {
   // Sample all material textures with standard UV coordinates
   vec4 diffuseColor = texture2D(uDiffuse, uv);
   
+  // Alpha test: discard transparent pixels to prevent PBR artifacts in transparent areas
+  if (diffuseColor.a < 0.01) {
+    discard;
+  }
+  
+  // Use actual world position from vertex shader (includes container transforms)
+  vec2 worldPos = vWorldPos;
+  vec3 worldPos3D = vec3(worldPos.x, worldPos.y, 0.0);
+  
   // Use scalar PBR material properties (texture support can be added later)
   float finalMetallic = uMetallicValue;
   float finalSmoothness = uSmoothnessValue;
@@ -593,10 +602,6 @@ void main(void) {
   } else {
     normal = vec3(0.0, 0.0, 1.0); // Flat normal pointing outward
   }
-  
-  // Use actual world position from vertex shader (includes container transforms)
-  vec2 worldPos = vWorldPos;
-  vec3 worldPos3D = vec3(worldPos.x, worldPos.y, 0.0);
   
   // Calculate view direction for PBR (from surface to camera)
   // In 2.5D, use dynamic view direction based on world position
