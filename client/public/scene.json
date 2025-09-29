@@ -60,7 +60,7 @@
         "normal": "/textures/ballN.png",
         "useNormalMap": true,
         "metallic": 0.15,
-        "smoothness": 0.16
+        "smoothness": 0.15
       },
       "transform": {
         "position": {
