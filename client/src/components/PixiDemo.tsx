@@ -1974,10 +1974,12 @@ const PixiDemo = (props: PixiDemoProps) => {
             // Update AO config
             const aoEnabled = ambientOcclusionConfig.enabled && performanceSettings.enableAmbientOcclusion;
             shader.uniforms.uAOEnabled = aoEnabled;
-            shader.uniforms.uAOStrength = ambientOcclusionConfig.strength || 3.5;
-            shader.uniforms.uAORadius = ambientOcclusionConfig.radius || 6;
-            shader.uniforms.uAOSamples = ambientOcclusionConfig.samples || 8;
-            shader.uniforms.uAOBias = ambientOcclusionConfig.bias || 20.0;
+            shader.uniforms.uAOStrength = ambientOcclusionConfig.strength * 3; // MATCH useEffect calculation
+            shader.uniforms.uAORadius = ambientOcclusionConfig.radius;
+            shader.uniforms.uAOSamples = Math.min(ambientOcclusionConfig.samples, 
+              performanceSettings.quality === 'low' ? 4 : 
+              performanceSettings.quality === 'high' ? 16 : 8);
+            shader.uniforms.uAOBias = ambientOcclusionConfig.bias;
           }
         });
         
