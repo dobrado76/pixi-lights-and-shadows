@@ -229,11 +229,11 @@
         "useNormalMap": true,
         "metallic": 0.34,
         "smoothness": 0.5,
-        "albedoTint": 0.41,
+        "albedoTint": 0.19,
         "albedoColor": {
-          "r": 0.792156862745098,
-          "g": 0.10980392156862745,
-          "b": 0.5058823529411764
+          "r": 0.10980392156862745,
+          "g": 0.5294117647058824,
+          "b": 0.792156862745098
         }
       },
       "transform": {
@@ -402,7 +402,7 @@
   },
   "iblConfig": {
     "enabled": true,
-    "intensity": 1,
+    "intensity": 0.4,
     "environmentMap": "/sky_boxes/golden_gate_hills_1k.jpg"
   }
 }
