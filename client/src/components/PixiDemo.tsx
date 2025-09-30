@@ -1606,20 +1606,18 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Image-Based Lighting (IBL) uniforms - Environmental/Indirect Lighting
       const iblConfig = (sceneConfig as any).iblConfig || { enabled: false, intensity: 1.0, environmentMap: '/textures/BGTextureTest.jpg' };
-      uniforms.uIBLEnabled = iblConfig.enabled;
-      uniforms.uIBLIntensity = iblConfig.intensity || 1.0;
-      // Load environment map texture with error handling for HDR files
-      if (iblConfig.environmentMap) {
+      
+      // Treat intensity 0 as disabled
+      const iblEnabled = iblConfig.enabled && iblConfig.intensity > 0.0;
+      uniforms.uIBLEnabled = iblEnabled;
+      uniforms.uIBLIntensity = iblConfig.intensity;
+      
+      // Load environment map texture - try HDR files directly (PIXI will load as regular images)
+      if (iblConfig.environmentMap && iblEnabled) {
         try {
-          // Note: PIXI.js doesn't natively support HDR files
-          // For HDR files, we'll use a fallback texture until proper HDR support is added
-          const isHDR = iblConfig.environmentMap.toLowerCase().endsWith('.hdr');
-          if (isHDR) {
-            console.warn('HDR texture loading not yet supported, using fallback texture');
-            uniforms.uEnvironmentMap = PIXI.Texture.from('/textures/BGTextureTest.jpg');
-          } else {
-            uniforms.uEnvironmentMap = PIXI.Texture.from(iblConfig.environmentMap);
-          }
+          // Load the texture directly - even for HDR files, PIXI will attempt to load them
+          // HDR files won't have proper HDR data but will still provide different textures
+          uniforms.uEnvironmentMap = PIXI.Texture.from(iblConfig.environmentMap);
         } catch (err) {
           console.error('Failed to load environment map:', err);
           uniforms.uEnvironmentMap = PIXI.Texture.WHITE;
@@ -1975,9 +1973,10 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         shadersRef.current.forEach(shader => {
           if (shader.uniforms) {
-            // Update IBL uniforms
-            shader.uniforms.uIBLEnabled = iblConfig.enabled;
-            shader.uniforms.uIBLIntensity = iblConfig.intensity || 1.0;
+            // Update IBL uniforms - treat intensity 0 as disabled
+            const iblEnabled = iblConfig.enabled && iblConfig.intensity > 0.0;
+            shader.uniforms.uIBLEnabled = iblEnabled;
+            shader.uniforms.uIBLIntensity = iblConfig.intensity;
             
             // Update ambient light
             shader.uniforms.uAmbientIntensity = currentAmbientLight.intensity;

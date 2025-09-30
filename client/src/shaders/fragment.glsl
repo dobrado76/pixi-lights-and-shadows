@@ -644,11 +644,14 @@ vec3 calculateIBL(vec3 albedo, vec3 normal, vec3 viewDir, float metallic, float 
     specularSample = blurSum / samples;
   }
   
-  // Specular reflection with Fresnel
-  vec3 specularIBL = kS * specularSample;
+  // Reduce specular intensity for more subtle reflections
+  // Apply roughness falloff to reduce bright edges
+  float specularFalloff = mix(0.3, 1.0, roughness); // Rough surfaces get more IBL, smooth get less
+  vec3 specularIBL = kS * specularSample * specularFalloff;
   
-  // Combine diffuse and specular IBL
-  vec3 iblContribution = (diffuseIBL + specularIBL) * uIBLIntensity;
+  // Combine diffuse and specular IBL with reduced intensity
+  // Scale down the overall contribution to prevent bright halos
+  vec3 iblContribution = (diffuseIBL * 0.5 + specularIBL * 0.7) * uIBLIntensity;
   
   return iblContribution;
 }
