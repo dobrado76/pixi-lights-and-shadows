@@ -272,9 +272,11 @@
       "type": "directional",
       "brightness": 0.3,
       "color": "0xffffff",
-      "directionX": 0.25881904510252074,
-      "directionY": -0.9659258262890683,
-      "directionZ": -1,
+      "direction": {
+        "x": 0.25881904510252074,
+        "y": -0.9659258262890683,
+        "z": -1
+      },
       "castsShadows": true
     },
     {
@@ -288,9 +290,11 @@
         "y": 210,
         "z": 80
       },
-      "directionX": 0,
-      "directionY": 1,
-      "directionZ": -1,
+      "direction": {
+        "x": 0,
+        "y": 1,
+        "z": -1
+      },
       "castsShadows": true,
       "radius": 480,
       "coneAngle": 58,
@@ -307,9 +311,11 @@
         "y": 250,
         "z": 50
       },
-      "directionX": 0,
-      "directionY": 1,
-      "directionZ": -0.5,
+      "direction": {
+        "x": 0,
+        "y": 1,
+        "z": -0.5
+      },
       "castsShadows": true,
       "radius": 400,
       "coneAngle": 43,

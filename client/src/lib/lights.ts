@@ -23,9 +23,14 @@ export interface LightConfig {
   };
   
   // Direction properties  
-  directionX?: number;
-  directionY?: number;
-  directionZ?: number;
+  direction?: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  directionX?: number; // Legacy support
+  directionY?: number; // Legacy support
+  directionZ?: number; // Legacy support
   angle?: number; // For directional lights
   
   // Appearance
@@ -328,9 +333,11 @@ export const convertLightToConfig = (light: Light): LightConfig => {
 
   // Add direction properties if relevant  
   if (light.type === 'directional' || light.type === 'spotlight') {
-    config.directionX = light.direction.x;
-    config.directionY = light.direction.y;
-    config.directionZ = light.direction.z;
+    config.direction = {
+      x: light.direction.x,
+      y: light.direction.y,
+      z: light.direction.z
+    };
   }
 
   // Add type-specific properties
