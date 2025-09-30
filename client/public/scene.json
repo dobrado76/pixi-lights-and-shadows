@@ -388,8 +388,8 @@
   },
   "iblConfig": {
     "enabled": true,
-    "intensity": 0.3,
-    "environmentMap": "/sky_boxes/golden_gate_hills_1k.hdr"
+    "intensity": 0.9,
+    "environmentMap": "/sky_boxes/cobblestone_street_night_1k.hdr"
   },
   "performanceSettings": {
     "quality": "high",
