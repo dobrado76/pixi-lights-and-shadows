@@ -572,8 +572,8 @@ void main(void) {
   // Sample all material textures with standard UV coordinates
   vec4 diffuseColor = texture2D(uDiffuse, uv);
   
-  // Apply albedo tint: mix original color with tint color based on tint percentage
-  diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * uAlbedoColor, uAlbedoTint);
+  // Apply albedo tint: blend original color toward tint color based on tint percentage
+  diffuseColor.rgb = mix(diffuseColor.rgb, uAlbedoColor, uAlbedoTint);
   
   // Alpha test: discard transparent pixels to prevent PBR artifacts in transparent areas
   if (diffuseColor.a < 0.01) {
