@@ -224,7 +224,8 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     
     const updatedConfig = {
       ...sceneConfig,
-      ambientOcclusionConfig: newAOConfig
+      ambientOcclusionConfig: newAOConfig,
+      iblConfig: sceneConfig.iblConfig // Preserve IBL config
     };
     setSceneConfig(updatedConfig);
     debouncedSaveScene(updatedConfig);
@@ -239,7 +240,8 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
       ...sceneConfig,
       performanceSettings: settingsWithOverride,
       shadowConfig,
-      ambientOcclusionConfig
+      ambientOcclusionConfig,
+      iblConfig: sceneConfig.iblConfig // Preserve IBL config
     };
     setSceneConfig(updatedConfig);
     debouncedSaveScene(updatedConfig);

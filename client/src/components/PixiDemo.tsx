@@ -82,7 +82,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   const shadowCastersDirtyRef = useRef<boolean>(true);
 
   // Performance optimization utilities
-  const createLightConfigHash = (lights: Light[], ambient: any, shadow: any, ao: any, performance: any) => {
+  const createLightConfigHash = (lights: Light[], ambient: any, shadow: any, ao: any, performance: any, ibl: any) => {
     return JSON.stringify({
       lights: lights.map(l => ({ 
         id: l.id, enabled: l.enabled, type: l.type, 
@@ -93,6 +93,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       ambient: { intensity: ambient.intensity, color: ambient.color },
       shadow: { enabled: shadow.enabled && performance.enableShadows, strength: shadow.strength },
       ao: { enabled: ao.enabled && performance.enableAmbientOcclusion, strength: ao.strength },
+      ibl: { enabled: ibl?.enabled, intensity: ibl?.intensity, environmentMap: ibl?.environmentMap },
       quality: performance.quality
     });
   };
@@ -125,7 +126,8 @@ const PixiDemo = (props: PixiDemoProps) => {
 
   // Dirty flag management for performance optimization
   const checkAndUpdateDirtyFlags = () => {
-    const currentLightHash = createLightConfigHash(lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings);
+    const iblConfig = (sceneConfig as any).iblConfig;
+    const currentLightHash = createLightConfigHash(lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings, iblConfig);
     const currentShadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
     
     // Check if lighting configuration changed (affects uniforms)
