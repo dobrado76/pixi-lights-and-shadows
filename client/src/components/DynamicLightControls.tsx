@@ -143,6 +143,7 @@ const DynamicLightControls = ({
         const skyBoxFiles = [
           "cobblestone_street_night_1k.hdr",
           "golden_gate_hills_1k.hdr",
+          "golden_gate_hills_1k.jpg",
           "rogland_clear_night_1k.hdr",
         ];
         setAvailableSkyBoxes(skyBoxFiles);

@@ -402,7 +402,7 @@
   },
   "iblConfig": {
     "enabled": true,
-    "intensity": 0.8,
-    "environmentMap": "/sky_boxes/cobblestone_street_night_1k.hdr"
+    "intensity": 0.6,
+    "environmentMap": "/sky_boxes/golden_gate_hills_1k.jpg"
   }
 }
