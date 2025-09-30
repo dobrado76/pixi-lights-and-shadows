@@ -56,7 +56,6 @@ const DynamicLightControls = ({
   onAmbientOcclusionConfigChange,
   onSceneConfigChange,
 }: DynamicLightControlsProps) => {
-  
   const [localLights, setLocalLights] = useState<Light[]>(lights);
   const [localAmbient, setLocalAmbient] = useState(ambientLight);
   const [localShadowConfig, setLocalShadowConfig] =
@@ -141,10 +140,9 @@ const DynamicLightControls = ({
       try {
         // Hardcoded sky box inventory from /client/public/sky_boxes
         const skyBoxFiles = [
-          "cobblestone_street_night_1k.hdr",
-          "golden_gate_hills_1k.hdr",
+          "cobblestone_street_night_1k.jpg",
           "golden_gate_hills_1k.jpg",
-          "rogland_clear_night_1k.hdr",
+          "rogland_clear_night_1k.jpg",
         ];
         setAvailableSkyBoxes(skyBoxFiles);
       } catch (error) {
@@ -174,7 +172,13 @@ const DynamicLightControls = ({
     );
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    debouncedSave(updatedLights, localAmbient, localShadowConfig, localAOConfig, sceneConfig); // Persistence
+    debouncedSave(
+      updatedLights,
+      localAmbient,
+      localShadowConfig,
+      localAOConfig,
+      sceneConfig,
+    ); // Persistence
   };
 
   // Helper to delete a light
@@ -182,7 +186,13 @@ const DynamicLightControls = ({
     const updatedLights = localLights.filter((light) => light.id !== lightId);
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    debouncedSave(updatedLights, localAmbient, localShadowConfig, localAOConfig, sceneConfig);
+    debouncedSave(
+      updatedLights,
+      localAmbient,
+      localShadowConfig,
+      localAOConfig,
+      sceneConfig,
+    );
   };
 
   // Light duplication with timestamp-based unique naming
@@ -200,7 +210,13 @@ const DynamicLightControls = ({
     const updatedLights = [...localLights, newLight];
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    debouncedSave(updatedLights, localAmbient, localShadowConfig, localAOConfig, sceneConfig);
+    debouncedSave(
+      updatedLights,
+      localAmbient,
+      localShadowConfig,
+      localAOConfig,
+      sceneConfig,
+    );
   };
 
   // Light renaming system with validation to prevent ID conflicts
@@ -233,7 +249,13 @@ const DynamicLightControls = ({
     );
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    debouncedSave(updatedLights, localAmbient, localShadowConfig, localAOConfig, sceneConfig);
+    debouncedSave(
+      updatedLights,
+      localAmbient,
+      localShadowConfig,
+      localAOConfig,
+      sceneConfig,
+    );
     setEditingLightId(null);
     setEditingName("");
   };
@@ -309,7 +331,13 @@ const DynamicLightControls = ({
 
     const updatedLights = [...localLights, baseLight];
     setLocalLights(updatedLights);
-    debouncedSave(updatedLights, localAmbient, localShadowConfig, localAOConfig, sceneConfig);
+    debouncedSave(
+      updatedLights,
+      localAmbient,
+      localShadowConfig,
+      localAOConfig,
+      sceneConfig,
+    );
   };
 
   // Helper to convert RGB to hex
@@ -561,7 +589,13 @@ const DynamicLightControls = ({
               };
               setLocalShadowConfig(newConfig);
               onShadowConfigChange(newConfig); // Immediate visual update
-              debouncedSave(localLights, localAmbient, newConfig, localAOConfig, sceneConfig);
+              debouncedSave(
+                localLights,
+                localAmbient,
+                newConfig,
+                localAOConfig,
+                sceneConfig,
+              );
             }}
             className={`ml-auto p-1 rounded text-xs ${
               localShadowConfig.enabled
@@ -852,9 +886,12 @@ const DynamicLightControls = ({
                     setLocalIBLConfig(newConfig);
                     const updatedScene = {
                       ...sceneConfig,
-                      iblConfig: newConfig
+                      iblConfig: newConfig,
                     };
-                    console.log('🎨 IBL Toggle - calling onSceneConfigChange with:', updatedScene);
+                    console.log(
+                      "🎨 IBL Toggle - calling onSceneConfigChange with:",
+                      updatedScene,
+                    );
                     onSceneConfigChange(updatedScene);
                     debouncedSave(
                       localLights,
@@ -899,7 +936,7 @@ const DynamicLightControls = ({
                         setLocalIBLConfig(newConfig);
                         const updatedScene = {
                           ...sceneConfig,
-                          iblConfig: newConfig
+                          iblConfig: newConfig,
                         };
                         onSceneConfigChange(updatedScene);
                         debouncedSave(
@@ -940,7 +977,7 @@ const DynamicLightControls = ({
                         setLocalIBLConfig(newConfig);
                         const updatedScene = {
                           ...sceneConfig,
-                          iblConfig: newConfig
+                          iblConfig: newConfig,
                         };
                         onSceneConfigChange(updatedScene);
                         debouncedSave(
