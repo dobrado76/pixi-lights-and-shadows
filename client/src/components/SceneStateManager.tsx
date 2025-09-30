@@ -39,9 +39,7 @@ const SceneStateContext = createContext<SceneStateContextType | null>(null);
 
 // Hook to use the scene state context
 export const useSceneState = () => {
-  console.log('🔧 useSceneState: Hook called');
   const context = useContext(SceneStateContext);
-  console.log('🔧 useSceneState: Context value:', context);
   return context;
 };
 
@@ -50,7 +48,6 @@ interface SceneStateProviderProps {
 }
 
 export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
-  console.log('🔧 SceneStateProvider: Provider rendering...');
   
   // Core scene state
   const [sceneConfig, setSceneConfig] = useState<SceneConfig>({ scene: {} });
@@ -94,9 +91,7 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
   
   // Keep ref updated whenever sceneConfig changes
   useEffect(() => {
-    console.log('📌 Updating sceneConfigRef, sceneConfig:', sceneConfig);
     sceneConfigRef.current = sceneConfig;
-    console.log('📌 sceneConfigRef.current now:', sceneConfigRef.current);
   }, [sceneConfig]);
 
   // Debounced save for lights configuration
@@ -273,8 +268,6 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     updatePerformanceSettings,
     triggerImmediateSpriteChange
   };
-
-  console.log('🔧 SceneStateProvider: Providing context value:', { isLoaded, lightsCount: lightsConfig.length });
 
   return (
     <SceneStateContext.Provider value={contextValue}>

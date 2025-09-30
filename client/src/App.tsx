@@ -3,7 +3,6 @@ import PixiDemo from './components/PixiDemo';
 import DynamicLightControls from './components/DynamicLightControls';
 import { DynamicSpriteControls } from './components/DynamicSpriteControls';
 import PerformanceMonitor from './components/PerformanceMonitor';
-import { useSceneState } from './components/SceneStateManager';
 import { Light, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
 import { detectDevice, getOptimalSettings, PerformanceSettings } from './utils/performance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,9 +44,6 @@ export interface ShaderParams {
 }
 
 function App() {
-  // TODO: Gradually integrate centralized scene state manager
-  // For now, keep the original state management working
-  
   // External JSON-based lighting configuration system
   // Lights are loaded from lights-config.json and auto-saved on changes
   const [lightsConfig, setLightsConfig] = useState<Light[]>([]);
@@ -211,7 +207,18 @@ function App() {
     localStorage.setItem('pixiShaderParams', JSON.stringify(shaderParams));
   }, [shaderParams]);
 
-  // Light/shadow handlers removed - now handled by SceneStateManager
+  // Handlers for immediate light updates (drives live rendering)
+  const handleLightsChange = useCallback((newLights: Light[]) => {
+    setLightsConfig(newLights);
+  }, []);
+
+  const handleAmbientLightChange = useCallback((newAmbient: {intensity: number, color: {r: number, g: number, b: number}}) => {
+    setAmbientLight(newAmbient);
+  }, []);
+
+  const handleShadowConfigChange = useCallback((newShadowConfig: ShadowConfig) => {
+    setShadowConfig(newShadowConfig);
+  }, []);
 
   // Handler for ambient occlusion configuration changes
   const handleAmbientOcclusionConfigChange = useCallback((newAOConfig: AmbientOcclusionConfig) => {
@@ -356,7 +363,17 @@ function App() {
               
               <TabsContent value="lights" className="mt-4">
                 {lightsLoaded && (
-                  <DynamicLightControls />
+                  <DynamicLightControls
+                    lights={lightsConfig}
+                    ambientLight={ambientLight}
+                    shadowConfig={shadowConfig}
+                    ambientOcclusionConfig={ambientOcclusionConfig}
+                    sceneConfig={sceneConfig}
+                    onLightsChange={handleLightsChange}
+                    onAmbientChange={handleAmbientLightChange}
+                    onShadowConfigChange={handleShadowConfigChange}
+                    onAmbientOcclusionConfigChange={handleAmbientOcclusionConfigChange}
+                  />
                 )}
               </TabsContent>
               
