@@ -322,6 +322,8 @@ export class SceneSprite {
       uMetallic: this.metallicTexture,          // Metallic texture map
       uSmoothness: this.smoothnessTexture,      // Smoothness texture map
       uUseNormalMap: this.definition.useNormalMap, // Flag to control normal map usage in shader
+      uAlbedoColor: [this.definition.albedoColor.r, this.definition.albedoColor.g, this.definition.albedoColor.b], // Albedo tint color
+      uAlbedoTint: this.definition.albedoTint,     // Albedo tint percentage (0.0-1.0)
       uMetallicValue: this.definition.metallic,    // Scalar metallic value (0.0-1.0)
       uSmoothnessValue: this.definition.smoothness, // Scalar smoothness value (0.0-1.0)
       uSpritePos: [x, y],

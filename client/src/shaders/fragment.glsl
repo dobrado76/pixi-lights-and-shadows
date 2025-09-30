@@ -6,6 +6,8 @@ uniform sampler2D uNormal;
 uniform sampler2D uMetallic;      // Metallic texture map (R channel = metallic)
 uniform sampler2D uSmoothness;    // Smoothness texture map (R channel = smoothness)
 uniform bool uUseNormalMap;       // Flag to control whether to use normal map or default flat normals
+uniform vec3 uAlbedoColor;        // Albedo tint color (RGB 0-1)
+uniform float uAlbedoTint;        // Albedo tint percentage (0.0-1.0)
 uniform float uMetallicValue;     // Scalar metallic value (0.0-1.0)
 uniform float uSmoothnessValue;   // Scalar smoothness value (0.0-1.0)
 uniform vec2 uSpritePos;
@@ -569,6 +571,9 @@ void main(void) {
   
   // Sample all material textures with standard UV coordinates
   vec4 diffuseColor = texture2D(uDiffuse, uv);
+  
+  // Apply albedo tint: mix original color with tint color based on tint percentage
+  diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * uAlbedoColor, uAlbedoTint);
   
   // Alpha test: discard transparent pixels to prevent PBR artifacts in transparent areas
   if (diffuseColor.a < 0.01) {
