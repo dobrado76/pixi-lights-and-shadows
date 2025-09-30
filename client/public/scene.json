@@ -256,7 +256,7 @@
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
-      "brightness": 0.7,
+      "brightness": 1.2,
       "color": "0xffffff",
       "position": {
         "x": 250,
@@ -265,7 +265,7 @@
       },
       "followMouse": true,
       "castsShadows": true,
-      "radius": 270
+      "radius": 440
     },
     {
       "id": "directional_light",
@@ -371,14 +371,15 @@
   "shadowConfig": {
     "enabled": true,
     "strength": 0.6,
-    "maxLength": 130,
-    "height": 10
+    "maxLength": 150,
+    "height": 10,
+    "bias": 4.1
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 4.8,
-    "radius": 5,
+    "strength": 4.65,
+    "radius": 4,
     "samples": 8,
-    "bias": 20
+    "bias": 6.5
   }
 }
