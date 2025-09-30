@@ -68,15 +68,6 @@ function App() {
     updatePerformanceSettings,
     triggerImmediateSpriteChange
   } = sceneState || {};
-  
-  // Show loading state while scene data is being loaded
-  if (!isLoaded || !sceneConfig || !lightsConfig) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-foreground">Loading scene configuration...</div>
-      </div>
-    );
-  }
 
   // Legacy shader params system - loads from localStorage for backward compatibility
   const getInitialParams = (): ShaderParams => {
