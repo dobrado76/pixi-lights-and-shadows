@@ -249,7 +249,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.5,
+      "brightness": 0.36,
       "color": "0x666666"
     },
     {
