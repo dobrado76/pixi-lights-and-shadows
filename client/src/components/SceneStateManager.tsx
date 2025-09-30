@@ -224,8 +224,7 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     
     const updatedConfig = {
       ...sceneConfig,
-      ambientOcclusionConfig: newAOConfig,
-      iblConfig: sceneConfig.iblConfig // Preserve IBL config
+      ambientOcclusionConfig: newAOConfig
     };
     setSceneConfig(updatedConfig);
     debouncedSaveScene(updatedConfig);
@@ -238,14 +237,11 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     
     const updatedConfig = {
       ...sceneConfig,
-      performanceSettings: settingsWithOverride,
-      shadowConfig,
-      ambientOcclusionConfig,
-      iblConfig: sceneConfig.iblConfig // Preserve IBL config
+      performanceSettings: settingsWithOverride
     };
     setSceneConfig(updatedConfig);
     debouncedSaveScene(updatedConfig);
-  }, [sceneConfig, shadowConfig, ambientOcclusionConfig, debouncedSaveScene]);
+  }, [sceneConfig, debouncedSaveScene]);
 
   const updateIBLConfig = useCallback((newIBLConfig: IBLConfig) => {
     console.log('🌍 SceneStateManager: Updating IBL config...');
