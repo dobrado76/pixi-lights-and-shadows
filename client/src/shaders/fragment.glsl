@@ -1138,7 +1138,7 @@ void main(void) {
   
   // Add Image-Based Lighting (IBL) - Environmental/Indirect Lighting
   // This adds realistic ambient lighting and reflections from the environment
-  if (uIBLEnabled) {
+  if (uIBLEnabled && uIBLIntensity > 0.0) {
     vec3 iblContribution = calculateIBL(diffuseColor.rgb, normal, viewDir, finalMetallic, finalSmoothness);
     finalColor += iblContribution;
   }

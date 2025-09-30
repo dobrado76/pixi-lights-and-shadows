@@ -387,6 +387,7 @@ function App() {
                     onAmbientChange={handleAmbientLightChange}
                     onShadowConfigChange={handleShadowConfigChange}
                     onAmbientOcclusionConfigChange={handleAmbientOcclusionConfigChange}
+                    onSceneConfigChange={handleSceneConfigChange}
                   />
                 )}
               </TabsContent>

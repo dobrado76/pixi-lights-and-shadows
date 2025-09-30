@@ -1947,8 +1947,37 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Directional lights are always enabled - no state tracking needed
       
-      // Reset dirty flag
+      // Update uniforms if dirty (lighting config changed)
       if (uniformsDirtyRef.current) {
+        const iblConfig = (sceneConfig as any).iblConfig || { enabled: false, intensity: 1.0, environmentMap: '/textures/BGTextureTest.jpg' };
+        
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            // Update IBL uniforms
+            shader.uniforms.uIBLEnabled = iblConfig.enabled;
+            shader.uniforms.uIBLIntensity = iblConfig.intensity || 1.0;
+            
+            // Update ambient light
+            shader.uniforms.uAmbientIntensity = ambientLight.intensity;
+            shader.uniforms.uAmbientColor = [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b];
+            
+            // Update shadow config
+            const shadowsEnabled = shadowConfig.enabled && performanceSettings.enableShadows;
+            shader.uniforms.uShadowsEnabled = shadowsEnabled;
+            shader.uniforms.uShadowStrength = shadowConfig.strength;
+            shader.uniforms.uShadowMaxLength = shadowConfig.maxLength || 130;
+            shader.uniforms.uShadowBias = shadowConfig.bias || 3.0;
+            
+            // Update AO config
+            const aoEnabled = ambientOcclusionConfig.enabled && performanceSettings.enableAmbientOcclusion;
+            shader.uniforms.uAOEnabled = aoEnabled;
+            shader.uniforms.uAOStrength = ambientOcclusionConfig.strength || 3.5;
+            shader.uniforms.uAORadius = ambientOcclusionConfig.radius || 6;
+            shader.uniforms.uAOSamples = ambientOcclusionConfig.samples || 8;
+            shader.uniforms.uAOBias = ambientOcclusionConfig.bias || 20.0;
+          }
+        });
+        
         uniformsDirtyRef.current = false;
       }
       

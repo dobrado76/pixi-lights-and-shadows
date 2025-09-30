@@ -41,6 +41,7 @@ interface DynamicLightControlsProps {
   }) => void;
   onShadowConfigChange: (shadowConfig: ShadowConfig) => void;
   onAmbientOcclusionConfigChange: (aoConfig: AmbientOcclusionConfig) => void;
+  onSceneConfigChange: (sceneConfig: SceneConfig) => void;
 }
 
 const DynamicLightControls = ({
@@ -53,6 +54,7 @@ const DynamicLightControls = ({
   onAmbientChange,
   onShadowConfigChange,
   onAmbientOcclusionConfigChange,
+  onSceneConfigChange,
 }: DynamicLightControlsProps) => {
   
   const [localLights, setLocalLights] = useState<Light[]>(lights);
@@ -840,6 +842,7 @@ const DynamicLightControls = ({
                       ...sceneConfig,
                       iblConfig: newConfig,
                     };
+                    onSceneConfigChange(updatedScene);
                     debouncedSave(
                       localLights,
                       localAmbient,
@@ -884,6 +887,7 @@ const DynamicLightControls = ({
                           ...sceneConfig,
                           iblConfig: newConfig,
                         };
+                        onSceneConfigChange(updatedScene);
                         debouncedSave(
                           localLights,
                           localAmbient,
@@ -923,6 +927,7 @@ const DynamicLightControls = ({
                           ...sceneConfig,
                           iblConfig: newConfig,
                         };
+                        onSceneConfigChange(updatedScene);
                         debouncedSave(
                           localLights,
                           localAmbient,
