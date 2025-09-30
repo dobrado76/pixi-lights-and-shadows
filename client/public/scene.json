@@ -223,7 +223,7 @@
         "useNormalMap": true,
         "metallic": 0.34,
         "smoothness": 0.5,
-        "albedoTint": 0.5,
+        "albedoTint": 0.65,
         "albedoColor": {
           "r": 1,
           "g": 0.9686274509803922,
