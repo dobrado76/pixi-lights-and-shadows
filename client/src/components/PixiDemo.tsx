@@ -1906,7 +1906,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Render is handled by animation loop - no need for double rendering
     }
-  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings]);
+  }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings, sceneConfig]);
 
 
   // Animation loop with UNCAPPED FPS

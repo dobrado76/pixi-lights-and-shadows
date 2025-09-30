@@ -250,8 +250,46 @@ function App() {
   }) => {
     console.log('🔄 App: Scene config changed, triggering update...', newSceneConfig);
     setSceneConfig(newSceneConfig);
-    saveAllConfigs();
-  }, [saveAllConfigs]);
+    
+    // Save with NEW value directly (state update is async, so use the new value here)
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const lightConfigs = lightsConfig.map(convertLightToConfig);
+        const ambientConfig = {
+          id: 'ambient_light',
+          type: 'ambient' as const,
+          enabled: true,
+          brightness: ambientLight.intensity,
+          color: rgbToHex(ambientLight.color.r, ambientLight.color.g, ambientLight.color.b)
+        };
+        
+        const fullSaveData = {
+          sprites: newSceneConfig.sprites, // Use NEW value directly
+          lights: [ambientConfig, ...lightConfigs],
+          shadowConfig,
+          ambientOcclusionConfig,
+          performanceSettings,
+          iblConfig: newSceneConfig.iblConfig // Use NEW value directly
+        };
+        
+        const response = await fetch('/api/save-scene-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(fullSaveData),
+        });
+        
+        if (response.ok) {
+          console.log('✅ All configurations saved successfully');
+        }
+      } catch (error) {
+        console.error('Failed to save configurations:', error);
+      }
+    }, 300);
+  }, [lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings]);
 
   // Handler for performance settings changes - just update state and save!
   const handlePerformanceSettingsChange = useCallback((newSettings: PerformanceSettings & { manualOverride?: boolean }) => {

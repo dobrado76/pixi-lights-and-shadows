@@ -375,7 +375,7 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.8,
+    "strength": 0.7,
     "maxLength": 120,
     "height": 10,
     "bias": 2.9
