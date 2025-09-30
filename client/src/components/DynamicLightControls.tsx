@@ -4,7 +4,7 @@ import { Plus, Trash2, Copy, Edit3, ImageIcon, Eye, EyeOff, Moon, Contrast } fro
 
 /**
  * Dynamic lighting control panel supporting unlimited lights with real-time editing.
- * Manages light creation and configuration. Saving is handled by App.
+ * Manages light creation, configuration, masking, and auto-save to external JSON.
  * Handles all three light types: point, directional, and spotlight.
  */
 
@@ -20,7 +20,6 @@ interface DynamicLightControlsProps {
 }
 
 const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclusionConfig, onLightsChange, onAmbientChange, onShadowConfigChange, onAmbientOcclusionConfigChange }: DynamicLightControlsProps) => {
-  
   const [localLights, setLocalLights] = useState<Light[]>(lights);
   const [localAmbient, setLocalAmbient] = useState(ambientLight);
   const [localShadowConfig, setLocalShadowConfig] = useState<ShadowConfig>(shadowConfig);
@@ -73,20 +72,20 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
     setLocalShadowConfig(shadowConfig);
   }, [shadowConfig]);
 
-  // Core light mutation function - immediate update
+  // Core light mutation function - triggers auto-save via parent callback
   const updateLight = (lightId: string, updates: Partial<Light>) => {
     const updatedLights = localLights.map(light => 
       light.id === lightId ? { ...light, ...updates } : light
     );
     setLocalLights(updatedLights);
-    onLightsChange(updatedLights); // App handles saving
+    onLightsChange(updatedLights);
   };
 
   // Helper to delete a light
   const deleteLight = (lightId: string) => {
     const updatedLights = localLights.filter(light => light.id !== lightId);
     setLocalLights(updatedLights);
-    onLightsChange(updatedLights); // App handles saving
+    onLightsChange(updatedLights);
   };
 
   // Light duplication with timestamp-based unique naming
@@ -103,7 +102,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
 
     const updatedLights = [...localLights, newLight];
     setLocalLights(updatedLights);
-    onLightsChange(updatedLights); // App handles saving
+    onLightsChange(updatedLights);
   };
 
   // Light renaming system with validation to prevent ID conflicts
@@ -133,8 +132,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
       light.id === lightId ? { ...light, id: editingName } : light
     );
     setLocalLights(updatedLights);
-    onLightsChange(updatedLights); // Immediate visual update
-    // App handles saving via callback
+    onLightsChange(updatedLights);
     setEditingLightId(null);
     setEditingName('');
   };
@@ -206,7 +204,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
 
     const updatedLights = [...localLights, baseLight];
     setLocalLights(updatedLights);
-    // App handles saving via callback
+    onLightsChange(updatedLights);
   };
 
   // Helper to convert RGB to hex
@@ -272,8 +270,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
               const newIntensity = parseFloat(e.target.value);
               const newAmbient = { ...localAmbient, intensity: newIntensity };
               setLocalAmbient(newAmbient);
-              onAmbientChange(newAmbient); // Immediate visual update
-              // App handles saving via callback
+              onAmbientChange(newAmbient);
             }}
             className="flex-1"
             data-testid="slider-ambient-light"
@@ -290,8 +287,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
               const rgb = hexToRgb(e.target.value);
               const newAmbient = { ...localAmbient, color: rgb };
               setLocalAmbient(newAmbient);
-              onAmbientChange(newAmbient); // Immediate visual update
-              // App handles saving via callback
+              onAmbientChange(newAmbient);
             }}
             className="w-20 h-6 rounded border border-border cursor-pointer"
             data-testid="color-ambient-light"
@@ -396,8 +392,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
             onClick={() => {
               const newConfig = { ...localShadowConfig, enabled: !localShadowConfig.enabled };
               setLocalShadowConfig(newConfig);
-              onShadowConfigChange(newConfig); // Immediate visual update
-              // App handles saving via callback
+              onShadowConfigChange(newConfig);
             }}
             className={`ml-auto p-1 rounded text-xs ${
               localShadowConfig.enabled 
@@ -426,8 +421,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                   const newStrength = parseFloat(e.target.value);
                   const newConfig = { ...localShadowConfig, strength: newStrength };
                   setLocalShadowConfig(newConfig);
-                  onShadowConfigChange(newConfig); // Immediate visual update
-                  // App handles saving via callback
+                  onShadowConfigChange(newConfig);
                 }}
                 className="flex-1"
                 data-testid="slider-shadow-strength"
@@ -448,8 +442,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                   const newLength = parseFloat(e.target.value);
                   const newConfig = { ...localShadowConfig, maxLength: newLength };
                   setLocalShadowConfig(newConfig);
-                  onShadowConfigChange(newConfig); // Immediate visual update
-                  // App handles saving via callback
+                  onShadowConfigChange(newConfig);
                 }}
                 className="flex-1"
                 data-testid="slider-shadow-max-length"
@@ -470,8 +463,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                   const newBias = parseFloat(e.target.value);
                   const newConfig = { ...localShadowConfig, bias: newBias };
                   setLocalShadowConfig(newConfig);
-                  onShadowConfigChange(newConfig); // Immediate visual update
-                  // App handles saving via callback
+                  onShadowConfigChange(newConfig);
                 }}
                 className="flex-1"
                 data-testid="slider-shadow-bias"
@@ -489,8 +481,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                   onClick={() => {
                     const newConfig = { ...localAOConfig, enabled: !localAOConfig.enabled };
                     setLocalAOConfig(newConfig);
-                    onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                    // App handles saving via callback
+                    onAmbientOcclusionConfigChange(newConfig);
                   }}
                   className={`ml-auto p-1 rounded text-xs ${
                     localAOConfig.enabled 
@@ -519,8 +510,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                         const newStrength = parseFloat(e.target.value);
                         const newConfig = { ...localAOConfig, strength: newStrength };
                         setLocalAOConfig(newConfig);
-                        onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                        // App handles saving via callback
+                        onAmbientOcclusionConfigChange(newConfig);
                       }}
                       className="flex-1"
                       data-testid="slider-ao-strength"
@@ -541,8 +531,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                         const newRadius = parseFloat(e.target.value);
                         const newConfig = { ...localAOConfig, radius: newRadius };
                         setLocalAOConfig(newConfig);
-                        onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                        // App handles saving via callback
+                        onAmbientOcclusionConfigChange(newConfig);
                       }}
                       className="flex-1"
                       data-testid="slider-ao-radius"
@@ -563,8 +552,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                         const newSamples = parseInt(e.target.value);
                         const newConfig = { ...localAOConfig, samples: newSamples };
                         setLocalAOConfig(newConfig);
-                        onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                        // App handles saving via callback
+                        onAmbientOcclusionConfigChange(newConfig);
                       }}
                       className="flex-1"
                       data-testid="slider-ao-samples"
@@ -585,8 +573,7 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                         const newBias = parseFloat(e.target.value);
                         const newConfig = { ...localAOConfig, bias: newBias };
                         setLocalAOConfig(newConfig);
-                        onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                        // App handles saving via callback
+                        onAmbientOcclusionConfigChange(newConfig);
                       }}
                       className="flex-1"
                       data-testid="slider-ao-bias"

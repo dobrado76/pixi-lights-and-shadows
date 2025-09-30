@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
 import { Light, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
 import { PerformanceSettings } from '../utils/performance';
 
@@ -39,7 +39,13 @@ const SceneStateContext = createContext<SceneStateContextType | null>(null);
 
 // Hook to use the scene state context
 export const useSceneState = () => {
+  console.log('🔧 useSceneState: Hook called');
   const context = useContext(SceneStateContext);
+  console.log('🔧 useSceneState: Context value:', context);
+  if (!context) {
+    console.error('🔧 useSceneState: Context is null! Provider not found.');
+    throw new Error('useSceneState must be used within a SceneStateProvider');
+  }
   return context;
 };
 
@@ -48,6 +54,7 @@ interface SceneStateProviderProps {
 }
 
 export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
+  console.log('🔧 SceneStateProvider: Provider rendering...');
   
   // Core scene state
   const [sceneConfig, setSceneConfig] = useState<SceneConfig>({ scene: {} });
@@ -84,25 +91,19 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
   });
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Use refs to track timeouts and latest scene config (avoids recreating callbacks)
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const sceneTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const sceneConfigRef = useRef<SceneConfig>({ scene: {} });
-  
-  // Keep ref updated whenever sceneConfig changes
-  useEffect(() => {
-    sceneConfigRef.current = sceneConfig;
-  }, [sceneConfig]);
+  // Debounced save timeouts
+  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [sceneTimeout, setSceneTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Debounced save for lights configuration
-  const debouncedSaveLights = useCallback((lights: Light[], ambient: {intensity: number, color: {r: number, g: number, b: number}}, currentScene: SceneConfig, shadows?: ShadowConfig) => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+  const debouncedSaveLights = useCallback((lights: Light[], ambient: {intensity: number, color: {r: number, g: number, b: number}}, shadows?: ShadowConfig) => {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
     }
     
-    saveTimeoutRef.current = setTimeout(async () => {
+    const timeout = setTimeout(async () => {
       try {
-        const success = await saveLightsConfig(lights, ambient, shadows, currentScene);
+        const success = await saveLightsConfig(lights, ambient, shadows, sceneConfig);
         if (success) {
           console.log('Lights configuration auto-saved successfully');
         } else {
@@ -112,15 +113,17 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
         console.error('Error auto-saving lights configuration:', error);
       }
     }, 500);
-  }, []);
+    
+    setSaveTimeout(timeout);
+  }, [saveTimeout, sceneConfig]);
 
   // Debounced save for scene configuration
   const debouncedSaveScene = useCallback((fullSceneData: SceneConfig) => {
-    if (sceneTimeoutRef.current) {
-      clearTimeout(sceneTimeoutRef.current);
+    if (sceneTimeout) {
+      clearTimeout(sceneTimeout);
     }
     
-    sceneTimeoutRef.current = setTimeout(async () => {
+    const timeout = setTimeout(async () => {
       try {
         const response = await fetch('/api/save-scene-config', {
           method: 'POST',
@@ -137,7 +140,9 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
         console.error('Error auto-saving scene configuration:', error);
       }
     }, 500);
-  }, []);
+    
+    setSceneTimeout(timeout);
+  }, [sceneTimeout]);
 
   // Load scene configuration from server (runs only once)
   useEffect(() => {
@@ -194,19 +199,19 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
   const updateLights = useCallback((newLights: Light[]) => {
     console.log('💡 SceneStateManager: Updating lights...', newLights.length);
     setLightsConfig(newLights);
-    debouncedSaveLights(newLights, ambientLight, sceneConfigRef.current, shadowConfig);
+    debouncedSaveLights(newLights, ambientLight, shadowConfig);
   }, [ambientLight, shadowConfig, debouncedSaveLights]);
 
   const updateAmbientLight = useCallback((newAmbient: {intensity: number, color: {r: number, g: number, b: number}}) => {
     console.log('🌅 SceneStateManager: Updating ambient light...');
     setAmbientLight(newAmbient);
-    debouncedSaveLights(lightsConfig, newAmbient, sceneConfigRef.current, shadowConfig);
+    debouncedSaveLights(lightsConfig, newAmbient, shadowConfig);
   }, [lightsConfig, shadowConfig, debouncedSaveLights]);
 
   const updateShadowConfig = useCallback((newShadowConfig: ShadowConfig) => {
     console.log('👥 SceneStateManager: Updating shadow config...');
     setShadowConfig(newShadowConfig);
-    debouncedSaveLights(lightsConfig, ambientLight, sceneConfigRef.current, newShadowConfig);
+    debouncedSaveLights(lightsConfig, ambientLight, newShadowConfig);
   }, [lightsConfig, ambientLight, debouncedSaveLights]);
 
   const updateAmbientOcclusionConfig = useCallback((newAOConfig: AmbientOcclusionConfig) => {
@@ -268,6 +273,8 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     updatePerformanceSettings,
     triggerImmediateSpriteChange
   };
+
+  console.log('🔧 SceneStateProvider: Providing context value:', { isLoaded, lightsCount: lightsConfig.length });
 
   return (
     <SceneStateContext.Provider value={contextValue}>

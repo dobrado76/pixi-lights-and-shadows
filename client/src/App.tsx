@@ -4,7 +4,8 @@ import DynamicLightControls from './components/DynamicLightControls';
 import { DynamicSpriteControls } from './components/DynamicSpriteControls';
 import PerformanceMonitor from './components/PerformanceMonitor';
 import { useSceneState } from './components/SceneStateManager';
-import { detectDevice } from './utils/performance';
+import { Light, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
+import { detectDevice, getOptimalSettings, PerformanceSettings } from './utils/performance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -44,30 +45,100 @@ export interface ShaderParams {
 }
 
 function App() {
-  // Performance monitoring state (must be before conditional logic to maintain hooks order)
+  // TODO: Gradually integrate centralized scene state manager
+  // For now, keep the original state management working
+  
+  // External JSON-based lighting configuration system
+  // Lights are loaded from lights-config.json and auto-saved on changes
+  const [lightsConfig, setLightsConfig] = useState<Light[]>([]);
+  const [ambientLight, setAmbientLight] = useState<{intensity: number, color: {r: number, g: number, b: number}}>({
+    intensity: 0.3,
+    color: { r: 0.4, g: 0.4, b: 0.4 }
+  });
+  
+  // Shadow configuration state
+  const [shadowConfig, setShadowConfig] = useState<ShadowConfig>({
+    enabled: true,
+    strength: 0.7,
+    maxLength: 200,
+    height: 10,
+  });
+
+  // Ambient Occlusion configuration state
+  const [ambientOcclusionConfig, setAmbientOcclusionConfig] = useState<AmbientOcclusionConfig>({
+    enabled: false,
+    strength: 0.3,
+    radius: 25,
+    samples: 8,
+    bias: 2.0,
+  });
+
+  // Scene configuration state
+  const [sceneConfig, setSceneConfig] = useState<{ scene: Record<string, any> }>({ scene: {} });
+  const [isLoaded, setSceneLoaded] = useState<boolean>(false);
+  
+  // Performance monitoring state
+  const [performanceSettings, setPerformanceSettings] = useState<PerformanceSettings & { manualOverride?: boolean }>(() => getOptimalSettings(detectDevice()));
+
+  const [lightsLoaded, setLightsLoaded] = useState<boolean>(false);
+
+  // Performance monitoring state
   const [deviceInfo] = useState(() => detectDevice());
   const [fpsData, setFpsData] = useState({ current: 60, average: 60 });
   
-  // Get all state and update functions from SceneStateManager (single source of truth)
-  const sceneState = useSceneState();
-  
-  // SceneStateManager provides all state
-  const {
-    sceneConfig,
-    lightsConfig,
-    ambientLight,
-    shadowConfig,
-    ambientOcclusionConfig,
-    performanceSettings,
-    isLoaded,
-    updateSceneSprites,
-    updateLights,
-    updateAmbientLight,
-    updateShadowConfig,
-    updateAmbientOcclusionConfig,
-    updatePerformanceSettings,
-    triggerImmediateSpriteChange
-  } = sceneState || {};
+
+  // Auto-save system with debouncing to prevent excessive writes during UI manipulation
+  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  const debouncedSave = useCallback((lights: Light[], ambient: {intensity: number, color: {r: number, g: number, b: number}}, shadows?: ShadowConfig) => {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+    
+    const timeout = setTimeout(async () => {
+      try {
+        const success = await saveLightsConfig(lights, ambient, shadows);
+        if (success) {
+          console.log('Lights configuration auto-saved successfully');
+        } else {
+          console.warn('Failed to auto-save lights configuration');
+        }
+      } catch (error) {
+        console.error('Error auto-saving lights configuration:', error);
+      }
+    }, 500); // 500ms debounce prevents save spam during slider adjustments
+    
+    setSaveTimeout(timeout);
+  }, [saveTimeout]);
+
+  // Auto-save system for scene configuration
+  const [sceneTimeout, setSceneTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  const debouncedSceneSave = useCallback((sceneData: { scene: Record<string, any> }) => {
+    if (sceneTimeout) {
+      clearTimeout(sceneTimeout);
+    }
+    
+    const timeout = setTimeout(async () => {
+      try {
+        const response = await fetch('/api/save-scene-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sceneData)
+        });
+        
+        if (response.ok) {
+          console.log('Scene configuration auto-saved successfully');
+        } else {
+          console.warn('Failed to auto-save scene configuration');
+        }
+      } catch (error) {
+        console.error('Error auto-saving scene configuration:', error);
+      }
+    }, 500); // 500ms debounce
+    
+    setSceneTimeout(timeout);
+  }, [sceneTimeout]);
 
   // Legacy shader params system - loads from localStorage for backward compatibility
   const getInitialParams = (): ShaderParams => {
@@ -117,15 +188,131 @@ function App() {
   const [shaderStatus, setShaderStatus] = useState('Initializing...');
   const [meshStatus, setMeshStatus] = useState('Initializing...');
 
+  // Bootstrap: Load lighting and scene configuration from external JSON files on app start
+  useEffect(() => {
+    const loadConfigurations = async () => {
+      try {
+        const sceneResult = await fetch('/api/load-scene-config').then(res => res.json());
+        const lightsResult = await loadLightsConfig('/api/load-scene-config');
+        const ambientLightData = await loadAmbientLight('/api/load-scene-config');
+        
+        setLightsConfig(lightsResult.lights);
+        setAmbientLight(ambientLightData);
+        setSceneConfig(sceneResult);
+        
+        // Merge saved shadow config with defaults
+        if (lightsResult.shadowConfig) {
+          setShadowConfig(lightsResult.shadowConfig);
+        }
+        
+        // Load ambient occlusion config from scene.json
+        if (sceneResult.ambientOcclusionConfig) {
+          setAmbientOcclusionConfig(sceneResult.ambientOcclusionConfig);
+        }
+
+        // Load performance settings from scene.json
+        if (sceneResult.performanceSettings) {
+          setPerformanceSettings(sceneResult.performanceSettings);
+        }
+        
+        setLightsLoaded(true);
+        setSceneLoaded(true);
+        console.log('Loaded configurations:', { lights: lightsResult, ambient: ambientLightData, scene: sceneResult });
+      } catch (error) {
+        console.error('Failed to load configurations:', error);
+        setLightsLoaded(true);
+        setSceneLoaded(true);
+      }
+    };
+    
+    loadConfigurations();
+  }, []);
+
   // Auto-save shader params to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('pixiShaderParams', JSON.stringify(shaderParams));
   }, [shaderParams]);
 
-  // Wrapper for scene config changes to match expected interface
+  // Handler for lights configuration changes
+  const handleLightsChange = useCallback((newLights: Light[]) => {
+    setLightsConfig(newLights);
+    debouncedSave(newLights, ambientLight, shadowConfig);
+  }, [ambientLight, shadowConfig, debouncedSave]);
+
+  // Handler for ambient light changes
+  const handleAmbientChange = useCallback((newAmbient: {intensity: number, color: {r: number, g: number, b: number}}) => {
+    setAmbientLight(newAmbient);
+    debouncedSave(lightsConfig, newAmbient, shadowConfig);
+  }, [lightsConfig, shadowConfig, debouncedSave]);
+
+  // Handler for shadow configuration changes
+  const handleShadowConfigChange = useCallback((newShadowConfig: ShadowConfig) => {
+    setShadowConfig(newShadowConfig);
+    debouncedSave(lightsConfig, ambientLight, newShadowConfig);
+  }, [lightsConfig, ambientLight, debouncedSave]);
+
+  // Handler for ambient occlusion configuration changes
+  const handleAmbientOcclusionConfigChange = useCallback((newAOConfig: AmbientOcclusionConfig) => {
+    setAmbientOcclusionConfig(newAOConfig);
+    const updatedSceneConfig = {
+      ...sceneConfig,
+      ambientOcclusionConfig: newAOConfig
+    };
+    setSceneConfig(updatedSceneConfig);
+    debouncedSceneSave(updatedSceneConfig);
+  }, [sceneConfig, debouncedSceneSave]);
+
+  // Handler for scene configuration changes
   const handleSceneConfigChange = useCallback((newSceneConfig: { scene: Record<string, any> }) => {
-    updateSceneSprites(newSceneConfig.scene);
-  }, [updateSceneSprites]);
+    console.log('🔄 App: Scene config changed, triggering update...', Object.keys(newSceneConfig.scene));
+    setSceneConfig(newSceneConfig);
+    debouncedSceneSave(newSceneConfig);
+  }, [debouncedSceneSave]);
+
+  // Handler for performance settings changes with auto-save
+  const handlePerformanceSettingsChange = useCallback((newSettings: PerformanceSettings & { manualOverride?: boolean }) => {
+    const settingsWithOverride = { ...newSettings, manualOverride: true };
+    setPerformanceSettings(settingsWithOverride);
+    
+    const saveData = {
+      scene: sceneConfig.scene,
+      lights: lightsConfig,
+      performanceSettings: settingsWithOverride,
+      shadowConfig,
+      ambientOcclusionConfig
+    };
+    
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+    
+    const timeout = setTimeout(async () => {
+      try {
+        await fetch('/api/save-scene-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(saveData),
+        });
+        console.log('Performance settings auto-saved successfully');
+      } catch (error) {
+        console.error('Failed to save performance settings:', error);
+      }
+    }, 1000);
+    
+    setSaveTimeout(timeout);
+  }, [sceneConfig.scene, lightsConfig, shadowConfig, ambientOcclusionConfig, saveTimeout]);
+
+  // Handler for immediate sprite changes (bypass React state for instant feedback)
+  const handleImmediateSpriteChange = useCallback((spriteId: string, updates: any) => {
+    console.log(`🚀 App: Immediate sprite change for ${spriteId}:`, Object.keys(updates));
+    
+    const immediateUpdate = (window as any).__pixiImmediateUpdate;
+    if (immediateUpdate) {
+      immediateUpdate(spriteId, updates);
+    } else {
+      console.log('⚠️ Immediate update handler not yet available');
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -164,7 +351,7 @@ function App() {
               </div>
 
               <div className="pixi-canvas rounded-lg overflow-hidden glow" data-testid="pixi-container">
-                {isLoaded && (
+                {lightsLoaded && (
                   <PixiDemo
                     shaderParams={shaderParams}
                     lightsConfig={lightsConfig}
@@ -176,12 +363,12 @@ function App() {
                     onGeometryUpdate={setGeometryStatus}
                     onShaderUpdate={setShaderStatus}
                     onMeshUpdate={setMeshStatus}
-                    onImmediateSpriteChange={triggerImmediateSpriteChange}
+                    onImmediateSpriteChange={handleImmediateSpriteChange}
                     onPerformanceUpdate={(fps, settings) => {
                       setFpsData(fps);
                       // Only update performance settings if not manually overridden
                       if (!performanceSettings.manualOverride) {
-                        updatePerformanceSettings(settings);
+                        setPerformanceSettings(settings);
                       }
                     }}
                   />
@@ -206,26 +393,26 @@ function App() {
               </TabsList>
               
               <TabsContent value="lights" className="mt-4">
-                {isLoaded && (
+                {lightsLoaded && (
                   <DynamicLightControls
                     lights={lightsConfig}
                     ambientLight={ambientLight}
                     shadowConfig={shadowConfig}
                     ambientOcclusionConfig={ambientOcclusionConfig}
-                    onLightsChange={updateLights}
-                    onAmbientChange={updateAmbientLight}
-                    onShadowConfigChange={updateShadowConfig}
-                    onAmbientOcclusionConfigChange={updateAmbientOcclusionConfig}
+                    onLightsChange={handleLightsChange}
+                    onAmbientChange={handleAmbientChange}
+                    onShadowConfigChange={handleShadowConfigChange}
+                    onAmbientOcclusionConfigChange={handleAmbientOcclusionConfigChange}
                   />
                 )}
               </TabsContent>
               
               <TabsContent value="sprites" className="mt-4">
-                {isLoaded && (
+                {lightsLoaded && (
                   <DynamicSpriteControls
                     sceneConfig={sceneConfig}
                     onSceneConfigChange={handleSceneConfigChange}
-                    onImmediateSpriteChange={triggerImmediateSpriteChange}
+                    onImmediateSpriteChange={handleImmediateSpriteChange}
                   />
                 )}
               </TabsContent>
@@ -325,7 +512,7 @@ function App() {
                                 <input
                                   type="checkbox"
                                   checked={performanceSettings.enableShadows}
-                                  onChange={(e) => updatePerformanceSettings({
+                                  onChange={(e) => handlePerformanceSettingsChange({
                                     ...performanceSettings,
                                     enableShadows: e.target.checked
                                   })}
@@ -340,7 +527,7 @@ function App() {
                                 <input
                                   type="checkbox"
                                   checked={performanceSettings.enableAmbientOcclusion}
-                                  onChange={(e) => updatePerformanceSettings({
+                                  onChange={(e) => handlePerformanceSettingsChange({
                                     ...performanceSettings,
                                     enableAmbientOcclusion: e.target.checked
                                   })}
@@ -355,7 +542,7 @@ function App() {
                                 <input
                                   type="checkbox"
                                   checked={performanceSettings.enableNormalMapping}
-                                  onChange={(e) => updatePerformanceSettings({
+                                  onChange={(e) => handlePerformanceSettingsChange({
                                     ...performanceSettings,
                                     enableNormalMapping: e.target.checked
                                   })}
@@ -370,7 +557,7 @@ function App() {
                                 <input
                                   type="checkbox"
                                   checked={performanceSettings.enableLightMasks}
-                                  onChange={(e) => updatePerformanceSettings({
+                                  onChange={(e) => handlePerformanceSettingsChange({
                                     ...performanceSettings,
                                     enableLightMasks: e.target.checked
                                   })}
@@ -385,7 +572,7 @@ function App() {
                                 <input
                                   type="checkbox"
                                   checked={performanceSettings.capFpsTo60}
-                                  onChange={(e) => updatePerformanceSettings({
+                                  onChange={(e) => handlePerformanceSettingsChange({
                                     ...performanceSettings,
                                     capFpsTo60: e.target.checked
                                   })}
@@ -401,7 +588,7 @@ function App() {
                           <h4 className="font-medium text-foreground mb-3">Quality Presets</h4>
                           <div className="flex gap-2 mb-3">
                             <button
-                              onClick={() => updatePerformanceSettings({
+                              onClick={() => handlePerformanceSettingsChange({
                                 quality: 'low',
                                 resolution: 0.5,
                                 maxLights: 2,
@@ -419,7 +606,7 @@ function App() {
                               Low
                             </button>
                             <button
-                              onClick={() => updatePerformanceSettings({
+                              onClick={() => handlePerformanceSettingsChange({
                                 quality: 'medium',
                                 resolution: 0.75,
                                 maxLights: 4,
@@ -437,7 +624,7 @@ function App() {
                               Medium
                             </button>
                             <button
-                              onClick={() => updatePerformanceSettings({
+                              onClick={() => handlePerformanceSettingsChange({
                                 quality: 'high',
                                 resolution: 1.0,
                                 maxLights: 999, // No limit for high quality - let your RTX 4080 shine!

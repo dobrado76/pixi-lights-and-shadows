@@ -60,11 +60,11 @@
         "normal": "/textures/ballN.png",
         "useNormalMap": true,
         "metallic": 0.15,
-        "smoothness": 0.15
+        "smoothness": 0.16
       },
       "transform": {
         "position": {
-          "x": 124,
+          "x": 138,
           "y": 86
         },
         "rotation": 0,
@@ -246,23 +246,25 @@
   },
   "lights": [
     {
-      "id": "ambient_light",
-      "type": "ambient",
-      "enabled": true,
-      "brightness": 0.39,
-      "color": "0x666666"
-    },
-    {
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
-      "brightness": 0.7,
-      "color": "0xffffff",
       "position": {
         "x": 250,
         "y": 170,
         "z": 70
       },
+      "direction": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "color": {
+        "r": 1,
+        "g": 1,
+        "b": 1
+      },
+      "intensity": 0.7,
       "followMouse": true,
       "castsShadows": true,
       "radius": 270
@@ -270,27 +272,44 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "brightness": 0.3,
-      "color": "0xffffff",
-      "directionX": 0.2419218955996679,
-      "directionY": -0.9702957262759965,
-      "directionZ": -1,
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "direction": {
+        "x": 0.3420201433256688,
+        "y": -0.9396926207859083,
+        "z": -1
+      },
+      "color": {
+        "r": 1,
+        "g": 1,
+        "b": 1
+      },
+      "intensity": 0.3,
       "castsShadows": true
     },
     {
       "id": "spotlight_1",
       "type": "spotlight",
       "enabled": true,
-      "brightness": 0.9,
-      "color": "0xf4f080",
       "position": {
         "x": 180,
         "y": 210,
         "z": 80
       },
-      "directionX": 0,
-      "directionY": 1,
-      "directionZ": -1,
+      "direction": {
+        "x": 0,
+        "y": 1,
+        "z": -1
+      },
+      "color": {
+        "r": 0.9568627450980393,
+        "g": 0.9411764705882353,
+        "b": 0.5019607843137255
+      },
+      "intensity": 0.9,
       "castsShadows": true,
       "radius": 480,
       "coneAngle": 58,
@@ -300,16 +319,22 @@
       "id": "spotlight",
       "type": "spotlight",
       "enabled": false,
-      "brightness": 0.5,
-      "color": "0xffffff",
       "position": {
         "x": 300,
         "y": 250,
         "z": 50
       },
-      "directionX": 0,
-      "directionY": 1,
-      "directionZ": -0.5,
+      "direction": {
+        "x": 0,
+        "y": 1,
+        "z": -0.5
+      },
+      "color": {
+        "r": 1,
+        "g": 1,
+        "b": 1
+      },
+      "intensity": 0.5,
       "castsShadows": true,
       "radius": 400,
       "coneAngle": 43,
@@ -319,13 +344,22 @@
       "id": "point_copy_1758529441818",
       "type": "point",
       "enabled": false,
-      "brightness": 0.6,
-      "color": "0xffffff",
       "position": {
         "x": 140,
         "y": 240,
         "z": 90
       },
+      "direction": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "color": {
+        "r": 1,
+        "g": 1,
+        "b": 1
+      },
+      "intensity": 0.6,
       "followMouse": false,
       "castsShadows": true,
       "radius": 400,
@@ -343,13 +377,22 @@
       "id": "point_1758536509084",
       "type": "point",
       "enabled": true,
-      "brightness": 1,
-      "color": "0xe12323",
       "position": {
         "x": 210,
         "y": 130,
         "z": 50
       },
+      "direction": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "color": {
+        "r": 0.8823529411764706,
+        "g": 0.13725490196078433,
+        "b": 0.13725490196078433
+      },
+      "intensity": 1,
       "followMouse": false,
       "castsShadows": true,
       "radius": 700
@@ -376,9 +419,9 @@
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 4.65,
-    "radius": 4,
+    "strength": 4.8,
+    "radius": 5,
     "samples": 8,
-    "bias": 6.5
+    "bias": 20
   }
 }

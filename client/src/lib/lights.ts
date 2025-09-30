@@ -326,13 +326,11 @@ export const convertLightToConfig = (light: Light): LightConfig => {
     };
   }
 
-  // Add direction properties if relevant - USE OBJECT FORMAT
+  // Add direction properties if relevant  
   if (light.type === 'directional' || light.type === 'spotlight') {
-    (config as any).direction = {
-      x: light.direction.x,
-      y: light.direction.y,
-      z: light.direction.z
-    };
+    config.directionX = light.direction.x;
+    config.directionY = light.direction.y;
+    config.directionZ = light.direction.z;
   }
 
   // Add type-specific properties
@@ -349,12 +347,9 @@ export const convertLightToConfig = (light: Light): LightConfig => {
 // Save lights configuration to scene.json
 export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity: number, color: {r: number, g: number, b: number}}, shadowConfig?: ShadowConfig, currentScene?: any): Promise<boolean> => {
   try {
-    console.log('💾 saveLightsConfig called, currentScene:', currentScene);
-    
     // Use provided scene data instead of fetching (eliminates race conditions)
-    if (!currentScene || !currentScene.scene || Object.keys(currentScene.scene).length === 0) {
-      console.warn('⏭️ Skipping save - scene not loaded yet');
-      return true; // Return success to avoid localStorage fallback during initialization
+    if (!currentScene) {
+      throw new Error('Current scene data must be provided to saveLightsConfig');
     }
 
     // Convert lights back to config format
@@ -376,7 +371,6 @@ export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity
       shadowConfig: shadowConfig || currentScene.shadowConfig
     };
 
-    console.log('📡 Sending POST to /api/save-scene-config...');
     const response = await fetch('/api/save-scene-config', {
       method: 'POST',
       headers: {
@@ -385,10 +379,8 @@ export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity
       body: JSON.stringify(updatedScene),
     });
 
-    console.log('✅ POST response:', response.status, response.ok);
     return response.ok;
   } catch (error) {
-    console.error('❌ Server save failed:', error);
     console.warn('Server save failed, saving to localStorage instead:', error);
     // Fallback to localStorage for static deployment
     try {
