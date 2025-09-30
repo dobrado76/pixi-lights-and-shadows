@@ -5,8 +5,8 @@
         "image": "/textures/BGTextureTest.jpg",
         "normal": "/textures/BGTextureNORM.jpg",
         "useNormalMap": true,
-        "metallic": 0,
-        "smoothness": 0.5
+        "metallic": 0.15,
+        "smoothness": 0.09
       },
       "transform": {
         "position": {
@@ -32,8 +32,8 @@
         "image": "/textures/white-fabric-texture-background.jpg",
         "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
         "useNormalMap": false,
-        "metallic": 0.31,
-        "smoothness": 0.11
+        "metallic": 0.25,
+        "smoothness": 0.17
       },
       "transform": {
         "position": {
@@ -402,7 +402,7 @@
   },
   "iblConfig": {
     "enabled": true,
-    "intensity": 0.2,
-    "environmentMap": "/sky_boxes/golden_gate_hills_1k.jpg"
+    "intensity": 0.8,
+    "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg"
   }
 }
