@@ -10,7 +10,9 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (September 2025)
 
-- **Centralized Scene State Management** (2025-09-28): Successfully implemented a centralized scene state management system using React Context to eliminate synchronization issues between DynamicLightControls and DynamicSpriteControls. Created SceneStateManager component with SceneStateProvider and useSceneState hook. Fixed React context integration issues and restored application to fully working state. All components now share a single source of truth for scene data.
+- **IBL Architectural Fix** (2025-09-30): Fixed IBL (Image-Based Lighting) controls to use the existing debouncedSave pattern instead of SceneStateProvider. App.tsx never integrated SceneStateProvider, so IBL controls were attempting to use null context. Now all IBL changes (enabled toggle, sky box selection, intensity) properly save to scene.json and update immediately without page reload.
+
+- **Centralized Scene State Management** (2025-09-28): Successfully implemented a centralized scene state management system using React Context to eliminate synchronization issues between DynamicLightControls and DynamicSpriteControls. Created SceneStateManager component with SceneStateProvider and useSceneState hook. NOTE: SceneStateProvider exists but is NOT currently used in App.tsx - all controls use debouncedSave pattern for updates.
 
 - **Fixed Critical Shadow Positioning & Rotation Bugs** (2025-09-27): Resolved major issues with rotated sprite shadows: 1) Shadows cast from unrotated rectangles - fixed by aligning shadow system with visual sprites (geometry handles scaling/pivot, mesh.rotation handles rotation). 2) Shadow offset from pivot positioning - fixed by accounting for middle-center pivot offset in mesh positioning. Shadows now perfectly align with sprites regardless of rotation or pivot type.
 - **Unified Shadow System** (2025-09-26): Successfully unified the dual shadow casting system into a single, clean code path using occluder maps for all sprite counts (0-4+). Removed all legacy per-caster uniform code and simplified architecture.

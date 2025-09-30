@@ -258,25 +258,23 @@
   },
   "lights": [
     {
+      "id": "ambient_light",
+      "type": "ambient",
+      "enabled": true,
+      "brightness": 0.3,
+      "color": "0x666666"
+    },
+    {
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
+      "brightness": 1.3,
+      "color": "0xffffff",
       "position": {
         "x": 250,
         "y": 170,
         "z": 40
       },
-      "direction": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "color": {
-        "r": 1,
-        "g": 1,
-        "b": 1
-      },
-      "intensity": 1.3,
       "followMouse": true,
       "castsShadows": true,
       "radius": 270
@@ -284,28 +282,21 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "position": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "brightness": 0.3,
+      "color": "0xffffff",
       "direction": {
         "x": 0.25881904510252074,
         "y": -0.9659258262890683,
         "z": -1
       },
-      "color": {
-        "r": 1,
-        "g": 1,
-        "b": 1
-      },
-      "intensity": 0.3,
       "castsShadows": true
     },
     {
       "id": "spotlight_1",
       "type": "spotlight",
       "enabled": true,
+      "brightness": 0.9,
+      "color": "0xf4f080",
       "position": {
         "x": 180,
         "y": 210,
@@ -316,12 +307,6 @@
         "y": 1,
         "z": -1
       },
-      "color": {
-        "r": 0.9568627450980393,
-        "g": 0.9411764705882353,
-        "b": 0.5019607843137255
-      },
-      "intensity": 0.9,
       "castsShadows": true,
       "radius": 480,
       "coneAngle": 58,
@@ -331,6 +316,8 @@
       "id": "spotlight",
       "type": "spotlight",
       "enabled": false,
+      "brightness": 0.5,
+      "color": "0xffffff",
       "position": {
         "x": 300,
         "y": 250,
@@ -341,12 +328,6 @@
         "y": 1,
         "z": -0.5
       },
-      "color": {
-        "r": 1,
-        "g": 1,
-        "b": 1
-      },
-      "intensity": 0.5,
       "castsShadows": true,
       "radius": 400,
       "coneAngle": 43,
@@ -356,22 +337,13 @@
       "id": "point_copy_1758529441818",
       "type": "point",
       "enabled": false,
+      "brightness": 0.6,
+      "color": "0xffffff",
       "position": {
         "x": 140,
         "y": 240,
         "z": 90
       },
-      "direction": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "color": {
-        "r": 1,
-        "g": 1,
-        "b": 1
-      },
-      "intensity": 0.6,
       "followMouse": false,
       "castsShadows": true,
       "radius": 400,
@@ -389,22 +361,13 @@
       "id": "point_1758536509084",
       "type": "point",
       "enabled": true,
+      "brightness": 1,
+      "color": "0xe12323",
       "position": {
         "x": 210,
         "y": 130,
         "z": 50
       },
-      "direction": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "color": {
-        "r": 0.8823529411764706,
-        "g": 0.13725490196078433,
-        "b": 0.13725490196078433
-      },
-      "intensity": 1,
       "followMouse": false,
       "castsShadows": true,
       "radius": 700
