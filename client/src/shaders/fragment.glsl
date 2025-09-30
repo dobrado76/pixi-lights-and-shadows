@@ -88,6 +88,11 @@ uniform float uAOBias; // Bias to prevent self-occlusion
 // Per-sprite AO settings (uCurrentSpriteZOrder already declared above for shadows)
 // AO is now calculated for all sprites - no per-sprite toggle needed in shader
 
+// Image-Based Lighting (IBL) System - Environmental/Indirect Lighting
+uniform bool uIBLEnabled; // Enable/disable IBL
+uniform float uIBLIntensity; // IBL strength multiplier (0.0-5.0)
+uniform sampler2D uEnvironmentMap; // Equirectangular environment map for IBL
+
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 pixelPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
   vec2 relativePos = pixelPos - lightPos;
@@ -563,6 +568,89 @@ vec3 calculatePBR(vec3 albedo, vec3 normal, vec3 lightDir, vec3 lightColor, floa
   // Combine diffuse and specular
   float NdotL = max(dot(normal, lightDir), 0.0);
   return (diffuse + specular) * lightColor * lightIntensity * NdotL;
+}
+
+// ======= Image-Based Lighting (IBL) Functions =======
+
+// Convert 3D direction to equirectangular UV coordinates
+vec2 directionToEquirectUV(vec3 dir) {
+  // Normalize direction
+  vec3 d = normalize(dir);
+  
+  // Convert to spherical coordinates
+  float phi = atan(d.x, d.z); // Azimuth angle
+  float theta = asin(d.y); // Elevation angle
+  
+  // Map to UV space [0,1]
+  vec2 uv;
+  uv.x = phi / (2.0 * 3.14159265) + 0.5;
+  uv.y = theta / 3.14159265 + 0.5;
+  
+  return uv;
+}
+
+// Calculate IBL contribution (diffuse irradiance + specular reflection)
+vec3 calculateIBL(vec3 albedo, vec3 normal, vec3 viewDir, float metallic, float smoothness) {
+  if (!uIBLEnabled || uIBLIntensity <= 0.0) {
+    return vec3(0.0);
+  }
+  
+  float roughness = 1.0 - smoothness;
+  roughness = max(roughness, 0.04);
+  
+  // Metallic workflow F0
+  vec3 F0 = mix(vec3(0.04), albedo, metallic);
+  
+  // Calculate reflection vector for specular IBL
+  vec3 R = reflect(-viewDir, normal);
+  
+  // Fresnel for view angle (determines diffuse/specular split)
+  float NdotV = max(dot(normal, viewDir), 0.0);
+  vec3 F = fresnelSchlick(NdotV, F0);
+  
+  // Energy conservation
+  vec3 kS = F;
+  vec3 kD = vec3(1.0) - kS;
+  kD *= 1.0 - metallic; // Metals have no diffuse
+  
+  // === Diffuse IBL (Irradiance) ===
+  // Sample environment map with normal direction for diffuse lighting
+  vec2 diffuseUV = directionToEquirectUV(normal);
+  vec3 irradiance = texture2D(uEnvironmentMap, diffuseUV).rgb;
+  vec3 diffuseIBL = kD * albedo * irradiance;
+  
+  // === Specular IBL (Reflection) ===
+  // Sample environment with reflection vector, blur based on roughness
+  // Approximate roughness-based mip level selection (0-5 levels for roughness 0-1)
+  float mipLevel = roughness * 5.0;
+  vec2 specularUV = directionToEquirectUV(R);
+  
+  // Manual blur approximation for roughness (sample neighboring pixels)
+  vec3 specularSample = texture2D(uEnvironmentMap, specularUV).rgb;
+  
+  // Apply roughness-based blur by sampling additional directions
+  if (roughness > 0.1) {
+    float blurAmount = roughness * 0.02; // Blur radius based on roughness
+    vec3 blurSum = specularSample;
+    float samples = 1.0;
+    
+    // Simple 4-tap blur for rough surfaces
+    blurSum += texture2D(uEnvironmentMap, specularUV + vec2(blurAmount, 0.0)).rgb;
+    blurSum += texture2D(uEnvironmentMap, specularUV + vec2(-blurAmount, 0.0)).rgb;
+    blurSum += texture2D(uEnvironmentMap, specularUV + vec2(0.0, blurAmount)).rgb;
+    blurSum += texture2D(uEnvironmentMap, specularUV + vec2(0.0, -blurAmount)).rgb;
+    samples += 4.0;
+    
+    specularSample = blurSum / samples;
+  }
+  
+  // Specular reflection with Fresnel
+  vec3 specularIBL = kS * specularSample;
+  
+  // Combine diffuse and specular IBL
+  vec3 iblContribution = (diffuseIBL + specularIBL) * uIBLIntensity;
+  
+  return iblContribution;
 }
 
 void main(void) {
@@ -1047,6 +1135,13 @@ void main(void) {
   
   // Apply color tinting
   finalColor *= uColor;
+  
+  // Add Image-Based Lighting (IBL) - Environmental/Indirect Lighting
+  // This adds realistic ambient lighting and reflections from the environment
+  if (uIBLEnabled) {
+    vec3 iblContribution = calculateIBL(diffuseColor.rgb, normal, viewDir, finalMetallic, finalSmoothness);
+    finalColor += iblContribution;
+  }
   
   // Apply Ambient Occlusion with reduced effect on solid sprites
   if (uAOEnabled) {
