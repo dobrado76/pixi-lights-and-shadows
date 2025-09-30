@@ -33,6 +33,13 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
     samples: 8,
     bias: 2.0,
   });
+  
+  const [localIBLConfig, setLocalIBLConfig] = useState<{enabled: boolean, intensity: number, environmentMap: string}>((sceneConfig as any).iblConfig || {
+    enabled: false,
+    intensity: 1.0,
+    environmentMap: '/sky_boxes/golden_gate_hills_1k.hdr'
+  });
+  const [availableSkyBoxes, setAvailableSkyBoxes] = useState<string[]>([]);
   const [newLightType, setNewLightType] = useState<'point' | 'directional' | 'spotlight'>('point');
   const [editingLightId, setEditingLightId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
@@ -72,6 +79,23 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
       }
     };
     loadMasks();
+  }, []);
+  
+  // Load available sky boxes from the sky_boxes directory
+  useEffect(() => {
+    const loadSkyBoxes = async () => {
+      try {
+        // Hardcoded sky box inventory from /client/public/sky_boxes
+        const skyBoxFiles = [
+          'golden_gate_hills_1k.hdr',
+          'rogland_clear_night_1k.hdr'
+        ];
+        setAvailableSkyBoxes(skyBoxFiles);
+      } catch (error) {
+        console.error('Error loading sky box files:', error);
+      }
+    };
+    loadSkyBoxes();
   }, []);
 
   // Sync local state with external configuration changes
@@ -610,6 +634,84 @@ const DynamicLightControls = ({ lights, ambientLight, shadowConfig, ambientOcclu
                     />
                   </div>
                   
+                </>
+              )}
+            </div>
+            
+            {/* Image-Based Lighting (IBL) Controls - Environmental/Indirect Lighting */}
+            <div className="mt-3 pt-2 border-t border-border/50">
+              <div className="flex items-center space-x-2 mb-2">
+                <ImageIcon size={12} className="text-muted-foreground" />
+                <h5 className="text-xs font-medium text-muted-foreground">Image-Based Lighting (IBL)</h5>
+                <button
+                  onClick={() => {
+                    const newConfig = { ...localIBLConfig, enabled: !localIBLConfig.enabled };
+                    setLocalIBLConfig(newConfig);
+                    const updatedScene = { ...sceneConfig, iblConfig: newConfig };
+                    debouncedSave(localLights, localAmbient, localShadowConfig, updatedScene);
+                  }}
+                  className={`ml-auto p-1 rounded text-xs ${
+                    localIBLConfig.enabled 
+                      ? 'bg-accent text-accent-foreground' 
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                  data-testid="button-toggle-ibl"
+                >
+                  {localIBLConfig.enabled ? <Eye size={10} /> : <EyeOff size={10} />}
+                </button>
+              </div>
+              
+              {localIBLConfig.enabled && (
+                <>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Sky Box:
+                    </label>
+                    <select
+                      value={localIBLConfig.environmentMap?.split('/').pop() || availableSkyBoxes[0]}
+                      onChange={(e) => {
+                        const newMap = `/sky_boxes/${e.target.value}`;
+                        const newConfig = { ...localIBLConfig, environmentMap: newMap };
+                        setLocalIBLConfig(newConfig);
+                        const updatedScene = { ...sceneConfig, iblConfig: newConfig };
+                        debouncedSave(localLights, localAmbient, localShadowConfig, updatedScene);
+                      }}
+                      className="flex-1 bg-background border border-border rounded px-2 py-1 text-xs text-foreground"
+                      data-testid="select-sky-box"
+                    >
+                      {availableSkyBoxes.map(skyBox => (
+                        <option key={skyBox} value={skyBox}>
+                          {skyBox.replace('.hdr', '').replace(/_/g, ' ')}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 mb-1">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Intensity: {localIBLConfig.intensity.toFixed(2)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="5"
+                      step="0.1"
+                      value={localIBLConfig.intensity}
+                      onChange={(e) => {
+                        const newIntensity = parseFloat(e.target.value);
+                        const newConfig = { ...localIBLConfig, intensity: newIntensity };
+                        setLocalIBLConfig(newConfig);
+                        const updatedScene = { ...sceneConfig, iblConfig: newConfig };
+                        debouncedSave(localLights, localAmbient, localShadowConfig, updatedScene);
+                      }}
+                      className="flex-1"
+                      data-testid="slider-ibl-intensity"
+                    />
+                  </div>
+                  
+                  <p className="text-[10px] text-muted-foreground mt-1 leading-tight">
+                    Environmental lighting adds realistic ambient reflections. Metals will reflect the environment.
+                  </p>
                 </>
               )}
             </div>

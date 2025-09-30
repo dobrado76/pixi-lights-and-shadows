@@ -386,6 +386,11 @@
     "samples": 8,
     "bias": 20
   },
+  "iblConfig": {
+    "enabled": true,
+    "intensity": 1,
+    "environmentMap": "/sky_boxes/golden_gate_hills_1k.hdr"
+  },
   "performanceSettings": {
     "quality": "high",
     "resolution": 1,

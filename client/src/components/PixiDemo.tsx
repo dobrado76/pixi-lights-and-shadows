@@ -1586,11 +1586,15 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
       
       // Image-Based Lighting (IBL) uniforms - Environmental/Indirect Lighting
-      const iblConfig = (sceneConfig as any).iblConfig || { enabled: false, intensity: 1.0 };
+      const iblConfig = (sceneConfig as any).iblConfig || { enabled: false, intensity: 1.0, environmentMap: '/textures/BGTextureTest.jpg' };
       uniforms.uIBLEnabled = iblConfig.enabled;
       uniforms.uIBLIntensity = iblConfig.intensity || 1.0;
-      // Use a simple gradient texture as environment map (users can replace with HDR later)
-      uniforms.uEnvironmentMap = PIXI.Texture.WHITE; // Fallback - will be replaced with actual env map
+      // Load environment map texture (fallback to WHITE if not available)
+      if (iblConfig.environmentMap) {
+        uniforms.uEnvironmentMap = PIXI.Texture.from(iblConfig.environmentMap);
+      } else {
+        uniforms.uEnvironmentMap = PIXI.Texture.WHITE;
+      }
       
       // ✅ Global Light Masks Control (performance-filtered)
       uniforms.uMasksEnabled = performanceSettings.enableLightMasks;
