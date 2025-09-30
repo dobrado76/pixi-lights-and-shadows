@@ -14,6 +14,8 @@ interface MaterialComponent {
   image: string;
   normal?: string;
   useNormalMap?: boolean;
+  albedoColor?: { r: number; g: number; b: number };
+  albedoTint?: number;
   metallic?: number;
   smoothness?: number;
   metallicMap?: string;
@@ -67,6 +69,8 @@ interface LegacySpriteConfig {
   castsShadows: boolean;
   visible: boolean;
   useNormalMap?: boolean;
+  albedoColor?: { r: number; g: number; b: number };
+  albedoTint?: number;
   metallic?: number;
   smoothness?: number;
   metallicMap?: string;
@@ -96,6 +100,8 @@ function convertLegacyToECS(legacy: LegacySpriteConfig): SpriteEntity {
       image: legacy.image,
       normal: legacy.normal,
       useNormalMap: legacy.useNormalMap,
+      albedoColor: legacy.albedoColor,
+      albedoTint: legacy.albedoTint,
       metallic: legacy.metallic,
       smoothness: legacy.smoothness,
       metallicMap: legacy.metallicMap,
@@ -122,6 +128,8 @@ function convertECSToLegacy(entity: SpriteEntity): LegacySpriteConfig {
     image: material.image,
     normal: material.normal,
     useNormalMap: material.useNormalMap,
+    albedoColor: material.albedoColor,
+    albedoTint: material.albedoTint,
     metallic: material.metallic,
     smoothness: material.smoothness,
     metallicMap: material.metallicMap,
@@ -156,10 +164,12 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
     const newSprite = { ...currentSprite };
     
     // Update material component properties
-    if ('metallic' in updates || 'smoothness' in updates || 'useNormalMap' in updates) {
+    if ('metallic' in updates || 'smoothness' in updates || 'useNormalMap' in updates || 'albedoColor' in updates || 'albedoTint' in updates) {
       const currentMaterial = getMaterial(currentSprite.material);
       newSprite.material = {
         ...currentMaterial,
+        ...(updates.albedoColor !== undefined && { albedoColor: updates.albedoColor }),
+        ...(updates.albedoTint !== undefined && { albedoTint: updates.albedoTint }),
         ...(updates.metallic !== undefined && { metallic: updates.metallic }),
         ...(updates.smoothness !== undefined && { smoothness: updates.smoothness }),
         ...(updates.useNormalMap !== undefined && { useNormalMap: updates.useNormalMap }),
@@ -458,6 +468,38 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
 
                         {/* PBR Material Properties */}
                         <div className="space-y-2 pt-2 border-t border-border/50">
+                          {/* Albedo Color Tint */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-xs text-card-foreground">Albedo Tint</Label>
+                              <span className="text-xs text-muted-foreground">{((material.albedoTint ?? 0.0) * 100).toFixed(0)}%</span>
+                            </div>
+                            <div className="flex gap-2 items-center">
+                              <Input
+                                type="color"
+                                value={`#${Math.round((material.albedoColor?.r ?? 1) * 255).toString(16).padStart(2, '0')}${Math.round((material.albedoColor?.g ?? 1) * 255).toString(16).padStart(2, '0')}${Math.round((material.albedoColor?.b ?? 1) * 255).toString(16).padStart(2, '0')}`}
+                                onChange={(e) => {
+                                  const hex = e.target.value;
+                                  const r = parseInt(hex.slice(1, 3), 16) / 255;
+                                  const g = parseInt(hex.slice(3, 5), 16) / 255;
+                                  const b = parseInt(hex.slice(5, 7), 16) / 255;
+                                  updateSpriteConfig(spriteId, { albedoColor: { r, g, b } });
+                                }}
+                                className="w-16 h-8 p-1 cursor-pointer"
+                                data-testid={`input-albedo-color-${spriteId}`}
+                              />
+                              <Slider
+                                value={[material.albedoTint ?? 0.0]}
+                                onValueChange={([value]) => updateSpriteConfig(spriteId, { albedoTint: value })}
+                                min={0.0}
+                                max={1.0}
+                                step={0.01}
+                                className="flex-1"
+                                data-testid={`slider-albedo-tint-${spriteId}`}
+                              />
+                            </div>
+                          </div>
+                          
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <Label className="text-xs text-card-foreground">Metallic</Label>

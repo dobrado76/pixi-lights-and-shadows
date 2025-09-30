@@ -989,6 +989,28 @@ const PixiDemo = (props: PixiDemoProps) => {
                 console.log(`⚡ Immediate smoothness: ${spriteId} → ${flatUpdates.smoothness}`);
               }
               
+              // Handle albedo color changes - Update shader uniform immediately
+              if (flatUpdates.albedoColor !== undefined) {
+                sprite.definition.albedoColor = flatUpdates.albedoColor;
+                if (sprite.shader) {
+                  sprite.shader.uniforms.uAlbedoColor = [flatUpdates.albedoColor.r, flatUpdates.albedoColor.g, flatUpdates.albedoColor.b];
+                  (sprite.shader as any).userData = (sprite.shader as any).userData || {};
+                  (sprite.shader as any).userData.__immediateAlbedoColor = flatUpdates.albedoColor;
+                }
+                console.log(`⚡ Immediate albedo color: ${spriteId} →`, flatUpdates.albedoColor);
+              }
+              
+              // Handle albedo tint changes - Update shader uniform immediately
+              if (flatUpdates.albedoTint !== undefined) {
+                sprite.definition.albedoTint = flatUpdates.albedoTint;
+                if (sprite.shader) {
+                  sprite.shader.uniforms.uAlbedoTint = flatUpdates.albedoTint;
+                  (sprite.shader as any).userData = (sprite.shader as any).userData || {};
+                  (sprite.shader as any).userData.__immediateAlbedoTint = flatUpdates.albedoTint;
+                }
+                console.log(`⚡ Immediate albedo tint: ${spriteId} → ${flatUpdates.albedoTint}`);
+              }
+              
               // Handle position changes
               if (flatUpdates.position) {
                 sprite.updateTransform({
@@ -1792,6 +1814,8 @@ const PixiDemo = (props: PixiDemoProps) => {
           // Set PBR material properties - PRESERVE IMMEDIATE CHANGES
           const hasImmediateMetallic = (mesh.shader as any).userData?.__immediateMetallic !== undefined;
           const hasImmediateSmoothness = (mesh.shader as any).userData?.__immediateSmoothness !== undefined;
+          const hasImmediateAlbedoColor = (mesh.shader as any).userData?.__immediateAlbedoColor !== undefined;
+          const hasImmediateAlbedoTint = (mesh.shader as any).userData?.__immediateAlbedoTint !== undefined;
           
           if (hasImmediateMetallic) {
             console.log(`🔒 Preserving immediate metallic change for sprite`);
@@ -1803,6 +1827,19 @@ const PixiDemo = (props: PixiDemoProps) => {
             console.log(`🔒 Preserving immediate smoothness change for sprite`);
           } else {
             mesh.shader.uniforms.uSmoothnessValue = spriteData.smoothness || 0.5;
+          }
+          
+          if (hasImmediateAlbedoColor) {
+            console.log(`🔒 Preserving immediate albedo color change for sprite`);
+          } else {
+            const color = spriteData.albedoColor || { r: 1, g: 1, b: 1 };
+            mesh.shader.uniforms.uAlbedoColor = [color.r, color.g, color.b];
+          }
+          
+          if (hasImmediateAlbedoTint) {
+            console.log(`🔒 Preserving immediate albedo tint change for sprite`);
+          } else {
+            mesh.shader.uniforms.uAlbedoTint = spriteData.albedoTint || 0.0;
           }
         }
 

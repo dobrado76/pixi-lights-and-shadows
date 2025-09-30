@@ -19,6 +19,8 @@ export interface SpriteDefinition {
   castsShadows?: boolean;             // Participates in shadow casting & ambient occlusion
   visible?: boolean;                  // Controls sprite visibility without deletion
   useNormalMap?: boolean;             // Whether to use normal mapping for this sprite
+  albedoColor?: { r: number; g: number; b: number };  // Albedo tint color (RGB 0-1)
+  albedoTint?: number;                // Albedo tint percentage 0.0-1.0 (0 = no tint, 1 = full tint)
   metallic?: number;                  // Metallic value 0.0-1.0 (0 = dielectric, 1 = metal)
   smoothness?: number;                // Smoothness value 0.0-1.0 (0 = rough, 1 = mirror-like)
   pivot?: {                           // Optional pivot point for rotation and scaling
@@ -41,6 +43,8 @@ interface CompleteSpriteDefinition {
   castsShadows: boolean;              // Participates in shadow casting & ambient occlusion
   visible: boolean;
   useNormalMap: boolean;
+  albedoColor: { r: number; g: number; b: number };  // Always present (default white {1,1,1})
+  albedoTint: number;                 // Always present (0.0-1.0, default 0.0 = no tint)
   metallic: number;                   // Always present (0.0-1.0, default 0.0 = dielectric)
   smoothness: number;                 // Always present (0.0-1.0, default 0.5 = semi-rough)
   pivot: {                            // Always present with defaults applied
@@ -87,6 +91,8 @@ export class SceneSprite {
       castsShadows: definition.castsShadows ?? true,   // Most sprites cast shadows & AO
       visible: definition.visible ?? true,             // Visible by default
       useNormalMap: definition.useNormalMap ?? true,   // Use normal mapping by default
+      albedoColor: definition.albedoColor || { r: 1, g: 1, b: 1 },  // Default white (no tint)
+      albedoTint: definition.albedoTint ?? 0.0,        // Default 0.0 = no tint applied
       metallic: definition.metallic ?? 0.0,            // Default 0.0 = dielectric (non-metal)
       smoothness: definition.smoothness ?? 0.5,        // Default 0.5 = semi-rough surface
       pivot: { 
