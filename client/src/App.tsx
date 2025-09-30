@@ -44,13 +44,14 @@ export interface ShaderParams {
 }
 
 function App() {
+  // Performance monitoring state (must be before conditional logic to maintain hooks order)
+  const [deviceInfo] = useState(() => detectDevice());
+  const [fpsData, setFpsData] = useState({ current: 60, average: 60 });
+  
   // Get all state and update functions from SceneStateManager (single source of truth)
   const sceneState = useSceneState();
   
-  if (!sceneState) {
-    return <div>Loading...</div>;
-  }
-  
+  // SceneStateManager provides all state
   const {
     sceneConfig,
     lightsConfig,
@@ -66,11 +67,16 @@ function App() {
     updateAmbientOcclusionConfig,
     updatePerformanceSettings,
     triggerImmediateSpriteChange
-  } = sceneState;
-
-  // Performance monitoring state  
-  const [deviceInfo] = useState(() => detectDevice());
-  const [fpsData, setFpsData] = useState({ current: 60, average: 60 });
+  } = sceneState || {};
+  
+  // Show loading state while scene data is being loaded
+  if (!isLoaded || !sceneConfig || !lightsConfig) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-foreground">Loading scene configuration...</div>
+      </div>
+    );
+  }
 
   // Legacy shader params system - loads from localStorage for backward compatibility
   const getInitialParams = (): ShaderParams => {
