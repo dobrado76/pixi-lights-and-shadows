@@ -326,11 +326,13 @@ export const convertLightToConfig = (light: Light): LightConfig => {
     };
   }
 
-  // Add direction properties if relevant  
+  // Add direction properties if relevant - USE OBJECT FORMAT
   if (light.type === 'directional' || light.type === 'spotlight') {
-    config.directionX = light.direction.x;
-    config.directionY = light.direction.y;
-    config.directionZ = light.direction.z;
+    (config as any).direction = {
+      x: light.direction.x,
+      y: light.direction.y,
+      z: light.direction.z
+    };
   }
 
   // Add type-specific properties
