@@ -1589,9 +1589,22 @@ const PixiDemo = (props: PixiDemoProps) => {
       const iblConfig = (sceneConfig as any).iblConfig || { enabled: false, intensity: 1.0, environmentMap: '/textures/BGTextureTest.jpg' };
       uniforms.uIBLEnabled = iblConfig.enabled;
       uniforms.uIBLIntensity = iblConfig.intensity || 1.0;
-      // Load environment map texture (fallback to WHITE if not available)
+      // Load environment map texture with error handling for HDR files
       if (iblConfig.environmentMap) {
-        uniforms.uEnvironmentMap = PIXI.Texture.from(iblConfig.environmentMap);
+        try {
+          // Note: PIXI.js doesn't natively support HDR files
+          // For HDR files, we'll use a fallback texture until proper HDR support is added
+          const isHDR = iblConfig.environmentMap.toLowerCase().endsWith('.hdr');
+          if (isHDR) {
+            console.warn('HDR texture loading not yet supported, using fallback texture');
+            uniforms.uEnvironmentMap = PIXI.Texture.from('/textures/BGTextureTest.jpg');
+          } else {
+            uniforms.uEnvironmentMap = PIXI.Texture.from(iblConfig.environmentMap);
+          }
+        } catch (err) {
+          console.error('Failed to load environment map:', err);
+          uniforms.uEnvironmentMap = PIXI.Texture.WHITE;
+        }
       } else {
         uniforms.uEnvironmentMap = PIXI.Texture.WHITE;
       }
