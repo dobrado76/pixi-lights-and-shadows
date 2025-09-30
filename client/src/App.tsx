@@ -3,7 +3,7 @@ import PixiDemo from './components/PixiDemo';
 import DynamicLightControls from './components/DynamicLightControls';
 import { DynamicSpriteControls } from './components/DynamicSpriteControls';
 import PerformanceMonitor from './components/PerformanceMonitor';
-import { Light, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
+import { Light, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig, convertLightToConfig, rgbToHex } from '@/lib/lights';
 import { detectDevice, getOptimalSettings, PerformanceSettings } from './utils/performance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -95,10 +95,29 @@ function App() {
     
     const timeout = setTimeout(async () => {
       try {
+        // CRITICAL: Include ALL current data to prevent overwrites
+        // Convert lights to config format (same as saveLightsConfig does)
+        const lightConfigs = lightsConfig.map(convertLightToConfig);
+        const ambientConfig = {
+          id: 'ambient_light',
+          type: 'ambient' as const,
+          enabled: true,
+          brightness: ambientLight.intensity,
+          color: rgbToHex(ambientLight.color.r, ambientLight.color.g, ambientLight.color.b)
+        };
+        
+        const fullSaveData = {
+          scene: sceneData.scene,
+          lights: [ambientConfig, ...lightConfigs],
+          shadowConfig,
+          ambientOcclusionConfig,
+          performanceSettings
+        };
+        
         const response = await fetch('/api/save-scene-config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(sceneData)
+          body: JSON.stringify(fullSaveData)
         });
         
         if (response.ok) {
@@ -112,7 +131,7 @@ function App() {
     }, 500); // 500ms debounce
     
     setSceneTimeout(timeout);
-  }, [sceneTimeout]);
+  }, [sceneTimeout, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings]);
 
   // Legacy shader params system - loads from localStorage for backward compatibility
   const getInitialParams = (): ShaderParams => {
@@ -223,13 +242,8 @@ function App() {
   // Handler for ambient occlusion configuration changes
   const handleAmbientOcclusionConfigChange = useCallback((newAOConfig: AmbientOcclusionConfig) => {
     setAmbientOcclusionConfig(newAOConfig);
-    const updatedSceneConfig = {
-      ...sceneConfig,
-      ambientOcclusionConfig: newAOConfig
-    };
-    setSceneConfig(updatedSceneConfig);
-    debouncedSceneSave(updatedSceneConfig);
-  }, [sceneConfig, debouncedSceneSave]);
+    // Note: DynamicLightControls handles the save with correct data
+  }, []);
 
   // Handler for scene configuration changes
   const handleSceneConfigChange = useCallback((newSceneConfig: { scene: Record<string, any> }) => {
