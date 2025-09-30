@@ -388,8 +388,8 @@
   },
   "iblConfig": {
     "enabled": true,
-    "intensity": 0.9,
-    "environmentMap": "/sky_boxes/cobblestone_street_night_1k.hdr"
+    "intensity": 0.4,
+    "environmentMap": "/sky_boxes/rogland_clear_night_1k.hdr"
   },
   "performanceSettings": {
     "quality": "high",

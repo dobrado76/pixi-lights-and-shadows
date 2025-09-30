@@ -17,7 +17,7 @@ import {
   Moon,
   Contrast,
 } from "lucide-react";
-import { SceneConfig } from "./SceneStateManager";
+import { SceneConfig, useSceneState } from "./SceneStateManager";
 
 /**
  * Dynamic lighting control panel supporting unlimited lights with real-time editing.
@@ -54,6 +54,9 @@ const DynamicLightControls = ({
   onShadowConfigChange,
   onAmbientOcclusionConfigChange,
 }: DynamicLightControlsProps) => {
+  // Get scene state manager functions for immediate updates
+  const sceneState = useSceneState();
+  
   const [localLights, setLocalLights] = useState<Light[]>(lights);
   const [localAmbient, setLocalAmbient] = useState(ambientLight);
   const [localShadowConfig, setLocalShadowConfig] =
@@ -835,16 +838,7 @@ const DynamicLightControls = ({
                       enabled: !localIBLConfig.enabled,
                     };
                     setLocalIBLConfig(newConfig);
-                    const updatedScene = {
-                      ...sceneConfig,
-                      iblConfig: newConfig,
-                    };
-                    debouncedSave(
-                      localLights,
-                      localAmbient,
-                      localShadowConfig,
-                      updatedScene,
-                    );
+                    sceneState?.updateIBLConfig(newConfig);
                   }}
                   className={`ml-auto p-1 rounded text-xs ${
                     localIBLConfig.enabled
@@ -879,16 +873,7 @@ const DynamicLightControls = ({
                           environmentMap: newMap,
                         };
                         setLocalIBLConfig(newConfig);
-                        const updatedScene = {
-                          ...sceneConfig,
-                          iblConfig: newConfig,
-                        };
-                        debouncedSave(
-                          localLights,
-                          localAmbient,
-                          localShadowConfig,
-                          updatedScene,
-                        );
+                        sceneState?.updateIBLConfig(newConfig);
                       }}
                       className="flex-1 bg-background border border-border rounded px-2 py-1 text-xs text-foreground"
                       data-testid="select-sky-box"
@@ -918,16 +903,7 @@ const DynamicLightControls = ({
                           intensity: newIntensity,
                         };
                         setLocalIBLConfig(newConfig);
-                        const updatedScene = {
-                          ...sceneConfig,
-                          iblConfig: newConfig,
-                        };
-                        debouncedSave(
-                          localLights,
-                          localAmbient,
-                          localShadowConfig,
-                          updatedScene,
-                        );
+                        sceneState?.updateIBLConfig(newConfig);
                       }}
                       className="flex-1"
                       data-testid="slider-ibl-intensity"

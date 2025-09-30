@@ -2,6 +2,13 @@ import { useState, useEffect, useCallback, useRef, createContext, useContext, Re
 import { Light, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
 import { PerformanceSettings } from '../utils/performance';
 
+// IBL Config interface
+export interface IBLConfig {
+  enabled: boolean;
+  intensity: number;
+  environmentMap: string;
+}
+
 // Complete scene configuration interface
 export interface SceneConfig {
   scene: Record<string, any>;
@@ -9,6 +16,7 @@ export interface SceneConfig {
   performanceSettings?: PerformanceSettings & { manualOverride?: boolean };
   shadowConfig?: ShadowConfig;
   ambientOcclusionConfig?: AmbientOcclusionConfig;
+  iblConfig?: IBLConfig;
 }
 
 // Context interface for the scene state manager
@@ -29,6 +37,7 @@ export interface SceneStateContextType {
   updateShadowConfig: (newShadowConfig: ShadowConfig) => void;
   updateAmbientOcclusionConfig: (newAOConfig: AmbientOcclusionConfig) => void;
   updatePerformanceSettings: (newSettings: PerformanceSettings & { manualOverride?: boolean }) => void;
+  updateIBLConfig: (newIBLConfig: IBLConfig) => void;
   
   // Immediate update for bypassing React state
   triggerImmediateSpriteChange: (spriteId: string, updates: any) => void;
@@ -236,6 +245,17 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     debouncedSaveScene(updatedConfig);
   }, [sceneConfig, shadowConfig, ambientOcclusionConfig, debouncedSaveScene]);
 
+  const updateIBLConfig = useCallback((newIBLConfig: IBLConfig) => {
+    console.log('🌍 SceneStateManager: Updating IBL config...');
+    
+    const updatedConfig = {
+      ...sceneConfig,
+      iblConfig: newIBLConfig
+    };
+    setSceneConfig(updatedConfig);
+    debouncedSaveScene(updatedConfig);
+  }, [sceneConfig, debouncedSaveScene]);
+
   // Immediate sprite change function (bypasses React state for instant feedback)
   const triggerImmediateSpriteChange = useCallback((spriteId: string, updates: any) => {
     console.log(`🚀 SceneStateManager: Immediate sprite change for ${spriteId}:`, Object.keys(updates));
@@ -266,6 +286,7 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     updateShadowConfig,
     updateAmbientOcclusionConfig,
     updatePerformanceSettings,
+    updateIBLConfig,
     triggerImmediateSpriteChange
   };
 
