@@ -380,7 +380,7 @@ export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity
       ...currentScene,
       lights: [ambientConfig, ...lightConfigs],
       shadowConfig: shadowConfig || currentScene.shadowConfig,
-      ambientOcclusion: aoConfig || currentScene.ambientOcclusion
+      ambientOcclusionConfig: aoConfig || currentScene.ambientOcclusionConfig
     };
 
     console.log('📡 Sending POST to /api/save-scene-config...');
