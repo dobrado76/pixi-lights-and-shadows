@@ -185,6 +185,7 @@ All scene, lighting, shadow, and performance data is stored in a single JSON fil
 - **image**: Path to diffuse texture (relative to public/)
 - **normal**: Path to normal map texture for surface detail
 - **useNormalMap**: Whether to apply normal mapping for this sprite
+- **albedoColor**: RGB color for tinting (0.0-1.0), **albedoTint**: Blend percentage (0.0 = original texture, 1.0 = full tint color)
 - **metallic**: Metallic property for PBR rendering (0.0 = dielectric, 1.0 = metallic)
 - **smoothness**: Surface smoothness for PBR rendering (0.0 = rough, 1.0 = mirror-like)
 
