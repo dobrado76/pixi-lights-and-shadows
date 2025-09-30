@@ -219,7 +219,7 @@
         },
         "zOrder": 1,
         "castsShadows": true,
-        "visible": true
+        "visible": false
       }
     },
     "block2": {
@@ -261,7 +261,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.3,
+      "brightness": 0.27,
       "color": "0x666666"
     },
     {
@@ -401,7 +401,14 @@
   },
   "iblConfig": {
     "enabled": true,
-    "intensity": 0.2,
+    "intensity": 0.5,
     "environmentMap": "/sky_boxes/golden_gate_hills_1k.hdr"
+  },
+  "ambientOcclusion": {
+    "enabled": true,
+    "strength": 1.9,
+    "radius": 25,
+    "samples": 8,
+    "bias": 2
   }
 }

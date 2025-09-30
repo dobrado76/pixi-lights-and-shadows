@@ -357,7 +357,8 @@ export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity
     console.log('💾 saveLightsConfig called, currentScene:', currentScene);
     
     // Use provided scene data instead of fetching (eliminates race conditions)
-    if (!currentScene || !currentScene.scene || Object.keys(currentScene.scene).length === 0) {
+    const sprites = currentScene?.sprites || currentScene?.scene;
+    if (!currentScene || !sprites || Object.keys(sprites).length === 0) {
       console.warn('⏭️ Skipping save - scene not loaded yet');
       return true; // Return success to avoid localStorage fallback during initialization
     }
