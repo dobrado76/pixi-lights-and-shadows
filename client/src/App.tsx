@@ -70,7 +70,10 @@ function App() {
   });
 
   // Scene configuration state
-  const [sceneConfig, setSceneConfig] = useState<{ scene: Record<string, any> }>({ scene: {} });
+  const [sceneConfig, setSceneConfig] = useState<{ 
+    sprites: Record<string, any>; 
+    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string } 
+  }>({ sprites: {} });
   const [isLoaded, setSceneLoaded] = useState<boolean>(false);
   
   // Performance monitoring state
@@ -83,20 +86,18 @@ function App() {
   const [fpsData, setFpsData] = useState({ current: 60, average: 60 });
   
 
-  // Auto-save is now handled by SceneStateManager - this legacy code is removed
-
-  // Auto-save system for scene configuration
-  const [sceneTimeout, setSceneTimeout] = useState<NodeJS.Timeout | null>(null);
-
-  const debouncedSceneSave = useCallback((sceneData: { scene: Record<string, any> }) => {
-    if (sceneTimeout) {
-      clearTimeout(sceneTimeout);
+  // CENTRALIZED SAVE - Gathers ALL current state automatically
+  // No controller needs to know about other configs!
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const saveAllConfigs = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
     
-    const timeout = setTimeout(async () => {
+    saveTimeoutRef.current = setTimeout(async () => {
       try {
-        // CRITICAL: Include ALL current data to prevent overwrites
-        // Convert lights to config format (same as saveLightsConfig does)
+        // Gather ALL current state automatically
         const lightConfigs = lightsConfig.map(convertLightToConfig);
         const ambientConfig = {
           id: 'ambient_light',
@@ -107,11 +108,12 @@ function App() {
         };
         
         const fullSaveData = {
-          scene: sceneData.scene,
+          sprites: sceneConfig.sprites,
           lights: [ambientConfig, ...lightConfigs],
           shadowConfig,
           ambientOcclusionConfig,
-          performanceSettings
+          performanceSettings,
+          iblConfig: sceneConfig.iblConfig
         };
         
         const response = await fetch('/api/save-scene-config', {
@@ -121,17 +123,13 @@ function App() {
         });
         
         if (response.ok) {
-          console.log('Scene configuration auto-saved successfully');
-        } else {
-          console.warn('Failed to auto-save scene configuration');
+          console.log('✅ All configurations saved successfully');
         }
       } catch (error) {
-        console.error('Error auto-saving scene configuration:', error);
+        console.error('❌ Failed to save configurations:', error);
       }
-    }, 500); // 500ms debounce
-    
-    setSceneTimeout(timeout);
-  }, [sceneTimeout, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings]);
+    }, 500);
+  }, [lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings, sceneConfig]);
 
   // Legacy shader params system - loads from localStorage for backward compatibility
   const getInitialParams = (): ShaderParams => {
@@ -246,44 +244,21 @@ function App() {
   }, []);
 
   // Handler for scene configuration changes
-  const handleSceneConfigChange = useCallback((newSceneConfig: { scene: Record<string, any> }) => {
-    console.log('🔄 App: Scene config changed, triggering update...', Object.keys(newSceneConfig.scene));
+  const handleSceneConfigChange = useCallback((newSceneConfig: { 
+    sprites: Record<string, any>; 
+    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string } 
+  }) => {
+    console.log('🔄 App: Scene config changed, triggering update...', newSceneConfig);
     setSceneConfig(newSceneConfig);
-    debouncedSceneSave(newSceneConfig);
-  }, [debouncedSceneSave]);
+    saveAllConfigs();
+  }, [saveAllConfigs]);
 
-  // Handler for performance settings changes with auto-save
-  const perfSettingsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+  // Handler for performance settings changes - just update state and save!
   const handlePerformanceSettingsChange = useCallback((newSettings: PerformanceSettings & { manualOverride?: boolean }) => {
     const settingsWithOverride = { ...newSettings, manualOverride: true };
     setPerformanceSettings(settingsWithOverride);
-    
-    const saveData = {
-      scene: sceneConfig.scene,
-      lights: lightsConfig,
-      performanceSettings: settingsWithOverride,
-      shadowConfig,
-      ambientOcclusionConfig
-    };
-    
-    if (perfSettingsTimeoutRef.current) {
-      clearTimeout(perfSettingsTimeoutRef.current);
-    }
-    
-    perfSettingsTimeoutRef.current = setTimeout(async () => {
-      try {
-        await fetch('/api/save-scene-config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(saveData),
-        });
-        console.log('Performance settings auto-saved successfully');
-      } catch (error) {
-        console.error('Failed to save performance settings:', error);
-      }
-    }, 1000);
-  }, [sceneConfig.scene, lightsConfig, shadowConfig, ambientOcclusionConfig]);
+    saveAllConfigs(); // Central save gathers ALL state automatically
+  }, [saveAllConfigs]);
 
   // Handler for immediate sprite changes (bypass React state for instant feedback)
   const handleImmediateSpriteChange = useCallback((spriteId: string, updates: any) => {
@@ -368,7 +343,7 @@ function App() {
                   💡 Lights ({lightsConfig.length})
                 </TabsTrigger>
                 <TabsTrigger value="sprites" data-testid="tab-sprites">
-                  🎭 Sprites ({Object.keys(sceneConfig.scene || {}).length})
+                  🎭 Sprites ({Object.keys(sceneConfig.sprites || {}).length})
                 </TabsTrigger>
                 <TabsTrigger value="optimization" data-testid="tab-optimization">
                   ⚡ Optimization

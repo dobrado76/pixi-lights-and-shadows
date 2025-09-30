@@ -54,7 +54,7 @@ interface MaterialDefinition extends MaterialComponent {
 
 interface SceneConfig {
   materials?: MaterialDefinition[]; // Array of reusable materials
-  scene: Record<string, SpriteEntity>;
+  sprites: Record<string, SpriteEntity>;
 }
 
 // Legacy support - convert to ECS structure when needed
@@ -158,7 +158,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
   };
 
   const updateSpriteConfig = (spriteId: string, updates: any) => {
-    const currentSprite = sceneConfig.scene[spriteId];
+    const currentSprite = sceneConfig.sprites[spriteId];
     
     // Handle component-based updates
     const newSprite = { ...currentSprite };
@@ -199,8 +199,8 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
     
     const newConfig = {
       ...sceneConfig,
-      scene: {
-        ...sceneConfig.scene,
+      sprites: {
+        ...sceneConfig.sprites,
         [spriteId]: newSprite
       }
     };
@@ -224,7 +224,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
     }
   };
 
-  const sprites = Object.entries(sceneConfig.scene || {});
+  const sprites = Object.entries(sceneConfig.sprites || {});
 
   return (
     <Card className="w-full max-w-md bg-card/95 backdrop-blur border-border">

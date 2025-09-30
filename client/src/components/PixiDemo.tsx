@@ -32,7 +32,10 @@ interface PixiDemoProps {
   ambientLight: {intensity: number, color: {r: number, g: number, b: number}};
   shadowConfig: ShadowConfig;
   ambientOcclusionConfig: AmbientOcclusionConfig;
-  sceneConfig: { scene: Record<string, any> };
+  sceneConfig: { 
+    sprites: Record<string, any>; 
+    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string } 
+  };
   performanceSettings: PerformanceSettings;
   onGeometryUpdate: (status: string) => void;
   onShaderUpdate: (status: string) => void;
@@ -883,7 +886,7 @@ const PixiDemo = (props: PixiDemoProps) => {
 
   // Setup demo content when PIXI app is ready - initial load only
   useEffect(() => {
-    if (!pixiApp || !pixiApp.stage || !sceneConfig.scene || Object.keys(sceneConfig.scene).length === 0 || lightsConfig.length === 0) {
+    if (!pixiApp || !pixiApp.stage || !sceneConfig.sprites || Object.keys(sceneConfig.sprites).length === 0 || lightsConfig.length === 0) {
       return;
     }
 
@@ -1411,7 +1414,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   
   // Handle sprite updates without full scene rebuild
   useEffect(() => {
-    if (!sceneManagerRef.current || !sceneConfig.scene || !pixiApp) return;
+    if (!sceneManagerRef.current || !sceneConfig.sprites || !pixiApp) return;
     
     
     // Update individual sprite properties without rebuilding entire scene
@@ -1507,7 +1510,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       pixiApp.render();
     } catch (error) {
     }
-  }, [sceneConfig, pixiApp, JSON.stringify(sceneConfig.scene)]);
+  }, [sceneConfig, pixiApp, JSON.stringify(sceneConfig.sprites)]);
   
   // CRITICAL: Render trigger when scene is fully loaded
   useEffect(() => {

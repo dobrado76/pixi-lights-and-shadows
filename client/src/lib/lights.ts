@@ -352,7 +352,7 @@ export const convertLightToConfig = (light: Light): LightConfig => {
 };
 
 // Save lights configuration to scene.json
-export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity: number, color: {r: number, g: number, b: number}}, shadowConfig?: ShadowConfig, currentScene?: any): Promise<boolean> => {
+export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity: number, color: {r: number, g: number, b: number}}, shadowConfig?: ShadowConfig, aoConfig?: AmbientOcclusionConfig, currentScene?: any): Promise<boolean> => {
   try {
     console.log('💾 saveLightsConfig called, currentScene:', currentScene);
     
@@ -374,11 +374,12 @@ export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity
       color: rgbToHex(ambientLight.color.r, ambientLight.color.g, ambientLight.color.b)
     };
     
-    // Update the scene with new lights and shadowConfig
+    // Update the scene with new lights, shadowConfig, and aoConfig
     const updatedScene = {
       ...currentScene,
       lights: [ambientConfig, ...lightConfigs],
-      shadowConfig: shadowConfig || currentScene.shadowConfig
+      shadowConfig: shadowConfig || currentScene.shadowConfig,
+      ambientOcclusion: aoConfig || currentScene.ambientOcclusion
     };
 
     console.log('📡 Sending POST to /api/save-scene-config...');

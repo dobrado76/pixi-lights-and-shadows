@@ -98,13 +98,14 @@ const DynamicLightControls = ({
       lights: Light[],
       ambient: typeof ambientLight,
       shadows: ShadowConfig,
+      ao: AmbientOcclusionConfig,
       scene: SceneConfig,
     ) => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
       saveTimeoutRef.current = setTimeout(async () => {
-        await saveLightsConfig(lights, ambient, shadows, scene);
+        await saveLightsConfig(lights, ambient, shadows, ao, scene);
       }, 500);
     },
     [],
@@ -172,7 +173,7 @@ const DynamicLightControls = ({
     );
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    debouncedSave(updatedLights, localAmbient, localShadowConfig, sceneConfig); // Persistence
+    debouncedSave(updatedLights, localAmbient, localShadowConfig, localAOConfig, sceneConfig); // Persistence
   };
 
   // Helper to delete a light
@@ -180,7 +181,7 @@ const DynamicLightControls = ({
     const updatedLights = localLights.filter((light) => light.id !== lightId);
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    debouncedSave(updatedLights, localAmbient, localShadowConfig, sceneConfig);
+    debouncedSave(updatedLights, localAmbient, localShadowConfig, localAOConfig, sceneConfig);
   };
 
   // Light duplication with timestamp-based unique naming
@@ -198,7 +199,7 @@ const DynamicLightControls = ({
     const updatedLights = [...localLights, newLight];
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    debouncedSave(updatedLights, localAmbient, localShadowConfig, sceneConfig);
+    debouncedSave(updatedLights, localAmbient, localShadowConfig, localAOConfig, sceneConfig);
   };
 
   // Light renaming system with validation to prevent ID conflicts
@@ -231,7 +232,7 @@ const DynamicLightControls = ({
     );
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    debouncedSave(updatedLights, localAmbient, localShadowConfig, sceneConfig);
+    debouncedSave(updatedLights, localAmbient, localShadowConfig, localAOConfig, sceneConfig);
     setEditingLightId(null);
     setEditingName("");
   };
@@ -307,7 +308,7 @@ const DynamicLightControls = ({
 
     const updatedLights = [...localLights, baseLight];
     setLocalLights(updatedLights);
-    debouncedSave(updatedLights, localAmbient, localShadowConfig, sceneConfig);
+    debouncedSave(updatedLights, localAmbient, localShadowConfig, localAOConfig, sceneConfig);
   };
 
   // Helper to convert RGB to hex
@@ -393,6 +394,7 @@ const DynamicLightControls = ({
                 localLights,
                 newAmbient,
                 localShadowConfig,
+                localAOConfig,
                 sceneConfig,
               );
             }}
@@ -420,6 +422,7 @@ const DynamicLightControls = ({
                 localLights,
                 newAmbient,
                 localShadowConfig,
+                localAOConfig,
                 sceneConfig,
               );
             }}
@@ -557,7 +560,7 @@ const DynamicLightControls = ({
               };
               setLocalShadowConfig(newConfig);
               onShadowConfigChange(newConfig); // Immediate visual update
-              debouncedSave(localLights, localAmbient, newConfig, sceneConfig);
+              debouncedSave(localLights, localAmbient, newConfig, localAOConfig, sceneConfig);
             }}
             className={`ml-auto p-1 rounded text-xs ${
               localShadowConfig.enabled
@@ -598,6 +601,7 @@ const DynamicLightControls = ({
                     localLights,
                     localAmbient,
                     newConfig,
+                    localAOConfig,
                     sceneConfig,
                   );
                 }}
@@ -628,6 +632,7 @@ const DynamicLightControls = ({
                     localLights,
                     localAmbient,
                     newConfig,
+                    localAOConfig,
                     sceneConfig,
                   );
                 }}
@@ -655,6 +660,7 @@ const DynamicLightControls = ({
                     localLights,
                     localAmbient,
                     newConfig,
+                    localAOConfig,
                     sceneConfig,
                   );
                 }}
@@ -684,6 +690,7 @@ const DynamicLightControls = ({
                       localLights,
                       localAmbient,
                       localShadowConfig,
+                      newConfig,
                       sceneConfig,
                     );
                   }}
@@ -726,6 +733,7 @@ const DynamicLightControls = ({
                           localLights,
                           localAmbient,
                           localShadowConfig,
+                          newConfig,
                           sceneConfig,
                         );
                       }}
@@ -756,6 +764,7 @@ const DynamicLightControls = ({
                           localLights,
                           localAmbient,
                           localShadowConfig,
+                          newConfig,
                           sceneConfig,
                         );
                       }}
@@ -786,6 +795,7 @@ const DynamicLightControls = ({
                           localLights,
                           localAmbient,
                           localShadowConfig,
+                          newConfig,
                           sceneConfig,
                         );
                       }}
@@ -813,6 +823,7 @@ const DynamicLightControls = ({
                           localLights,
                           localAmbient,
                           localShadowConfig,
+                          newConfig,
                           sceneConfig,
                         );
                       }}
@@ -840,13 +851,15 @@ const DynamicLightControls = ({
                     setLocalIBLConfig(newConfig);
                     const updatedScene = {
                       ...sceneConfig,
-                      iblConfig: newConfig,
+                      iblConfig: newConfig
                     };
+                    console.log('🎨 IBL Toggle - calling onSceneConfigChange with:', updatedScene);
                     onSceneConfigChange(updatedScene);
                     debouncedSave(
                       localLights,
                       localAmbient,
                       localShadowConfig,
+                      localAOConfig,
                       updatedScene,
                     );
                   }}
@@ -885,13 +898,14 @@ const DynamicLightControls = ({
                         setLocalIBLConfig(newConfig);
                         const updatedScene = {
                           ...sceneConfig,
-                          iblConfig: newConfig,
+                          iblConfig: newConfig
                         };
                         onSceneConfigChange(updatedScene);
                         debouncedSave(
                           localLights,
                           localAmbient,
                           localShadowConfig,
+                          localAOConfig,
                           updatedScene,
                         );
                       }}
@@ -925,13 +939,14 @@ const DynamicLightControls = ({
                         setLocalIBLConfig(newConfig);
                         const updatedScene = {
                           ...sceneConfig,
-                          iblConfig: newConfig,
+                          iblConfig: newConfig
                         };
                         onSceneConfigChange(updatedScene);
                         debouncedSave(
                           localLights,
                           localAmbient,
                           localShadowConfig,
+                          localAOConfig,
                           updatedScene,
                         );
                       }}

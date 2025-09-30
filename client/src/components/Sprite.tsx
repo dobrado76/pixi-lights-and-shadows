@@ -592,8 +592,15 @@ export class SceneManager {
     // Clean slate for new scene
     this.sprites.clear();
     
+    // Guard against null/undefined scene data
+    if (!sceneData) {
+      console.warn('⚠️ SceneManager: No scene data provided to loadScene');
+      return;
+    }
+    
     // Parallel sprite creation and texture loading
-    for (const [key, entityData] of Object.entries(sceneData.scene)) {
+    const sprites = sceneData.sprites || sceneData.scene || {};
+    for (const [key, entityData] of Object.entries(sprites)) {
       const entity = entityData as any;
       
       // Extract components from ECS structure - all materials are now inline
@@ -643,12 +650,13 @@ export class SceneManager {
    * Update existing sprites from new configuration without full rebuild
    */
   updateFromConfig(sceneData: any, pixiContainer?: any): void {
-    if (!sceneData.scene) return;
+    const sprites = sceneData.sprites || sceneData.scene;
+    if (!sprites) return;
     
     let zOrderChanged = false;
     
     // Update each sprite that exists in both old and new configs
-    for (const [key, newSpriteData] of Object.entries(sceneData.scene)) {
+    for (const [key, newSpriteData] of Object.entries(sprites)) {
       const existingSprite = this.sprites.get(key);
       if (existingSprite) {
         // Extract data from ECS structure

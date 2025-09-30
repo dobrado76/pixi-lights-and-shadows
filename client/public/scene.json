@@ -1,5 +1,5 @@
 {
-  "scene": {
+  "sprites": {
     "background": {
       "material": {
         "image": "/textures/BGTextureTest.jpg",
@@ -373,6 +373,19 @@
       "radius": 700
     }
   ],
+  "shadowConfig": {
+    "enabled": true,
+    "strength": 0.6,
+    "maxLength": 130,
+    "height": 10
+  },
+  "ambientOcclusionConfig": {
+    "enabled": true,
+    "strength": 0.3,
+    "radius": 25,
+    "samples": 8,
+    "bias": 2
+  },
   "performanceSettings": {
     "quality": "high",
     "resolution": 1,
@@ -385,19 +398,6 @@
     "fpsTarget": 60,
     "capFpsTo60": true,
     "manualOverride": true
-  },
-  "shadowConfig": {
-    "enabled": true,
-    "strength": 0.6,
-    "maxLength": 130,
-    "height": 10
-  },
-  "ambientOcclusionConfig": {
-    "enabled": true,
-    "strength": 3.5,
-    "radius": 6,
-    "samples": 8,
-    "bias": 20
   },
   "iblConfig": {
     "enabled": true,
