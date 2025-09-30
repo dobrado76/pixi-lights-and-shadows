@@ -88,7 +88,13 @@ All scene, lighting, shadow, and performance data is stored in a single JSON fil
         "normal": "/textures/BGTextureNORM.jpg", 
         "useNormalMap": true,
         "metallic": 0,
-        "smoothness": 0.5
+        "smoothness": 0.5,
+        "albedoTint": 0.41,
+        "albedoColor": {
+          "r": 0.792156862745098,
+          "g": 0.10980392156862745,
+          "b": 0.5058823529411764
+        }
       },
       "transform": {
         "position": { "x": 0, "y": 0 },
