@@ -84,6 +84,12 @@ const PixiDemo = (props: PixiDemoProps) => {
   const occluderMapDirtyRef = useRef<boolean>(true);
   const shadowCastersDirtyRef = useRef<boolean>(true);
 
+  // Refs to always access current config values (avoid stale closure in animation loop)
+  const shadowConfigRef = useRef(shadowConfig);
+  const ambientOcclusionConfigRef = useRef(ambientOcclusionConfig);
+  const sceneConfigRef = useRef(sceneConfig);
+  const ambientLightRef = useRef(ambientLight);
+
   // Performance optimization utilities
   const createLightConfigHash = (lights: Light[], ambient: any, shadow: any, ao: any, performance: any, ibl: any) => {
     return JSON.stringify({
@@ -1539,6 +1545,14 @@ const PixiDemo = (props: PixiDemoProps) => {
     };
   }, [pixiApp, meshesRef.current.length])
 
+  // Keep refs in sync with props (for animation loop to access current values)
+  useEffect(() => {
+    shadowConfigRef.current = shadowConfig;
+    ambientOcclusionConfigRef.current = ambientOcclusionConfig;
+    sceneConfigRef.current = sceneConfig;
+    ambientLightRef.current = ambientLight;
+  }, [shadowConfig, ambientOcclusionConfig, sceneConfig, ambientLight]);
+
   // Dynamic shader uniform updates for real-time lighting changes
   useEffect(() => {
     // UI modification detected - mark uniforms as dirty
@@ -1952,7 +1966,12 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Update uniforms if dirty (lighting config changed)
       if (uniformsDirtyRef.current) {
-        const iblConfig = (sceneConfig as any).iblConfig || { enabled: false, intensity: 1.0, environmentMap: '/textures/BGTextureTest.jpg' };
+        // Use refs to get current values (avoid stale closure)
+        const currentShadowConfig = shadowConfigRef.current;
+        const currentAOConfig = ambientOcclusionConfigRef.current;
+        const currentSceneConfig = sceneConfigRef.current;
+        const currentAmbientLight = ambientLightRef.current;
+        const iblConfig = (currentSceneConfig as any).iblConfig || { enabled: false, intensity: 1.0, environmentMap: '/textures/BGTextureTest.jpg' };
         
         shadersRef.current.forEach(shader => {
           if (shader.uniforms) {
@@ -1961,25 +1980,25 @@ const PixiDemo = (props: PixiDemoProps) => {
             shader.uniforms.uIBLIntensity = iblConfig.intensity || 1.0;
             
             // Update ambient light
-            shader.uniforms.uAmbientIntensity = ambientLight.intensity;
-            shader.uniforms.uAmbientColor = [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b];
+            shader.uniforms.uAmbientIntensity = currentAmbientLight.intensity;
+            shader.uniforms.uAmbientColor = [currentAmbientLight.color.r, currentAmbientLight.color.g, currentAmbientLight.color.b];
             
             // Update shadow config
-            const shadowsEnabled = shadowConfig.enabled && performanceSettings.enableShadows;
+            const shadowsEnabled = currentShadowConfig.enabled && performanceSettings.enableShadows;
             shader.uniforms.uShadowsEnabled = shadowsEnabled;
-            shader.uniforms.uShadowStrength = shadowConfig.strength;
-            shader.uniforms.uShadowMaxLength = shadowConfig.maxLength || 130;
-            shader.uniforms.uShadowBias = shadowConfig.bias || 3.0;
+            shader.uniforms.uShadowStrength = currentShadowConfig.strength;
+            shader.uniforms.uShadowMaxLength = currentShadowConfig.maxLength || 130;
+            shader.uniforms.uShadowBias = currentShadowConfig.bias || 3.0;
             
             // Update AO config
-            const aoEnabled = ambientOcclusionConfig.enabled && performanceSettings.enableAmbientOcclusion;
+            const aoEnabled = currentAOConfig.enabled && performanceSettings.enableAmbientOcclusion;
             shader.uniforms.uAOEnabled = aoEnabled;
-            shader.uniforms.uAOStrength = ambientOcclusionConfig.strength * 3; // MATCH useEffect calculation
-            shader.uniforms.uAORadius = ambientOcclusionConfig.radius;
-            shader.uniforms.uAOSamples = Math.min(ambientOcclusionConfig.samples, 
+            shader.uniforms.uAOStrength = currentAOConfig.strength * 3; // MATCH useEffect calculation
+            shader.uniforms.uAORadius = currentAOConfig.radius;
+            shader.uniforms.uAOSamples = Math.min(currentAOConfig.samples, 
               performanceSettings.quality === 'low' ? 4 : 
               performanceSettings.quality === 'high' ? 16 : 8);
-            shader.uniforms.uAOBias = ambientOcclusionConfig.bias;
+            shader.uniforms.uAOBias = currentAOConfig.bias;
           }
         });
         

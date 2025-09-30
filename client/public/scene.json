@@ -282,7 +282,7 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "brightness": 0.5,
+      "brightness": 0.4,
       "color": "0xffffff",
       "direction": {
         "x": 0.29237170472273677,
@@ -375,17 +375,17 @@
   ],
   "shadowConfig": {
     "enabled": true,
-    "strength": 0.55,
+    "strength": 0.3,
     "maxLength": 230,
     "height": 10,
     "bias": 3.2
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 3.9,
-    "radius": 22,
+    "strength": 5.65,
+    "radius": 4,
     "samples": 10,
-    "bias": 10
+    "bias": 14
   },
   "performanceSettings": {
     "quality": "high",
@@ -402,7 +402,7 @@
   },
   "iblConfig": {
     "enabled": true,
-    "intensity": 0.6,
-    "environmentMap": "/sky_boxes/golden_gate_hills_1k.hdr"
+    "intensity": 0.3,
+    "environmentMap": "/sky_boxes/cobblestone_street_night_1k.hdr"
   }
 }
