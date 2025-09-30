@@ -1,9 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import PixiDemo from './components/PixiDemo';
 import DynamicLightControls from './components/DynamicLightControls';
 import { DynamicSpriteControls } from './components/DynamicSpriteControls';
 import PerformanceMonitor from './components/PerformanceMonitor';
-import { useSceneState } from './components/SceneStateManager';
 import { Light, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
 import { detectDevice, getOptimalSettings, PerformanceSettings } from './utils/performance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,9 +44,6 @@ export interface ShaderParams {
 }
 
 function App() {
-  // TODO: Gradually integrate centralized scene state manager
-  // For now, keep the original state management working
-  
   // External JSON-based lighting configuration system
   // Lights are loaded from lights-config.json and auto-saved on changes
   const [lightsConfig, setLightsConfig] = useState<Light[]>([]);
@@ -87,29 +83,7 @@ function App() {
   const [fpsData, setFpsData] = useState({ current: 60, average: 60 });
   
 
-  // Auto-save system with debouncing to prevent excessive writes during UI manipulation
-  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
-
-  const debouncedSave = useCallback((lights: Light[], ambient: {intensity: number, color: {r: number, g: number, b: number}}, shadows?: ShadowConfig) => {
-    if (saveTimeout) {
-      clearTimeout(saveTimeout);
-    }
-    
-    const timeout = setTimeout(async () => {
-      try {
-        const success = await saveLightsConfig(lights, ambient, shadows);
-        if (success) {
-          console.log('Lights configuration auto-saved successfully');
-        } else {
-          console.warn('Failed to auto-save lights configuration');
-        }
-      } catch (error) {
-        console.error('Error auto-saving lights configuration:', error);
-      }
-    }, 500); // 500ms debounce prevents save spam during slider adjustments
-    
-    setSaveTimeout(timeout);
-  }, [saveTimeout]);
+  // Auto-save is now handled by SceneStateManager - this legacy code is removed
 
   // Auto-save system for scene configuration
   const [sceneTimeout, setSceneTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -233,23 +207,18 @@ function App() {
     localStorage.setItem('pixiShaderParams', JSON.stringify(shaderParams));
   }, [shaderParams]);
 
-  // Handler for lights configuration changes
+  // Handlers for immediate light updates (drives live rendering)
   const handleLightsChange = useCallback((newLights: Light[]) => {
     setLightsConfig(newLights);
-    debouncedSave(newLights, ambientLight, shadowConfig);
-  }, [ambientLight, shadowConfig, debouncedSave]);
+  }, []);
 
-  // Handler for ambient light changes
-  const handleAmbientChange = useCallback((newAmbient: {intensity: number, color: {r: number, g: number, b: number}}) => {
+  const handleAmbientLightChange = useCallback((newAmbient: {intensity: number, color: {r: number, g: number, b: number}}) => {
     setAmbientLight(newAmbient);
-    debouncedSave(lightsConfig, newAmbient, shadowConfig);
-  }, [lightsConfig, shadowConfig, debouncedSave]);
+  }, []);
 
-  // Handler for shadow configuration changes
   const handleShadowConfigChange = useCallback((newShadowConfig: ShadowConfig) => {
     setShadowConfig(newShadowConfig);
-    debouncedSave(lightsConfig, ambientLight, newShadowConfig);
-  }, [lightsConfig, ambientLight, debouncedSave]);
+  }, []);
 
   // Handler for ambient occlusion configuration changes
   const handleAmbientOcclusionConfigChange = useCallback((newAOConfig: AmbientOcclusionConfig) => {
@@ -270,6 +239,8 @@ function App() {
   }, [debouncedSceneSave]);
 
   // Handler for performance settings changes with auto-save
+  const perfSettingsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   const handlePerformanceSettingsChange = useCallback((newSettings: PerformanceSettings & { manualOverride?: boolean }) => {
     const settingsWithOverride = { ...newSettings, manualOverride: true };
     setPerformanceSettings(settingsWithOverride);
@@ -282,11 +253,11 @@ function App() {
       ambientOcclusionConfig
     };
     
-    if (saveTimeout) {
-      clearTimeout(saveTimeout);
+    if (perfSettingsTimeoutRef.current) {
+      clearTimeout(perfSettingsTimeoutRef.current);
     }
     
-    const timeout = setTimeout(async () => {
+    perfSettingsTimeoutRef.current = setTimeout(async () => {
       try {
         await fetch('/api/save-scene-config', {
           method: 'POST',
@@ -298,9 +269,7 @@ function App() {
         console.error('Failed to save performance settings:', error);
       }
     }, 1000);
-    
-    setSaveTimeout(timeout);
-  }, [sceneConfig.scene, lightsConfig, shadowConfig, ambientOcclusionConfig, saveTimeout]);
+  }, [sceneConfig.scene, lightsConfig, shadowConfig, ambientOcclusionConfig]);
 
   // Handler for immediate sprite changes (bypass React state for instant feedback)
   const handleImmediateSpriteChange = useCallback((spriteId: string, updates: any) => {
@@ -399,8 +368,9 @@ function App() {
                     ambientLight={ambientLight}
                     shadowConfig={shadowConfig}
                     ambientOcclusionConfig={ambientOcclusionConfig}
+                    sceneConfig={sceneConfig}
                     onLightsChange={handleLightsChange}
-                    onAmbientChange={handleAmbientChange}
+                    onAmbientChange={handleAmbientLightChange}
                     onShadowConfigChange={handleShadowConfigChange}
                     onAmbientOcclusionConfigChange={handleAmbientOcclusionConfigChange}
                   />
