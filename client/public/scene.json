@@ -60,7 +60,13 @@
         "normal": "/textures/ballN.png",
         "useNormalMap": true,
         "metallic": 0.15,
-        "smoothness": 0.15
+        "smoothness": 0.15,
+        "albedoTint": 0,
+        "albedoColor": {
+          "r": 1,
+          "g": 1,
+          "b": 1
+        }
       },
       "transform": {
         "position": {
@@ -223,7 +229,7 @@
         "useNormalMap": true,
         "metallic": 0.34,
         "smoothness": 0.5,
-        "albedoTint": 0.56,
+        "albedoTint": 0.41,
         "albedoColor": {
           "r": 0.792156862745098,
           "g": 0.10980392156862745,
@@ -276,7 +282,7 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "brightness": 0.5,
+      "brightness": 0.3,
       "color": "0xffffff",
       "direction": {
         "x": 0.25881904510252074,

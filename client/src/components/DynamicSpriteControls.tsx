@@ -390,9 +390,9 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                             </Select>
                           </div>
                           
-                          <div className="grid grid-cols-2 gap-2 mt-2">
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">Offset X</Label>
+                          <div className="flex gap-2 mt-2">
+                            <div className="flex items-center gap-1 flex-1">
+                              <Label className="text-xs text-muted-foreground whitespace-nowrap">Offset X</Label>
                               <Input
                                 type="number"
                                 value={entity.sprite.pivot?.offsetX || 0}
@@ -403,12 +403,12 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                                     offsetY: entity.sprite.pivot?.offsetY || 0
                                   }
                                 })}
-                                className="h-8 text-xs"
+                                className="h-8 text-xs flex-1"
                                 data-testid={`input-pivot-offset-x-${spriteId}`}
                               />
                             </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">Offset Y</Label>
+                            <div className="flex items-center gap-1 flex-1">
+                              <Label className="text-xs text-muted-foreground whitespace-nowrap">Offset Y</Label>
                               <Input
                                 type="number"
                                 value={entity.sprite.pivot?.offsetY || 0}
@@ -419,7 +419,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                                     offsetY: parseFloat(e.target.value) || 0
                                   }
                                 })}
-                                className="h-8 text-xs"
+                                className="h-8 text-xs flex-1"
                                 data-testid={`input-pivot-offset-y-${spriteId}`}
                               />
                             </div>
@@ -469,12 +469,9 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                         {/* PBR Material Properties */}
                         <div className="space-y-2 pt-2 border-t border-border/50">
                           {/* Albedo Color Tint */}
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-xs text-card-foreground">Albedo Tint</Label>
-                              <span className="text-xs text-muted-foreground">{((material.albedoTint ?? 0.0) * 100).toFixed(0)}%</span>
-                            </div>
-                            <div className="flex gap-2 items-center">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs text-card-foreground whitespace-nowrap">Albedo Tint</Label>
                               <Input
                                 type="color"
                                 value={`#${Math.round((material.albedoColor?.r ?? 1) * 255).toString(16).padStart(2, '0')}${Math.round((material.albedoColor?.g ?? 1) * 255).toString(16).padStart(2, '0')}${Math.round((material.albedoColor?.b ?? 1) * 255).toString(16).padStart(2, '0')}`}
@@ -485,7 +482,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                                   const b = parseInt(hex.slice(5, 7), 16) / 255;
                                   updateSpriteConfig(spriteId, { albedoColor: { r, g, b } });
                                 }}
-                                className="w-16 h-8 p-1 cursor-pointer"
+                                className="w-12 h-7 p-1 cursor-pointer"
                                 data-testid={`input-albedo-color-${spriteId}`}
                               />
                               <Slider
@@ -497,6 +494,7 @@ export function DynamicSpriteControls({ sceneConfig, onSceneConfigChange, onImme
                                 className="flex-1"
                                 data-testid={`slider-albedo-tint-${spriteId}`}
                               />
+                              <span className="text-xs text-muted-foreground min-w-[32px] text-right">{((material.albedoTint ?? 0.0) * 100).toFixed(0)}%</span>
                             </div>
                           </div>
                           
