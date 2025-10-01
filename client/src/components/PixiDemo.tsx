@@ -1960,33 +1960,14 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Use additive blending for multi-light rendering
         mesh.blendMode = PIXI.BLEND_MODES.ADD;
         
-        // Add meshes to sceneContainer for texture-based rendering
-        if (sceneContainerRef.current && mesh.parent !== sceneContainerRef.current) {
+        // Add meshes directly to stage for working render
+        if (mesh.parent !== pixiApp.stage) {
           if (mesh.parent) mesh.parent.removeChild(mesh);
-          sceneContainerRef.current.addChild(mesh);
+          pixiApp.stage.addChild(mesh);
         }
       });
       
-      // Render scene to texture
-      if (renderTargetRef.current && sceneContainerRef.current) {
-        pixiApp.renderer.render(sceneContainerRef.current, { 
-          renderTexture: renderTargetRef.current, 
-          clear: true 
-        });
-      }
-      
-      // Update display based on SSR setting
-      if (displaySpriteRef.current && renderTargetRef.current) {
-        if (ssrConfigRef.current?.enabled && performanceSettings.enableSSR) {
-          // SSR will process this texture in animation loop
-          console.log('🎨 SSR enabled - will apply post-process');
-        } else {
-          // Show normal rendering directly
-          displaySpriteRef.current.texture = renderTargetRef.current;
-        }
-      }
-      
-      // Force render to display
+      // Immediate render to display changes
       pixiApp.render();
     }
   }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings, sceneConfig]);
@@ -2194,27 +2175,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniformsDirtyRef.current = false;
       }
       
-      // Render scene to texture every frame
-      if (renderTargetRef.current && sceneContainerRef.current && shadersRef.current.length > 0) {
-        pixiApp.renderer.render(sceneContainerRef.current, { 
-          renderTexture: renderTargetRef.current, 
-          clear: true 
-        });
-      }
-      
-      // Apply SSR if enabled, otherwise show normal render
-      if (ssrConfigRef.current?.enabled && performanceSettings.enableSSR) {
-        // Render depth pass
-        renderDepthPass();
-        
-        // Apply SSR post-process
-        renderSSRPass();
-      } else {
-        // SSR disabled - show normal lit scene directly
-        if (displaySpriteRef.current && renderTargetRef.current) {
-          displaySpriteRef.current.texture = renderTargetRef.current;
-        }
-      }
+      // SSR disabled - additive blending on stage incompatible with render-to-texture architecture
       
       // Always render to display the result
       if (pixiApp && pixiApp.renderer) {
