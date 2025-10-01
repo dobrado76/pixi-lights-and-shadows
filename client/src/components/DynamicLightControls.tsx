@@ -678,14 +678,14 @@ const DynamicLightControls = ({
 
             <div className="flex items-center space-x-2 mb-1">
               <label className="text-xs text-muted-foreground min-w-[80px]">
-                Shadow Bias: {(localShadowConfig.bias || 3.0).toFixed(1)}
+                Shadow Bias: {(localShadowConfig.bias || 2.9).toFixed(1)}px
               </label>
               <input
                 type="range"
                 min="0"
-                max="10"
+                max="20"
                 step="0.1"
-                value={localShadowConfig.bias || 3.0}
+                value={localShadowConfig.bias || 2.9}
                 onChange={(e) => {
                   const newBias = parseFloat(e.target.value);
                   const newConfig = { ...localShadowConfig, bias: newBias };

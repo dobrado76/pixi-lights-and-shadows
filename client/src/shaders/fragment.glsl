@@ -269,7 +269,8 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
   float eps = 1.5; // Small epsilon for edge cases
   
   // Apply shadow bias to start position to prevent self-shadowing artifacts
-  float biasedStartDistance = max(startDistance, uShadowBias);
+  // Bias is ADDITIVE to create visible gap between object and shadow
+  float biasedStartDistance = startDistance + uShadowBias;
   
   for (int i = 1; i < 500; i++) {
     float distance = biasedStartDistance + float(i - 1) * stepSize;
