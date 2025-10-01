@@ -1309,6 +1309,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
         uAmbientLight: ambientLight.intensity,
         uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
+        uPassMode: 1, // Normal rendering: all lights active (not multi-pass)
         // Shadow system uniforms
         uShadowsEnabled: shadowConfig.enabled,
         uShadowStrength: shadowConfig.strength || 0.5,
