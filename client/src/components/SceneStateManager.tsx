@@ -9,15 +9,12 @@ export interface IBLConfig {
   environmentMap: string;
 }
 
-// SSR Config interface
-export interface SSRConfig {
+// Planar Reflection Config interface
+export interface PlanarReflectionConfig {
   enabled: boolean;
-  resolutionScale: number;  // 0.25 to 1.0 (quarter-res to full-res)
-  marchSteps: number;        // 16 to 128
-  stride: number;            // 1.0 to 10.0
-  strength: number;          // 0.0 to 1.0
-  maxDistance: number;       // Maximum ray travel distance
-  fadeEdgeDistance: number;  // Distance from edge to start fading
+  strength: number;          // 0.0 to 1.0 - reflection intensity
+  blurAmount: number;        // 0 to 5 - blur for glossy reflections
+  reflectionPlaneY: number;  // Y position of reflection plane (floor level)
 }
 
 // Complete scene configuration interface
@@ -28,7 +25,7 @@ export interface SceneConfig {
   shadowConfig?: ShadowConfig;
   ambientOcclusionConfig?: AmbientOcclusionConfig;
   iblConfig?: IBLConfig;
-  ssrConfig?: SSRConfig;
+  planarReflectionConfig?: PlanarReflectionConfig;
 }
 
 // Context interface for the scene state manager
@@ -50,7 +47,7 @@ export interface SceneStateContextType {
   updateAmbientOcclusionConfig: (newAOConfig: AmbientOcclusionConfig) => void;
   updatePerformanceSettings: (newSettings: PerformanceSettings & { manualOverride?: boolean }) => void;
   updateIBLConfig: (newIBLConfig: IBLConfig) => void;
-  updateSSRConfig: (newSSRConfig: SSRConfig) => void;
+  updatePlanarReflectionConfig: (newConfig: PlanarReflectionConfig) => void;
   
   // Immediate update for bypassing React state
   triggerImmediateSpriteChange: (spriteId: string, updates: any) => void;
@@ -267,12 +264,12 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     debouncedSaveScene(updatedConfig);
   }, [sceneConfig, debouncedSaveScene]);
 
-  const updateSSRConfig = useCallback((newSSRConfig: SSRConfig) => {
-    console.log('🔍 SceneStateManager: Updating SSR config...');
+  const updatePlanarReflectionConfig = useCallback((newConfig: PlanarReflectionConfig) => {
+    console.log('🪞 SceneStateManager: Updating planar reflection config...');
     
     const updatedConfig = {
       ...sceneConfig,
-      ssrConfig: newSSRConfig
+      planarReflectionConfig: newConfig
     };
     setSceneConfig(updatedConfig);
     debouncedSaveScene(updatedConfig);
@@ -309,7 +306,7 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     updateAmbientOcclusionConfig,
     updatePerformanceSettings,
     updateIBLConfig,
-    updateSSRConfig,
+    updatePlanarReflectionConfig,
     triggerImmediateSpriteChange
   };
 
