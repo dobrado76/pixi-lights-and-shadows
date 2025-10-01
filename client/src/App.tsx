@@ -3,7 +3,7 @@ import PixiDemo from './components/PixiDemo';
 import DynamicLightControls from './components/DynamicLightControls';
 import { DynamicSpriteControls } from './components/DynamicSpriteControls';
 import PerformanceMonitor from './components/PerformanceMonitor';
-import { Light, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig, convertLightToConfig, rgbToHex } from '@/lib/lights';
+import { Light, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, convertLightToConfig, rgbToHex } from '@/lib/lights';
 import { detectDevice, getOptimalSettings, PerformanceSettings } from './utils/performance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -87,34 +87,55 @@ function App() {
   const [fpsData, setFpsData] = useState({ current: 60, average: 60 });
   
 
-  // CENTRALIZED SAVE - Gathers ALL current state automatically
-  // No controller needs to know about other configs!
+  // ============================================================================
+  // SINGLE CENTRALIZED SAVE FUNCTION - THE ONLY PLACE THAT SAVES TO SERVER
+  // ============================================================================
+  // All handlers update their local state and call this with override values
+  // This ensures we ALWAYS save complete, fresh data without race conditions
+  
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  const saveAllConfigs = useCallback(() => {
+  const saveSceneConfig = useCallback((overrides?: {
+    lights?: Light[];
+    ambient?: {intensity: number, color: {r: number, g: number, b: number}};
+    shadowConfig?: ShadowConfig;
+    ambientOcclusionConfig?: AmbientOcclusionConfig;
+    performanceSettings?: PerformanceSettings & { manualOverride?: boolean };
+    sceneConfig?: { sprites: Record<string, any>; iblConfig?: any; planarReflectionConfig?: any };
+  }) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
     
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        // Gather ALL current state automatically
-        const lightConfigs = lightsConfig.map(convertLightToConfig);
+        // Use override values if provided, otherwise use current state
+        const currentLights = overrides?.lights ?? lightsConfig;
+        const currentAmbient = overrides?.ambient ?? ambientLight;
+        const currentShadowConfig = overrides?.shadowConfig ?? shadowConfig;
+        const currentAOConfig = overrides?.ambientOcclusionConfig ?? ambientOcclusionConfig;
+        const currentPerfSettings = overrides?.performanceSettings ?? performanceSettings;
+        const currentScene = overrides?.sceneConfig ?? sceneConfig;
+        
+        // Build light configs
+        const lightConfigs = currentLights.map(convertLightToConfig);
         const ambientConfig = {
           id: 'ambient_light',
           type: 'ambient' as const,
           enabled: true,
-          brightness: ambientLight.intensity,
-          color: rgbToHex(ambientLight.color.r, ambientLight.color.g, ambientLight.color.b)
+          brightness: currentAmbient.intensity,
+          color: rgbToHex(currentAmbient.color.r, currentAmbient.color.g, currentAmbient.color.b)
         };
         
+        // Build complete save data with ALL fields
         const fullSaveData = {
-          sprites: sceneConfig.sprites,
+          sprites: currentScene.sprites,
           lights: [ambientConfig, ...lightConfigs],
-          shadowConfig,
-          ambientOcclusionConfig,
-          performanceSettings,
-          iblConfig: sceneConfig.iblConfig
+          shadowConfig: currentShadowConfig,
+          ambientOcclusionConfig: currentAOConfig,
+          performanceSettings: currentPerfSettings,
+          iblConfig: currentScene.iblConfig,
+          planarReflectionConfig: currentScene.planarReflectionConfig
         };
         
         const response = await fetch('/api/save-scene-config', {
@@ -124,10 +145,10 @@ function App() {
         });
         
         if (response.ok) {
-          console.log('✅ All configurations saved successfully');
+          console.log('✅ Scene configuration saved successfully');
         }
       } catch (error) {
-        console.error('❌ Failed to save configurations:', error);
+        console.error('❌ Failed to save scene configuration:', error);
       }
     }, 500);
   }, [lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings, sceneConfig]);
@@ -252,92 +273,17 @@ function App() {
   }) => {
     console.log('🔄 App: Scene config changed, triggering update...', newSceneConfig);
     setSceneConfig(newSceneConfig);
-    
-    // Save with NEW value directly (state update is async, so use the new value here)
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    
-    saveTimeoutRef.current = setTimeout(async () => {
-      try {
-        const lightConfigs = lightsConfig.map(convertLightToConfig);
-        const ambientConfig = {
-          id: 'ambient_light',
-          type: 'ambient' as const,
-          enabled: true,
-          brightness: ambientLight.intensity,
-          color: rgbToHex(ambientLight.color.r, ambientLight.color.g, ambientLight.color.b)
-        };
-        
-        const fullSaveData = {
-          sprites: newSceneConfig.sprites, // Use NEW value directly
-          lights: [ambientConfig, ...lightConfigs],
-          shadowConfig,
-          ambientOcclusionConfig,
-          performanceSettings,
-          iblConfig: newSceneConfig.iblConfig, // Use NEW value directly
-          planarReflectionConfig: newSceneConfig.planarReflectionConfig // Use NEW value directly
-        };
-        
-        const response = await fetch('/api/save-scene-config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(fullSaveData),
-        });
-        
-        if (response.ok) {
-          console.log('✅ All configurations saved successfully');
-        }
-      } catch (error) {
-        console.error('Failed to save configurations:', error);
-      }
-    }, 300);
-  }, [lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings]);
+    // Call single save function with new scene config
+    saveSceneConfig({ sceneConfig: newSceneConfig });
+  }, [saveSceneConfig]);
 
-  // Handler for performance settings changes - just update state and save!
+  // Handler for performance settings changes
   const handlePerformanceSettingsChange = useCallback((newSettings: PerformanceSettings & { manualOverride?: boolean }) => {
     const settingsWithOverride = { ...newSettings, manualOverride: true };
     setPerformanceSettings(settingsWithOverride);
-    
-    // Save with NEW value directly (state update is async, so use the new value here)
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    
-    saveTimeoutRef.current = setTimeout(async () => {
-      try {
-        const lightConfigs = lightsConfig.map(convertLightToConfig);
-        const ambientConfig = {
-          id: 'ambient_light',
-          type: 'ambient' as const,
-          enabled: true,
-          brightness: ambientLight.intensity,
-          color: rgbToHex(ambientLight.color.r, ambientLight.color.g, ambientLight.color.b)
-        };
-        
-        const fullSaveData = {
-          sprites: sceneConfig.sprites,
-          lights: [ambientConfig, ...lightConfigs],
-          shadowConfig,
-          ambientOcclusionConfig,
-          performanceSettings: settingsWithOverride, // Use NEW value directly
-          iblConfig: sceneConfig.iblConfig
-        };
-        
-        const response = await fetch('/api/save-scene-config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(fullSaveData),
-        });
-        
-        if (response.ok) {
-          console.log('✅ All configurations saved successfully');
-        }
-      } catch (error) {
-        console.error('Failed to save configurations:', error);
-      }
-    }, 300);
-  }, [lightsConfig, ambientLight, sceneConfig, shadowConfig, ambientOcclusionConfig]);
+    // Call single save function with new performance settings
+    saveSceneConfig({ performanceSettings: settingsWithOverride });
+  }, [saveSceneConfig]);
 
   // Handler for immediate sprite changes (bypass React state for instant feedback)
   const handleImmediateSpriteChange = useCallback((spriteId: string, updates: any) => {
@@ -442,6 +388,7 @@ function App() {
                     onShadowConfigChange={handleShadowConfigChange}
                     onAmbientOcclusionConfigChange={handleAmbientOcclusionConfigChange}
                     onSceneConfigChange={handleSceneConfigChange as any}
+                    onSave={saveSceneConfig}
                   />
                 )}
               </TabsContent>

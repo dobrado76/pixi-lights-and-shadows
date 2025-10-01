@@ -261,7 +261,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.43,
+      "brightness": 0.8,
       "color": "0x666666"
     },
     {
@@ -381,7 +381,7 @@
     "bias": 2.9
   },
   "ambientOcclusionConfig": {
-    "enabled": true,
+    "enabled": false,
     "strength": 5.65,
     "radius": 4,
     "samples": 10,
@@ -402,8 +402,8 @@
   },
   "iblConfig": {
     "enabled": true,
-    "intensity": 0.5,
-    "environmentMap": "/sky_boxes/cobblestone_street_night_1k.jpg"
+    "intensity": 0.3,
+    "environmentMap": "/sky_boxes/golden_gate_hills_1k.jpg"
   },
   "planarReflectionConfig": {
     "enabled": true,

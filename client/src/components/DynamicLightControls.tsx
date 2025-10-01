@@ -4,7 +4,6 @@ import {
   MaskConfig,
   ShadowConfig,
   AmbientOcclusionConfig,
-  saveLightsConfig,
 } from "@/lib/lights";
 import {
   Plus,
@@ -43,6 +42,14 @@ interface DynamicLightControlsProps {
   onShadowConfigChange: (shadowConfig: ShadowConfig) => void;
   onAmbientOcclusionConfigChange: (aoConfig: AmbientOcclusionConfig) => void;
   onSceneConfigChange: (sceneConfig: SceneConfig) => void;
+  // Single save function that saves everything
+  onSave: (overrides?: {
+    lights?: Light[];
+    ambient?: {intensity: number, color: {r: number, g: number, b: number}};
+    shadowConfig?: ShadowConfig;
+    ambientOcclusionConfig?: AmbientOcclusionConfig;
+    sceneConfig?: { sprites: Record<string, any>; iblConfig?: any; planarReflectionConfig?: any };
+  }) => void;
 }
 
 const DynamicLightControls = ({
@@ -56,6 +63,7 @@ const DynamicLightControls = ({
   onShadowConfigChange,
   onAmbientOcclusionConfigChange,
   onSceneConfigChange,
+  onSave,
 }: DynamicLightControlsProps) => {
   const [localLights, setLocalLights] = useState<Light[]>(lights);
   const [localAmbient, setLocalAmbient] = useState(ambientLight);
@@ -103,26 +111,25 @@ const DynamicLightControls = ({
   const [editingName, setEditingName] = useState<string>("");
   const [availableMasks, setAvailableMasks] = useState<string[]>([]);
 
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Debounced auto-save
-  const debouncedSave = useCallback(
-    (
-      lights: Light[],
-      ambient: typeof ambientLight,
-      shadows: ShadowConfig,
-      ao: AmbientOcclusionConfig,
-      scene: SceneConfig,
-    ) => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      saveTimeoutRef.current = setTimeout(async () => {
-        await saveLightsConfig(lights, ambient, shadows, ao, scene);
-      }, 500);
-    },
-    [],
-  );
+  // Helper to persist state changes using the single centralized save function
+  const persistState = useCallback((partial?: {
+    lights?: Light[];
+    ambient?: {intensity: number, color: {r: number, g: number, b: number}};
+    shadowConfig?: ShadowConfig;
+    ambientOcclusionConfig?: AmbientOcclusionConfig;
+  }) => {
+    onSave({
+      lights: partial?.lights ?? localLights,
+      ambient: partial?.ambient ?? localAmbient,
+      shadowConfig: partial?.shadowConfig ?? localShadowConfig,
+      ambientOcclusionConfig: partial?.ambientOcclusionConfig ?? localAOConfig,
+      sceneConfig: {
+        sprites: (sceneConfig as any).sprites || {},
+        iblConfig: localIBLConfig,
+        planarReflectionConfig: localPlanarReflectionConfig,
+      },
+    });
+  }, [onSave, localLights, localAmbient, localShadowConfig, localAOConfig, sceneConfig, localIBLConfig, localPlanarReflectionConfig]);
 
   // Bootstrap mask file list - in production this could be dynamically loaded
   useEffect(() => {
@@ -179,6 +186,18 @@ const DynamicLightControls = ({
     setLocalShadowConfig(shadowConfig);
   }, [shadowConfig]);
 
+  useEffect(() => {
+    if ((sceneConfig as any).iblConfig) {
+      setLocalIBLConfig((sceneConfig as any).iblConfig);
+    }
+  }, [(sceneConfig as any).iblConfig]);
+
+  useEffect(() => {
+    if ((sceneConfig as any).planarReflectionConfig) {
+      setLocalPlanarReflectionConfig((sceneConfig as any).planarReflectionConfig);
+    }
+  }, [(sceneConfig as any).planarReflectionConfig]);
+
   // Core light mutation function - immediate update + auto-save
   const updateLight = (lightId: string, updates: Partial<Light>) => {
     const updatedLights = localLights.map((light) =>
@@ -186,13 +205,7 @@ const DynamicLightControls = ({
     );
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    debouncedSave(
-      updatedLights,
-      localAmbient,
-      localShadowConfig,
-      localAOConfig,
-      sceneConfig,
-    ); // Persistence
+    persistState({ lights: updatedLights }); // Persistence
   };
 
   // Helper to delete a light
@@ -200,13 +213,7 @@ const DynamicLightControls = ({
     const updatedLights = localLights.filter((light) => light.id !== lightId);
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    debouncedSave(
-      updatedLights,
-      localAmbient,
-      localShadowConfig,
-      localAOConfig,
-      sceneConfig,
-    );
+    persistState({ lights: updatedLights });
   };
 
   // Light duplication with timestamp-based unique naming
@@ -224,13 +231,7 @@ const DynamicLightControls = ({
     const updatedLights = [...localLights, newLight];
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    debouncedSave(
-      updatedLights,
-      localAmbient,
-      localShadowConfig,
-      localAOConfig,
-      sceneConfig,
-    );
+    persistState({ lights: updatedLights });
   };
 
   // Light renaming system with validation to prevent ID conflicts
@@ -263,13 +264,7 @@ const DynamicLightControls = ({
     );
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    debouncedSave(
-      updatedLights,
-      localAmbient,
-      localShadowConfig,
-      localAOConfig,
-      sceneConfig,
-    );
+    persistState({ lights: updatedLights });
     setEditingLightId(null);
     setEditingName("");
   };
@@ -345,13 +340,7 @@ const DynamicLightControls = ({
 
     const updatedLights = [...localLights, baseLight];
     setLocalLights(updatedLights);
-    debouncedSave(
-      updatedLights,
-      localAmbient,
-      localShadowConfig,
-      localAOConfig,
-      sceneConfig,
-    );
+    persistState({ lights: updatedLights });
   };
 
   // Helper to convert RGB to hex
@@ -433,13 +422,7 @@ const DynamicLightControls = ({
               const newAmbient = { ...localAmbient, intensity: newIntensity };
               setLocalAmbient(newAmbient);
               onAmbientChange(newAmbient); // Immediate visual update
-              debouncedSave(
-                localLights,
-                newAmbient,
-                localShadowConfig,
-                localAOConfig,
-                sceneConfig,
-              );
+              persistState({ ambient: newAmbient });
             }}
             className="flex-1"
             data-testid="slider-ambient-light"
@@ -461,13 +444,7 @@ const DynamicLightControls = ({
               const newAmbient = { ...localAmbient, color: rgb };
               setLocalAmbient(newAmbient);
               onAmbientChange(newAmbient); // Immediate visual update
-              debouncedSave(
-                localLights,
-                newAmbient,
-                localShadowConfig,
-                localAOConfig,
-                sceneConfig,
-              );
+              persistState({ ambient: newAmbient });
             }}
             className="w-20 h-6 rounded border border-border cursor-pointer"
             data-testid="color-ambient-light"
@@ -603,13 +580,7 @@ const DynamicLightControls = ({
               };
               setLocalShadowConfig(newConfig);
               onShadowConfigChange(newConfig); // Immediate visual update
-              debouncedSave(
-                localLights,
-                localAmbient,
-                newConfig,
-                localAOConfig,
-                sceneConfig,
-              );
+              persistState({ shadowConfig: newConfig });
             }}
             className={`ml-auto p-1 rounded text-xs ${
               localShadowConfig.enabled
@@ -646,13 +617,7 @@ const DynamicLightControls = ({
                   };
                   setLocalShadowConfig(newConfig);
                   onShadowConfigChange(newConfig); // Immediate visual update
-                  debouncedSave(
-                    localLights,
-                    localAmbient,
-                    newConfig,
-                    localAOConfig,
-                    sceneConfig,
-                  );
+                  persistState({ shadowConfig: newConfig });
                 }}
                 className="flex-1"
                 data-testid="slider-shadow-strength"
@@ -677,13 +642,7 @@ const DynamicLightControls = ({
                   };
                   setLocalShadowConfig(newConfig);
                   onShadowConfigChange(newConfig); // Immediate visual update
-                  debouncedSave(
-                    localLights,
-                    localAmbient,
-                    newConfig,
-                    localAOConfig,
-                    sceneConfig,
-                  );
+                  persistState({ shadowConfig: newConfig });
                 }}
                 className="flex-1"
                 data-testid="slider-shadow-max-length"
@@ -705,13 +664,7 @@ const DynamicLightControls = ({
                   const newConfig = { ...localShadowConfig, bias: newBias };
                   setLocalShadowConfig(newConfig);
                   onShadowConfigChange(newConfig); // Immediate visual update
-                  debouncedSave(
-                    localLights,
-                    localAmbient,
-                    newConfig,
-                    localAOConfig,
-                    sceneConfig,
-                  );
+                  persistState({ shadowConfig: newConfig });
                 }}
                 className="flex-1"
                 data-testid="slider-shadow-bias"
@@ -735,13 +688,7 @@ const DynamicLightControls = ({
                     };
                     setLocalAOConfig(newConfig);
                     onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                    debouncedSave(
-                      localLights,
-                      localAmbient,
-                      localShadowConfig,
-                      newConfig,
-                      sceneConfig,
-                    );
+                    persistState({ ambientOcclusionConfig: newConfig });
                   }}
                   className={`ml-auto p-1 rounded text-xs ${
                     localAOConfig.enabled
@@ -778,13 +725,7 @@ const DynamicLightControls = ({
                         };
                         setLocalAOConfig(newConfig);
                         onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                        debouncedSave(
-                          localLights,
-                          localAmbient,
-                          localShadowConfig,
-                          newConfig,
-                          sceneConfig,
-                        );
+                        persistState({ ambientOcclusionConfig: newConfig });
                       }}
                       className="flex-1"
                       data-testid="slider-ao-strength"
@@ -809,13 +750,7 @@ const DynamicLightControls = ({
                         };
                         setLocalAOConfig(newConfig);
                         onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                        debouncedSave(
-                          localLights,
-                          localAmbient,
-                          localShadowConfig,
-                          newConfig,
-                          sceneConfig,
-                        );
+                        persistState({ ambientOcclusionConfig: newConfig });
                       }}
                       className="flex-1"
                       data-testid="slider-ao-radius"
@@ -840,13 +775,7 @@ const DynamicLightControls = ({
                         };
                         setLocalAOConfig(newConfig);
                         onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                        debouncedSave(
-                          localLights,
-                          localAmbient,
-                          localShadowConfig,
-                          newConfig,
-                          sceneConfig,
-                        );
+                        persistState({ ambientOcclusionConfig: newConfig });
                       }}
                       className="flex-1"
                       data-testid="slider-ao-samples"
@@ -868,13 +797,7 @@ const DynamicLightControls = ({
                         const newConfig = { ...localAOConfig, bias: newBias };
                         setLocalAOConfig(newConfig);
                         onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                        debouncedSave(
-                          localLights,
-                          localAmbient,
-                          localShadowConfig,
-                          newConfig,
-                          sceneConfig,
-                        );
+                        persistState({ ambientOcclusionConfig: newConfig });
                       }}
                       className="flex-1"
                       data-testid="slider-ao-bias"
