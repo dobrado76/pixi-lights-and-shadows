@@ -268,12 +268,12 @@
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
-      "brightness": 1.8,
+      "brightness": 2.5,
       "color": "0xffffff",
       "position": {
         "x": 260,
         "y": 170,
-        "z": 40
+        "z": 70
       },
       "followMouse": true,
       "castsShadows": true,
