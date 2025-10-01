@@ -1517,7 +1517,10 @@ const PixiDemo = (props: PixiDemoProps) => {
             const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
             // Set PIXI zIndex based on sprite's zOrder for proper layering
             mesh.zIndex = sprite.definition.zOrder;
-            pixiApp.stage.addChild(mesh);
+            // Add to scene container ONLY (not main stage) - meshes render to texture, displaySprite shows result
+            if (sceneContainerRef.current) {
+              sceneContainerRef.current.addChild(mesh);
+            }
             meshesRef.current.push(mesh);
             shadersRef.current.push(mesh.shader as PIXI.Shader);
             sprite.needsMeshCreation = false;
