@@ -1947,22 +1947,19 @@ const PixiDemo = (props: PixiDemoProps) => {
           }
         }
 
-        // Keep meshes in scene container for rendering to texture
-        mesh.blendMode = PIXI.BLEND_MODES.NORMAL;
-        if (mesh.parent !== sceneContainerRef.current) {
+        // Use additive blending for multi-light rendering
+        mesh.blendMode = PIXI.BLEND_MODES.ADD;
+        if (mesh.parent !== pixiApp.stage) {
           if (mesh.parent) mesh.parent.removeChild(mesh);
-          if (sceneContainerRef.current) sceneContainerRef.current.addChild(mesh);
+          pixiApp.stage.addChild(mesh);
         }
+        
+        // Also keep reference in scene container (without adding as child) for multi-pass rendering when needed
+        // The sceneContainerRef will be populated by renderMultiPass when SSR is enabled
       });
       
-      // Set unified lighting mode for all shaders
-      shadersRef.current.forEach(shader => {
-        if (shader.uniforms) {
-          shader.uniforms.uPassMode = 1; // All lights active in unified mode
-        }
-      });
-      
-      // Rendering is handled by animation loop
+      // Immediate render to display changes
+      pixiApp.render();
     }
   }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings, sceneConfig]);
 
@@ -2172,11 +2169,13 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniformsDirtyRef.current = false;
       }
       
-      // Render multi-pass lighting to render target FIRST
-      renderMultiPass(lightsConfig);
-      
-      // Apply SSR pass LAST (after all lighting) if enabled
-      renderSSRPass();
+      // Render multi-pass lighting to render target ONLY if SSR is enabled
+      // Otherwise use normal additive blending (default behavior)
+      if (ssrConfigRef.current?.enabled && performanceSettings.enableSSR && shadersRef.current.length > 0) {
+        renderMultiPass(lightsConfig);
+        // Apply SSR pass LAST (after all lighting) if enabled
+        renderSSRPass();
+      }
       
       // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
       // MUST be AFTER SSR pass so displaySprite shows the SSR result
