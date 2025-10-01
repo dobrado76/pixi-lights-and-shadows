@@ -4,7 +4,6 @@ import {
   MaskConfig,
   ShadowConfig,
   AmbientOcclusionConfig,
-  SSRConfig,
   saveLightsConfig,
 } from "@/lib/lights";
 import {
@@ -17,7 +16,6 @@ import {
   EyeOff,
   Moon,
   Contrast,
-  Layers,
 } from "lucide-react";
 import { SceneConfig } from "./SceneStateManager";
 
@@ -83,19 +81,6 @@ const DynamicLightControls = ({
       environmentMap: "/sky_boxes/golden_gate_hills_1k.hdr",
     },
   );
-  
-  const [localSSRConfig, setLocalSSRConfig] = useState<SSRConfig>(
-    (sceneConfig as any).ssrConfig || {
-      enabled: true,
-      intensity: 0.5,
-      maxRayDistance: 200,
-      stepSize: 2.0,
-      maxSteps: 50,
-      fadeEdgeDistance: 50,
-      depthThreshold: 0.01,
-    },
-  );
-  
   const [availableSkyBoxes, setAvailableSkyBoxes] = useState<string[]>([]);
   const [newLightType, setNewLightType] = useState<
     "point" | "directional" | "spotlight"
@@ -977,158 +962,6 @@ const DynamicLightControls = ({
                       }}
                       className="flex-1"
                       data-testid="slider-ibl-intensity"
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Screen Space Reflections (SSR) Controls */}
-            <div className="mt-3 pt-2 border-t border-border/50">
-              <div className="flex items-center space-x-2 mb-2">
-                <Layers size={12} className="text-muted-foreground" />
-                <h5 className="text-xs font-medium text-muted-foreground">
-                  Screen Space Reflections (SSR)
-                </h5>
-                <button
-                  onClick={() => {
-                    const newConfig = {
-                      ...localSSRConfig,
-                      enabled: !localSSRConfig.enabled,
-                    };
-                    setLocalSSRConfig(newConfig);
-                    const updatedScene = {
-                      ...sceneConfig,
-                      ssrConfig: newConfig,
-                    };
-                    onSceneConfigChange(updatedScene);
-                    debouncedSave(
-                      localLights,
-                      localAmbient,
-                      localShadowConfig,
-                      localAOConfig,
-                      updatedScene,
-                    );
-                  }}
-                  className={`ml-auto p-1 rounded text-xs ${
-                    localSSRConfig.enabled
-                      ? "bg-accent text-accent-foreground"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                  data-testid="button-toggle-ssr"
-                >
-                  {localSSRConfig.enabled ? (
-                    <Eye size={10} />
-                  ) : (
-                    <EyeOff size={10} />
-                  )}
-                </button>
-              </div>
-
-              {localSSRConfig.enabled && (
-                <>
-                  <div className="flex items-center space-x-2 mb-1">
-                    <label className="text-xs text-muted-foreground min-w-[70px]">
-                      Intensity: {localSSRConfig.intensity.toFixed(2)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={localSSRConfig.intensity}
-                      onChange={(e) => {
-                        const newIntensity = parseFloat(e.target.value);
-                        const newConfig = {
-                          ...localSSRConfig,
-                          intensity: newIntensity,
-                        };
-                        setLocalSSRConfig(newConfig);
-                        const updatedScene = {
-                          ...sceneConfig,
-                          ssrConfig: newConfig,
-                        };
-                        onSceneConfigChange(updatedScene);
-                        debouncedSave(
-                          localLights,
-                          localAmbient,
-                          localShadowConfig,
-                          localAOConfig,
-                          updatedScene,
-                        );
-                      }}
-                      className="flex-1"
-                      data-testid="slider-ssr-intensity"
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-2 mb-1">
-                    <label className="text-xs text-muted-foreground min-w-[70px]">
-                      Max Distance: {localSSRConfig.maxRayDistance.toFixed(0)}px
-                    </label>
-                    <input
-                      type="range"
-                      min="50"
-                      max="500"
-                      step="10"
-                      value={localSSRConfig.maxRayDistance}
-                      onChange={(e) => {
-                        const newDistance = parseFloat(e.target.value);
-                        const newConfig = {
-                          ...localSSRConfig,
-                          maxRayDistance: newDistance,
-                        };
-                        setLocalSSRConfig(newConfig);
-                        const updatedScene = {
-                          ...sceneConfig,
-                          ssrConfig: newConfig,
-                        };
-                        onSceneConfigChange(updatedScene);
-                        debouncedSave(
-                          localLights,
-                          localAmbient,
-                          localShadowConfig,
-                          localAOConfig,
-                          updatedScene,
-                        );
-                      }}
-                      className="flex-1"
-                      data-testid="slider-ssr-distance"
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-2 mb-1">
-                    <label className="text-xs text-muted-foreground min-w-[70px]">
-                      Quality: {localSSRConfig.maxSteps.toFixed(0)} steps
-                    </label>
-                    <input
-                      type="range"
-                      min="10"
-                      max="100"
-                      step="5"
-                      value={localSSRConfig.maxSteps}
-                      onChange={(e) => {
-                        const newSteps = parseFloat(e.target.value);
-                        const newConfig = {
-                          ...localSSRConfig,
-                          maxSteps: newSteps,
-                        };
-                        setLocalSSRConfig(newConfig);
-                        const updatedScene = {
-                          ...sceneConfig,
-                          ssrConfig: newConfig,
-                        };
-                        onSceneConfigChange(updatedScene);
-                        debouncedSave(
-                          localLights,
-                          localAmbient,
-                          localShadowConfig,
-                          localAOConfig,
-                          updatedScene,
-                        );
-                      }}
-                      className="flex-1"
-                      data-testid="slider-ssr-quality"
                     />
                   </div>
                 </>

@@ -4,7 +4,7 @@ import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import vertexShaderSource from '../shaders/vertex.glsl?raw';
 import fragmentShaderSource from '../shaders/fragment.glsl?raw';
 import { ShaderParams } from '../App';
-import { Light, ShadowConfig, AmbientOcclusionConfig, SSRConfig } from '@/lib/lights';
+import { Light, ShadowConfig, AmbientOcclusionConfig } from '@/lib/lights';
 import { SceneManager, SceneSprite } from './Sprite';
 import { detectDevice, getOptimalSettings, AdaptiveQuality, PerformanceSettings } from '../utils/performance';
 
@@ -32,11 +32,9 @@ interface PixiDemoProps {
   ambientLight: {intensity: number, color: {r: number, g: number, b: number}};
   shadowConfig: ShadowConfig;
   ambientOcclusionConfig: AmbientOcclusionConfig;
-  ssrConfig: SSRConfig;
   sceneConfig: { 
     sprites: Record<string, any>; 
-    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string };
-    ssrConfig?: SSRConfig;
+    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string } 
   };
   performanceSettings: PerformanceSettings;
   onGeometryUpdate: (status: string) => void;
@@ -47,7 +45,7 @@ interface PixiDemoProps {
 }
 
 const PixiDemo = (props: PixiDemoProps) => {
-  const { shaderParams, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, ssrConfig, sceneConfig, performanceSettings, onGeometryUpdate, onShaderUpdate, onMeshUpdate, onImmediateSpriteChange, onPerformanceUpdate } = props;
+  const { shaderParams, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, sceneConfig, performanceSettings, onGeometryUpdate, onShaderUpdate, onMeshUpdate, onImmediateSpriteChange, onPerformanceUpdate } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
   
   const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
@@ -75,12 +73,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   const occluderContainerRef = useRef<PIXI.Container | null>(null);
   const occluderSpritesRef = useRef<PIXI.Sprite[]>([]);
   
-  // SSR (Screen Space Reflections) system
-  const depthRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);  // Depth/height map for SSR
-  const ssrRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);    // Final SSR result
-  const ssrQuadMeshRef = useRef<PIXI.Mesh | null>(null);                 // Full-screen quad for SSR pass
-  const ssrConfigRef = useRef(ssrConfig);                                 // Ref to avoid stale closure
-  
   // Performance optimization caches with dirty flags
   const lastUniformsRef = useRef<any>({});
   const lastShadowCastersRef = useRef<any[]>([]);
@@ -97,11 +89,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   const ambientOcclusionConfigRef = useRef(ambientOcclusionConfig);
   const sceneConfigRef = useRef(sceneConfig);
   const ambientLightRef = useRef(ambientLight);
-  
-  // Update SSR config ref when props change
-  useEffect(() => {
-    ssrConfigRef.current = ssrConfig;
-  }, [ssrConfig]);
 
   // Performance optimization utilities
   const createLightConfigHash = (lights: Light[], ambient: any, shadow: any, ao: any, performance: any, ibl: any) => {
@@ -543,15 +530,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   // Multi-pass lighting composer
   const renderMultiPass = (lights: Light[]) => {
     if (!pixiApp || !renderTargetRef.current || !sceneContainerRef.current || !displaySpriteRef.current) return;
-    
-    // Safety check: Don't render if shaders don't have valid uniforms yet
-    if (shadersRef.current.length === 0 || !shadersRef.current[0].uniforms) {
-      // Scene not fully loaded yet, show normal scene for now
-      if (displaySpriteRef.current && renderTargetRef.current) {
-        displaySpriteRef.current.texture = renderTargetRef.current;
-      }
-      return;
-    }
 
     const enabledLights = lights.filter(light => light.enabled && light.type !== 'ambient');
 
@@ -843,7 +821,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       );
       
       console.log('🌑 Occluder render target initialized for unlimited shadow casters');
-      
       } else {
         console.warn('Canvas element not available for PIXI initialization');
         return; // Exit gracefully instead of throwing
@@ -915,12 +892,7 @@ const PixiDemo = (props: PixiDemoProps) => {
 
   // Setup demo content when PIXI app is ready - initial load only
   useEffect(() => {
-    // Guard: Wait until ALL configs are loaded before creating meshes
-    if (!pixiApp || !pixiApp.stage || !sceneConfig.sprites || Object.keys(sceneConfig.sprites).length === 0) {
-      return;
-    }
-    if (!lightsConfig || lightsConfig.length === 0 || !ambientLight || !shadowConfig || !ambientOcclusionConfig) {
-      console.log('⏳ Waiting for all configs to load...');
+    if (!pixiApp || !pixiApp.stage || !sceneConfig.sprites || Object.keys(sceneConfig.sprites).length === 0 || lightsConfig.length === 0) {
       return;
     }
 
@@ -1267,20 +1239,15 @@ const PixiDemo = (props: PixiDemoProps) => {
       const shadowCaster1 = shadowCasters[1]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
       const shadowCaster2 = shadowCasters[2]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
       
-      // Common shader uniforms for all sprites (with safe defaults)
+      // Common shader uniforms for all sprites
       const commonUniforms = {
-        uColor: [shaderParams.colorR || 1, shaderParams.colorG || 1, shaderParams.colorB || 1],
+        uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
         uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
-        uAmbientLight: ambientLight?.intensity || 0.3,
-        uAmbientColor: [
-          ambientLight?.color?.r || 1,
-          ambientLight?.color?.g || 1,
-          ambientLight?.color?.b || 1
-        ],
-        uPassMode: 1, // Normal rendering: all lights active (not multi-pass)
+        uAmbientLight: ambientLight.intensity,
+        uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
         // Shadow system uniforms
-        uShadowsEnabled: shadowConfig?.enabled || false,
-        uShadowStrength: shadowConfig?.strength || 0.5,
+        uShadowsEnabled: shadowConfig.enabled,
+        uShadowStrength: shadowConfig.strength || 0.5,
         // Add zOrder uniforms for shadow hierarchy
         // Switch to unlimited mode when more than 3 shadow casters
         uUseOccluderMap: true,
@@ -1497,10 +1464,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             const mesh = sprite.createMesh(vertexShaderSource, spriteFragmentShader, commonUniforms);
             // Set PIXI zIndex based on sprite's zOrder for proper layering
             mesh.zIndex = sprite.definition.zOrder;
-            // Add to scene container ONLY (not main stage) - meshes render to texture, displaySprite shows result
-            if (sceneContainerRef.current) {
-              sceneContainerRef.current.addChild(mesh);
-            }
+            pixiApp.stage.addChild(mesh);
             meshesRef.current.push(mesh);
             shadersRef.current.push(mesh.shader as PIXI.Shader);
             sprite.needsMeshCreation = false;
@@ -1916,18 +1880,25 @@ const PixiDemo = (props: PixiDemoProps) => {
           }
         }
 
-        // Use additive blending for multi-light rendering
-        mesh.blendMode = PIXI.BLEND_MODES.ADD;
-        
-        // Add meshes directly to stage for working render
+        // Ensure mesh is properly positioned for rendering
+        mesh.blendMode = PIXI.BLEND_MODES.NORMAL;
         if (mesh.parent !== pixiApp.stage) {
           if (mesh.parent) mesh.parent.removeChild(mesh);
           pixiApp.stage.addChild(mesh);
         }
       });
       
-      // Immediate render to display changes
+      // Set unified lighting mode for all shaders
+      shadersRef.current.forEach(shader => {
+        if (shader.uniforms) {
+          shader.uniforms.uPassMode = 1; // All lights active in unified mode
+        }
+      });
+      
+      // Single unified render call
       pixiApp.render();
+      
+      // Render is handled by animation loop - no need for double rendering
     }
   }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings, sceneConfig]);
 
@@ -2028,9 +1999,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniformsDirtyRef.current = false;
       }
       
-      // SSR disabled - additive blending on stage incompatible with render-to-texture architecture
-      
-      // Always render to display the result
+      // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
       if (pixiApp && pixiApp.renderer) {
         pixiApp.render();
       }
