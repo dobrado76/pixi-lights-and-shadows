@@ -4,6 +4,7 @@ import {
   MaskConfig,
   ShadowConfig,
   AmbientOcclusionConfig,
+  saveLightsConfig,
 } from "@/lib/lights";
 import {
   Plus,
@@ -15,7 +16,6 @@ import {
   EyeOff,
   Moon,
   Contrast,
-  Waves,
 } from "lucide-react";
 import { SceneConfig } from "./SceneStateManager";
 
@@ -42,14 +42,6 @@ interface DynamicLightControlsProps {
   onShadowConfigChange: (shadowConfig: ShadowConfig) => void;
   onAmbientOcclusionConfigChange: (aoConfig: AmbientOcclusionConfig) => void;
   onSceneConfigChange: (sceneConfig: SceneConfig) => void;
-  // Single save function that saves everything
-  onSave: (overrides?: {
-    lights?: Light[];
-    ambient?: {intensity: number, color: {r: number, g: number, b: number}};
-    shadowConfig?: ShadowConfig;
-    ambientOcclusionConfig?: AmbientOcclusionConfig;
-    sceneConfig?: { sprites: Record<string, any>; iblConfig?: any; planarReflectionConfig?: any };
-  }) => void;
 }
 
 const DynamicLightControls = ({
@@ -63,7 +55,6 @@ const DynamicLightControls = ({
   onShadowConfigChange,
   onAmbientOcclusionConfigChange,
   onSceneConfigChange,
-  onSave,
 }: DynamicLightControlsProps) => {
   const [localLights, setLocalLights] = useState<Light[]>(lights);
   const [localAmbient, setLocalAmbient] = useState(ambientLight);
@@ -90,19 +81,6 @@ const DynamicLightControls = ({
       environmentMap: "/sky_boxes/golden_gate_hills_1k.hdr",
     },
   );
-  const [localPlanarReflectionConfig, setLocalPlanarReflectionConfig] = useState<{
-    enabled: boolean;
-    strength: number;
-    blurAmount: number;
-    reflectionPlaneY: number;
-  }>(
-    (sceneConfig as any).planarReflectionConfig || {
-      enabled: false,
-      strength: 0.5,
-      blurAmount: 1,
-      reflectionPlaneY: 300,
-    },
-  );
   const [availableSkyBoxes, setAvailableSkyBoxes] = useState<string[]>([]);
   const [newLightType, setNewLightType] = useState<
     "point" | "directional" | "spotlight"
@@ -111,25 +89,26 @@ const DynamicLightControls = ({
   const [editingName, setEditingName] = useState<string>("");
   const [availableMasks, setAvailableMasks] = useState<string[]>([]);
 
-  // Helper to persist state changes using the single centralized save function
-  const persistState = useCallback((partial?: {
-    lights?: Light[];
-    ambient?: {intensity: number, color: {r: number, g: number, b: number}};
-    shadowConfig?: ShadowConfig;
-    ambientOcclusionConfig?: AmbientOcclusionConfig;
-  }) => {
-    onSave({
-      lights: partial?.lights ?? localLights,
-      ambient: partial?.ambient ?? localAmbient,
-      shadowConfig: partial?.shadowConfig ?? localShadowConfig,
-      ambientOcclusionConfig: partial?.ambientOcclusionConfig ?? localAOConfig,
-      sceneConfig: {
-        sprites: (sceneConfig as any).sprites || {},
-        iblConfig: localIBLConfig,
-        planarReflectionConfig: localPlanarReflectionConfig,
-      },
-    });
-  }, [onSave, localLights, localAmbient, localShadowConfig, localAOConfig, sceneConfig, localIBLConfig, localPlanarReflectionConfig]);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounced auto-save
+  const debouncedSave = useCallback(
+    (
+      lights: Light[],
+      ambient: typeof ambientLight,
+      shadows: ShadowConfig,
+      ao: AmbientOcclusionConfig,
+      scene: SceneConfig,
+    ) => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      saveTimeoutRef.current = setTimeout(async () => {
+        await saveLightsConfig(lights, ambient, shadows, ao, scene);
+      }, 500);
+    },
+    [],
+  );
 
   // Bootstrap mask file list - in production this could be dynamically loaded
   useEffect(() => {
@@ -186,18 +165,6 @@ const DynamicLightControls = ({
     setLocalShadowConfig(shadowConfig);
   }, [shadowConfig]);
 
-  useEffect(() => {
-    if ((sceneConfig as any).iblConfig) {
-      setLocalIBLConfig((sceneConfig as any).iblConfig);
-    }
-  }, [(sceneConfig as any).iblConfig]);
-
-  useEffect(() => {
-    if ((sceneConfig as any).planarReflectionConfig) {
-      setLocalPlanarReflectionConfig((sceneConfig as any).planarReflectionConfig);
-    }
-  }, [(sceneConfig as any).planarReflectionConfig]);
-
   // Core light mutation function - immediate update + auto-save
   const updateLight = (lightId: string, updates: Partial<Light>) => {
     const updatedLights = localLights.map((light) =>
@@ -205,7 +172,13 @@ const DynamicLightControls = ({
     );
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    persistState({ lights: updatedLights }); // Persistence
+    debouncedSave(
+      updatedLights,
+      localAmbient,
+      localShadowConfig,
+      localAOConfig,
+      sceneConfig,
+    ); // Persistence
   };
 
   // Helper to delete a light
@@ -213,7 +186,13 @@ const DynamicLightControls = ({
     const updatedLights = localLights.filter((light) => light.id !== lightId);
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    persistState({ lights: updatedLights });
+    debouncedSave(
+      updatedLights,
+      localAmbient,
+      localShadowConfig,
+      localAOConfig,
+      sceneConfig,
+    );
   };
 
   // Light duplication with timestamp-based unique naming
@@ -231,7 +210,13 @@ const DynamicLightControls = ({
     const updatedLights = [...localLights, newLight];
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    persistState({ lights: updatedLights });
+    debouncedSave(
+      updatedLights,
+      localAmbient,
+      localShadowConfig,
+      localAOConfig,
+      sceneConfig,
+    );
   };
 
   // Light renaming system with validation to prevent ID conflicts
@@ -264,7 +249,13 @@ const DynamicLightControls = ({
     );
     setLocalLights(updatedLights);
     onLightsChange(updatedLights); // Immediate visual update
-    persistState({ lights: updatedLights });
+    debouncedSave(
+      updatedLights,
+      localAmbient,
+      localShadowConfig,
+      localAOConfig,
+      sceneConfig,
+    );
     setEditingLightId(null);
     setEditingName("");
   };
@@ -340,7 +331,13 @@ const DynamicLightControls = ({
 
     const updatedLights = [...localLights, baseLight];
     setLocalLights(updatedLights);
-    persistState({ lights: updatedLights });
+    debouncedSave(
+      updatedLights,
+      localAmbient,
+      localShadowConfig,
+      localAOConfig,
+      sceneConfig,
+    );
   };
 
   // Helper to convert RGB to hex
@@ -422,7 +419,13 @@ const DynamicLightControls = ({
               const newAmbient = { ...localAmbient, intensity: newIntensity };
               setLocalAmbient(newAmbient);
               onAmbientChange(newAmbient); // Immediate visual update
-              persistState({ ambient: newAmbient });
+              debouncedSave(
+                localLights,
+                newAmbient,
+                localShadowConfig,
+                localAOConfig,
+                sceneConfig,
+              );
             }}
             className="flex-1"
             data-testid="slider-ambient-light"
@@ -444,7 +447,13 @@ const DynamicLightControls = ({
               const newAmbient = { ...localAmbient, color: rgb };
               setLocalAmbient(newAmbient);
               onAmbientChange(newAmbient); // Immediate visual update
-              persistState({ ambient: newAmbient });
+              debouncedSave(
+                localLights,
+                newAmbient,
+                localShadowConfig,
+                localAOConfig,
+                sceneConfig,
+              );
             }}
             className="w-20 h-6 rounded border border-border cursor-pointer"
             data-testid="color-ambient-light"
@@ -580,7 +589,13 @@ const DynamicLightControls = ({
               };
               setLocalShadowConfig(newConfig);
               onShadowConfigChange(newConfig); // Immediate visual update
-              persistState({ shadowConfig: newConfig });
+              debouncedSave(
+                localLights,
+                localAmbient,
+                newConfig,
+                localAOConfig,
+                sceneConfig,
+              );
             }}
             className={`ml-auto p-1 rounded text-xs ${
               localShadowConfig.enabled
@@ -617,7 +632,13 @@ const DynamicLightControls = ({
                   };
                   setLocalShadowConfig(newConfig);
                   onShadowConfigChange(newConfig); // Immediate visual update
-                  persistState({ shadowConfig: newConfig });
+                  debouncedSave(
+                    localLights,
+                    localAmbient,
+                    newConfig,
+                    localAOConfig,
+                    sceneConfig,
+                  );
                 }}
                 className="flex-1"
                 data-testid="slider-shadow-strength"
@@ -642,7 +663,13 @@ const DynamicLightControls = ({
                   };
                   setLocalShadowConfig(newConfig);
                   onShadowConfigChange(newConfig); // Immediate visual update
-                  persistState({ shadowConfig: newConfig });
+                  debouncedSave(
+                    localLights,
+                    localAmbient,
+                    newConfig,
+                    localAOConfig,
+                    sceneConfig,
+                  );
                 }}
                 className="flex-1"
                 data-testid="slider-shadow-max-length"
@@ -664,7 +691,13 @@ const DynamicLightControls = ({
                   const newConfig = { ...localShadowConfig, bias: newBias };
                   setLocalShadowConfig(newConfig);
                   onShadowConfigChange(newConfig); // Immediate visual update
-                  persistState({ shadowConfig: newConfig });
+                  debouncedSave(
+                    localLights,
+                    localAmbient,
+                    newConfig,
+                    localAOConfig,
+                    sceneConfig,
+                  );
                 }}
                 className="flex-1"
                 data-testid="slider-shadow-bias"
@@ -688,7 +721,13 @@ const DynamicLightControls = ({
                     };
                     setLocalAOConfig(newConfig);
                     onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                    persistState({ ambientOcclusionConfig: newConfig });
+                    debouncedSave(
+                      localLights,
+                      localAmbient,
+                      localShadowConfig,
+                      newConfig,
+                      sceneConfig,
+                    );
                   }}
                   className={`ml-auto p-1 rounded text-xs ${
                     localAOConfig.enabled
@@ -725,7 +764,13 @@ const DynamicLightControls = ({
                         };
                         setLocalAOConfig(newConfig);
                         onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                        persistState({ ambientOcclusionConfig: newConfig });
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          newConfig,
+                          sceneConfig,
+                        );
                       }}
                       className="flex-1"
                       data-testid="slider-ao-strength"
@@ -750,7 +795,13 @@ const DynamicLightControls = ({
                         };
                         setLocalAOConfig(newConfig);
                         onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                        persistState({ ambientOcclusionConfig: newConfig });
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          newConfig,
+                          sceneConfig,
+                        );
                       }}
                       className="flex-1"
                       data-testid="slider-ao-radius"
@@ -775,7 +826,13 @@ const DynamicLightControls = ({
                         };
                         setLocalAOConfig(newConfig);
                         onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                        persistState({ ambientOcclusionConfig: newConfig });
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          newConfig,
+                          sceneConfig,
+                        );
                       }}
                       className="flex-1"
                       data-testid="slider-ao-samples"
@@ -797,7 +854,13 @@ const DynamicLightControls = ({
                         const newConfig = { ...localAOConfig, bias: newBias };
                         setLocalAOConfig(newConfig);
                         onAmbientOcclusionConfigChange(newConfig); // Immediate visual update
-                        persistState({ ambientOcclusionConfig: newConfig });
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          newConfig,
+                          sceneConfig,
+                        );
                       }}
                       className="flex-1"
                       data-testid="slider-ao-bias"
@@ -830,7 +893,13 @@ const DynamicLightControls = ({
                       updatedScene,
                     );
                     onSceneConfigChange(updatedScene);
-                    // App.tsx handles saving via handleSceneConfigChange
+                    debouncedSave(
+                      localLights,
+                      localAmbient,
+                      localShadowConfig,
+                      localAOConfig,
+                      updatedScene,
+                    );
                   }}
                   className={`ml-auto p-1 rounded text-xs ${
                     localIBLConfig.enabled
@@ -870,7 +939,13 @@ const DynamicLightControls = ({
                           iblConfig: newConfig,
                         };
                         onSceneConfigChange(updatedScene);
-                        // App.tsx handles saving via handleSceneConfigChange
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          localAOConfig,
+                          updatedScene,
+                        );
                       }}
                       className="flex-1 bg-background border border-border rounded px-2 py-1 text-xs text-foreground"
                       data-testid="select-sky-box"
@@ -905,7 +980,13 @@ const DynamicLightControls = ({
                           iblConfig: newConfig,
                         };
                         onSceneConfigChange(updatedScene);
-                        // App.tsx handles saving via handleSceneConfigChange
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          localAOConfig,
+                          updatedScene,
+                        );
                       }}
                       className="flex-1"
                       data-testid="slider-ibl-intensity"
@@ -915,139 +996,6 @@ const DynamicLightControls = ({
                   <p className="text-[10px] text-muted-foreground mt-1 leading-tight">
                     Environmental lighting adds realistic ambient reflections.
                     Metals will reflect the environment.
-                  </p>
-                </>
-              )}
-            </div>
-
-            {/* Planar Reflection Controls - Floor/Water reflections */}
-            <div className="mt-3 pt-2 border-t border-border/50">
-              <div className="flex items-center space-x-2 mb-2">
-                <Waves size={12} className="text-muted-foreground" />
-                <h5 className="text-xs font-medium text-muted-foreground">
-                  Planar Reflections
-                </h5>
-                <button
-                  onClick={() => {
-                    const newConfig = {
-                      ...localPlanarReflectionConfig,
-                      enabled: !localPlanarReflectionConfig.enabled,
-                    };
-                    setLocalPlanarReflectionConfig(newConfig);
-                    const updatedScene = {
-                      ...sceneConfig,
-                      planarReflectionConfig: newConfig,
-                    };
-                    onSceneConfigChange(updatedScene);
-                    // App.tsx handles saving via handleSceneConfigChange
-                  }}
-                  className={`ml-auto p-1 rounded text-xs ${
-                    localPlanarReflectionConfig.enabled
-                      ? "bg-accent text-accent-foreground"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                  data-testid="button-toggle-reflection"
-                >
-                  {localPlanarReflectionConfig.enabled ? (
-                    <Eye size={10} />
-                  ) : (
-                    <EyeOff size={10} />
-                  )}
-                </button>
-              </div>
-
-              {localPlanarReflectionConfig.enabled && (
-                <>
-                  <div className="flex items-center space-x-2 mb-1">
-                    <label className="text-xs text-muted-foreground min-w-[70px]">
-                      Strength: {localPlanarReflectionConfig.strength.toFixed(2)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={localPlanarReflectionConfig.strength}
-                      onChange={(e) => {
-                        const newStrength = parseFloat(e.target.value);
-                        const newConfig = {
-                          ...localPlanarReflectionConfig,
-                          strength: newStrength,
-                        };
-                        setLocalPlanarReflectionConfig(newConfig);
-                        const updatedScene = {
-                          ...sceneConfig,
-                          planarReflectionConfig: newConfig,
-                        };
-                        onSceneConfigChange(updatedScene);
-                        // App.tsx handles saving via handleSceneConfigChange
-                      }}
-                      className="flex-1"
-                      data-testid="slider-reflection-strength"
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-2 mb-1">
-                    <label className="text-xs text-muted-foreground min-w-[70px]">
-                      Blur: {localPlanarReflectionConfig.blurAmount.toFixed(1)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="5"
-                      step="0.5"
-                      value={localPlanarReflectionConfig.blurAmount}
-                      onChange={(e) => {
-                        const newBlur = parseFloat(e.target.value);
-                        const newConfig = {
-                          ...localPlanarReflectionConfig,
-                          blurAmount: newBlur,
-                        };
-                        setLocalPlanarReflectionConfig(newConfig);
-                        const updatedScene = {
-                          ...sceneConfig,
-                          planarReflectionConfig: newConfig,
-                        };
-                        onSceneConfigChange(updatedScene);
-                        // App.tsx handles saving via handleSceneConfigChange
-                      }}
-                      className="flex-1"
-                      data-testid="slider-reflection-blur"
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-2 mb-1">
-                    <label className="text-xs text-muted-foreground min-w-[70px]">
-                      Plane Y: {localPlanarReflectionConfig.reflectionPlaneY.toFixed(0)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="600"
-                      step="10"
-                      value={localPlanarReflectionConfig.reflectionPlaneY}
-                      onChange={(e) => {
-                        const newPlaneY = parseFloat(e.target.value);
-                        const newConfig = {
-                          ...localPlanarReflectionConfig,
-                          reflectionPlaneY: newPlaneY,
-                        };
-                        setLocalPlanarReflectionConfig(newConfig);
-                        const updatedScene = {
-                          ...sceneConfig,
-                          planarReflectionConfig: newConfig,
-                        };
-                        onSceneConfigChange(updatedScene);
-                        // App.tsx handles saving via handleSceneConfigChange
-                      }}
-                      className="flex-1"
-                      data-testid="slider-reflection-plane-y"
-                    />
-                  </div>
-
-                  <p className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                    Simulates reflections on flat surfaces like floors and water.
-                    Adjust Plane Y to match your floor position.
                   </p>
                 </>
               )}

@@ -10,7 +10,6 @@ export interface PerformanceSettings {
   enableAmbientOcclusion: boolean;
   enableNormalMapping: boolean;
   enableLightMasks: boolean;
-  enableSSR?: boolean;
   textureScale: number;
   fpsTarget: number;
   capFpsTo60: boolean;

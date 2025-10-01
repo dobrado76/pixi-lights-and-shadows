@@ -8,11 +8,9 @@ This project is a comprehensive React.js application showcasing advanced pseudo-
 
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes (October 2025)
+## Recent Changes (September 2025)
 
-- **Complete Save Architecture Fix** (2025-10-01): Fully resolved all save overwrite issues across the application. Key changes: 1) Created single centralized `saveSceneConfig` function in App.tsx that owns ALL persistence. 2) Fixed DynamicLightControls `persistState` helper to include IBL and Planar Reflection configs when saving (preventing config loss). 3) Added useEffect hooks to sync local IBL/Planar configs when sceneConfig prop changes. 4) Removed all individual component save mechanisms. Result: One save function, no race conditions, no data loss. Every component now updates local state and calls centralized save with complete merged data.
-
-- **Fixed Planar Reflection & IBL Save Race Condition** (2025-10-01): Initial fix eliminated critical bug where planar reflection and IBL controls were calling debouncedSave with stale local data, overwriting recent changes. Removed all debouncedSave calls from these controls - they now ONLY call onSceneConfigChange, allowing App.tsx's handleSceneConfigChange to save with fresh config data. Also fixed App.tsx to include planarReflectionConfig in save payload.
+- **IBL Architectural Fix** (2025-09-30): Fixed IBL (Image-Based Lighting) controls to use the existing debouncedSave pattern instead of SceneStateProvider. App.tsx never integrated SceneStateProvider, so IBL controls were attempting to use null context. Now all IBL changes (enabled toggle, sky box selection, intensity) properly save to scene.json and update immediately without page reload.
 
 - **Centralized Scene State Management** (2025-09-28): Successfully implemented a centralized scene state management system using React Context to eliminate synchronization issues between DynamicLightControls and DynamicSpriteControls. Created SceneStateManager component with SceneStateProvider and useSceneState hook. NOTE: SceneStateProvider exists but is NOT currently used in App.tsx - all controls use debouncedSave pattern for updates.
 

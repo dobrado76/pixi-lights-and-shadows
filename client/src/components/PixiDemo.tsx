@@ -3,8 +3,6 @@ import * as PIXI from 'pixi.js';
 import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import vertexShaderSource from '../shaders/vertex.glsl?raw';
 import fragmentShaderSource from '../shaders/fragment.glsl?raw';
-import planarReflectionVertexShader from '../shaders/planar-reflection-vertex.glsl?raw';
-import planarReflectionFragmentShader from '../shaders/planar-reflection-fragment.glsl?raw';
 import { ShaderParams } from '../App';
 import { Light, ShadowConfig, AmbientOcclusionConfig } from '@/lib/lights';
 import { SceneManager, SceneSprite } from './Sprite';
@@ -36,13 +34,7 @@ interface PixiDemoProps {
   ambientOcclusionConfig: AmbientOcclusionConfig;
   sceneConfig: { 
     sprites: Record<string, any>; 
-    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string };
-    planarReflectionConfig?: {
-      enabled: boolean;
-      strength: number;
-      blurAmount: number;
-      reflectionPlaneY: number;
-    }
+    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string } 
   };
   performanceSettings: PerformanceSettings;
   onGeometryUpdate: (status: string) => void;
@@ -80,10 +72,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   const occluderRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
   const occluderContainerRef = useRef<PIXI.Container | null>(null);
   const occluderSpritesRef = useRef<PIXI.Sprite[]>([]);
-  
-  // Planar reflection system - simple post-process reflection
-  const reflectionRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
-  const reflectionMeshRef = useRef<PIXI.Mesh | null>(null);
   
   // Performance optimization caches with dirty flags
   const lastUniformsRef = useRef<any>({});
@@ -710,61 +698,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
     }
 
-    // PLANAR REFLECTION PASS: Apply reflections additively
-    const reflectionConfig = sceneConfig.planarReflectionConfig;
-    if (reflectionConfig?.enabled && reflectionRenderTargetRef.current) {
-      // Create reflection mesh if needed
-      if (!reflectionMeshRef.current) {
-        const geometry = new PIXI.Geometry()
-          .addAttribute('aVertexPosition', [
-            0, 0,
-            shaderParams.canvasWidth, 0,
-            shaderParams.canvasWidth, shaderParams.canvasHeight,
-            0, shaderParams.canvasHeight
-          ], 2)
-          .addAttribute('aTextureCoord', [
-            0, 0,
-            1, 0,
-            1, 1,
-            0, 1
-          ], 2)
-          .addIndex([0, 1, 2, 0, 2, 3]);
-
-        const shader = PIXI.Shader.from(
-          planarReflectionVertexShader,
-          planarReflectionFragmentShader,
-          {
-            uSceneTexture: renderTargetRef.current,
-            uReflectionPlaneY: reflectionConfig.reflectionPlaneY / shaderParams.canvasHeight,
-            uStrength: reflectionConfig.strength,
-            uBlurAmount: reflectionConfig.blurAmount,
-            uResolution: [shaderParams.canvasWidth, shaderParams.canvasHeight]
-          }
-        );
-
-        reflectionMeshRef.current = new PIXI.Mesh(geometry, shader) as any;
-        if (reflectionMeshRef.current) {
-          reflectionMeshRef.current.blendMode = PIXI.BLEND_MODES.ADD;
-        }
-      }
-
-      // Update reflection uniforms
-      if (reflectionMeshRef.current?.shader?.uniforms) {
-        reflectionMeshRef.current.shader.uniforms.uSceneTexture = renderTargetRef.current;
-        reflectionMeshRef.current.shader.uniforms.uReflectionPlaneY = reflectionConfig.reflectionPlaneY / shaderParams.canvasHeight;
-        reflectionMeshRef.current.shader.uniforms.uStrength = reflectionConfig.strength;
-        reflectionMeshRef.current.shader.uniforms.uBlurAmount = reflectionConfig.blurAmount;
-      }
-
-      // Render reflection pass additively
-      if (reflectionMeshRef.current) {
-        pixiApp.renderer.render(reflectionMeshRef.current as any, {
-          renderTexture: renderTargetRef.current,
-          clear: false
-        });
-      }
-    }
-
     // Final render: Display accumulated result
     pixiApp.renderer.render(displaySpriteRef.current);
   };
@@ -888,14 +821,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       );
       
       console.log('🌑 Occluder render target initialized for unlimited shadow casters');
-      
-      // Initialize planar reflection render target for post-process reflections
-      reflectionRenderTargetRef.current = PIXI.RenderTexture.create({
-        width: shaderParams.canvasWidth,
-        height: shaderParams.canvasHeight
-      });
-      
-      console.log('🪞 Planar reflection render target initialized');
       } else {
         console.warn('Canvas element not available for PIXI initialization');
         return; // Exit gracefully instead of throwing
@@ -2081,13 +2006,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
       if (pixiApp && pixiApp.renderer) {
-        // Use multi-pass rendering for advanced lighting and effects
-        if (renderTargetRef.current && sceneContainerRef.current && displaySpriteRef.current) {
-          renderMultiPass(lightsConfig);
-        } else {
-          // Fallback to direct render if multi-pass not ready
-          pixiApp.render();
-        }
+        pixiApp.render();
       }
     };
 

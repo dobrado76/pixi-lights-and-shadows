@@ -354,28 +354,11 @@ export const convertLightToConfig = (light: Light): LightConfig => {
 // Save lights configuration to scene.json
 export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity: number, color: {r: number, g: number, b: number}}, shadowConfig?: ShadowConfig, aoConfig?: AmbientOcclusionConfig, currentScene?: any): Promise<boolean> => {
   try {
-    console.log('💾 saveLightsConfig called');
+    console.log('💾 saveLightsConfig called, currentScene:', currentScene);
     
-    // ALWAYS fetch fresh scene data from server to avoid race conditions
-    // This ensures we have the latest iblConfig, planarReflectionConfig, etc.
-    let freshScene;
-    try {
-      const response = await fetch('/api/scene-config');
-      if (response.ok) {
-        freshScene = await response.json();
-        console.log('✅ Fetched fresh scene data for save');
-      } else {
-        // Fallback to provided scene if fetch fails
-        freshScene = currentScene;
-        console.warn('⚠️ Failed to fetch fresh scene, using provided scene');
-      }
-    } catch (fetchError) {
-      freshScene = currentScene;
-      console.warn('⚠️ Error fetching fresh scene:', fetchError);
-    }
-    
-    const sprites = freshScene?.sprites || freshScene?.scene;
-    if (!freshScene || !sprites || Object.keys(sprites).length === 0) {
+    // Use provided scene data instead of fetching (eliminates race conditions)
+    const sprites = currentScene?.sprites || currentScene?.scene;
+    if (!currentScene || !sprites || Object.keys(sprites).length === 0) {
       console.warn('⏭️ Skipping save - scene not loaded yet');
       return true; // Return success to avoid localStorage fallback during initialization
     }
@@ -393,16 +376,11 @@ export const saveLightsConfig = async (lights: Light[], ambientLight: {intensity
     };
     
     // Update the scene with new lights, shadowConfig, and aoConfig
-    // Use freshScene to preserve latest iblConfig and planarReflectionConfig
     const updatedScene = {
-      sprites: freshScene.sprites,
+      ...currentScene,
       lights: [ambientConfig, ...lightConfigs],
-      shadowConfig: shadowConfig || freshScene.shadowConfig,
-      ambientOcclusionConfig: aoConfig || freshScene.ambientOcclusionConfig,
-      // Preserve scene-level configs from fresh scene data
-      ...(freshScene.iblConfig && { iblConfig: freshScene.iblConfig }),
-      ...(freshScene.planarReflectionConfig && { planarReflectionConfig: freshScene.planarReflectionConfig }),
-      ...(freshScene.performanceSettings && { performanceSettings: freshScene.performanceSettings })
+      shadowConfig: shadowConfig || currentScene.shadowConfig,
+      ambientOcclusionConfig: aoConfig || currentScene.ambientOcclusionConfig
     };
 
     console.log('📡 Sending POST to /api/save-scene-config...');

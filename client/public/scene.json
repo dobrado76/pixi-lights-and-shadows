@@ -261,7 +261,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.8,
+      "brightness": 0.43,
       "color": "0x666666"
     },
     {
@@ -282,11 +282,11 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "brightness": 0.6,
+      "brightness": 0.4,
       "color": "0xffffff",
       "direction": {
-        "x": 0.25881904510252074,
-        "y": -0.9659258262890683,
+        "x": 0.29237170472273677,
+        "y": -0.9563047559630354,
         "z": -1
       },
       "castsShadows": true
@@ -381,7 +381,7 @@
     "bias": 2.9
   },
   "ambientOcclusionConfig": {
-    "enabled": false,
+    "enabled": true,
     "strength": 5.65,
     "radius": 4,
     "samples": 10,
@@ -392,7 +392,7 @@
     "resolution": 1,
     "maxLights": 999,
     "enableShadows": true,
-    "enableAmbientOcclusion": true,
+    "enableAmbientOcclusion": false,
     "enableNormalMapping": true,
     "enableLightMasks": true,
     "textureScale": 1,
@@ -402,13 +402,7 @@
   },
   "iblConfig": {
     "enabled": true,
-    "intensity": 0.3,
+    "intensity": 0.8,
     "environmentMap": "/sky_boxes/golden_gate_hills_1k.jpg"
-  },
-  "planarReflectionConfig": {
-    "enabled": false,
-    "strength": 0.35,
-    "blurAmount": 1,
-    "reflectionPlaneY": 300
   }
 }
