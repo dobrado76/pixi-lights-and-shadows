@@ -72,7 +72,8 @@ function App() {
   // Scene configuration state
   const [sceneConfig, setSceneConfig] = useState<{ 
     sprites: Record<string, any>; 
-    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string } 
+    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string };
+    planarReflectionConfig?: { enabled: boolean; strength: number; blurAmount: number; reflectionPlaneY: number }
   }>({ sprites: {} });
   const [isLoaded, setSceneLoaded] = useState<boolean>(false);
   
@@ -246,7 +247,8 @@ function App() {
   // Handler for scene configuration changes
   const handleSceneConfigChange = useCallback((newSceneConfig: { 
     sprites: Record<string, any>; 
-    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string } 
+    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string };
+    planarReflectionConfig?: { enabled: boolean; strength: number; blurAmount: number; reflectionPlaneY: number }
   }) => {
     console.log('🔄 App: Scene config changed, triggering update...', newSceneConfig);
     setSceneConfig(newSceneConfig);
@@ -273,7 +275,8 @@ function App() {
           shadowConfig,
           ambientOcclusionConfig,
           performanceSettings,
-          iblConfig: newSceneConfig.iblConfig // Use NEW value directly
+          iblConfig: newSceneConfig.iblConfig, // Use NEW value directly
+          planarReflectionConfig: newSceneConfig.planarReflectionConfig // Use NEW value directly
         };
         
         const response = await fetch('/api/save-scene-config', {
@@ -433,12 +436,12 @@ function App() {
                     ambientLight={ambientLight}
                     shadowConfig={shadowConfig}
                     ambientOcclusionConfig={ambientOcclusionConfig}
-                    sceneConfig={sceneConfig}
+                    sceneConfig={sceneConfig as any}
                     onLightsChange={handleLightsChange}
                     onAmbientChange={handleAmbientLightChange}
                     onShadowConfigChange={handleShadowConfigChange}
                     onAmbientOcclusionConfigChange={handleAmbientOcclusionConfigChange}
-                    onSceneConfigChange={handleSceneConfigChange}
+                    onSceneConfigChange={handleSceneConfigChange as any}
                   />
                 )}
               </TabsContent>
@@ -446,8 +449,8 @@ function App() {
               <TabsContent value="sprites" className="mt-4">
                 {lightsLoaded && (
                   <DynamicSpriteControls
-                    sceneConfig={sceneConfig}
-                    onSceneConfigChange={handleSceneConfigChange}
+                    sceneConfig={sceneConfig as any}
+                    onSceneConfigChange={handleSceneConfigChange as any}
                     onImmediateSpriteChange={handleImmediateSpriteChange}
                   />
                 )}

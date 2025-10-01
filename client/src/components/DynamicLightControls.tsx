@@ -907,13 +907,7 @@ const DynamicLightControls = ({
                       updatedScene,
                     );
                     onSceneConfigChange(updatedScene);
-                    debouncedSave(
-                      localLights,
-                      localAmbient,
-                      localShadowConfig,
-                      localAOConfig,
-                      updatedScene,
-                    );
+                    // App.tsx handles saving via handleSceneConfigChange
                   }}
                   className={`ml-auto p-1 rounded text-xs ${
                     localIBLConfig.enabled
@@ -953,13 +947,7 @@ const DynamicLightControls = ({
                           iblConfig: newConfig,
                         };
                         onSceneConfigChange(updatedScene);
-                        debouncedSave(
-                          localLights,
-                          localAmbient,
-                          localShadowConfig,
-                          localAOConfig,
-                          updatedScene,
-                        );
+                        // App.tsx handles saving via handleSceneConfigChange
                       }}
                       className="flex-1 bg-background border border-border rounded px-2 py-1 text-xs text-foreground"
                       data-testid="select-sky-box"
@@ -994,13 +982,7 @@ const DynamicLightControls = ({
                           iblConfig: newConfig,
                         };
                         onSceneConfigChange(updatedScene);
-                        debouncedSave(
-                          localLights,
-                          localAmbient,
-                          localShadowConfig,
-                          localAOConfig,
-                          updatedScene,
-                        );
+                        // App.tsx handles saving via handleSceneConfigChange
                       }}
                       className="flex-1"
                       data-testid="slider-ibl-intensity"
@@ -1034,13 +1016,7 @@ const DynamicLightControls = ({
                       planarReflectionConfig: newConfig,
                     };
                     onSceneConfigChange(updatedScene);
-                    debouncedSave(
-                      localLights,
-                      localAmbient,
-                      localShadowConfig,
-                      localAOConfig,
-                      updatedScene,
-                    );
+                    // App.tsx handles saving via handleSceneConfigChange
                   }}
                   className={`ml-auto p-1 rounded text-xs ${
                     localPlanarReflectionConfig.enabled
@@ -1081,13 +1057,7 @@ const DynamicLightControls = ({
                           planarReflectionConfig: newConfig,
                         };
                         onSceneConfigChange(updatedScene);
-                        debouncedSave(
-                          localLights,
-                          localAmbient,
-                          localShadowConfig,
-                          localAOConfig,
-                          updatedScene,
-                        );
+                        // App.tsx handles saving via handleSceneConfigChange
                       }}
                       className="flex-1"
                       data-testid="slider-reflection-strength"
@@ -1116,13 +1086,7 @@ const DynamicLightControls = ({
                           planarReflectionConfig: newConfig,
                         };
                         onSceneConfigChange(updatedScene);
-                        debouncedSave(
-                          localLights,
-                          localAmbient,
-                          localShadowConfig,
-                          localAOConfig,
-                          updatedScene,
-                        );
+                        // App.tsx handles saving via handleSceneConfigChange
                       }}
                       className="flex-1"
                       data-testid="slider-reflection-blur"
@@ -1151,13 +1115,7 @@ const DynamicLightControls = ({
                           planarReflectionConfig: newConfig,
                         };
                         onSceneConfigChange(updatedScene);
-                        debouncedSave(
-                          localLights,
-                          localAmbient,
-                          localShadowConfig,
-                          localAOConfig,
-                          updatedScene,
-                        );
+                        // App.tsx handles saving via handleSceneConfigChange
                       }}
                       className="flex-1"
                       data-testid="slider-reflection-plane-y"

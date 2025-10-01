@@ -2081,7 +2081,13 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
       if (pixiApp && pixiApp.renderer) {
-        pixiApp.render();
+        // Use multi-pass rendering for advanced lighting and effects
+        if (renderTargetRef.current && sceneContainerRef.current && displaySpriteRef.current) {
+          renderMultiPass(lightsConfig);
+        } else {
+          // Fallback to direct render if multi-pass not ready
+          pixiApp.render();
+        }
       }
     };
 
