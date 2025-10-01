@@ -1303,16 +1303,20 @@ const PixiDemo = (props: PixiDemoProps) => {
       const shadowCaster1 = shadowCasters[1]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
       const shadowCaster2 = shadowCasters[2]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
       
-      // Common shader uniforms for all sprites
+      // Common shader uniforms for all sprites (with safe defaults)
       const commonUniforms = {
-        uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
+        uColor: [shaderParams.colorR || 1, shaderParams.colorG || 1, shaderParams.colorB || 1],
         uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
-        uAmbientLight: ambientLight.intensity,
-        uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
+        uAmbientLight: ambientLight?.intensity || 0.3,
+        uAmbientColor: [
+          ambientLight?.color?.r || 1,
+          ambientLight?.color?.g || 1,
+          ambientLight?.color?.b || 1
+        ],
         uPassMode: 1, // Normal rendering: all lights active (not multi-pass)
         // Shadow system uniforms
-        uShadowsEnabled: shadowConfig.enabled,
-        uShadowStrength: shadowConfig.strength || 0.5,
+        uShadowsEnabled: shadowConfig?.enabled || false,
+        uShadowStrength: shadowConfig?.strength || 0.5,
         // Add zOrder uniforms for shadow hierarchy
         // Switch to unlimited mode when more than 3 shadow casters
         uUseOccluderMap: true,
@@ -1950,13 +1954,12 @@ const PixiDemo = (props: PixiDemoProps) => {
 
         // Use additive blending for multi-light rendering
         mesh.blendMode = PIXI.BLEND_MODES.ADD;
+        
+        // Add meshes directly to stage for normal rendering
         if (mesh.parent !== pixiApp.stage) {
           if (mesh.parent) mesh.parent.removeChild(mesh);
           pixiApp.stage.addChild(mesh);
         }
-        
-        // Also keep reference in scene container (without adding as child) for multi-pass rendering when needed
-        // The sceneContainerRef will be populated by renderMultiPass when SSR is enabled
       });
       
       // Immediate render to display changes
@@ -2109,9 +2112,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Check for changes and update dirty flags
       checkAndUpdateDirtyFlags();
       
-      // Render depth pass FIRST (before lighting) if SSR is enabled
-      renderDepthPass();
-      
       // Only rebuild occluder map if shadow casters changed
       if (occluderMapDirtyRef.current && occluderRenderTargetRef.current) {
         buildOccluderMap();
@@ -2170,8 +2170,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniformsDirtyRef.current = false;
       }
       
-      // SSR is disabled for now - needs proper implementation as true post-process
-      // Normal additive blending rendering is used (default behavior)
+      // SSR functionality temporarily disabled - needs proper architecture
+      // Scene renders normally to stage with additive blending
       
       // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
       // MUST be AFTER SSR pass so displaySprite shows the SSR result

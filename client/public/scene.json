@@ -406,8 +406,8 @@
     "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg"
   },
   "ssrConfig": {
-    "enabled": true,
-    "intensity": 0.4,
+    "enabled": false,
+    "intensity": 0.15,
     "maxRayDistance": 230,
     "stepSize": 2,
     "maxSteps": 40,
