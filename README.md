@@ -190,6 +190,11 @@ All scene, lighting, shadow, and performance data is stored in a single JSON fil
     "radius": 5,
     "samples": 8,
     "bias": 20
+  },
+  "iblConfig": {
+    "enabled": true,
+    "intensity": 0.4,
+    "environmentMap": "/sky_boxes/golden_gate_hills_1k.jpg"
   }
 }
 ```
