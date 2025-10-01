@@ -92,6 +92,15 @@ uniform bool uIBLEnabled; // Enable/disable IBL
 uniform float uIBLIntensity; // IBL strength multiplier (0.0-5.0)
 uniform sampler2D uEnvironmentMap; // Equirectangular environment map for IBL
 
+// Screen Space Reflections (SSR) System - 2.5D reflections using depth/zOrder
+uniform bool uSSREnabled; // Enable/disable SSR
+uniform float uSSRIntensity; // Reflection strength (0.0-1.0)
+uniform float uSSRMaxDistance; // Maximum ray marching distance (pixels)
+uniform float uSSRQuality; // Number of ray march steps
+uniform float uSSRFadeEdgeDistance; // Distance from edges where reflections fade
+uniform float uSSRDepthThreshold; // Depth threshold for hit detection
+uniform sampler2D uDepthMap; // Depth buffer (sprite heights from zOrder)
+
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 pixelPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
   vec2 relativePos = pixelPos - lightPos;
@@ -1149,6 +1158,105 @@ void main(void) {
     float aoInfluence = mix(0.3, 1.0, 1.0 - diffuseColor.a); // Sprites get 30% AO, background gets full AO
     float aoEffect = mix(1.0, aoFactor, aoInfluence);
     finalColor *= aoEffect;
+  }
+  
+  // === SCREEN SPACE REFLECTIONS (SSR) - FINAL PASS ===
+  // Add reflections for 2.5D surfaces using depth-based ray marching
+  if (uSSREnabled && uSSRIntensity > 0.0) {
+    // Get depth at current pixel (from zOrder-based depth map)
+    float pixelDepth = texture2D(uDepthMap, vTextureCoord).r;
+    
+    // FLOOR REFLECTIONS: Only pixels with LOW depth (floor/background) show reflections
+    // Objects at HIGH depth are what get reflected
+    if (pixelDepth <= uSSRDepthThreshold) {
+      // This is a reflective surface (floor/background)
+      
+      // Calculate reflection direction
+      // For 2.5D, default is upward reflection (simulating floor reflections)
+      vec2 reflectionDir = vec2(0.0, -1.0);
+      
+      // If using normal mapping, calculate reflection from normal
+      if (uUseNormalMap && length(normal - vec3(0.0, 0.0, 1.0)) > 0.1) {
+        // View direction is looking straight down (0, 0, -1)
+        vec3 viewDirSSR = vec3(0.0, 0.0, -1.0);
+        vec3 reflectDir3D = reflect(viewDirSSR, normal);
+        reflectionDir = normalize(reflectDir3D.xy);
+      }
+      
+      // Ray marching to find reflected object
+      vec2 rayOrigin = vTextureCoord;
+      vec2 rayStep = reflectionDir * (1.0 / uCanvasSize.x); // Normalize step by screen size
+      
+      bool hitFound = false;
+      vec2 hitUV = rayOrigin;
+      
+      // March the ray through screen space
+      // Use dynamic loop based on quality setting
+      for (float step = 1.0; step < 100.0; step += 1.0) {
+        // Early exit based on quality uniform
+        if (step >= uSSRQuality) break;
+        
+        // Calculate current ray position
+        vec2 currentUV = rayOrigin + rayStep * step;
+        
+        // Check if ray left screen bounds
+        if (currentUV.x < 0.0 || currentUV.x > 1.0 || currentUV.y < 0.0 || currentUV.y > 1.0) {
+          break;
+        }
+        
+        // Sample depth at current position
+        float sampledDepth = texture2D(uDepthMap, currentUV).r;
+        
+        // Check if we hit an object (depth > threshold) while marching from floor
+        // The ray should find elevated objects to reflect
+        if (sampledDepth > uSSRDepthThreshold) {
+          hitFound = true;
+          hitUV = currentUV;
+          break;
+        }
+        
+        // Early exit if we've traveled too far
+        float distanceTraveled = length((currentUV - rayOrigin) * uCanvasSize);
+        if (distanceTraveled > uSSRMaxDistance) {
+          break;
+        }
+      }
+      
+      // Calculate reflection color
+      if (hitFound) {
+        // Sample the scene color at the hit point (use current finalColor as scene)
+        // In multi-pass rendering, this samples the accumulated lighting
+        vec4 reflectionColor = vec4(finalColor, 1.0); // Use current pixel's final color as proxy
+        
+        float reflectionStrength = 1.0;
+        
+        // Fade out reflections near screen edges
+        vec2 edgeDist = min(hitUV, 1.0 - hitUV) * uCanvasSize.x;
+        float edgeFade = min(edgeDist.x, edgeDist.y) / uSSRFadeEdgeDistance;
+        edgeFade = smoothstep(0.0, 1.0, edgeFade);
+        reflectionStrength *= edgeFade;
+        
+        // Fade based on ray distance (further = weaker)
+        float distanceToHit = length((hitUV - rayOrigin) * uCanvasSize);
+        float distanceFade = 1.0 - smoothstep(0.0, uSSRMaxDistance, distanceToHit);
+        reflectionStrength *= distanceFade;
+        
+        // Blend reflection with scene color
+        float finalStrength = reflectionStrength * uSSRIntensity;
+        finalColor = mix(finalColor, reflectionColor.rgb, finalStrength);
+      } else if (uIBLEnabled) {
+        // Fall back to IBL environment map for missed rays
+        float phi = atan(reflectionDir.y, reflectionDir.x);
+        float theta = acos(0.0); // For 2.5D, we're looking mostly horizontal
+        vec2 envUV = vec2(
+          (phi / (2.0 * 3.14159265359)) + 0.5,
+          theta / 3.14159265359
+        );
+        vec4 reflectionColor = texture2D(uEnvironmentMap, envUV);
+        float fallbackStrength = 0.3 * uIBLIntensity * uSSRIntensity;
+        finalColor = mix(finalColor, reflectionColor.rgb, fallbackStrength);
+      }
+    }
   }
   
   gl_FragColor = vec4(finalColor, diffuseColor.a);
