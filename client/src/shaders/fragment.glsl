@@ -69,9 +69,8 @@ uniform bool uShadowsEnabled;
 // Global Light Mask Control
 uniform bool uMasksEnabled; // Global toggle for all light masks
 uniform float uShadowMaxLength; // Maximum shadow length to prevent extremely long shadows
-uniform float uShadowBias; // Pixels to offset shadow ray to prevent self-shadowing
 uniform float uCurrentSpriteZOrder; // Z-order of current sprite (used for shadows and AO hierarchy)
-// Removed shadow sharpness feature
+// Removed shadow sharpness and shadow bias features
 
 // Occluder Map System (for unlimited shadow casters)
 uniform bool uUseOccluderMap; // Switch between per-caster and occluder map
@@ -264,16 +263,12 @@ float calculateShadowOccluderMap(vec2 lightPos, vec2 pixelPos) {
     startDistance = 1.0; // Don't skip outside sprite - allow normal shadow casting
   }
   
-  // Ray marching with self-shadow avoidance and bias
+  // Ray marching with self-shadow avoidance (self-interval skipping prevents artifacts)
   float stepSize = 1.0; // Sample every pixel
   float eps = 1.5; // Small epsilon for edge cases
   
-  // Apply shadow bias to start position to prevent self-shadowing artifacts
-  // Bias is ADDITIVE to create visible gap between object and shadow
-  float biasedStartDistance = startDistance + uShadowBias;
-  
   for (int i = 1; i < 500; i++) {
-    float distance = biasedStartDistance + float(i - 1) * stepSize;
+    float distance = startDistance + float(i - 1) * stepSize;
     
     // Stop when we reach the pixel
     if (distance >= rayLength - eps) break;

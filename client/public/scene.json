@@ -378,14 +378,14 @@
     "strength": 0.85,
     "maxLength": 150,
     "height": 10,
-    "bias": 15.8
+    "bias": 0
   },
   "ambientOcclusionConfig": {
     "enabled": true,
     "strength": 5.65,
     "radius": 4,
     "samples": 10,
-    "bias": 0
+    "bias": 13
   },
   "performanceSettings": {
     "quality": "high",
