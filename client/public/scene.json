@@ -402,7 +402,7 @@
   },
   "iblConfig": {
     "enabled": true,
-    "intensity": 0.8,
+    "intensity": 0.3,
     "environmentMap": "/sky_boxes/golden_gate_hills_1k.jpg"
   }
 }
