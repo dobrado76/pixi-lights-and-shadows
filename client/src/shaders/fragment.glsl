@@ -92,14 +92,6 @@ uniform bool uIBLEnabled; // Enable/disable IBL
 uniform float uIBLIntensity; // IBL strength multiplier (0.0-5.0)
 uniform sampler2D uEnvironmentMap; // Equirectangular environment map for IBL
 
-// Screen Space Reflections (SSR) System
-uniform bool uSSREnabled; // Enable/disable SSR
-uniform float uSSRIntensity; // SSR reflection strength (0.0-1.0)
-uniform float uSSRMaxDistance; // Maximum ray march distance
-uniform float uSSRStepSize; // Ray march step size
-uniform int uSSRMaxSteps; // Maximum ray march steps
-uniform float uSSRFadeEdge; // Fade reflections at screen edges
-
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 pixelPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
   vec2 relativePos = pixelPos - lightPos;
@@ -1157,55 +1149,6 @@ void main(void) {
     float aoInfluence = mix(0.3, 1.0, 1.0 - diffuseColor.a); // Sprites get 30% AO, background gets full AO
     float aoEffect = mix(1.0, aoFactor, aoInfluence);
     finalColor *= aoEffect;
-  }
-  
-  // Apply Screen Space Reflections (SSR) as optional post-process
-  if (uSSREnabled && uSSRIntensity > 0.0 && finalSmoothness > 0.1) {
-    // Calculate screen UV
-    vec2 screenUV = gl_FragCoord.xy / uCanvasSize;
-    
-    // Calculate reflection direction (view-space)
-    vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0) - worldPos3D);
-    vec3 reflectDir = reflect(-viewDir, normal);
-    
-    // Simple SSR: sample nearby pixels along reflection direction
-    vec3 ssrColor = vec3(0.0);
-    float ssrWeight = 0.0;
-    
-    for (int step = 1; step <= uSSRMaxSteps; step++) {
-      // March along reflection direction in screen space
-      vec2 offset = reflectDir.xy * uSSRStepSize * float(step);
-      vec2 sampleUV = screenUV + offset / uCanvasSize;
-      
-      // Check bounds
-      if (sampleUV.x < 0.0 || sampleUV.x > 1.0 || sampleUV.y < 0.0 || sampleUV.y > 1.0) {
-        break;
-      }
-      
-      // Sample neighboring pixel (approximate by sampling current texture)
-      // Note: This is a simplified SSR - full SSR would need a scene texture
-      vec4 sampleColor = texture2D(uDiffuse, vTextureCoord + offset * 0.01);
-      ssrColor += sampleColor.rgb;
-      ssrWeight += 1.0;
-      
-      // Stop if we've marched too far
-      if (length(offset) > uSSRMaxDistance) {
-        break;
-      }
-    }
-    
-    if (ssrWeight > 0.0) {
-      ssrColor /= ssrWeight;
-      
-      // Fade at edges
-      vec2 edgeFade = smoothstep(0.0, uSSRFadeEdge, screenUV) * 
-                      smoothstep(1.0, 1.0 - uSSRFadeEdge, screenUV);
-      float edgeFactor = edgeFade.x * edgeFade.y;
-      
-      // Mix SSR based on smoothness and metallic
-      float ssrStrength = finalSmoothness * finalMetallic * uSSRIntensity * edgeFactor;
-      finalColor = mix(finalColor, ssrColor, ssrStrength);
-    }
   }
   
   gl_FragColor = vec4(finalColor, diffuseColor.a);
