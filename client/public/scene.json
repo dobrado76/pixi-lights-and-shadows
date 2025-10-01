@@ -385,7 +385,7 @@
     "strength": 5.65,
     "radius": 4,
     "samples": 10,
-    "bias": 14
+    "bias": 0
   },
   "performanceSettings": {
     "quality": "high",
