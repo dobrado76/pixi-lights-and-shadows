@@ -3,9 +3,6 @@ import * as PIXI from 'pixi.js';
 import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import vertexShaderSource from '../shaders/vertex.glsl?raw';
 import fragmentShaderSource from '../shaders/fragment.glsl?raw';
-import depthVertexShaderSource from '../shaders/depth_vertex.glsl?raw';
-import depthFragmentShaderSource from '../shaders/depth_fragment.glsl?raw';
-import ssrFragmentShaderSource from '../shaders/ssr_fragment.glsl?raw';
 import { ShaderParams } from '../App';
 import { Light, ShadowConfig, AmbientOcclusionConfig, SSRConfig } from '@/lib/lights';
 import { SceneManager, SceneSprite } from './Sprite';
@@ -847,44 +844,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       console.log('🌑 Occluder render target initialized for unlimited shadow casters');
       
-      // Initialize SSR (Screen Space Reflections) render targets
-      depthRenderTargetRef.current = PIXI.RenderTexture.create({
-        width: shaderParams.canvasWidth,
-        height: shaderParams.canvasHeight
-      });
-      
-      ssrRenderTargetRef.current = PIXI.RenderTexture.create({
-        width: shaderParams.canvasWidth,
-        height: shaderParams.canvasHeight
-      });
-      
-      // Create full-screen quad for SSR pass
-      const ssrGeometry = new PIXI.Geometry()
-        .addAttribute('aVertexPosition', [-1, -1, 1, -1, 1, 1, -1, 1], 2)
-        .addAttribute('aTextureCoord', [0, 0, 1, 0, 1, 1, 0, 1], 2)
-        .addIndex([0, 1, 2, 0, 2, 3]);
-      
-      const ssrShader = PIXI.Shader.from(vertexShaderSource, ssrFragmentShaderSource, {
-        uSceneColor: renderTargetRef.current,
-        uDepthMap: depthRenderTargetRef.current,
-        uNormalMap: PIXI.Texture.WHITE,
-        uEnvironmentMap: PIXI.Texture.WHITE,
-        uSSREnabled: false,
-        uSSRIntensity: 0.5,
-        uMaxRayDistance: 200,
-        uStepSize: 2.0,
-        uMaxSteps: 50,
-        uFadeEdgeDistance: 50,
-        uDepthThreshold: 0.01,
-        uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
-        uUseNormalMap: false,
-        uIBLEnabled: false,
-        uIBLIntensity: 1.0
-      });
-      
-      ssrQuadMeshRef.current = new PIXI.Mesh(ssrGeometry, ssrShader);
-      
-      console.log('✨ SSR render targets and quad initialized');
       } else {
         console.warn('Canvas element not available for PIXI initialization');
         return; // Exit gracefully instead of throwing
@@ -1980,112 +1939,6 @@ const PixiDemo = (props: PixiDemoProps) => {
     // BYPASS requestAnimationFrame limitation with high-frequency timer
     let uncappedTimer: NodeJS.Timeout | null = null;
     let isRunning = true;
-    
-    // Depth Pass: Render sprite zOrder as depth/height map for SSR
-    const renderDepthPass = () => {
-      if (!depthRenderTargetRef.current || !sceneContainerRef.current) return;
-      if (!ssrConfigRef.current || !ssrConfigRef.current.enabled || !performanceSettings.enableSSR) return;
-      
-      const allSprites = sceneManagerRef.current?.getAllSprites() || [];
-      if (allSprites.length === 0) return;
-      
-      // Calculate max zOrder for normalization
-      const maxZOrder = Math.max(...allSprites.map(s => s.definition.zOrder), 10);
-      const minZOrder = Math.min(...allSprites.map(s => s.definition.zOrder), -10);
-      const zOrderRange = maxZOrder - minZOrder;
-      const maxSceneHeight = zOrderRange > 0 ? zOrderRange : 20;
-      
-      // Store original shaders and temporarily replace with depth shader
-      const originalShaders: PIXI.Shader[] = [];
-      
-      sceneContainerRef.current.children.forEach((child, index) => {
-        const mesh = child as PIXI.Mesh;
-        if (mesh.shader) {
-          originalShaders[index] = mesh.shader;
-          
-          // Get sprite definition for zOrder
-          const spriteDefinition = (mesh as any).definition;
-          const zOrder = spriteDefinition?.zOrder || 0;
-          
-          // Convert zOrder to height (map from zOrder range to 0-maxHeight)
-          const objectHeight = (zOrder - minZOrder) * 10.0;
-          
-          // Create depth shader with current sprite's height
-          const depthShader = PIXI.Shader.from(depthVertexShaderSource, depthFragmentShaderSource, {
-            uSampler: (mesh.shader.uniforms as any).uSampler,
-            uObjectHeight: objectHeight,
-            uMaxSceneHeight: maxSceneHeight,
-            uAlpha: spriteDefinition?.visible ? 1.0 : 0.0,
-            uTextureMatrix: (mesh.shader.uniforms as any).uTextureMatrix,
-            projectionMatrix: mesh.shader.uniforms.projectionMatrix,
-            translationMatrix: mesh.shader.uniforms.translationMatrix
-          });
-          
-          mesh.shader = depthShader;
-        }
-      });
-      
-      // Render to depth buffer
-      pixiApp.renderer.render(sceneContainerRef.current, {
-        renderTexture: depthRenderTargetRef.current,
-        clear: true
-      });
-      
-      // Restore original lighting shaders
-      sceneContainerRef.current.children.forEach((child, index) => {
-        const mesh = child as PIXI.Mesh;
-        if (originalShaders[index]) {
-          mesh.shader = originalShaders[index];
-        }
-      });
-    };
-    
-    // SSR Pass: Apply screen space reflections using depth map
-    const renderSSRPass = () => {
-      if (!ssrRenderTargetRef.current || !ssrQuadMeshRef.current || !renderTargetRef.current) return;
-      if (!ssrConfigRef.current || !ssrConfigRef.current.enabled || !performanceSettings.enableSSR) {
-        // SSR disabled - show normal lit scene
-        if (displaySpriteRef.current && renderTargetRef.current) {
-          displaySpriteRef.current.texture = renderTargetRef.current;
-        }
-        return;
-      }
-      
-      const currentSSRConfig = ssrConfigRef.current;
-      const iblConfig = (sceneConfigRef.current as any).iblConfig || { enabled: false, intensity: 1.0 };
-      
-      // Update SSR shader uniforms
-      if (ssrQuadMeshRef.current.shader && ssrQuadMeshRef.current.shader.uniforms) {
-        const uniforms = ssrQuadMeshRef.current.shader.uniforms;
-        uniforms.uSceneColor = renderTargetRef.current;
-        uniforms.uDepthMap = depthRenderTargetRef.current;
-        uniforms.uSSREnabled = currentSSRConfig.enabled && performanceSettings.enableSSR;
-        uniforms.uSSRIntensity = currentSSRConfig.intensity;
-        uniforms.uMaxRayDistance = currentSSRConfig.maxRayDistance;
-        uniforms.uStepSize = currentSSRConfig.stepSize;
-        uniforms.uMaxSteps = currentSSRConfig.maxSteps;
-        uniforms.uFadeEdgeDistance = currentSSRConfig.fadeEdgeDistance;
-        uniforms.uDepthThreshold = currentSSRConfig.depthThreshold;
-        uniforms.uCanvasSize = [shaderParams.canvasWidth, shaderParams.canvasHeight];
-        uniforms.uUseNormalMap = false; // TODO: Could integrate with normal mapping later
-        uniforms.uIBLEnabled = iblConfig.enabled;
-        uniforms.uIBLIntensity = iblConfig.intensity;
-      }
-      
-      // Render SSR quad to SSR render target
-      const ssrContainer = new PIXI.Container();
-      ssrContainer.addChild(ssrQuadMeshRef.current);
-      
-      pixiApp.renderer.render(ssrContainer, {
-        renderTexture: ssrRenderTargetRef.current,
-        clear: true
-      });
-      
-      // Apply SSR result back to display
-      if (displaySpriteRef.current) {
-        displaySpriteRef.current.texture = ssrRenderTargetRef.current;
-      }
-    };
     
     const ticker = () => {
       frameCountRef.current++;
