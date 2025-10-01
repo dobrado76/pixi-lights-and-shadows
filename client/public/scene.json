@@ -381,10 +381,10 @@
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 5.65,
+    "strength": 4.85,
     "radius": 4,
-    "samples": 10,
-    "bias": 13
+    "samples": 6,
+    "bias": 16.5
   },
   "performanceSettings": {
     "quality": "high",
@@ -407,7 +407,7 @@
   },
   "ssrConfig": {
     "enabled": true,
-    "intensity": 0.6,
+    "intensity": 0.25,
     "maxRayDistance": 200,
     "stepSize": 2,
     "maxSteps": 50,

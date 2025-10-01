@@ -2026,9 +2026,20 @@ const PixiDemo = (props: PixiDemoProps) => {
     // SSR Pass: Apply screen space reflections using depth map
     const renderSSRPass = () => {
       if (!ssrRenderTargetRef.current || !ssrQuadMeshRef.current || !renderTargetRef.current) return;
-      if (!ssrConfigRef.current || !ssrConfigRef.current.enabled || !performanceSettings.enableSSR) return;
+      if (!ssrConfigRef.current || !ssrConfigRef.current.enabled || !performanceSettings.enableSSR) {
+        // SSR disabled - show normal lit scene
+        if (displaySpriteRef.current && renderTargetRef.current) {
+          displaySpriteRef.current.texture = renderTargetRef.current;
+        }
+        return;
+      }
       
       const currentSSRConfig = ssrConfigRef.current;
+      console.log('🔮 SSR Pass executing:', { 
+        intensity: currentSSRConfig.intensity,
+        maxSteps: currentSSRConfig.maxSteps,
+        enabled: currentSSRConfig.enabled
+      });
       const iblConfig = (sceneConfigRef.current as any).iblConfig || { enabled: false, intensity: 1.0 };
       
       // Update SSR shader uniforms
@@ -2155,13 +2166,14 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniformsDirtyRef.current = false;
       }
       
+      // Apply SSR pass LAST (after all lighting) if enabled
+      renderSSRPass();
+      
       // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
+      // MUST be AFTER SSR pass so displaySprite shows the SSR result
       if (pixiApp && pixiApp.renderer) {
         pixiApp.render();
       }
-      
-      // Apply SSR pass LAST (after all lighting) if enabled
-      renderSSRPass();
     };
 
     // Use PIXI ticker (capped by requestAnimationFrame)
