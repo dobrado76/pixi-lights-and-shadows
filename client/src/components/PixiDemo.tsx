@@ -2035,11 +2035,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
       
       const currentSSRConfig = ssrConfigRef.current;
-      console.log('🔮 SSR Pass executing:', { 
-        intensity: currentSSRConfig.intensity,
-        maxSteps: currentSSRConfig.maxSteps,
-        enabled: currentSSRConfig.enabled
-      });
       const iblConfig = (sceneConfigRef.current as any).iblConfig || { enabled: false, intensity: 1.0 };
       
       // Update SSR shader uniforms

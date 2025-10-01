@@ -37,8 +37,10 @@ void main(void) {
     // Get depth at current pixel
     float pixelDepth = texture2D(uDepthMap, vTextureCoord).r;
     
-    // If depth is 0 (background/floor), no reflection needed
-    if (pixelDepth < 0.01) {
+    // FLOOR REFLECTIONS: Only pixels with LOW depth (floor/background) show reflections
+    // Objects at HIGH depth are what get reflected
+    if (pixelDepth > 0.3) {
+        // This is an object, not a reflective surface - just show scene color
         gl_FragColor = sceneColor;
         return;
     }
@@ -81,9 +83,9 @@ void main(void) {
         // Sample depth at current position
         float sampledDepth = texture2D(uDepthMap, currentUV).r;
         
-        // Check if we hit something taller than our current pixel
-        // In 2.5D, "higher" objects have greater depth values
-        if (sampledDepth > pixelDepth + uDepthThreshold) {
+        // Check if we hit an object (depth > 0.3) while marching from floor (depth < 0.3)
+        // The ray should find elevated objects to reflect
+        if (sampledDepth > 0.3) {
             hitFound = true;
             hitUV = currentUV;
             hitDepth = sampledDepth;

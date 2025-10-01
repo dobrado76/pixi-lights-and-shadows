@@ -407,7 +407,7 @@
   },
   "ssrConfig": {
     "enabled": true,
-    "intensity": 0.25,
+    "intensity": 0.4,
     "maxRayDistance": 200,
     "stepSize": 2,
     "maxSteps": 50,
