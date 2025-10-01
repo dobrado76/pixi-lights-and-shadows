@@ -2170,11 +2170,10 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniformsDirtyRef.current = false;
       }
       
-      // SSR functionality temporarily disabled - needs proper architecture
-      // Scene renders normally to stage with additive blending
+      // SSR disabled to preserve working render
+      // (SSR needs proper architecture that doesn't break normal rendering)
       
       // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
-      // MUST be AFTER SSR pass so displaySprite shows the SSR result
       if (pixiApp && pixiApp.renderer) {
         pixiApp.render();
       }
