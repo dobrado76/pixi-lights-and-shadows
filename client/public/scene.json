@@ -119,13 +119,13 @@
         "image": "/textures/test1.png",
         "normal": "/textures/test1Normal.png",
         "useNormalMap": true,
-        "metallic": 0,
-        "smoothness": 0.5
+        "metallic": 0.34,
+        "smoothness": 0.41
       },
       "transform": {
         "position": {
-          "x": 82,
-          "y": 420
+          "x": 242,
+          "y": 373
         },
         "rotation": 0,
         "scale": 1
@@ -173,13 +173,13 @@
         "image": "/textures/test3.png",
         "normal": "/textures/test3Normal.png",
         "useNormalMap": true,
-        "metallic": 0,
-        "smoothness": 0.5
+        "metallic": 0.36,
+        "smoothness": 0.45
       },
       "transform": {
         "position": {
-          "x": 293,
-          "y": 424
+          "x": 242,
+          "y": 295
         },
         "rotation": 0,
         "scale": 1
@@ -402,6 +402,6 @@
   "iblConfig": {
     "enabled": true,
     "intensity": 0.3,
-    "environmentMap": "/sky_boxes/cobblestone_street_night_1k.jpg"
+    "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg"
   }
 }
