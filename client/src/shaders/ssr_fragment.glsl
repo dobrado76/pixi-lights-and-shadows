@@ -28,6 +28,13 @@ void main(void) {
     // Start with original scene color
     vec4 sceneColor = texture2D(uSceneColor, vTextureCoord);
     
+    // DEBUG: Add red tint when SSR is enabled to confirm shader is running
+    if (uSSREnabled && uSSRIntensity > 0.0) {
+        // Tint red to show SSR is active
+        gl_FragColor = vec4(sceneColor.rgb + vec3(0.3, 0.0, 0.0), sceneColor.a);
+        return;
+    }
+    
     // If SSR is disabled, just output scene color
     if (!uSSREnabled || uSSRIntensity <= 0.0) {
         gl_FragColor = sceneColor;
