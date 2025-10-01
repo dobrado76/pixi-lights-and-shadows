@@ -378,7 +378,7 @@
     "strength": 0.85,
     "maxLength": 150,
     "height": 10,
-    "bias": 2.3
+    "bias": 15.8
   },
   "ambientOcclusionConfig": {
     "enabled": true,
