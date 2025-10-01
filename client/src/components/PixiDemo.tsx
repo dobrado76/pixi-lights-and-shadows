@@ -546,6 +546,15 @@ const PixiDemo = (props: PixiDemoProps) => {
   // Multi-pass lighting composer
   const renderMultiPass = (lights: Light[]) => {
     if (!pixiApp || !renderTargetRef.current || !sceneContainerRef.current || !displaySpriteRef.current) return;
+    
+    // Safety check: Don't render if shaders don't have valid uniforms yet
+    if (shadersRef.current.length === 0 || !shadersRef.current[0].uniforms) {
+      // Scene not fully loaded yet, show normal scene for now
+      if (displaySpriteRef.current && renderTargetRef.current) {
+        displaySpriteRef.current.texture = renderTargetRef.current;
+      }
+      return;
+    }
 
     const enabledLights = lights.filter(light => light.enabled && light.type !== 'ambient');
 
@@ -858,6 +867,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       const ssrShader = PIXI.Shader.from(vertexShaderSource, ssrFragmentShaderSource, {
         uSceneColor: renderTargetRef.current,
         uDepthMap: depthRenderTargetRef.current,
+        uNormalMap: PIXI.Texture.WHITE,
+        uEnvironmentMap: PIXI.Texture.WHITE,
         uSSREnabled: false,
         uSSRIntensity: 0.5,
         uMaxRayDistance: 200,
@@ -1936,11 +1947,11 @@ const PixiDemo = (props: PixiDemoProps) => {
           }
         }
 
-        // Ensure mesh is properly positioned for rendering
+        // Keep meshes in scene container for rendering to texture
         mesh.blendMode = PIXI.BLEND_MODES.NORMAL;
-        if (mesh.parent !== pixiApp.stage) {
+        if (mesh.parent !== sceneContainerRef.current) {
           if (mesh.parent) mesh.parent.removeChild(mesh);
-          pixiApp.stage.addChild(mesh);
+          if (sceneContainerRef.current) sceneContainerRef.current.addChild(mesh);
         }
       });
       
@@ -1951,10 +1962,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         }
       });
       
-      // Single unified render call
-      pixiApp.render();
-      
-      // Render is handled by animation loop - no need for double rendering
+      // Rendering is handled by animation loop
     }
   }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings, sceneConfig]);
 

@@ -407,10 +407,10 @@
   },
   "ssrConfig": {
     "enabled": true,
-    "intensity": 0.4,
-    "maxRayDistance": 200,
+    "intensity": 0.45,
+    "maxRayDistance": 240,
     "stepSize": 2,
-    "maxSteps": 50,
+    "maxSteps": 40,
     "fadeEdgeDistance": 50,
     "depthThreshold": 0.01
   }
