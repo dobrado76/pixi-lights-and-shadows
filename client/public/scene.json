@@ -73,7 +73,7 @@
           "x": 124,
           "y": 86
         },
-        "rotation": 0,
+        "rotation": 5.654866776461628,
         "scale": 1
       },
       "sprite": {
@@ -97,15 +97,15 @@
       },
       "transform": {
         "position": {
-          "x": 87,
-          "y": 309
+          "x": 111,
+          "y": 321
         },
-        "rotation": 0,
+        "rotation": 4.363323129985823,
         "scale": 1
       },
       "sprite": {
         "pivot": {
-          "preset": "custom-offset",
+          "preset": "middle-center",
           "offsetX": 0,
           "offsetY": 0
         },
@@ -200,8 +200,8 @@
         "image": "/textures/block.png",
         "normal": "/textures/blockNormalMap.jpg",
         "useNormalMap": true,
-        "metallic": 0,
-        "smoothness": 0.5
+        "metallic": 0.38,
+        "smoothness": 0.42
       },
       "transform": {
         "position": {
@@ -403,6 +403,6 @@
   "iblConfig": {
     "enabled": true,
     "intensity": 0.8,
-    "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg"
+    "environmentMap": "/sky_boxes/golden_gate_hills_1k.jpg"
   }
 }

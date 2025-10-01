@@ -50,6 +50,15 @@ Experience the full lighting and shadow system in action with interactive contro
 - **Material Property Integration**: Seamless integration with lighting, shadows, and normal mapping systems
 - **Performance Optimized**: Efficient GPU utilization for real-time PBR calculations
 
+### 🌍 Image-Based Lighting (IBL) System
+- **Environmental Lighting**: Realistic ambient lighting and reflections from environment maps
+- **Equirectangular Environment Maps**: Support for standard HDR/LDR skybox textures
+- **PBR Integration**: Physically-based diffuse irradiance and specular reflections
+- **Metallic Surface Reflections**: Enhanced reflections on metallic materials using environment map
+- **Roughness-Based Blur**: Automatic environment map blurring based on surface roughness
+- **Intensity Control**: Real-time adjustment of IBL contribution (0.0 - 5.0 range)
+- **Performance Friendly**: Optimized shader sampling with configurable quality settings
+
 ### 📄 Unified JSON Configuration System
 - **Single Configuration File**: Everything stored in `scene.json` - sprites, lights, and shadow settings in one place
 - **Real-Time UI Editing**: All scene objects and lighting parameters editable through interactive controls
@@ -278,6 +287,28 @@ If no pivot is specified, sprites use `"top-left"` pivot, meaning the position c
 - **radius**: Sampling radius for occlusion detection
 - **samples**: Number of samples for AO calculation (4-16)
 - **bias**: Bias to prevent self-occlusion
+
+### Image-Based Lighting (IBL) Configuration
+- **enabled**: Global IBL system on/off
+- **intensity**: IBL contribution strength (0.0 - 5.0, recommended: 0.3 - 1.0)
+- **environmentMap**: Path to equirectangular environment map texture (relative to public/)
+
+**Example Configuration:**
+```json
+"iblConfig": {
+  "enabled": true,
+  "intensity": 0.4,
+  "environmentMap": "/sky_boxes/golden_gate_hills_1k.jpg"
+}
+```
+
+**Usage Notes:**
+- IBL provides realistic environmental reflections and indirect lighting
+- Most visible on metallic and smooth surfaces (spheres, metal objects)
+- Lower intensity values (0.3 - 0.8) provide subtle enhancement
+- Higher intensity values (1.0+) create strong reflections and bright highlights
+- Works best with high-quality equirectangular HDR environment maps
+- Environment maps should be placed in `client/public/sky_boxes/` directory
 
 ## 🚀 Quick Start
 
