@@ -16,6 +16,7 @@ import {
   EyeOff,
   Moon,
   Contrast,
+  Waves,
 } from "lucide-react";
 import { SceneConfig } from "./SceneStateManager";
 
@@ -79,6 +80,19 @@ const DynamicLightControls = ({
       enabled: false,
       intensity: 1.0,
       environmentMap: "/sky_boxes/golden_gate_hills_1k.hdr",
+    },
+  );
+  const [localPlanarReflectionConfig, setLocalPlanarReflectionConfig] = useState<{
+    enabled: boolean;
+    strength: number;
+    blurAmount: number;
+    reflectionPlaneY: number;
+  }>(
+    (sceneConfig as any).planarReflectionConfig || {
+      enabled: false,
+      strength: 0.5,
+      blurAmount: 1,
+      reflectionPlaneY: 300,
     },
   );
   const [availableSkyBoxes, setAvailableSkyBoxes] = useState<string[]>([]);
@@ -996,6 +1010,163 @@ const DynamicLightControls = ({
                   <p className="text-[10px] text-muted-foreground mt-1 leading-tight">
                     Environmental lighting adds realistic ambient reflections.
                     Metals will reflect the environment.
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Planar Reflection Controls - Floor/Water reflections */}
+            <div className="mt-3 pt-2 border-t border-border/50">
+              <div className="flex items-center space-x-2 mb-2">
+                <Waves size={12} className="text-muted-foreground" />
+                <h5 className="text-xs font-medium text-muted-foreground">
+                  Planar Reflections
+                </h5>
+                <button
+                  onClick={() => {
+                    const newConfig = {
+                      ...localPlanarReflectionConfig,
+                      enabled: !localPlanarReflectionConfig.enabled,
+                    };
+                    setLocalPlanarReflectionConfig(newConfig);
+                    const updatedScene = {
+                      ...sceneConfig,
+                      planarReflectionConfig: newConfig,
+                    };
+                    onSceneConfigChange(updatedScene);
+                    debouncedSave(
+                      localLights,
+                      localAmbient,
+                      localShadowConfig,
+                      localAOConfig,
+                      updatedScene,
+                    );
+                  }}
+                  className={`ml-auto p-1 rounded text-xs ${
+                    localPlanarReflectionConfig.enabled
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                  data-testid="button-toggle-reflection"
+                >
+                  {localPlanarReflectionConfig.enabled ? (
+                    <Eye size={10} />
+                  ) : (
+                    <EyeOff size={10} />
+                  )}
+                </button>
+              </div>
+
+              {localPlanarReflectionConfig.enabled && (
+                <>
+                  <div className="flex items-center space-x-2 mb-1">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Strength: {localPlanarReflectionConfig.strength.toFixed(2)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={localPlanarReflectionConfig.strength}
+                      onChange={(e) => {
+                        const newStrength = parseFloat(e.target.value);
+                        const newConfig = {
+                          ...localPlanarReflectionConfig,
+                          strength: newStrength,
+                        };
+                        setLocalPlanarReflectionConfig(newConfig);
+                        const updatedScene = {
+                          ...sceneConfig,
+                          planarReflectionConfig: newConfig,
+                        };
+                        onSceneConfigChange(updatedScene);
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          localAOConfig,
+                          updatedScene,
+                        );
+                      }}
+                      className="flex-1"
+                      data-testid="slider-reflection-strength"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2 mb-1">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Blur: {localPlanarReflectionConfig.blurAmount.toFixed(1)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="5"
+                      step="0.5"
+                      value={localPlanarReflectionConfig.blurAmount}
+                      onChange={(e) => {
+                        const newBlur = parseFloat(e.target.value);
+                        const newConfig = {
+                          ...localPlanarReflectionConfig,
+                          blurAmount: newBlur,
+                        };
+                        setLocalPlanarReflectionConfig(newConfig);
+                        const updatedScene = {
+                          ...sceneConfig,
+                          planarReflectionConfig: newConfig,
+                        };
+                        onSceneConfigChange(updatedScene);
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          localAOConfig,
+                          updatedScene,
+                        );
+                      }}
+                      className="flex-1"
+                      data-testid="slider-reflection-blur"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2 mb-1">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Plane Y: {localPlanarReflectionConfig.reflectionPlaneY.toFixed(0)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="600"
+                      step="10"
+                      value={localPlanarReflectionConfig.reflectionPlaneY}
+                      onChange={(e) => {
+                        const newPlaneY = parseFloat(e.target.value);
+                        const newConfig = {
+                          ...localPlanarReflectionConfig,
+                          reflectionPlaneY: newPlaneY,
+                        };
+                        setLocalPlanarReflectionConfig(newConfig);
+                        const updatedScene = {
+                          ...sceneConfig,
+                          planarReflectionConfig: newConfig,
+                        };
+                        onSceneConfigChange(updatedScene);
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          localAOConfig,
+                          updatedScene,
+                        );
+                      }}
+                      className="flex-1"
+                      data-testid="slider-reflection-plane-y"
+                    />
+                  </div>
+
+                  <p className="text-[10px] text-muted-foreground mt-1 leading-tight">
+                    Simulates reflections on flat surfaces like floors and water.
+                    Adjust Plane Y to match your floor position.
                   </p>
                 </>
               )}
