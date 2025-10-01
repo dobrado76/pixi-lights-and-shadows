@@ -133,7 +133,7 @@ export const getOptimalSettings = (device: DeviceInfo): PerformanceSettings => {
       return {
         quality: 'high',
         resolution: 1.0,
-        maxLights: 999, // No limit for high-end systems - let them use 50+ lights!
+        maxLights: 128, // Maximum realistic light count for high-end systems
         enableShadows: true,
         enableAmbientOcclusion: true,
         enableNormalMapping: true,
@@ -312,7 +312,7 @@ export class AdaptiveQuality {
         ...this.currentSettings,
         quality: 'high',
         resolution: 1.0,
-        maxLights: 999, // No limit for high-end performance
+        maxLights: 128, // Maximum realistic light count for high performance
         enableAmbientOcclusion: true,
         enableLightMasks: true
       };

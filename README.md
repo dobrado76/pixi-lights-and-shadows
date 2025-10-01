@@ -168,7 +168,7 @@ All scene, lighting, shadow, and performance data is stored in a single JSON fil
   "performanceSettings": {
     "quality": "high",
     "resolution": 1,
-    "maxLights": 999,
+    "maxLights": 128,
     "enableShadows": true,
     "enableAmbientOcclusion": true,
     "enableNormalMapping": true,
@@ -270,7 +270,7 @@ If no pivot is specified, sprites use `"top-left"` pivot, meaning the position c
 ### Performance Settings
 - **quality**: Performance preset ("low", "medium", "high")
 - **resolution**: Rendering resolution multiplier (0.5 - 1.0)
-- **maxLights**: Maximum number of lights to process (2, 4, or 999 for unlimited)
+- **maxLights**: Maximum number of lights to process (2, 4, or 128 for unlimited)
 - **enableShadows**: Global shadow system toggle
 - **enableAmbientOcclusion**: Ambient occlusion effects toggle
 - **enableNormalMapping**: Normal map rendering toggle

@@ -663,7 +663,7 @@ function App() {
                               onClick={() => handlePerformanceSettingsChange({
                                 quality: 'high',
                                 resolution: 1.0,
-                                maxLights: 999, // No limit for high quality - let your RTX 4080 shine!
+                                maxLights: 128, // Maximum realistic light count for high quality
                                 enableShadows: true,
                                 enableAmbientOcclusion: true,
                                 enableNormalMapping: true,

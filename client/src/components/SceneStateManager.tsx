@@ -81,7 +81,7 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
   const [performanceSettings, setPerformanceSettings] = useState<PerformanceSettings & { manualOverride?: boolean }>({
     quality: 'high',
     resolution: 1,
-    maxLights: 999,
+    maxLights: 128,
     enableShadows: true,
     enableAmbientOcclusion: true,
     enableNormalMapping: true,

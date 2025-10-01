@@ -146,8 +146,8 @@
         "image": "/textures/test2.png",
         "normal": "/textures/test2Normal.png",
         "useNormalMap": true,
-        "metallic": 0.7,
-        "smoothness": 0.45
+        "metallic": 0.41,
+        "smoothness": 0.41
       },
       "transform": {
         "position": {
@@ -390,9 +390,9 @@
   "performanceSettings": {
     "quality": "high",
     "resolution": 1,
-    "maxLights": 999,
+    "maxLights": 128,
     "enableShadows": true,
-    "enableAmbientOcclusion": false,
+    "enableAmbientOcclusion": true,
     "enableNormalMapping": true,
     "enableLightMasks": true,
     "textureScale": 1,
