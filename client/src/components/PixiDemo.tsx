@@ -2164,6 +2164,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniformsDirtyRef.current = false;
       }
       
+      // Render multi-pass lighting to render target FIRST
+      renderMultiPass(lightsConfig);
+      
       // Apply SSR pass LAST (after all lighting) if enabled
       renderSSRPass();
       
