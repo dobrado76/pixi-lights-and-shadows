@@ -68,15 +68,15 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
   const [shadowConfig, setShadowConfig] = useState<ShadowConfig>({
     enabled: true,
     strength: 0.7,
-    maxLength: 200,
+    maxLength: 120,
     height: 10,
   });
   const [ambientOcclusionConfig, setAmbientOcclusionConfig] = useState<AmbientOcclusionConfig>({
-    enabled: false,
-    strength: 0.3,
-    radius: 25,
-    samples: 8,
-    bias: 2.0,
+    enabled: true, // CRITICAL: Demo must show all features - default ON
+    strength: 5.65,
+    radius: 4,
+    samples: 10,
+    bias: 14,
   });
   const [performanceSettings, setPerformanceSettings] = useState<PerformanceSettings & { manualOverride?: boolean }>({
     quality: 'high',

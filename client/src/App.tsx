@@ -52,21 +52,21 @@ function App() {
     color: { r: 0.4, g: 0.4, b: 0.4 }
   });
   
-  // Shadow configuration state
+  // Shadow configuration state - DEMO MODE: Match scene.json defaults
   const [shadowConfig, setShadowConfig] = useState<ShadowConfig>({
     enabled: true,
     strength: 0.7,
-    maxLength: 200,
+    maxLength: 120,
     height: 10,
   });
 
-  // Ambient Occlusion configuration state
+  // Ambient Occlusion configuration state - DEMO MODE: All features ON by default
   const [ambientOcclusionConfig, setAmbientOcclusionConfig] = useState<AmbientOcclusionConfig>({
-    enabled: false,
-    strength: 0.3,
-    radius: 25,
-    samples: 8,
-    bias: 2.0,
+    enabled: true, // CRITICAL: Demo must show all features - default ON
+    strength: 5.65,
+    radius: 4,
+    samples: 10,
+    bias: 14,
   });
 
   // Scene configuration state
