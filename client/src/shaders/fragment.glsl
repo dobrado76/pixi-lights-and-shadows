@@ -100,6 +100,7 @@ uniform float uSSRQuality; // Number of ray march steps
 uniform float uSSRFadeEdgeDistance; // Distance from edges where reflections fade
 uniform float uSSRDepthThreshold; // Depth threshold for hit detection
 uniform sampler2D uDepthMap; // Depth buffer (sprite heights from zOrder)
+uniform sampler2D uAccumulatedScene; // Accumulated lighting result for reflections
 
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 pixelPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
@@ -1224,9 +1225,8 @@ void main(void) {
       
       // Calculate reflection color
       if (hitFound) {
-        // Sample the scene color at the hit point (use current finalColor as scene)
-        // In multi-pass rendering, this samples the accumulated lighting
-        vec4 reflectionColor = vec4(finalColor, 1.0); // Use current pixel's final color as proxy
+        // Sample the accumulated scene at the hit point for proper reflections
+        vec4 reflectionColor = texture2D(uAccumulatedScene, hitUV);
         
         float reflectionStrength = 1.0;
         

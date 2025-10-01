@@ -667,11 +667,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       depthContainer.addChild(mesh);
     });
     
-    // Render depth map
+    // Render depth map (clears to black by default - depth = 0 for background)
     pixiApp.renderer.render(depthContainer, {
       renderTexture: depthRenderTargetRef.current,
-      clear: true,
-      clearColor: [0, 0, 0, 1] // Clear to black (depth = 0, background)
+      clear: true
     });
     
     // Clean up
@@ -1795,6 +1794,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
       uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
       uniforms.uDepthMap = depthRenderTargetRef.current || PIXI.Texture.WHITE;
+      uniforms.uAccumulatedScene = renderTargetRef.current || PIXI.Texture.WHITE;
       
       
       // Per-sprite AO settings will be set individually for each sprite
@@ -2000,6 +2000,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             shader.uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
             shader.uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
             shader.uniforms.uDepthMap = depthRenderTargetRef.current;
+            shader.uniforms.uAccumulatedScene = renderTargetRef.current || PIXI.Texture.WHITE;
             
             // Occluder map setup complete - directional lights handled by normal uniform flow
           }
