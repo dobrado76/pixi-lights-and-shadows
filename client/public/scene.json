@@ -402,14 +402,14 @@
   },
   "iblConfig": {
     "enabled": true,
-    "intensity": 0.3,
+    "intensity": 0.4,
     "environmentMap": "/sky_boxes/golden_gate_hills_1k.jpg"
   },
   "ssrConfig": {
     "enabled": false,
     "resolutionScale": 0.5,
     "marchSteps": 32,
-    "stride": 2.0,
+    "stride": 2,
     "strength": 0.8,
     "maxDistance": 400,
     "fadeEdgeDistance": 100
