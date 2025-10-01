@@ -992,11 +992,6 @@ const DynamicLightControls = ({
                       data-testid="slider-ibl-intensity"
                     />
                   </div>
-
-                  <p className="text-[10px] text-muted-foreground mt-1 leading-tight">
-                    Environmental lighting adds realistic ambient reflections.
-                    Metals will reflect the environment.
-                  </p>
                 </>
               )}
             </div>
