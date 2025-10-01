@@ -956,7 +956,12 @@ const PixiDemo = (props: PixiDemoProps) => {
 
   // Setup demo content when PIXI app is ready - initial load only
   useEffect(() => {
-    if (!pixiApp || !pixiApp.stage || !sceneConfig.sprites || Object.keys(sceneConfig.sprites).length === 0 || lightsConfig.length === 0) {
+    // Guard: Wait until ALL configs are loaded before creating meshes
+    if (!pixiApp || !pixiApp.stage || !sceneConfig.sprites || Object.keys(sceneConfig.sprites).length === 0) {
+      return;
+    }
+    if (!lightsConfig || lightsConfig.length === 0 || !ambientLight || !shadowConfig || !ambientOcclusionConfig) {
+      console.log('⏳ Waiting for all configs to load...');
       return;
     }
 
@@ -1955,14 +1960,33 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Use additive blending for multi-light rendering
         mesh.blendMode = PIXI.BLEND_MODES.ADD;
         
-        // Add meshes directly to stage for normal rendering
-        if (mesh.parent !== pixiApp.stage) {
+        // Add meshes to sceneContainer for texture-based rendering
+        if (sceneContainerRef.current && mesh.parent !== sceneContainerRef.current) {
           if (mesh.parent) mesh.parent.removeChild(mesh);
-          pixiApp.stage.addChild(mesh);
+          sceneContainerRef.current.addChild(mesh);
         }
       });
       
-      // Immediate render to display changes
+      // Render scene to texture
+      if (renderTargetRef.current && sceneContainerRef.current) {
+        pixiApp.renderer.render(sceneContainerRef.current, { 
+          renderTexture: renderTargetRef.current, 
+          clear: true 
+        });
+      }
+      
+      // Update display based on SSR setting
+      if (displaySpriteRef.current && renderTargetRef.current) {
+        if (ssrConfigRef.current?.enabled && performanceSettings.enableSSR) {
+          // SSR will process this texture in animation loop
+          console.log('🎨 SSR enabled - will apply post-process');
+        } else {
+          // Show normal rendering directly
+          displaySpriteRef.current.texture = renderTargetRef.current;
+        }
+      }
+      
+      // Force render to display
       pixiApp.render();
     }
   }, [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB, mousePos, lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings, sceneConfig]);
@@ -2170,8 +2194,27 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniformsDirtyRef.current = false;
       }
       
-      // SSR integration disabled - keeping your beautiful working render
-      // (SSR architecture conflicts with additive blending on stage)
+      // Render scene to texture every frame
+      if (renderTargetRef.current && sceneContainerRef.current && shadersRef.current.length > 0) {
+        pixiApp.renderer.render(sceneContainerRef.current, { 
+          renderTexture: renderTargetRef.current, 
+          clear: true 
+        });
+      }
+      
+      // Apply SSR if enabled, otherwise show normal render
+      if (ssrConfigRef.current?.enabled && performanceSettings.enableSSR) {
+        // Render depth pass
+        renderDepthPass();
+        
+        // Apply SSR post-process
+        renderSSRPass();
+      } else {
+        // SSR disabled - show normal lit scene directly
+        if (displaySpriteRef.current && renderTargetRef.current) {
+          displaySpriteRef.current.texture = renderTargetRef.current;
+        }
+      }
       
       // Always render to display the result
       if (pixiApp && pixiApp.renderer) {
