@@ -408,7 +408,7 @@
   "ssrConfig": {
     "enabled": true,
     "intensity": 0.4,
-    "maxRayDistance": 240,
+    "maxRayDistance": 230,
     "stepSize": 2,
     "maxSteps": 40,
     "fadeEdgeDistance": 50,
