@@ -405,10 +405,19 @@
     "intensity": 0.5,
     "environmentMap": "/sky_boxes/cobblestone_street_night_1k.jpg"
   },
+  "ssrConfig": {
+    "enabled": false,
+    "resolutionScale": 0.5,
+    "marchSteps": 32,
+    "stride": 2,
+    "strength": 0.8,
+    "maxDistance": 400,
+    "fadeEdgeDistance": 100
+  },
   "planarReflectionConfig": {
     "enabled": true,
-    "strength": 0.6,
-    "blurAmount": 1.5,
-    "reflectionPlaneY": 350
+    "strength": 0.5,
+    "blurAmount": 1,
+    "reflectionPlaneY": 300
   }
 }
