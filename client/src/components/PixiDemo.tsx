@@ -545,28 +545,7 @@ const PixiDemo = (props: PixiDemoProps) => {
 
   // Multi-pass lighting composer
   const renderMultiPass = (lights: Light[]) => {
-    if (!pixiApp || !renderTargetRef.current || !sceneContainerRef.current || !displaySpriteRef.current) {
-      console.warn('⚠️ renderMultiPass skipped: missing refs', {
-        pixiApp: !!pixiApp,
-        renderTarget: !!renderTargetRef.current,
-        sceneContainer: !!sceneContainerRef.current,
-        displaySprite: !!displaySpriteRef.current
-      });
-      return;
-    }
-    
-    // Safety check: ensure shaders have all required uniforms
-    const hasInvalidUniforms = shadersRef.current.some(shader => {
-      if (!shader.uniforms) return true;
-      // Check critical uniforms exist
-      return shader.uniforms.uAmbientColor === undefined ||
-             shader.uniforms.uAmbientIntensity === undefined;
-    });
-    
-    if (hasInvalidUniforms) {
-      console.warn('⚠️ renderMultiPass skipped: shaders have invalid uniforms');
-      return;
-    }
+    if (!pixiApp || !renderTargetRef.current || !sceneContainerRef.current || !displaySpriteRef.current) return;
 
     const enabledLights = lights.filter(light => light.enabled && light.type !== 'ambient');
 
@@ -1188,7 +1167,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               light.followMouse ? mousePos.y : light.position.y,
               light.position.z
             ];
-            uniforms[`${prefix}Color`] = [light.color?.r ?? 1, light.color?.g ?? 1, light.color?.b ?? 1];
+            uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
             uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
             uniforms[`${prefix}Radius`] = light.radius || 200;
             
@@ -1229,7 +1208,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             // Directional lights are ALWAYS enabled (like ambient light) - intensity=0 disables
             uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - directional light is always on
             uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
-            uniforms[`${prefix}Color`] = [light.color?.r ?? 1, light.color?.g ?? 1, light.color?.b ?? 1];
+            uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
             uniforms[`${prefix}Intensity`] = light.intensity; // Use actual intensity (can be 0 to disable)
             
             // Shadow casting flag for directional lights
@@ -1251,7 +1230,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               light.position.z
             ];
             uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
-            uniforms[`${prefix}Color`] = [light.color?.r ?? 1, light.color?.g ?? 1, light.color?.b ?? 1];
+            uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
             uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
             uniforms[`${prefix}Radius`] = light.radius || 150;
             uniforms[`${prefix}ConeAngle`] = light.coneAngle || 30;
@@ -1313,12 +1292,12 @@ const PixiDemo = (props: PixiDemoProps) => {
       const shadowCaster1 = shadowCasters[1]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
       const shadowCaster2 = shadowCasters[2]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
       
-      // Common shader uniforms for all sprites (with safety checks for undefined values)
+      // Common shader uniforms for all sprites
       const commonUniforms = {
-        uColor: [shaderParams?.colorR ?? 1, shaderParams?.colorG ?? 1, shaderParams?.colorB ?? 1],
-        uCanvasSize: [shaderParams?.canvasWidth ?? 800, shaderParams?.canvasHeight ?? 600],
-        uAmbientLight: ambientLight?.intensity ?? 0.1,
-        uAmbientColor: [ambientLight?.color?.r ?? 1, ambientLight?.color?.g ?? 1, ambientLight?.color?.b ?? 1],
+        uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
+        uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
+        uAmbientLight: ambientLight.intensity,
+        uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
         // Shadow system uniforms
         uShadowsEnabled: shadowConfig.enabled,
         uShadowStrength: shadowConfig.strength || 0.5,
@@ -1517,7 +1496,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           const prefix = `uPoint${idx}`;
           lightUniforms[`${prefix}Enabled`] = true;
           lightUniforms[`${prefix}Position`] = [light.position.x, light.position.y, light.position.z];
-          lightUniforms[`${prefix}Color`] = [light.color?.r ?? 1, light.color?.g ?? 1, light.color?.b ?? 1];
+          lightUniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
           lightUniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0;
           lightUniforms[`${prefix}Radius`] = light.radius || 200;
         });
@@ -1526,10 +1505,10 @@ const PixiDemo = (props: PixiDemoProps) => {
         for (const sprite of spritesNeedingMeshes) {
           if (sprite.diffuseTexture && sprite.normalTexture) {
             const commonUniforms = {
-              uColor: [shaderParams?.colorR ?? 1, shaderParams?.colorG ?? 1, shaderParams?.colorB ?? 1],
-              uCanvasSize: [shaderParams?.canvasWidth ?? 800, shaderParams?.canvasHeight ?? 600],
-              uAmbientLight: ambientLight?.intensity ?? 0.1,
-              uAmbientColor: [ambientLight?.color?.r ?? 1, ambientLight?.color?.g ?? 1, ambientLight?.color?.b ?? 1],
+              uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
+              uCanvasSize: [shaderParams.canvasWidth, shaderParams.canvasHeight],
+              uAmbientLight: ambientLight.intensity,
+              uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
               uShadowsEnabled: shadowConfig.enabled,
               uShadowStrength: shadowConfig.strength || 0.5,
               ...lightUniforms
@@ -1736,7 +1715,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           light.followMouse ? mousePos.y : light.position.y,
           light.position.z
         ];
-        uniforms[`${prefix}Color`] = [light.color?.r ?? 1, light.color?.g ?? 1, light.color?.b ?? 1];
+        uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
         uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
         uniforms[`${prefix}Radius`] = light.radius || 200;
         
@@ -1773,7 +1752,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniforms[`${prefix}Enabled`] = true; // ALWAYS TRUE - directional light is always on
         uniforms[`${prefix}Intensity`] = light.intensity; // Use actual intensity (can be 0 to disable)
         uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
-        uniforms[`${prefix}Color`] = [light.color?.r ?? 1, light.color?.g ?? 1, light.color?.b ?? 1];
+        uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
         
         // Shadow casting flag for directional lights
         uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
@@ -1792,7 +1771,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           light.position.z
         ];
         uniforms[`${prefix}Direction`] = [light.direction.x, light.direction.y, light.direction.z];
-        uniforms[`${prefix}Color`] = [light.color?.r ?? 1, light.color?.g ?? 1, light.color?.b ?? 1];
+        uniforms[`${prefix}Color`] = [light.color.r, light.color.g, light.color.b];
         uniforms[`${prefix}Intensity`] = light.enabled ? light.intensity : 0; // Use 0 intensity for disabled lights
         uniforms[`${prefix}Radius`] = light.radius || 150;
         uniforms[`${prefix}ConeAngle`] = light.coneAngle || 30;
@@ -1815,22 +1794,11 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniforms[`${prefix}CastsShadows`] = light.castsShadows || false;
       });
 
-      // Add other dynamic uniforms with safety checks for undefined values
-      uniforms.uColor = [
-        shaderParams?.colorR ?? 1, 
-        shaderParams?.colorG ?? 1, 
-        shaderParams?.colorB ?? 1
-      ];
-      uniforms.uAmbientLight = ambientLight?.intensity ?? 0.1;
-      uniforms.uAmbientColor = [
-        ambientLight?.color?.r ?? 1, 
-        ambientLight?.color?.g ?? 1, 
-        ambientLight?.color?.b ?? 1
-      ];
-      uniforms.uCanvasSize = [
-        shaderParams?.canvasWidth ?? 800, 
-        shaderParams?.canvasHeight ?? 600
-      ];
+      // Add other dynamic uniforms
+      uniforms.uColor = [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB];
+      uniforms.uAmbientLight = ambientLight.intensity;
+      uniforms.uAmbientColor = [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b];
+      uniforms.uCanvasSize = [shaderParams.canvasWidth, shaderParams.canvasHeight];
       
       // FORCE DIRECTIONAL LIGHT SHADOW SETUP - BYPASS BROKEN useEffect
       const directionalLight = lightsConfig.find(light => light.type === 'directional');
@@ -1886,9 +1854,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       const enabledLights = lightsConfig.filter(light => light.enabled && light.type !== 'ambient');
       const lightCount = enabledLights.length;
       
-      // Automatic mode selection: Multi-pass for >8 lights OR when SSR is enabled
-      const ssrEnabled = ssrConfigRef.current?.enabled && performanceSettings.enableSSR;
-      const useMultiPass = lightCount > 8 || ssrEnabled;
+      // Automatic mode selection: Multi-pass for >8 lights  
+      const useMultiPass = lightCount > 8;
       
       // Shadow system: unified occluder map for all sprite counts
       const shadowCasters = sceneManagerRef.current?.getShadowCasters() || [];
@@ -1920,33 +1887,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         });
       }
       
-      // Choose rendering path based on useMultiPass flag
-      if (useMultiPass) {
-        // MULTI-PASS PATH: Render to texture for SSR or when many lights
-        // Move all meshes to sceneContainer (not stage)
-        meshesRef.current.forEach(mesh => {
-          if (mesh.parent !== sceneContainerRef.current) {
-            if (mesh.parent) mesh.parent.removeChild(mesh);
-            if (sceneContainerRef.current) {
-              sceneContainerRef.current.addChild(mesh);
-            }
-          }
-          
-          // Ensure per-sprite uniforms are set before rendering
-          if (mesh.shader && mesh.shader.uniforms && (mesh as any).definition) {
-            const spriteData = (mesh as any).definition;
-            mesh.shader.uniforms.uCurrentSpriteZOrder = spriteData.zOrder || 0;
-          }
-        });
-        
-        // Render scene to renderTargetRef using multi-pass lighting
-        // (displaySprite on stage will show renderTargetRef)
-        renderMultiPass(enabledLights);
-        
-        // SSR pass will replace displaySprite texture if SSR is enabled (handled in ticker)
-      } else {
-        // UNIFIED RENDERING PATH: Set per-sprite settings and render directly (single-pass, meshes on stage)
-        meshesRef.current.forEach(mesh => {
+      // UNIFIED RENDERING PATH: Set per-sprite settings and render directly (no more multi-pass complexity)
+      meshesRef.current.forEach(mesh => {
         // Set per-sprite zOrder settings (AO is now controlled via caster contribution, not per-sprite receive)
         if (mesh.shader && mesh.shader.uniforms && (mesh as any).definition) {
           const spriteData = (mesh as any).definition;
@@ -2000,18 +1942,17 @@ const PixiDemo = (props: PixiDemoProps) => {
           if (mesh.parent) mesh.parent.removeChild(mesh);
           pixiApp.stage.addChild(mesh);
         }
-        });
-        
-        // Set unified lighting mode for all shaders
-        shadersRef.current.forEach(shader => {
-          if (shader.uniforms) {
-            shader.uniforms.uPassMode = 1; // All lights active in unified mode
-          }
-        });
-        
-        // Single unified render call
-        pixiApp.render();
-      }
+      });
+      
+      // Set unified lighting mode for all shaders
+      shadersRef.current.forEach(shader => {
+        if (shader.uniforms) {
+          shader.uniforms.uPassMode = 1; // All lights active in unified mode
+        }
+      });
+      
+      // Single unified render call
+      pixiApp.render();
       
       // Render is handled by animation loop - no need for double rendering
     }
@@ -2162,17 +2103,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Check for changes and update dirty flags
       checkAndUpdateDirtyFlags();
       
-      // CRITICAL FIX: Ensure scene meshes are ONLY in sceneContainer, NOT on stage
-      // The stage should only contain displaySprite
-      if (pixiApp && pixiApp.stage) {
-        // Remove any meshes accidentally on the stage (keep only displaySprite)
-        pixiApp.stage.children.forEach(child => {
-          if (child !== displaySpriteRef.current) {
-            pixiApp.stage.removeChild(child);
-          }
-        });
-      }
-      
       // Render depth pass FIRST (before lighting) if SSR is enabled
       renderDepthPass();
       
@@ -2211,7 +2141,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             
             // Update ambient light
             shader.uniforms.uAmbientIntensity = currentAmbientLight.intensity;
-            shader.uniforms.uAmbientColor = [currentAmbientLight?.color?.r ?? 1, currentAmbientLight?.color?.g ?? 1, currentAmbientLight?.color?.b ?? 1];
+            shader.uniforms.uAmbientColor = [currentAmbientLight.color.r, currentAmbientLight.color.g, currentAmbientLight.color.b];
             
             // Update shadow config
             const shadowsEnabled = currentShadowConfig.enabled && performanceSettings.enableShadows;
