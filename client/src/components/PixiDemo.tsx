@@ -1248,7 +1248,6 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Shadow system uniforms
         uShadowsEnabled: shadowConfig.enabled,
         uShadowStrength: shadowConfig.strength || 0.5,
-        uShadowBias: shadowConfig.bias || 3.0,
         // Add zOrder uniforms for shadow hierarchy
         // Switch to unlimited mode when more than 3 shadow casters
         uUseOccluderMap: true,
@@ -1459,7 +1458,6 @@ const PixiDemo = (props: PixiDemoProps) => {
               uAmbientColor: [ambientLight.color.r, ambientLight.color.g, ambientLight.color.b],
               uShadowsEnabled: shadowConfig.enabled,
               uShadowStrength: shadowConfig.strength || 0.5,
-              uShadowBias: shadowConfig.bias || 3.0,
               ...lightUniforms
             };
             
@@ -1588,7 +1586,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Add shadow system uniforms - performance-filtered from scene configuration
       uniforms.uShadowsEnabled = shadowConfig.enabled && performanceSettings.enableShadows;
       uniforms.uShadowStrength = shadowConfig.strength || 0.5;
-      uniforms.uShadowBias = shadowConfig.bias || 3.0;
       
       // Ambient Occlusion uniforms (performance-filtered and completely independent from shadows)
       uniforms.uAOEnabled = ambientOcclusionConfig.enabled && performanceSettings.enableAmbientOcclusion;
@@ -1758,8 +1755,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uShadowMaxLength = shadowConfig.maxLength; // Maximum shadow length to prevent extremely long shadows
       uniforms.uShadowsEnabled = shadowConfig.enabled && performanceSettings.enableShadows; // Global shadow enable/disable (performance-filtered)
       uniforms.uShadowStrength = shadowConfig.strength; // Global shadow strength/opacity
-      uniforms.uShadowBias = shadowConfig.bias || 3.0; // Shadow bias to prevent self-shadowing artifacts
-      // Removed shadow sharpness feature
+      // Removed shadow sharpness and shadow bias features (bias redundant with self-interval skipping)
       
       // Debug: Log ambient light uniforms (disabled for performance)
       // console.log(`🌅 AMBIENT LIGHT VALUES:`, {
@@ -1987,7 +1983,6 @@ const PixiDemo = (props: PixiDemoProps) => {
             shader.uniforms.uShadowsEnabled = shadowsEnabled;
             shader.uniforms.uShadowStrength = currentShadowConfig.strength;
             shader.uniforms.uShadowMaxLength = currentShadowConfig.maxLength || 130;
-            shader.uniforms.uShadowBias = currentShadowConfig.bias || 3.0;
             
             // Update AO config
             const aoEnabled = currentAOConfig.enabled && performanceSettings.enableAmbientOcclusion;

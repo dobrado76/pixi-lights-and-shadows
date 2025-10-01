@@ -52,8 +52,7 @@ export interface ShadowConfig {
   strength: number;          // Shadow opacity/darkness (0.0 - 1.0)  
   maxLength: number;         // Maximum shadow length (pixels)
   height: number;            // Shadow casting height (affects angle)
-  bias?: number;             // Shadow bias to prevent self-shadowing artifacts (pixels)
-  // Removed shadow sharpness feature
+  // Removed shadow sharpness and shadow bias features (bias redundant with self-interval skipping)
 }
 
 // Ambient Occlusion configuration interface (completely independent from shadows)
