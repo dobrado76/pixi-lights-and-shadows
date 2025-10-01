@@ -2169,13 +2169,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniformsDirtyRef.current = false;
       }
       
-      // Render multi-pass lighting to render target ONLY if SSR is enabled
-      // Otherwise use normal additive blending (default behavior)
-      if (ssrConfigRef.current?.enabled && performanceSettings.enableSSR && shadersRef.current.length > 0) {
-        renderMultiPass(lightsConfig);
-        // Apply SSR pass LAST (after all lighting) if enabled
-        renderSSRPass();
-      }
+      // SSR is disabled for now - needs proper implementation as true post-process
+      // Normal additive blending rendering is used (default behavior)
       
       // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
       // MUST be AFTER SSR pass so displaySprite shows the SSR result
