@@ -394,6 +394,7 @@
     "enableAmbientOcclusion": true,
     "enableNormalMapping": true,
     "enableLightMasks": true,
+    "enableSSR": true,
     "textureScale": 1,
     "fpsTarget": 60,
     "capFpsTo60": true,
@@ -403,5 +404,14 @@
     "enabled": true,
     "intensity": 0.3,
     "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg"
+  },
+  "ssrConfig": {
+    "enabled": true,
+    "intensity": 0.6,
+    "maxRayDistance": 200,
+    "stepSize": 2,
+    "maxSteps": 50,
+    "fadeEdgeDistance": 50,
+    "depthThreshold": 0.01
   }
 }

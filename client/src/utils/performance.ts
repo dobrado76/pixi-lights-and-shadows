@@ -10,6 +10,7 @@ export interface PerformanceSettings {
   enableAmbientOcclusion: boolean;
   enableNormalMapping: boolean;
   enableLightMasks: boolean;
+  enableSSR: boolean; // Screen Space Reflections
   textureScale: number;
   fpsTarget: number;
   capFpsTo60: boolean;
@@ -107,6 +108,7 @@ export const getOptimalSettings = (device: DeviceInfo): PerformanceSettings => {
       enableAmbientOcclusion: false,
       enableNormalMapping: false,
       enableLightMasks: false,
+      enableSSR: false, // SSR disabled on low-end
       textureScale: 0.5,
       fpsTarget: 30,
       capFpsTo60: true
@@ -121,6 +123,7 @@ export const getOptimalSettings = (device: DeviceInfo): PerformanceSettings => {
       enableAmbientOcclusion: false,
       enableNormalMapping: true,
       enableLightMasks: false,
+      enableSSR: false, // SSR disabled on mobile
       textureScale: 0.75,
       fpsTarget: 45,
       capFpsTo60: true
@@ -138,6 +141,7 @@ export const getOptimalSettings = (device: DeviceInfo): PerformanceSettings => {
         enableAmbientOcclusion: true,
         enableNormalMapping: true,
         enableLightMasks: true,
+        enableSSR: true, // SSR enabled on high-end only
         textureScale: 1.0,
         fpsTarget: 60,
         capFpsTo60: true
@@ -152,6 +156,7 @@ export const getOptimalSettings = (device: DeviceInfo): PerformanceSettings => {
         enableAmbientOcclusion: false,
         enableNormalMapping: true,
         enableLightMasks: false,
+        enableSSR: false, // SSR disabled on medium
         textureScale: 0.75,
         fpsTarget: 45,
         capFpsTo60: true
