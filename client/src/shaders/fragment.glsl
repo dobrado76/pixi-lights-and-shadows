@@ -1182,8 +1182,9 @@ void main(void) {
     }
     
     // Blend reflection based on surface properties
-    // Smoother surfaces reflect more strongly
-    float reflectionStrength = uReflectionIntensity * finalSmoothness;
+    // Metallic and smoother surfaces reflect more strongly
+    // Non-metallic surfaces (finalMetallic = 0) will have no reflection
+    float reflectionStrength = uReflectionIntensity * finalSmoothness * finalMetallic;
     
     // Mix the reflection into the final color
     finalColor = mix(finalColor, reflectionColor, reflectionStrength);
