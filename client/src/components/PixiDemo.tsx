@@ -98,6 +98,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   const ambientOcclusionConfigRef = useRef(ambientOcclusionConfig);
   const sceneConfigRef = useRef(sceneConfig);
   const ambientLightRef = useRef(ambientLight);
+  const lightsConfigRef = useRef(lightsConfig);
 
   // Performance optimization utilities
   const createLightConfigHash = (lights: Light[], ambient: any, shadow: any, ao: any, performance: any, ibl: any) => {
@@ -1708,7 +1709,8 @@ const PixiDemo = (props: PixiDemoProps) => {
     ambientOcclusionConfigRef.current = ambientOcclusionConfig;
     sceneConfigRef.current = sceneConfig;
     ambientLightRef.current = ambientLight;
-  }, [shadowConfig, ambientOcclusionConfig, sceneConfig, ambientLight]);
+    lightsConfigRef.current = lightsConfig;
+  }, [shadowConfig, ambientOcclusionConfig, sceneConfig, ambientLight, lightsConfig]);
 
   // Dynamic shader uniform updates for real-time lighting changes
   useEffect(() => {
@@ -2106,7 +2108,6 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     const ticker = () => {
       frameCountRef.current++;
-      console.log(`🎬 Ticker running frame ${frameCountRef.current}`);
       
       // Performance monitoring and adaptive quality
       if (adaptiveQualityRef.current) {
@@ -2199,9 +2200,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         buildDepthMap();
       }
       
-      // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
-      if (pixiApp && pixiApp.renderer) {
-        pixiApp.render();
+      // CRITICAL: Call renderMultiPass which includes SSR logic
+      if (pixiApp && pixiApp.renderer && lightsConfigRef.current && lightsConfigRef.current.length > 0) {
+        renderMultiPass(lightsConfigRef.current);
       }
     };
 
