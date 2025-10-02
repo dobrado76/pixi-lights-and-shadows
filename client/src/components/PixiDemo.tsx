@@ -2194,15 +2194,41 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniformsDirtyRef.current = false;
       }
       
-      // Build depth map for SSR if enabled
+      // SSR two-pass rendering
       const ssrEnabled = (sceneConfigRef.current as any)?.ssrConfig?.enabled || false;
-      if (ssrEnabled && depthRenderTargetRef.current) {
-        buildDepthMap();
-      }
       
-      // Render frame
-      if (pixiApp && pixiApp.renderer) {
-        pixiApp.render();
+      if (ssrEnabled && depthRenderTargetRef.current && renderTargetRef.current && sceneContainerRef.current) {
+        // Build depth map
+        buildDepthMap();
+        
+        // PASS 1: Render scene with lighting+shadows+AO+IBL to renderTarget
+        shadersRef.current.forEach(s => {
+          if (s.uniforms) {
+            s.uniforms.uSSREnabled = false; // No SSR in first pass
+            s.uniforms.uPassMode = 1; // Normal lighting
+          }
+        });
+        
+        // Clear and render to texture
+        pixiApp.renderer.render(new PIXI.Container(), { renderTexture: renderTargetRef.current, clear: true });
+        pixiApp.renderer.render(sceneContainerRef.current, { renderTexture: renderTargetRef.current, clear: false });
+        
+        // PASS 2: Render to screen WITH SSR sampling from renderTarget
+        shadersRef.current.forEach(s => {
+          if (s.uniforms) {
+            s.uniforms.uSSREnabled = true;
+            s.uniforms.uRenderTarget = renderTargetRef.current;
+            s.uniforms.uDepthMap = depthRenderTargetRef.current;
+            s.uniforms.uPassMode = 2; // SSR pass
+          }
+        });
+        
+        pixiApp.renderer.render(sceneContainerRef.current);
+      } else {
+        // No SSR - single pass render
+        if (pixiApp && pixiApp.renderer) {
+          pixiApp.render();
+        }
       }
     };
 
