@@ -1163,17 +1163,16 @@ void main(void) {
   
   // === SCREEN SPACE REFLECTIONS (SSR) - FINAL PASS ===
   // Add reflections for 2.5D surfaces using depth-based ray marching
-  // CRITICAL: SSR only applies to FLOOR (lowest depth surfaces with metallic > 0)
-  // Objects above the floor should NOT do SSR, only the floor reflects them
+  // CRITICAL: All metallic surfaces can do SSR
+  // Depth hierarchy prevents reflecting objects BELOW current surface
   if (uSSREnabled && uSSRIntensity > 0.0 && finalMetallic > 0.0) {
     // Get depth at current pixel (from zOrder-based depth map)
     float pixelDepth = texture2D(uDepthMap, vTextureCoord).r;
     
-    // FLOOR REFLECTIONS ONLY: Must be at the LOWEST depth level (floor/background)
-    // Check: pixelDepth is BELOW threshold (floor area) 
-    // The threshold separates floor from objects ON the floor
-    if (pixelDepth < uSSRDepthThreshold - 0.02) {
-      // This is the floor (lowest depth + metallic > 0)
+    // All metallic surfaces do SSR (floor reflects sprites, sprites reflect other sprites)
+    // The depth check in ray marching prevents reflecting objects below
+    if (true) {
+      // This surface is metallic and will reflect objects at same or higher Z
       
       // Calculate reflection direction
       // For 2.5D, default is upward reflection (simulating floor reflections)
