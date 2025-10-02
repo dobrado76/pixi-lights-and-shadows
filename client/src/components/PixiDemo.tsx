@@ -3,6 +3,8 @@ import * as PIXI from 'pixi.js';
 import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import vertexShaderSource from '../shaders/vertex.glsl?raw';
 import fragmentShaderSource from '../shaders/fragment.glsl?raw';
+import depthVertexShaderSource from '../shaders/depth-vertex.glsl?raw';
+import depthFragmentShaderSource from '../shaders/depth-fragment.glsl?raw';
 import { ShaderParams } from '../App';
 import { Light, ShadowConfig, AmbientOcclusionConfig, SSRConfig } from '@/lib/lights';
 import { SceneManager, SceneSprite } from './Sprite';
@@ -540,47 +542,6 @@ const PixiDemo = (props: PixiDemoProps) => {
     if (!pixiApp || !depthRenderTargetRef.current || !sceneManagerRef.current) return;
     
     const allSprites = sceneManagerRef.current.getAllSprites();
-    const maxSceneHeight = 100.0; // Maximum zOrder value for normalization
-    
-    // Simple depth shader - renders zOrder as grayscale
-    const depthVertexShader = `
-      attribute vec2 aVertexPosition;
-      attribute vec2 aTextureCoord;
-      
-      uniform mat3 projectionMatrix;
-      uniform mat3 translationMatrix;
-      uniform mat3 uTextureMatrix;
-      
-      varying vec2 vTextureCoord;
-      
-      void main(void) {
-        gl_Position = vec4((projectionMatrix * translationMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
-        vTextureCoord = (uTextureMatrix * vec3(aTextureCoord, 1.0)).xy;
-      }
-    `;
-    
-    const depthFragmentShader = `
-      precision mediump float;
-      
-      varying vec2 vTextureCoord;
-      
-      uniform sampler2D uSampler;
-      uniform float uObjectHeight;
-      uniform float uMaxSceneHeight;
-      uniform float uAlpha;
-      
-      void main(void) {
-        vec4 texColor = texture2D(uSampler, vTextureCoord);
-        float alpha = texColor.a * uAlpha;
-        
-        if (alpha < 0.1) {
-          discard;
-        }
-        
-        float normalizedHeight = clamp(uObjectHeight / uMaxSceneHeight, 0.0, 1.0);
-        gl_FragColor = vec4(normalizedHeight, normalizedHeight, normalizedHeight, 1.0);
-      }
-    `;
     
     // Create temporary container for depth pass
     const depthContainer = new PIXI.Container();
@@ -650,13 +611,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       geometry.addAttribute('aTextureCoord', uvs, 2);
       geometry.addIndex(indices);
       
-      // Create shader
-      const shader = PIXI.Shader.from(depthVertexShader, depthFragmentShader, {
+      // Create shader using imported depth shaders
+      const shader = PIXI.Shader.from(depthVertexShaderSource, depthFragmentShaderSource, {
         uSampler: sprite.diffuseTexture,
-        uObjectHeight: objectHeight,
-        uMaxSceneHeight: maxSceneHeight,
-        uAlpha: 1.0,
-        uTextureMatrix: PIXI.Matrix.IDENTITY
+        uCurrentSpriteZOrder: zOrder
       });
       
       // Create mesh
@@ -1820,6 +1778,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       // This avoids texture feedback loop (can't read/write same texture)
       uniforms.uAccumulatedScene = previousFrameRenderTargetRef.current || PIXI.Texture.WHITE;
       
+      // NEW SSR Implementation uniforms
+      uniforms.uSSR_Steps = ssrConfig.quality || 25; // Use quality as steps
+      uniforms.uSSR_Stride = 10.0; // Pixels per step
+      uniforms.uSSR_Thickness = 0.05; // Thickness for hit detection
+      
       
       // Per-sprite AO settings will be set individually for each sprite
       
@@ -2208,6 +2171,12 @@ const PixiDemo = (props: PixiDemoProps) => {
         });
         
         uniformsDirtyRef.current = false;
+      }
+      
+      // Build depth map for SSR if enabled
+      const ssrEnabled = (sceneConfigRef.current as any)?.ssrConfig?.enabled || false;
+      if (ssrEnabled && depthRenderTargetRef.current) {
+        buildDepthMap();
       }
       
       // CRITICAL FIX: Always render every frame to ensure canvas displays immediately

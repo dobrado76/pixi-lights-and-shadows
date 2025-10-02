@@ -1,0 +1,75 @@
+Implementation Plan: Integrating SSR into the Unified PBR Shader
+The Prime Directive remains: DO NOT BREAK WHAT WORKS. This implementation will be additive. I will add new functions, new uniforms, and new logic branches to your existing fragment.glsl file, controlled by a master uEnableSSR uniform. If uEnableSSR is false, the shader's execution path will be identical to what you have now.
+What I Will Implement:
+1. Generate a Depth Map Pass:
+I will create a new, simple shader pair (depth.glsl). Its sole purpose is to render the "height" of each sprite into a depthTexture.
+The "height" will be derived directly from each sprite's zOrder property, ensuring perfect consistency with your scene's layering.
+In PixiDemo.tsx, I will orchestrate a new, independent render pass that runs at the beginning of each frame to generate this depthTexture.
+2. Augment the Unified Fragment Shader (fragment.glsl):
+New Uniforms: I will add the necessary uniforms to your existing shader:
+uniform sampler2D uDepthMap;: To receive the depth texture.
+uniform bool uEnableSSR;: A master switch to enable/disable the effect.
+uniform mat4 uInverseProjectionMatrix;: To convert screen coordinates to view-space.
+uniform int uSSR_Steps;: To control the quality/performance of the ray-march.
+uniform float uSSR_Stride;: To control the distance of each ray-march step.
+uniform float uSSR_Thickness;: A bias to prevent incorrect self-reflection.
+New GLSL Function (calculateSSR): I will write a self-contained GLSL function inside your fragment shader. This function will:
+Take the pixel's position, normal, and view direction as input.
+Calculate the reflection vector.
+Perform an optimized hierarchical ray-march through the uDepthMap. It will start with large steps (uSSR_Stride) and progressively refine to smaller steps as it nears a potential intersection.
+If the ray hits another pixel in the depth map (i.e., another object), it will return the screen-space coordinate of that hit.
+If the ray misses (goes off-screen or into the "sky"), it will return a special value indicating a miss.
+Integration into main(): At the end of your shader's main() function, I will add this logic:
+code
+Glsl
+// ... after all your direct and IBL lighting is calculated ...
+
+vec3 reflectionColor = vec3(0.0); // Start with no reflection
+
+if (uEnableSSR && uMetallic > 0.0) { // Only run for metallic surfaces
+    vec2 hitCoord = calculateSSR(worldPos, normal, viewDir);
+    
+    if (isHit(hitCoord)) { // Check if the ray hit something
+        // Sample the main scene color at the hit coordinate
+        vec3 localReflection = texture2D(uDiffuse, hitCoord).rgb;
+        
+        // Blend with IBL for a complete reflection model
+        // SSR provides sharp local reflections, IBL provides soft environmental reflections
+        vec3 iblReflection = calculateIBL_Specular(reflectionVector, uRoughness);
+        reflectionColor = mix(iblReflection, localReflection, uSmoothness);
+    } else {
+        // If the ray missed, fall back to only IBL reflections
+        reflectionColor = calculateIBL_Specular(reflectionVector, uRoughness);
+    }
+} else {
+    // If SSR is off or surface is not metallic, just use IBL
+    reflectionColor = calculateIBL_Specular(reflectionVector, uRoughness);
+}
+
+// The final color is a blend of diffuse light and reflections, based on metallic value
+vec3 finalColor = mix(diffuseLighting, reflectionColor, uMetallic);
+3. Update PixiDemo.tsx Orchestration:
+I will add the new uniforms to the shader creation logic.
+I will add the new depth pass to the ticker, ensuring it runs before the main lighting pass.
+I will pass the generated depthTexture to the main shader as the uDepthMap uniform.
+4. Update the UI (DynamicSpriteControls.tsx):
+I will add a new "Reflectivity" section to the sprite controls.
+This section will contain the existing Metallic and Smoothness sliders, as their role is now even more critical for controlling reflections. This is more of a UI organization change than a new feature.
+Expected Visual Results on Screen (The Payoff)
+Once this is implemented, you will see the following specific changes in your "Live Demo" canvas:
+Mirror-Like Reflections on Flat Surfaces:
+The Floor: If you set the background2 sprite's material to be highly metallic and smooth, it will now act like a polished floor. You will see a clear, upside-down reflection of the spheres and blocks that are floating above it. The reflection will be correctly occluded (e.g., a block behind another block won't be visible in the reflection).
+Other Flat Objects: The flat tops of the green square, green octagon, and purple ring will also show reflections of objects above them if you make them metallic and smooth.
+Reflections Obey zOrder:
+An object will only reflect other objects that are at the same zOrder or higher (in front of it).
+For example, if you have a zOrder: 0 floor and a zOrder: 2 sphere, the floor will reflect the sphere. However, the sphere will not reflect the floor, because the floor is behind it. This prevents nonsensical reflections and adds to the sense of depth.
+Reflections are Controlled by Material Properties:
+Metallic Slider: The visibility of the SSR reflections will be directly and linearly controlled by this slider.
+At Metallic: 0%, you will see no SSR reflection, only the object's albedo (base color).
+At Metallic: 50%, you will see a semi-transparent blend of the albedo color and the reflected scene.
+At Metallic: 100%, the albedo color will almost completely disappear, and you will see a strong, clear reflection, tinted by the albedo color (as is physically correct for metals).
+Smoothness Slider: This will now control the blurriness of the SSR reflections.
+At Smoothness: 100%, the reflections will be sharp and mirror-like.
+As you decrease Smoothness, the reflections will become progressively more blurry and diffuse, simulating a rougher surface.
+No Change to Non-Reflective Objects: Your existing objects with Metallic: 0% (like the stone wall background) will look exactly the same as they do now. The SSR calculation will be skipped for these pixels, ensuring no performance impact and no visual change, perfectly honoring the Prime Directive.
+In summary, you will have a new, powerful rendering feature that seamlessly integrates with your existing material properties, respects the 2.5D layering of your scene, and finally makes your flat, shiny surfaces behave like true mirrors.
