@@ -660,6 +660,10 @@ const PixiDemo = (props: PixiDemoProps) => {
         shader.uniforms.uSSRIntensity = (sceneConfig as any).ssrConfig?.intensity || 0.5;
         shader.uniforms.uSSRQuality = (sceneConfig as any).ssrConfig?.quality || 10;
         shader.uniforms.uSSRMaxDistance = (sceneConfig as any).ssrConfig?.maxDistance || 0.3;
+        // CRITICAL: These uniforms are used in calculateSSR function
+        shader.uniforms.uSSR_Steps = (sceneConfig as any).ssrConfig?.quality || 10;
+        shader.uniforms.uSSR_Stride = 2.0;
+        shader.uniforms.uSSR_Thickness = 0.05;
         
         // Reset all light enabled flags for base pass
         for (let i = 0; i < 4; i++) {
