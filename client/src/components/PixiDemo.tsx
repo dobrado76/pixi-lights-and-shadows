@@ -1259,7 +1259,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         uStepSize: 2.0,
         uFadeStart: 0.5,
         uFadeEnd: 1.0,
-        uDepthMap: depthRenderTargetRef.current,
+        uDepthMap: depthRenderTargetRef.current || PIXI.Texture.EMPTY,
         ...lightUniforms
       };
       
