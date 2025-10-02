@@ -5,7 +5,6 @@ import vertexShaderSource from '../shaders/vertex.glsl?raw';
 import fragmentShaderSource from '../shaders/fragment.glsl?raw';
 import depthVertexShaderSource from '../shaders/depth_vertex.glsl?raw';
 import depthFragmentShaderSource from '../shaders/depth_fragment.glsl?raw';
-import ssrFragmentShaderSource from '../shaders/ssr_fragment.glsl?raw';
 import { ShaderParams } from '../App';
 import { Light, ShadowConfig, AmbientOcclusionConfig, SSRConfig } from '@/lib/lights';
 import { SceneManager, SceneSprite } from './Sprite';

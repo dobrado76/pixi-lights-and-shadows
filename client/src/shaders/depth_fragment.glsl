@@ -1,12 +1,22 @@
 precision mediump float;
 
-uniform float uObjectHeight;   // Height derived from sprite's zOrder
-uniform float uMaxSceneHeight; // Maximum height for normalization (default: 100.0)
+varying vec2 vTextureCoord;
+
+uniform sampler2D uDiffuse;
+uniform float uObjectHeight; // Height value based on zOrder
 
 void main(void) {
-    // Normalize height to 0-1 range and store in red channel
-    float normalizedHeight = uObjectHeight / uMaxSceneHeight;
-    
-    // Red channel = height, other channels available for future material properties
-    gl_FragColor = vec4(normalizedHeight, 0.0, 0.0, 1.0);
+  // Sample alpha to maintain sprite shape
+  float alpha = texture2D(uDiffuse, vTextureCoord).a;
+  
+  // Discard transparent pixels
+  if (alpha < 0.01) {
+    discard;
+  }
+  
+  // Normalize height to 0-1 range for depth map (assuming height range 0-100)
+  float normalizedHeight = uObjectHeight / 100.0;
+  
+  // Output height as grayscale (R channel = height, RGB all same for visualization)
+  gl_FragColor = vec4(vec3(normalizedHeight), 1.0);
 }
