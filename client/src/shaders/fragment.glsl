@@ -1163,16 +1163,17 @@ void main(void) {
   
   // === SCREEN SPACE REFLECTIONS (SSR) - FINAL PASS ===
   // Add reflections for 2.5D surfaces using depth-based ray marching
-  // CRITICAL: SSR applies to ALL metallic surfaces (metallic > 0)
-  // Depth hierarchy prevents reflecting objects below current surface
+  // CRITICAL: SSR only applies to FLOOR (lowest depth surfaces with metallic > 0)
+  // Objects above the floor should NOT do SSR, only the floor reflects them
   if (uSSREnabled && uSSRIntensity > 0.0 && finalMetallic > 0.0) {
     // Get depth at current pixel (from zOrder-based depth map)
     float pixelDepth = texture2D(uDepthMap, vTextureCoord).r;
     
-    // Apply SSR to all surfaces within threshold
-    // Depth hierarchy in ray marching prevents reflecting objects below
-    if (pixelDepth <= uSSRDepthThreshold) {
-      // This is a reflective metallic surface
+    // FLOOR REFLECTIONS ONLY: Must be at the LOWEST depth level (floor/background)
+    // Check: pixelDepth is BELOW threshold (floor area) 
+    // The threshold separates floor from objects ON the floor
+    if (pixelDepth < uSSRDepthThreshold - 0.02) {
+      // This is the floor (lowest depth + metallic > 0)
       
       // Calculate reflection direction
       // For 2.5D, default is upward reflection (simulating floor reflections)
@@ -1195,8 +1196,7 @@ void main(void) {
       
       // March the ray through screen space
       // Use dynamic loop based on quality setting
-      // Start at step 5 to skip self-reflection (prevents sampling the sprite itself)
-      for (float step = 5.0; step < 100.0; step += 1.0) {
+      for (float step = 1.0; step < 100.0; step += 1.0) {
         // Early exit based on quality uniform
         if (step >= uSSRQuality) break;
         
@@ -1251,9 +1251,19 @@ void main(void) {
         // metallic=0 → no reflections, metallic=1 → full reflections
         float finalStrength = reflectionStrength * uSSRIntensity * finalMetallic;
         finalColor = mix(finalColor, reflectionColor.rgb, finalStrength);
+      } else if (uIBLEnabled) {
+        // Fall back to IBL environment map for missed rays
+        float phi = atan(reflectionDir.y, reflectionDir.x);
+        float theta = acos(0.0); // For 2.5D, we're looking mostly horizontal
+        vec2 envUV = vec2(
+          (phi / (2.0 * 3.14159265359)) + 0.5,
+          theta / 3.14159265359
+        );
+        vec4 reflectionColor = texture2D(uEnvironmentMap, envUV);
+        // Also scale fallback by metallic value
+        float fallbackStrength = 0.3 * uIBLIntensity * uSSRIntensity * finalMetallic;
+        finalColor = mix(finalColor, reflectionColor.rgb, fallbackStrength);
       }
-      // NOTE: No IBL fallback for SSR - if ray misses, no reflection is added
-      // This prevents dark sky artifacts on sprites
     }
   }
   
