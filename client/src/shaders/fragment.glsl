@@ -92,6 +92,15 @@ uniform bool uIBLEnabled; // Enable/disable IBL
 uniform float uIBLIntensity; // IBL strength multiplier (0.0-5.0)
 uniform sampler2D uEnvironmentMap; // Equirectangular environment map for IBL
 
+// Screen Space Reflections (SSR) System - Normal-map-aware reflections
+uniform bool uSSREnabled; // Enable/disable SSR
+uniform float uSSRIntensity; // SSR strength (0.0-1.0)
+uniform float uMaxDistance; // Maximum ray-march distance (pixels)
+uniform float uStepSize; // Ray-march step size (pixels)
+uniform float uFadeStart; // Distance fade start (0.0-1.0)
+uniform float uFadeEnd; // Distance fade end (0.0-1.0)
+uniform sampler2D uDepthMap; // Height/depth map from depth pass
+
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 pixelPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
   vec2 relativePos = pixelPos - lightPos;
@@ -652,6 +661,82 @@ vec3 calculateIBL(vec3 albedo, vec3 normal, vec3 viewDir, float metallic, float 
   return iblContribution;
 }
 
+// ======= Screen Space Reflections (SSR) Functions =======
+
+// Calculate SSR contribution using normal-map-aware ray-marching
+vec3 calculateSSR(vec3 normal, vec2 screenUV, vec3 sceneColor) {
+  if (!uSSREnabled || uSSRIntensity <= 0.0) {
+    return vec3(0.0);
+  }
+  
+  // Fixed view direction for 2.5D (looking down at scene)
+  vec3 viewDir = normalize(vec3(0.0, 0.0, -1.0));
+  
+  // Calculate reflection direction using surface normal
+  vec3 reflectDir = reflect(viewDir, normal);
+  
+  // Convert 3D reflection to 2D screen-space direction
+  vec2 reflectDir2D = normalize(reflectDir.xy);
+  
+  // Current pixel's depth (height)
+  float currentDepth = texture2D(uDepthMap, screenUV).r;
+  
+  // Early exit if no depth (background)
+  if (currentDepth <= 0.001) {
+    return vec3(0.0);
+  }
+  
+  // Ray-march through depth map to find reflection hit
+  vec2 currentPos = screenUV;
+  float travelDistance = 0.0;
+  bool hit = false;
+  vec2 hitUV = vec2(0.0);
+  
+  for (int i = 0; i < 50; i++) {
+    // Step along reflection direction in screen space
+    travelDistance += uStepSize;
+    vec2 stepOffset = reflectDir2D * (travelDistance / uCanvasSize.x);
+    currentPos = screenUV + stepOffset;
+    
+    // Check bounds
+    if (currentPos.x < 0.0 || currentPos.x > 1.0 || 
+        currentPos.y < 0.0 || currentPos.y > 1.0) {
+      break;
+    }
+    
+    // Sample depth at ray position
+    float sampleDepth = texture2D(uDepthMap, currentPos).r;
+    
+    // Ray height decreases as it travels away
+    float rayHeight = currentDepth - (travelDistance / uMaxDistance) * currentDepth;
+    
+    // Check for intersection: ray crosses sample depth
+    if (rayHeight <= sampleDepth && sampleDepth > 0.001) {
+      hit = true;
+      hitUV = currentPos;
+      break;
+    }
+    
+    // Stop if traveled max distance
+    if (travelDistance >= uMaxDistance) {
+      break;
+    }
+  }
+  
+  // If hit, return scene color at hit point with distance-based fade
+  if (hit) {
+    vec3 hitColor = texture2D(uDiffuse, hitUV).rgb;
+    
+    // Distance-based fade
+    float normalizedDistance = travelDistance / uMaxDistance;
+    float fade = 1.0 - smoothstep(uFadeStart, uFadeEnd, normalizedDistance);
+    
+    return hitColor * uSSRIntensity * fade;
+  }
+  
+  return vec3(0.0);
+}
+
 void main(void) {
   // Use UV coordinates directly since geometry is already rotated
   vec2 uv = vTextureCoord;
@@ -1149,6 +1234,13 @@ void main(void) {
     float aoInfluence = mix(0.3, 1.0, 1.0 - diffuseColor.a); // Sprites get 30% AO, background gets full AO
     float aoEffect = mix(1.0, aoFactor, aoInfluence);
     finalColor *= aoEffect;
+  }
+  
+  // Add Screen Space Reflections (SSR) - Normal-map-aware reflections
+  // Reflects other sprites based on surface normals at each pixel
+  if (uSSREnabled && uSSRIntensity > 0.0) {
+    vec3 ssrContribution = calculateSSR(normal, vTextureCoord, finalColor);
+    finalColor += ssrContribution;
   }
   
   gl_FragColor = vec4(finalColor, diffuseColor.a);
