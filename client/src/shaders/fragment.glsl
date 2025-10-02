@@ -784,6 +784,26 @@ void main(void) {
     // Skip all dynamic lights in base pass
     gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
     return;
+  } else if (uPassMode == 2) {
+    // SSR PASS: Sample from pre-lit renderTarget and apply SSR
+    vec2 screenPos = gl_FragCoord.xy / uCanvasSize;
+    
+    // Get the already-lit color from the renderTarget
+    vec3 litColor = texture2D(uRenderTarget, screenPos).rgb;
+    finalColor = litColor;
+    
+    // Apply SSR if enabled and metallic
+    if (uSSREnabled && finalMetallic > 0.0) {
+      vec2 hitCoord = calculateSSR(worldPos3D, normal, viewDir);
+      
+      if (hitCoord.x >= 0.0) { 
+        vec3 reflectedColor = texture2D(uRenderTarget, hitCoord).rgb;
+        finalColor = mix(finalColor, reflectedColor, finalMetallic * uSSRIntensity);
+      }
+    }
+    
+    gl_FragColor = vec4(finalColor, diffuseColor.a);
+    return;
   } else {
     
     // Start with ambient light only (no global shadow system)
