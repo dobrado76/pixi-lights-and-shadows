@@ -1252,14 +1252,6 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Switch to unlimited mode when more than 3 shadow casters
         uUseOccluderMap: true,
         uOccluderMapOffset: [SHADOW_BUFFER, SHADOW_BUFFER], // Offset for expanded occlusion map
-        // SSR system uniforms
-        uSSREnabled: (sceneConfig as any).ssrConfig?.enabled || false,
-        uSSRIntensity: (sceneConfig as any).ssrConfig?.intensity || 0.5,
-        uMaxDistance: (sceneConfig as any).ssrConfig?.maxDistance || 100,
-        uStepSize: 2.0,
-        uFadeStart: 0.5,
-        uFadeEnd: 1.0,
-        uDepthMap: depthRenderTargetRef.current || PIXI.Texture.EMPTY,
         ...lightUniforms
       };
       

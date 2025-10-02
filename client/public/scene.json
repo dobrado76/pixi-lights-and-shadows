@@ -119,13 +119,13 @@
         "image": "/textures/test1.png",
         "normal": "/textures/test1Normal.png",
         "useNormalMap": true,
-        "metallic": 0.34,
-        "smoothness": 0.41
+        "metallic": 0,
+        "smoothness": 0.5
       },
       "transform": {
         "position": {
-          "x": 242,
-          "y": 373
+          "x": 82,
+          "y": 420
         },
         "rotation": 0,
         "scale": 1
@@ -173,13 +173,13 @@
         "image": "/textures/test3.png",
         "normal": "/textures/test3Normal.png",
         "useNormalMap": true,
-        "metallic": 0.36,
-        "smoothness": 0.45
+        "metallic": 0,
+        "smoothness": 0.5
       },
       "transform": {
         "position": {
-          "x": 242,
-          "y": 295
+          "x": 293,
+          "y": 424
         },
         "rotation": 0,
         "scale": 1
@@ -268,12 +268,12 @@
       "id": "mouse_light",
       "type": "point",
       "enabled": true,
-      "brightness": 2.5,
+      "brightness": 1.8,
       "color": "0xffffff",
       "position": {
         "x": 260,
         "y": 170,
-        "z": 70
+        "z": 40
       },
       "followMouse": true,
       "castsShadows": true,
@@ -402,11 +402,6 @@
   "iblConfig": {
     "enabled": true,
     "intensity": 0.3,
-    "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg"
-  },
-  "ssrConfig": {
-    "enabled": true,
-    "intensity": 0.8,
-    "maxDistance": 150
+    "environmentMap": "/sky_boxes/cobblestone_street_night_1k.jpg"
   }
 }
