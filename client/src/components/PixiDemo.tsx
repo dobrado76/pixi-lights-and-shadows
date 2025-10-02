@@ -537,16 +537,21 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     const allSprites = sceneManagerRef.current?.getAllSprites() || [];
     
-    // Get sprites that can be reflected
-    const reflectableSprites = allSprites.filter(sprite => 
-      (sprite.definition as any).reflection?.canBeReflected && sprite.mesh
-    );
+    // Get sprites that can be reflected (safely check for reflection property)
+    const reflectableSprites = allSprites.filter(sprite => {
+      const reflection = (sprite.definition as any)?.reflection;
+      return reflection?.canBeReflected && sprite.mesh;
+    });
     
     // Find reflective surface to get reflection line
-    const reflectiveSurface = allSprites.find(sprite => 
-      (sprite.definition as any).reflection?.isReflectiveSurface
-    );
-    const reflectionLineY = (reflectiveSurface?.definition as any).reflection?.reflectionLineY || pixiApp.screen.height / 2;
+    const reflectiveSurface = allSprites.find(sprite => {
+      const reflection = (sprite.definition as any)?.reflection;
+      return reflection?.isReflectiveSurface;
+    });
+    
+    const reflectionLineY = reflectiveSurface 
+      ? ((reflectiveSurface.definition as any)?.reflection?.reflectionLineY || pixiApp.screen.height / 2)
+      : pixiApp.screen.height / 2;
     
     // Clear reflection container
     reflectionContainerRef.current.removeChildren();
