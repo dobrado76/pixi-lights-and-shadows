@@ -809,25 +809,37 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
     }
 
-    // CRITICAL: Render scene container (with all lit sprites) WITHOUT SSR to previousFrame
-    // This gives us the full colored scene that SSR can sample from
-    if (previousFrameRenderTargetRef.current && sceneContainerRef.current) {
-      // Disable SSR for this render pass
+    // SSR TWO-PASS RENDERING:
+    // Pass 1: Render WITHOUT SSR to get the fully lit scene
+    // Pass 2: Render WITH SSR, sampling from Pass 1
+    
+    const ssrConfig = (sceneConfig as any).ssrConfig;
+    const ssrEnabled = ssrConfig?.enabled || false;
+    
+    if (ssrEnabled && previousFrameRenderTargetRef.current && sceneContainerRef.current) {
+      // PASS 1: Disable SSR and render to previousFrame to capture the lit scene
       shadersRef.current.forEach(s => { if (s.uniforms) s.uniforms.uSSREnabled = false; });
       
-      // Clear previousFrame and render the fully lit scene to it
+      // Render the fully lit scene (lights+shadows+AO+IBL) WITHOUT SSR
       pixiApp.renderer.render(sceneContainerRef.current, {
         renderTexture: previousFrameRenderTargetRef.current,
         clear: true
       });
       
-      // Re-enable SSR for final pass
-      const ssrEnabled = (sceneConfig as any).ssrConfig?.enabled || false;
-      shadersRef.current.forEach(s => { if (s.uniforms) s.uniforms.uSSREnabled = ssrEnabled; });
+      // PASS 2: Enable SSR and update uniforms to sample from the lit scene we just rendered
+      shadersRef.current.forEach(s => { 
+        if (s.uniforms) {
+          s.uniforms.uSSREnabled = true;
+          s.uniforms.uAccumulatedScene = previousFrameRenderTargetRef.current;
+        }
+      });
+      
+      // Now render WITH SSR, which will sample from previousFrame (the current lit scene)
+      pixiApp.renderer.render(displaySpriteRef.current);
+    } else {
+      // No SSR - just render normally
+      pixiApp.renderer.render(displaySpriteRef.current);
     }
-    
-    // Final render WITH SSR to screen
-    pixiApp.renderer.render(displaySpriteRef.current);
   };
 
   // Initialize PIXI Application
