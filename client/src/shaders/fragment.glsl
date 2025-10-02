@@ -1165,6 +1165,22 @@ void main(void) {
   // Add reflections for 2.5D surfaces using depth-based ray marching
   // CRITICAL: All metallic surfaces can do SSR
   // Depth hierarchy prevents reflecting objects BELOW current surface
+  
+  // DEBUG: Show what's in uAccumulatedScene texture directly
+  if (uSSREnabled && finalMetallic > 0.0) {
+    vec2 screenUV = gl_FragCoord.xy / uCanvasSize;
+    vec4 debugSample = texture2D(uAccumulatedScene, screenUV);
+    if (length(debugSample.rgb) > 0.01) {
+      // Texture has color - show it in CYAN
+      finalColor = vec3(0.0, 1.0, 1.0);
+    } else {
+      // Texture is black - show in MAGENTA
+      finalColor = vec3(1.0, 0.0, 1.0);
+    }
+    gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
+    return;
+  }
+  
   if (uSSREnabled && uSSRIntensity > 0.0 && finalMetallic > 0.0) {
     // CRITICAL: Convert fragment position to screen-space UVs (0-1 for entire screen)
     // gl_FragCoord is in pixels, divide by canvas size to get normalized coordinates
