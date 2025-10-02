@@ -77,6 +77,9 @@ const PixiDemo = (props: PixiDemoProps) => {
   // SSR depth buffer system - renders sprite zOrder as grayscale depth map
   const depthRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
   
+  // SSR previous frame texture - stores last frame's fully rendered scene for reflections
+  const previousFrameRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
+  
   // Performance optimization caches with dirty flags
   const lastUniformsRef = useRef<any>({});
   const lastShadowCastersRef = useRef<any[]>([]);
@@ -850,6 +853,17 @@ const PixiDemo = (props: PixiDemoProps) => {
 
     // Final render: Display accumulated result
     pixiApp.renderer.render(displaySpriteRef.current);
+    
+    // Copy current frame to previous frame texture for next frame's SSR
+    if (previousFrameRenderTargetRef.current && renderTargetRef.current) {
+      // Create a temporary sprite to copy the texture
+      const copySprite = new PIXI.Sprite(renderTargetRef.current);
+      pixiApp.renderer.render(copySprite, {
+        renderTexture: previousFrameRenderTargetRef.current,
+        clear: true
+      });
+      copySprite.destroy();
+    }
   };
 
   // Initialize PIXI Application
@@ -980,6 +994,15 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
       
       console.log('📊 Depth render target initialized for SSR');
+      
+      // Initialize previous frame texture for SSR reflections
+      // Stores the last fully rendered frame so SSR can sample it
+      previousFrameRenderTargetRef.current = PIXI.RenderTexture.create({
+        width: shaderParams.canvasWidth,
+        height: shaderParams.canvasHeight
+      });
+      
+      console.log('🖼️ Previous frame texture initialized for SSR reflections');
       } else {
         console.warn('Canvas element not available for PIXI initialization');
         return; // Exit gracefully instead of throwing
@@ -1794,7 +1817,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
       uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
       uniforms.uDepthMap = depthRenderTargetRef.current || PIXI.Texture.WHITE;
-      uniforms.uAccumulatedScene = renderTargetRef.current || PIXI.Texture.WHITE;
+      // SSR samples the PREVIOUS frame's fully rendered scene (not current frame being built)
+      uniforms.uAccumulatedScene = previousFrameRenderTargetRef.current || PIXI.Texture.WHITE;
       
       
       // Per-sprite AO settings will be set individually for each sprite
@@ -2000,7 +2024,8 @@ const PixiDemo = (props: PixiDemoProps) => {
             shader.uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
             shader.uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
             shader.uniforms.uDepthMap = depthRenderTargetRef.current;
-            shader.uniforms.uAccumulatedScene = renderTargetRef.current || PIXI.Texture.WHITE;
+            // SSR samples the PREVIOUS frame's fully rendered scene
+            shader.uniforms.uAccumulatedScene = previousFrameRenderTargetRef.current || PIXI.Texture.WHITE;
             
             // Occluder map setup complete - directional lights handled by normal uniform flow
           }
