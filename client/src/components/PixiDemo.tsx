@@ -851,19 +851,28 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
     }
 
-    // COPY renderTarget to previousFrame BEFORE displaying
-    // This breaks the texture feedback loop (can't read/write same texture)
-    if (previousFrameRenderTargetRef.current && renderTargetRef.current) {
-      const tempSprite = new PIXI.Sprite(renderTargetRef.current);
-      pixiApp.renderer.render(tempSprite, {
+    // REVOLUTIONARY APPROACH: Render scene container directly to SSR texture
+    // This captures the ACTUAL scene with all sprites and colors
+    if (previousFrameRenderTargetRef.current && sceneContainerRef.current) {
+      // Turn OFF all shaders temporarily to get base colors only
+      shadersRef.current.forEach(shader => {
+        if (shader.uniforms) shader.uniforms.uSSREnabled = false;
+      });
+      
+      // Render the actual scene container (with all sprites) to SSR texture
+      pixiApp.renderer.render(sceneContainerRef.current, {
         renderTexture: previousFrameRenderTargetRef.current,
         clear: true
       });
-      tempSprite.destroy();
+      
+      // Turn SSR back ON for final display
+      const ssrEnabled = (sceneConfig as any).ssrConfig?.enabled || false;
+      shadersRef.current.forEach(shader => {
+        if (shader.uniforms) shader.uniforms.uSSREnabled = ssrEnabled;
+      });
     }
     
-    // Final render: Display accumulated result
-    // SSR now samples from previousFrame (copy of renderTarget)
+    // Final render: Display accumulated result with SSR
     pixiApp.renderer.render(displaySpriteRef.current);
   };
 
