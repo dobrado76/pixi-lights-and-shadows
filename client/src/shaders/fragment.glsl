@@ -1250,19 +1250,9 @@ void main(void) {
         // metallic=0 → no reflections, metallic=1 → full reflections
         float finalStrength = reflectionStrength * uSSRIntensity * finalMetallic;
         finalColor = mix(finalColor, reflectionColor.rgb, finalStrength);
-      } else if (uIBLEnabled) {
-        // Fall back to IBL environment map for missed rays
-        float phi = atan(reflectionDir.y, reflectionDir.x);
-        float theta = acos(0.0); // For 2.5D, we're looking mostly horizontal
-        vec2 envUV = vec2(
-          (phi / (2.0 * 3.14159265359)) + 0.5,
-          theta / 3.14159265359
-        );
-        vec4 reflectionColor = texture2D(uEnvironmentMap, envUV);
-        // Also scale fallback by metallic value
-        float fallbackStrength = 0.3 * uIBLIntensity * uSSRIntensity * finalMetallic;
-        finalColor = mix(finalColor, reflectionColor.rgb, fallbackStrength);
       }
+      // NOTE: No IBL fallback for SSR - if ray misses, no reflection is added
+      // This prevents dark sky artifacts on sprites
     }
   }
   
