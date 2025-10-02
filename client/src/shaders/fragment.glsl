@@ -1192,7 +1192,11 @@ void main(void) {
       
       // Ray marching in SCREEN SPACE - use screen UVs, not texture UVs
       vec2 rayOrigin = screenUV;
-      vec2 rayStep = reflectionDir * (1.0 / uCanvasSize.x); // Normalize step by screen size
+      
+      // Calculate step size based on MaxDistance and Quality
+      // MaxDistance is in pixels, convert to UV space and divide by quality for step count
+      float maxDistanceUV = uSSRMaxDistance / uCanvasSize.x; // Convert pixels to UV space
+      vec2 rayStep = reflectionDir * (maxDistanceUV / uSSRQuality); // Total distance divided by steps
       
       bool hitFound = false;
       vec2 hitUV = rayOrigin;
@@ -1221,12 +1225,6 @@ void main(void) {
         if (sampledDepth > uSSRDepthThreshold && sampledDepth >= pixelDepth) {
           hitFound = true;
           hitUV = currentUV;
-          break;
-        }
-        
-        // Early exit if we've traveled too far
-        float distanceTraveled = length((currentUV - rayOrigin) * uCanvasSize);
-        if (distanceTraveled > uSSRMaxDistance) {
           break;
         }
       }

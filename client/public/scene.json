@@ -275,7 +275,7 @@
         "y": 170,
         "z": 70
       },
-      "followMouse": false,
+      "followMouse": true,
       "castsShadows": true,
       "radius": 220
     },
@@ -406,8 +406,8 @@
   },
   "ssrConfig": {
     "enabled": true,
-    "intensity": 0.74,
-    "maxDistance": 130,
+    "intensity": 0.72,
+    "maxDistance": 330,
     "quality": 14,
     "fadeEdgeDistance": 50,
     "depthThreshold": 0.3

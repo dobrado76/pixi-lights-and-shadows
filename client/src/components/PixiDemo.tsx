@@ -863,6 +863,14 @@ const PixiDemo = (props: PixiDemoProps) => {
         clear: true
       });
       copySprite.destroy();
+      
+      // Debug: Log once every 60 frames to verify copy is working
+      if (frameCountRef.current % 60 === 0) {
+        console.log('📸 SSR: Copied frame to previousFrameTexture', {
+          hasRenderTarget: !!renderTargetRef.current,
+          hasPreviousFrame: !!previousFrameRenderTargetRef.current
+        });
+      }
     }
   };
 
@@ -1817,8 +1825,19 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
       uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
       uniforms.uDepthMap = depthRenderTargetRef.current || PIXI.Texture.WHITE;
-      // SSR samples the display sprite texture (fully rendered scene from this frame)
-      uniforms.uAccumulatedScene = displaySpriteRef.current?.texture || renderTargetRef.current || PIXI.Texture.WHITE;
+      // SSR samples previous frame - must be fully populated!
+      const ssrTexture = previousFrameRenderTargetRef.current || renderTargetRef.current || PIXI.Texture.WHITE;
+      uniforms.uAccumulatedScene = ssrTexture;
+      
+      // Debug SSR texture assignment (log once every 60 frames)
+      if (frameCountRef.current % 60 === 0 && ssrConfig.enabled) {
+        console.log('🔍 SSR Texture:', {
+          usingPrevious: !!previousFrameRenderTargetRef.current,
+          usingCurrent: !previousFrameRenderTargetRef.current && !!renderTargetRef.current,
+          usingFallback: !previousFrameRenderTargetRef.current && !renderTargetRef.current,
+          textureValid: ssrTexture && ssrTexture.valid
+        });
+      }
       
       
       // Per-sprite AO settings will be set individually for each sprite
@@ -2024,8 +2043,8 @@ const PixiDemo = (props: PixiDemoProps) => {
             shader.uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
             shader.uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
             shader.uniforms.uDepthMap = depthRenderTargetRef.current;
-            // SSR samples the accumulated render target (fully lit scene)
-            shader.uniforms.uAccumulatedScene = renderTargetRef.current || PIXI.Texture.WHITE;
+            // SSR samples previous frame
+            shader.uniforms.uAccumulatedScene = previousFrameRenderTargetRef.current || renderTargetRef.current || PIXI.Texture.WHITE;
             
             // Occluder map setup complete - directional lights handled by normal uniform flow
           }
