@@ -32,7 +32,7 @@
         "image": "/textures/white-fabric-texture-background.jpg",
         "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
         "useNormalMap": false,
-        "metallic": 0.64,
+        "metallic": 0,
         "smoothness": 0.17
       },
       "transform": {
@@ -403,5 +403,13 @@
     "enabled": true,
     "intensity": 0.3,
     "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg"
+  },
+  "ssrConfig": {
+    "enabled": true,
+    "intensity": 0.66,
+    "maxDistance": 130,
+    "quality": 14,
+    "fadeEdgeDistance": 50,
+    "depthThreshold": 0.3
   }
 }
