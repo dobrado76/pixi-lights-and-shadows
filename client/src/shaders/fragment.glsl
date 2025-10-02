@@ -92,7 +92,15 @@ uniform bool uIBLEnabled; // Enable/disable IBL
 uniform float uIBLIntensity; // IBL strength multiplier (0.0-5.0)
 uniform sampler2D uEnvironmentMap; // Equirectangular environment map for IBL
 
-// SSR removed - feature disabled
+// Screen Space Reflections (SSR) System - 2.5D reflections using depth/zOrder
+uniform bool uSSREnabled; // Enable/disable SSR
+uniform float uSSRIntensity; // Reflection strength (0.0-1.0)
+uniform float uSSRMaxDistance; // Maximum ray marching distance (pixels)
+uniform float uSSRQuality; // Number of ray march steps
+uniform float uSSRFadeEdgeDistance; // Distance from edges where reflections fade
+uniform float uSSRDepthThreshold; // Depth threshold for hit detection
+uniform sampler2D uDepthMap; // Depth buffer (sprite heights from zOrder)
+uniform sampler2D uAccumulatedScene; // Accumulated lighting result for reflections
 
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 pixelPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
