@@ -32,8 +32,8 @@
         "image": "/textures/white-fabric-texture-background.jpg",
         "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
         "useNormalMap": false,
-        "metallic": 0.24,
-        "smoothness": 0.35
+        "metallic": 0.64,
+        "smoothness": 0.43
       },
       "transform": {
         "position": {
@@ -406,8 +406,8 @@
   },
   "ssrConfig": {
     "enabled": true,
-    "intensity": 0.6,
-    "maxDistance": 140,
+    "intensity": 0.47,
+    "maxDistance": 220,
     "quality": 19,
     "fadeEdgeDistance": 50,
     "depthThreshold": 0.3

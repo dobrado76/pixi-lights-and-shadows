@@ -792,13 +792,17 @@ void main(void) {
     vec3 litColor = texture2D(uRenderTarget, screenPos).rgb;
     finalColor = litColor;
     
-    // Apply SSR if enabled and metallic
-    if (uSSREnabled && finalMetallic > 0.0) {
+    // DEBUG: For metallic surfaces, show what SSR is doing
+    if (uSSREnabled && finalMetallic > 0.5) {
       vec2 hitCoord = calculateSSR(worldPos3D, normal, viewDir);
       
       if (hitCoord.x >= 0.0) { 
+        // HIT FOUND - show reflected color
         vec3 reflectedColor = texture2D(uRenderTarget, hitCoord).rgb;
-        finalColor = mix(finalColor, reflectedColor, finalMetallic * uSSRIntensity);
+        finalColor = reflectedColor; // SHOW PURE REFLECTION for debugging
+      } else {
+        // NO HIT - show blue to indicate miss
+        finalColor = vec3(0.0, 0.0, 0.5);
       }
     }
     
