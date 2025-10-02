@@ -2200,9 +2200,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         buildDepthMap();
       }
       
-      // CRITICAL: Call renderMultiPass which includes SSR logic
-      if (pixiApp && pixiApp.renderer && lightsConfigRef.current && lightsConfigRef.current.length > 0) {
-        renderMultiPass(lightsConfigRef.current);
+      // Render frame
+      if (pixiApp && pixiApp.renderer) {
+        pixiApp.render();
       }
     };
 
