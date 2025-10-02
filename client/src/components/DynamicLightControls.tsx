@@ -967,6 +967,123 @@ const DynamicLightControls = ({
                 </>
               )}
             </div>
+
+            {/* Screen Space Reflections (SSR) Controls */}
+            <div className="mt-3 pt-2 border-t border-border/50">
+              <div className="flex items-center space-x-2 mb-2">
+                <ImageIcon size={12} className="text-muted-foreground" />
+                <h5 className="text-xs font-medium text-muted-foreground">
+                  Screen Space Reflections (SSR)
+                </h5>
+                <button
+                  onClick={() => {
+                    const newConfig = {
+                      ...localSSRConfig,
+                      enabled: !localSSRConfig.enabled,
+                    };
+                    setLocalSSRConfig(newConfig);
+                    const updatedScene = {
+                      ...sceneConfig,
+                      ssrConfig: newConfig,
+                    };
+                    onSceneConfigChange(updatedScene);
+                    debouncedSave(
+                      localLights,
+                      localAmbient,
+                      localShadowConfig,
+                      localAOConfig,
+                      updatedScene,
+                    );
+                  }}
+                  className={`ml-auto p-1 rounded text-xs ${
+                    localSSRConfig.enabled
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                  data-testid="button-toggle-ssr"
+                >
+                  {localSSRConfig.enabled ? (
+                    <Eye size={10} />
+                  ) : (
+                    <EyeOff size={10} />
+                  )}
+                </button>
+              </div>
+
+              {localSSRConfig.enabled && (
+                <>
+                  <div className="flex items-center space-x-2 mb-1">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Intensity: {localSSRConfig.intensity.toFixed(2)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={localSSRConfig.intensity}
+                      onChange={(e) => {
+                        const newIntensity = parseFloat(e.target.value);
+                        const newConfig = {
+                          ...localSSRConfig,
+                          intensity: newIntensity,
+                        };
+                        setLocalSSRConfig(newConfig);
+                        const updatedScene = {
+                          ...sceneConfig,
+                          ssrConfig: newConfig,
+                        };
+                        onSceneConfigChange(updatedScene);
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          localAOConfig,
+                          updatedScene,
+                        );
+                      }}
+                      className="flex-1"
+                      data-testid="slider-ssr-intensity"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2 mb-1">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Distance: {localSSRConfig.maxDistance}
+                    </label>
+                    <input
+                      type="range"
+                      min="50"
+                      max="300"
+                      step="10"
+                      value={localSSRConfig.maxDistance}
+                      onChange={(e) => {
+                        const newDistance = parseInt(e.target.value);
+                        const newConfig = {
+                          ...localSSRConfig,
+                          maxDistance: newDistance,
+                        };
+                        setLocalSSRConfig(newConfig);
+                        const updatedScene = {
+                          ...sceneConfig,
+                          ssrConfig: newConfig,
+                        };
+                        onSceneConfigChange(updatedScene);
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          localAOConfig,
+                          updatedScene,
+                        );
+                      }}
+                      className="flex-1"
+                      data-testid="slider-ssr-distance"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
           </>
         )}
       </div>
