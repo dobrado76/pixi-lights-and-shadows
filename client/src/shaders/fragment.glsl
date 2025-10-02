@@ -1195,7 +1195,8 @@ void main(void) {
       
       // March the ray through screen space
       // Use dynamic loop based on quality setting
-      for (float step = 1.0; step < 100.0; step += 1.0) {
+      // Start at step 5 to skip self-reflection (prevents sampling the sprite itself)
+      for (float step = 5.0; step < 100.0; step += 1.0) {
         // Early exit based on quality uniform
         if (step >= uSSRQuality) break;
         
