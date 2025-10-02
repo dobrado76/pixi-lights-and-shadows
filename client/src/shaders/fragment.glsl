@@ -1175,16 +1175,13 @@ void main(void) {
       // This is a reflective metallic surface
       
       // Calculate reflection direction for 2.5D
-      // Use view angle of 45 degrees (looking down at surface)
-      vec3 viewDirSSR = normalize(vec3(0.0, -0.707, -0.707)); // 45° angle looking down
-      vec3 reflectDir3D = reflect(viewDirSSR, normal);
+      // Default: march upward (simulating floor reflecting objects above)
+      vec2 reflectionDir = vec2(0.0, -1.0);
       
-      // Project reflection direction to 2D screen space
-      vec2 reflectionDir = normalize(reflectDir3D.xy);
-      
-      // Fallback if reflection direction is invalid (too vertical or zero)
-      if (length(reflectionDir) < 0.1) {
-        reflectionDir = vec2(0.0, -1.0); // Default upward reflection
+      // Only use normal-based reflection if normal is significantly tilted
+      if (length(normal.xy) > 0.3) {
+        // Normal has significant XY component, use it for reflection direction
+        reflectionDir = normalize(normal.xy);
       }
       
       // Ray marching to find reflected object
@@ -1233,7 +1230,13 @@ void main(void) {
         // Sample the accumulated scene at the hit point for proper reflections
         vec4 reflectionColor = texture2D(uAccumulatedScene, hitUV);
         
-        float reflectionStrength = 1.0;
+        // Skip reflection if the sampled color is too dark (likely in shadow)
+        // This prevents dark shadow artifacts
+        float sampledBrightness = (reflectionColor.r + reflectionColor.g + reflectionColor.b) / 3.0;
+        if (sampledBrightness < 0.1) {
+          // Too dark, skip this reflection
+        } else {
+          float reflectionStrength = 1.0;
         
         // Fade out reflections near screen edges
         vec2 edgeDist = min(hitUV, 1.0 - hitUV) * uCanvasSize.x;
@@ -1246,11 +1249,12 @@ void main(void) {
         float distanceFade = 1.0 - smoothstep(0.0, uSSRMaxDistance, distanceToHit);
         reflectionStrength *= distanceFade;
         
-        // Blend reflection with scene color
-        // CRITICAL: Scale reflection strength by metallic value
-        // metallic=0 → no reflections, metallic=1 → full reflections
-        float finalStrength = reflectionStrength * uSSRIntensity * finalMetallic;
-        finalColor = mix(finalColor, reflectionColor.rgb, finalStrength);
+          // Blend reflection with scene color
+          // CRITICAL: Scale reflection strength by metallic value
+          // metallic=0 → no reflections, metallic=1 → full reflections
+          float finalStrength = reflectionStrength * uSSRIntensity * finalMetallic;
+          finalColor = mix(finalColor, reflectionColor.rgb, finalStrength);
+        }
       }
       // Disabled IBL fallback for now - only show reflections when ray actually hits something
       // This prevents dark sky reflections from appearing as artifacts
