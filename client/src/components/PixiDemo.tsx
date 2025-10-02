@@ -809,35 +809,25 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
     }
 
-    // SSR TWO-PASS RENDERING:
-    // Pass 1: Render WITHOUT SSR to get the fully lit scene
-    // Pass 2: Render WITH SSR, sampling from Pass 1
-    
+    // SSR: Enable and point to the lit renderTarget, then render to screen
     const ssrConfig = (sceneConfig as any).ssrConfig;
     const ssrEnabled = ssrConfig?.enabled || false;
     
-    if (ssrEnabled && previousFrameRenderTargetRef.current && sceneContainerRef.current) {
-      // PASS 1: Disable SSR and render to previousFrame to capture the lit scene
-      shadersRef.current.forEach(s => { if (s.uniforms) s.uniforms.uSSREnabled = false; });
-      
-      // Render the fully lit scene (lights+shadows+AO+IBL) WITHOUT SSR
-      pixiApp.renderer.render(sceneContainerRef.current, {
-        renderTexture: previousFrameRenderTargetRef.current,
-        clear: true
-      });
-      
-      // PASS 2: Enable SSR and update uniforms to sample from the lit scene we just rendered
+    if (ssrEnabled && renderTargetRef.current && sceneContainerRef.current) {
+      // Enable SSR and point it to the already-lit renderTarget
       shadersRef.current.forEach(s => { 
         if (s.uniforms) {
           s.uniforms.uSSREnabled = true;
-          s.uniforms.uAccumulatedScene = previousFrameRenderTargetRef.current;
+          s.uniforms.uAccumulatedScene = renderTargetRef.current;
+          s.uniforms.uPassMode = 2; // SSR pass
         }
       });
       
-      // Now render WITH SSR, which will sample from previousFrame (the current lit scene)
-      pixiApp.renderer.render(displaySpriteRef.current);
+      // Render scene WITH SSR to screen
+      // SSR will sample from renderTarget (which has lights+shadows+AO+IBL)
+      pixiApp.renderer.render(sceneContainerRef.current);
     } else {
-      // No SSR - just render normally
+      // No SSR - just show the lit renderTarget
       pixiApp.renderer.render(displaySpriteRef.current);
     }
   };

@@ -403,5 +403,13 @@
     "enabled": true,
     "intensity": 0.3,
     "environmentMap": "/sky_boxes/golden_gate_hills_1k.jpg"
+  },
+  "ssrConfig": {
+    "enabled": true,
+    "intensity": 0.85,
+    "maxDistance": 240,
+    "quality": 46,
+    "fadeEdgeDistance": 50,
+    "depthThreshold": 0.3
   }
 }
