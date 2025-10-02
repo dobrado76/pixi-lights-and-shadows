@@ -672,46 +672,45 @@ vec2 calculateSSR(vec3 worldPos, vec3 normal, vec3 viewDir) {
   // Calculate reflection vector
   vec3 reflectDir = reflect(-viewDir, normal);
   
-  // Convert to screen space
+  // Convert to screen space (0-1 range)
   vec2 screenPos = gl_FragCoord.xy / uCanvasSize;
-  vec2 screenDir = normalize(reflectDir.xy);
   
-  // Hierarchical ray marching
-  float stride = uSSR_Stride / uCanvasSize.x; // Convert to UV space
-  vec2 currentPos = screenPos;
+  // Get current pixel's depth
   float currentDepth = texture2D(uDepthMap, screenPos).r;
   
+  // Calculate reflection direction in screen space
+  vec2 screenDir = normalize(reflectDir.xy);
+  
+  // CRITICAL FIX: Use uSSRMaxDistance to calculate total march distance
+  // MaxDistance is in pixels, convert to UV space (0-1)
+  float maxDistanceUV = uSSRMaxDistance / uCanvasSize.x;
+  
+  // Calculate stride per step: total distance / number of steps
+  // This ensures we actually cover the MaxDistance range
+  float stridePerStep = maxDistanceUV / float(uSSR_Steps);
+  
+  vec2 currentPos = screenPos;
+  
   // Ray march through screen space
-  for (int i = 0; i < 100; i++) { // Max iterations (will break early based on uSSR_Steps)
-    if (i >= uSSR_Steps) break;
+  for (int i = 1; i <= 100; i++) { // Start from 1 to skip self
+    if (i > uSSR_Steps) break;
     
-    // Step along ray
-    currentPos += screenDir * stride;
+    // Step along ray using calculated stride
+    currentPos = screenPos + screenDir * stridePerStep * float(i);
     
-    // Check bounds
+    // Check bounds - exit if ray goes off screen
     if (currentPos.x < 0.0 || currentPos.x > 1.0 || currentPos.y < 0.0 || currentPos.y > 1.0) {
-      return vec2(-1.0); // Ray went off screen
+      return vec2(-1.0);
     }
     
     // Sample depth at current position
     float sampledDepth = texture2D(uDepthMap, currentPos).r;
     
-    // Check for intersection (with thickness tolerance)
-    if (sampledDepth > currentDepth && (sampledDepth - currentDepth) < uSSR_Thickness) {
-      // Binary search refinement for more accurate hit
-      vec2 lastPos = currentPos - screenDir * stride;
-      for (int j = 0; j < 4; j++) {
-        vec2 midPos = (lastPos + currentPos) * 0.5;
-        float midDepth = texture2D(uDepthMap, midPos).r;
-        
-        if (midDepth > currentDepth) {
-          currentPos = midPos;
-        } else {
-          lastPos = midPos;
-        }
-      }
-      
-      return currentPos; // Found a hit!
+    // Check if we hit something (depth > 0 means an object is there)
+    // AND it's at same or higher level (sampledDepth >= currentDepth for 2.5D)
+    if (sampledDepth > 0.01 && sampledDepth >= currentDepth) {
+      // We found a hit! Return the hit coordinate
+      return currentPos;
     }
   }
   
@@ -1226,6 +1225,13 @@ void main(void) {
     if (hitCoord.x >= 0.0) { 
       // Sample the main scene color at the hit coordinate
       vec3 localReflection = texture2D(uAccumulatedScene, hitCoord).rgb;
+      
+      // Safety check: if reflection is too dark, it might be invalid data
+      // Add a very subtle blue tint to black reflections for debugging
+      if (length(localReflection) < 0.01) {
+        localReflection = vec3(0.05, 0.05, 0.1); // Very dark blue for debugging
+      }
+      
       vec3 reflectionColor = vec3(0.0);
       
       // Blend with IBL for a complete reflection model
@@ -1238,7 +1244,7 @@ void main(void) {
         reflectionColor = localReflection;
       }
       
-      // Only blend reflection if we have a valid color
+      // Apply reflection based on metallic value
       finalColor = mix(finalColor, reflectionColor, finalMetallic * uSSRIntensity);
     } else if (uIBLEnabled && finalMetallic > 0.0) {
       // If the ray missed, fall back to only IBL reflections (but still check metallic)
