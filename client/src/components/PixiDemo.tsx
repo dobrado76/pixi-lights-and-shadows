@@ -851,17 +851,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
     }
 
-    // Render WITHOUT SSR to previousFrame  
-    if (previousFrameRenderTargetRef.current) {
-      shadersRef.current.forEach(s => { if (s.uniforms) s.uniforms.uSSREnabled = false; });
-      pixiApp.renderer.render(displaySpriteRef.current, {
-        renderTexture: previousFrameRenderTargetRef.current
-      });
-      const ssrEnabled = (sceneConfig as any).ssrConfig?.enabled || false;
-      shadersRef.current.forEach(s => { if (s.uniforms) s.uniforms.uSSREnabled = ssrEnabled; });
-    }
-    
-    // Final render WITH SSR to screen
+    // Final render: Display accumulated result
     pixiApp.renderer.render(displaySpriteRef.current);
   };
 
@@ -1807,18 +1797,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       // ✅ Global Light Masks Control (performance-filtered)
       uniforms.uMasksEnabled = performanceSettings.enableLightMasks;
       
-      // Screen Space Reflections (SSR) uniforms - 2.5D reflections using depth/zOrder
-      const ssrConfig = (sceneConfig as any).ssrConfig || { enabled: false, intensity: 0.15, maxDistance: 230, quality: 25, fadeEdgeDistance: 50, depthThreshold: 0.3 };
-      uniforms.uSSREnabled = ssrConfig.enabled || false;
-      uniforms.uSSRIntensity = ssrConfig.intensity || 0.15;
-      uniforms.uSSRMaxDistance = ssrConfig.maxDistance || 230;
-      uniforms.uSSRQuality = ssrConfig.quality || 25;
-      uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
-      uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
-      uniforms.uDepthMap = depthRenderTargetRef.current || PIXI.Texture.WHITE;
-      // SSR samples from previousFrame (copy of renderTarget made BEFORE display)
-      // This avoids texture feedback loop (can't read/write same texture)
-      uniforms.uAccumulatedScene = previousFrameRenderTargetRef.current || PIXI.Texture.WHITE;
+      // SSR removed - feature disabled
       
       
       // Per-sprite AO settings will be set individually for each sprite
