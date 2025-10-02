@@ -1230,13 +1230,7 @@ void main(void) {
         // Sample the accumulated scene at the hit point for proper reflections
         vec4 reflectionColor = texture2D(uAccumulatedScene, hitUV);
         
-        // Skip reflection if the sampled color is too dark (likely in shadow)
-        // This prevents dark shadow artifacts
-        float sampledBrightness = (reflectionColor.r + reflectionColor.g + reflectionColor.b) / 3.0;
-        if (sampledBrightness < 0.1) {
-          // Too dark, skip this reflection
-        } else {
-          float reflectionStrength = 1.0;
+        float reflectionStrength = 1.0;
         
         // Fade out reflections near screen edges
         vec2 edgeDist = min(hitUV, 1.0 - hitUV) * uCanvasSize.x;
@@ -1249,12 +1243,11 @@ void main(void) {
         float distanceFade = 1.0 - smoothstep(0.0, uSSRMaxDistance, distanceToHit);
         reflectionStrength *= distanceFade;
         
-          // Blend reflection with scene color
-          // CRITICAL: Scale reflection strength by metallic value
-          // metallic=0 → no reflections, metallic=1 → full reflections
-          float finalStrength = reflectionStrength * uSSRIntensity * finalMetallic;
-          finalColor = mix(finalColor, reflectionColor.rgb, finalStrength);
-        }
+        // Blend reflection with scene color
+        // CRITICAL: Scale reflection strength by metallic value
+        // metallic=0 → no reflections, metallic=1 → full reflections
+        float finalStrength = reflectionStrength * uSSRIntensity * finalMetallic;
+        finalColor = mix(finalColor, reflectionColor.rgb, finalStrength);
       }
       // Disabled IBL fallback for now - only show reflections when ray actually hits something
       // This prevents dark sky reflections from appearing as artifacts
