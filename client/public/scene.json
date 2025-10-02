@@ -400,15 +400,15 @@
     "manualOverride": true
   },
   "iblConfig": {
-    "enabled": true,
+    "enabled": false,
     "intensity": 0.3,
     "environmentMap": "/sky_boxes/golden_gate_hills_1k.jpg"
   },
   "ssrConfig": {
     "enabled": true,
-    "intensity": 0.19,
-    "maxDistance": 200,
-    "quality": 19,
+    "intensity": 0.66,
+    "maxDistance": 250,
+    "quality": 9,
     "fadeEdgeDistance": 50,
     "depthThreshold": 0.3
   }
