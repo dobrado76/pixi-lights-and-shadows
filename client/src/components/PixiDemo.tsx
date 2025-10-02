@@ -851,16 +851,33 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
     }
 
-    // CRITICAL FIX: Render displaySprite WITH SSR to previousFrame FIRST
-    // This executes the shader which calculates SSR and saves the result
+    // TWO-PASS SSR RENDERING:
+    // Pass 1: Render WITHOUT SSR to previousFrame (for next frame to sample)
+    // Pass 2: Render WITH SSR to screen (sampling from previousFrame)
+    
     if (previousFrameRenderTargetRef.current && displaySpriteRef.current) {
+      // Pass 1: Disable SSR and render to previousFrame
+      const ssrEnabled = (sceneConfig as any).ssrConfig?.enabled || false;
+      shadersRef.current.forEach(shader => {
+        if (shader.uniforms) {
+          shader.uniforms.uSSREnabled = false; // Temporarily disable SSR
+        }
+      });
+      
       pixiApp.renderer.render(displaySpriteRef.current, {
         renderTexture: previousFrameRenderTargetRef.current,
         clear: true
       });
+      
+      // Pass 2: Re-enable SSR for screen render
+      shadersRef.current.forEach(shader => {
+        if (shader.uniforms) {
+          shader.uniforms.uSSREnabled = ssrEnabled; // Restore SSR state
+        }
+      });
     }
     
-    // Final render: Display to screen (can reuse same displaySprite)
+    // Final render: Display to screen WITH SSR (sampling from previousFrame)
     pixiApp.renderer.render(displaySpriteRef.current);
   };
 

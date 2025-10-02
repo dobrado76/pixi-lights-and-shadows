@@ -1234,16 +1234,24 @@ void main(void) {
         // Sample the accumulated scene at the hit point for proper reflections
         vec4 reflectionColor = texture2D(uAccumulatedScene, hitUV);
         
-        // DEBUG: Show what we sampled - if it's non-black, show it strongly
-        if (length(reflectionColor.rgb) > 0.01) {
-          finalColor = mix(finalColor, reflectionColor.rgb, 0.8);
-        } else {
-          // Sampled black - show RED to indicate the texture is empty
-          finalColor = vec3(1.0, 0.0, 0.0);
-        }
+        float reflectionStrength = 1.0;
         
-        gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
-        return;
+        // Fade out reflections near screen edges
+        vec2 edgeDist = min(hitUV, 1.0 - hitUV) * uCanvasSize.x;
+        float edgeFade = min(edgeDist.x, edgeDist.y) / uSSRFadeEdgeDistance;
+        edgeFade = smoothstep(0.0, 1.0, edgeFade);
+        reflectionStrength *= edgeFade;
+        
+        // Fade based on ray distance (further = weaker)
+        float distanceToHit = length((hitUV - rayOrigin) * uCanvasSize);
+        float distanceFade = 1.0 - smoothstep(0.0, uSSRMaxDistance, distanceToHit);
+        reflectionStrength *= distanceFade;
+        
+        // Blend reflection with scene color
+        // CRITICAL: Scale reflection strength by metallic value
+        // metallic=0 → no reflections, metallic=1 → full reflections
+        float finalStrength = reflectionStrength * uSSRIntensity * finalMetallic;
+        finalColor = mix(finalColor, reflectionColor.rgb, finalStrength);
       } else if (uIBLEnabled) {
         // Fall back to IBL environment map for missed rays
         float phi = atan(reflectionDir.y, reflectionDir.x);
