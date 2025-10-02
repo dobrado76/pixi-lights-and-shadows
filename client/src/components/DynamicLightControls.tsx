@@ -81,6 +81,19 @@ const DynamicLightControls = ({
       environmentMap: "/sky_boxes/golden_gate_hills_1k.hdr",
     },
   );
+
+  const [localSSRConfig, setLocalSSRConfig] = useState<{
+    enabled: boolean;
+    intensity: number;
+    maxDistance: number;
+  }>(
+    (sceneConfig as any).ssrConfig || {
+      enabled: false,
+      intensity: 0.5,
+      maxDistance: 100,
+    },
+  );
+
   const [availableSkyBoxes, setAvailableSkyBoxes] = useState<string[]>([]);
   const [newLightType, setNewLightType] = useState<
     "point" | "directional" | "spotlight"
