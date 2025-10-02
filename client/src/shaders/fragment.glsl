@@ -92,21 +92,6 @@ uniform bool uIBLEnabled; // Enable/disable IBL
 uniform float uIBLIntensity; // IBL strength multiplier (0.0-5.0)
 uniform sampler2D uEnvironmentMap; // Equirectangular environment map for IBL
 
-// Screen Space Reflections (SSR) System - 2.5D reflections using depth/zOrder
-uniform bool uSSREnabled; // Enable/disable SSR
-uniform float uSSRIntensity; // Reflection strength (0.0-1.0)
-uniform float uSSRMaxDistance; // Maximum ray marching distance (pixels)
-uniform float uSSRQuality; // Number of ray march steps
-uniform float uSSRFadeEdgeDistance; // Distance from edges where reflections fade
-uniform float uSSRDepthThreshold; // Depth threshold for hit detection
-uniform sampler2D uDepthMap; // Depth buffer (sprite heights from zOrder)
-uniform sampler2D uRenderTarget; // The lit scene texture for SSR to sample from
-
-// NEW SSR Implementation uniforms
-uniform int uSSR_Steps; // Number of ray march steps (quality)
-uniform float uSSR_Stride; // Distance per step
-uniform float uSSR_Thickness; // Thickness for hit detection
-
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 pixelPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
   vec2 relativePos = pixelPos - lightPos;
@@ -667,56 +652,6 @@ vec3 calculateIBL(vec3 albedo, vec3 normal, vec3 viewDir, float metallic, float 
   return iblContribution;
 }
 
-// NEW: Calculate Screen Space Reflection
-vec2 calculateSSR(vec3 worldPos, vec3 normal, vec3 viewDir) {
-  // Calculate reflection vector
-  vec3 reflectDir = reflect(-viewDir, normal);
-  
-  // Convert to screen space (0-1 range)
-  vec2 screenPos = gl_FragCoord.xy / uCanvasSize;
-  
-  // Get current pixel's depth
-  float currentDepth = texture2D(uDepthMap, screenPos).r;
-  
-  // Calculate reflection direction in screen space
-  vec2 screenDir = normalize(reflectDir.xy);
-  
-  // CRITICAL FIX: Use uSSRMaxDistance to calculate total march distance
-  // MaxDistance is in pixels, convert to UV space (0-1)
-  float maxDistanceUV = uSSRMaxDistance / uCanvasSize.x;
-  
-  // Calculate stride per step: total distance / number of steps
-  // This ensures we actually cover the MaxDistance range
-  float stridePerStep = maxDistanceUV / float(uSSR_Steps);
-  
-  vec2 currentPos = screenPos;
-  
-  // Ray march through screen space
-  for (int i = 1; i <= 100; i++) { // Start from 1 to skip self
-    if (i > uSSR_Steps) break;
-    
-    // Step along ray using calculated stride
-    currentPos = screenPos + screenDir * stridePerStep * float(i);
-    
-    // Check bounds - exit if ray goes off screen
-    if (currentPos.x < 0.0 || currentPos.x > 1.0 || currentPos.y < 0.0 || currentPos.y > 1.0) {
-      return vec2(-1.0);
-    }
-    
-    // Sample depth at current position
-    float sampledDepth = texture2D(uDepthMap, currentPos).r;
-    
-    // Check if we hit something (depth > 0 means an object is there)
-    // AND it's at same or higher level (sampledDepth >= currentDepth for 2.5D)
-    if (sampledDepth > 0.01 && sampledDepth >= currentDepth) {
-      // We found a hit! Return the hit coordinate
-      return currentPos;
-    }
-  }
-  
-  return vec2(-1.0); // No hit found
-}
-
 void main(void) {
   // Use UV coordinates directly since geometry is already rotated
   vec2 uv = vTextureCoord;
@@ -783,30 +718,6 @@ void main(void) {
     
     // Skip all dynamic lights in base pass
     gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
-    return;
-  } else if (uPassMode == 2) {
-    // SSR PASS: Sample from pre-lit renderTarget and apply SSR
-    vec2 screenPos = gl_FragCoord.xy / uCanvasSize;
-    
-    // Get the already-lit color from the renderTarget
-    vec3 litColor = texture2D(uRenderTarget, screenPos).rgb;
-    finalColor = litColor;
-    
-    // DEBUG: For metallic surfaces, show what SSR is doing
-    if (uSSREnabled && finalMetallic > 0.5) {
-      vec2 hitCoord = calculateSSR(worldPos3D, normal, viewDir);
-      
-      if (hitCoord.x >= 0.0) { 
-        // HIT FOUND - show reflected color
-        vec3 reflectedColor = texture2D(uRenderTarget, hitCoord).rgb;
-        finalColor = reflectedColor; // SHOW PURE REFLECTION for debugging
-      } else {
-        // NO HIT - show blue to indicate miss
-        finalColor = vec3(0.0, 0.0, 0.5);
-      }
-    }
-    
-    gl_FragColor = vec4(finalColor, diffuseColor.a);
     return;
   } else {
     
@@ -1238,20 +1149,6 @@ void main(void) {
     float aoInfluence = mix(0.3, 1.0, 1.0 - diffuseColor.a); // Sprites get 30% AO, background gets full AO
     float aoEffect = mix(1.0, aoFactor, aoInfluence);
     finalColor *= aoEffect;
-  }
-  
-  // === SCREEN SPACE REFLECTIONS (SSR) ===
-  // Sample from the current renderTarget texture using depth-based ray marching
-  if (uSSREnabled && finalMetallic > 0.0) { // Only run for metallic surfaces
-    vec2 hitCoord = calculateSSR(worldPos3D, normal, viewDir);
-    
-    // If we found a hit, sample the color from the renderTarget
-    if (hitCoord.x >= 0.0) { 
-      vec3 reflectedColor = texture2D(uRenderTarget, hitCoord).rgb;
-      
-      // Mix the reflected color based on metallic value
-      finalColor = mix(finalColor, reflectedColor, finalMetallic * uSSRIntensity);
-    }
   }
   
   gl_FragColor = vec4(finalColor, diffuseColor.a);

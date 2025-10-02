@@ -64,16 +64,6 @@ export interface AmbientOcclusionConfig {
   bias: number;              // Bias to prevent self-occlusion artifacts (pixels)
 }
 
-// Screen Space Reflections configuration interface
-export interface SSRConfig {
-  enabled: boolean;           // Global SSR enable/disable
-  intensity: number;          // Reflection strength (0.0 - 1.0)
-  maxDistance: number;        // Maximum ray marching distance (pixels)
-  quality: number;            // Number of ray march steps (higher = better quality, lower performance)
-  fadeEdgeDistance: number;   // Distance from edges where reflections fade
-  depthThreshold: number;     // Depth difference threshold for detecting hits
-}
-
 // Internal runtime format
 export interface Light {
   id: string;

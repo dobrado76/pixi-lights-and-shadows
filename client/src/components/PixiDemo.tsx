@@ -3,10 +3,8 @@ import * as PIXI from 'pixi.js';
 import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import vertexShaderSource from '../shaders/vertex.glsl?raw';
 import fragmentShaderSource from '../shaders/fragment.glsl?raw';
-import depthVertexShaderSource from '../shaders/depth-vertex.glsl?raw';
-import depthFragmentShaderSource from '../shaders/depth-fragment.glsl?raw';
 import { ShaderParams } from '../App';
-import { Light, ShadowConfig, AmbientOcclusionConfig, SSRConfig } from '@/lib/lights';
+import { Light, ShadowConfig, AmbientOcclusionConfig } from '@/lib/lights';
 import { SceneManager, SceneSprite } from './Sprite';
 import { detectDevice, getOptimalSettings, AdaptiveQuality, PerformanceSettings } from '../utils/performance';
 
@@ -36,8 +34,7 @@ interface PixiDemoProps {
   ambientOcclusionConfig: AmbientOcclusionConfig;
   sceneConfig: { 
     sprites: Record<string, any>; 
-    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string };
-    ssrConfig?: SSRConfig;
+    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string } 
   };
   performanceSettings: PerformanceSettings;
   onGeometryUpdate: (status: string) => void;
@@ -76,12 +73,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   const occluderContainerRef = useRef<PIXI.Container | null>(null);
   const occluderSpritesRef = useRef<PIXI.Sprite[]>([]);
   
-  // SSR depth buffer system - renders sprite zOrder as grayscale depth map
-  const depthRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
-  
-  // SSR previous frame texture - stores last frame's fully rendered scene for reflections
-  const previousFrameRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
-  
   // Performance optimization caches with dirty flags
   const lastUniformsRef = useRef<any>({});
   const lastShadowCastersRef = useRef<any[]>([]);
@@ -98,7 +89,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   const ambientOcclusionConfigRef = useRef(ambientOcclusionConfig);
   const sceneConfigRef = useRef(sceneConfig);
   const ambientLightRef = useRef(ambientLight);
-  const lightsConfigRef = useRef(lightsConfig);
 
   // Performance optimization utilities
   const createLightConfigHash = (lights: Light[], ambient: any, shadow: any, ao: any, performance: any, ibl: any) => {
@@ -537,108 +527,6 @@ const PixiDemo = (props: PixiDemoProps) => {
     buildOccluderMapForSprite(-999, excludeSpriteId); // Use very low zOrder to include all casters
   };
 
-  // Build depth map for SSR (Screen Space Reflections)
-  // Renders sprite zOrder as normalized grayscale depth values (0=background, 1=max height)
-  const buildDepthMap = () => {
-    if (!pixiApp || !depthRenderTargetRef.current || !sceneManagerRef.current) return;
-    
-    const allSprites = sceneManagerRef.current.getAllSprites();
-    
-    // Create temporary container for depth pass
-    const depthContainer = new PIXI.Container();
-    
-    // Render each sprite with depth shader
-    allSprites.forEach(sprite => {
-      if (!sprite.diffuseTexture || !sprite.definition.visible) return;
-      
-      const zOrder = sprite.definition.zOrder || 0;
-      const objectHeight = (zOrder + 10) * 5.0; // Map zOrder [-10, 10] to [0, 100]
-      
-      // Create mesh with depth shader
-      const geometry = new PIXI.Geometry();
-      const spritePos = sprite.definition.position;
-      const spriteScale = sprite.definition.scale || 1;
-      const spriteRotation = sprite.definition.rotation || 0;
-      const baseWidth = sprite.diffuseTexture.width;
-      const baseHeight = sprite.diffuseTexture.height;
-      
-      // Get pivot (same logic as occluder map)
-      const pivot = sprite.definition.pivot || { preset: 'middle-center', offsetX: 0, offsetY: 0 };
-      let basePivotX = 0, basePivotY = 0;
-      
-      if (pivot.preset === 'custom-offset') {
-        basePivotX = -(pivot.offsetX || 0);
-        basePivotY = -(pivot.offsetY || 0);
-      } else {
-        switch (pivot.preset) {
-          case 'top-left': basePivotX = 0; basePivotY = 0; break;
-          case 'top-center': basePivotX = baseWidth / 2; basePivotY = 0; break;
-          case 'top-right': basePivotX = baseWidth; basePivotY = 0; break;
-          case 'middle-left': basePivotX = 0; basePivotY = baseHeight / 2; break;
-          case 'middle-center': basePivotX = baseWidth / 2; basePivotY = baseHeight / 2; break;
-          case 'middle-right': basePivotX = baseWidth; basePivotY = baseHeight / 2; break;
-          case 'bottom-left': basePivotX = 0; basePivotY = baseHeight; break;
-          case 'bottom-center': basePivotX = baseWidth / 2; basePivotY = baseHeight; break;
-          case 'bottom-right': basePivotX = baseWidth; basePivotY = baseHeight; break;
-        }
-        basePivotX -= (pivot.offsetX || 0);
-        basePivotY -= (pivot.offsetY || 0);
-      }
-      
-      // Create geometry
-      const corners = [
-        { x: 0, y: 0 },
-        { x: baseWidth, y: 0 },
-        { x: baseWidth, y: baseHeight },
-        { x: 0, y: baseHeight }
-      ];
-      
-      const transformedCorners = corners.map(corner => ({
-        x: (corner.x - basePivotX) * spriteScale + (basePivotX * spriteScale),
-        y: (corner.y - basePivotY) * spriteScale + (basePivotY * spriteScale)
-      }));
-      
-      const vertices = new Float32Array([
-        transformedCorners[0].x, transformedCorners[0].y,
-        transformedCorners[1].x, transformedCorners[1].y,
-        transformedCorners[2].x, transformedCorners[2].y,
-        transformedCorners[3].x, transformedCorners[3].y
-      ]);
-      
-      const uvs = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
-      const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
-      
-      geometry.addAttribute('aVertexPosition', vertices, 2);
-      geometry.addAttribute('aTextureCoord', uvs, 2);
-      geometry.addIndex(indices);
-      
-      // Create shader using imported depth shaders
-      const shader = PIXI.Shader.from(depthVertexShaderSource, depthFragmentShaderSource, {
-        uSampler: sprite.diffuseTexture,
-        uCurrentSpriteZOrder: zOrder
-      });
-      
-      // Create mesh
-      const mesh = new PIXI.Mesh(geometry, shader as any);
-      const scaledPivotX = basePivotX * spriteScale;
-      const scaledPivotY = basePivotY * spriteScale;
-      mesh.pivot.set(scaledPivotX, scaledPivotY);
-      mesh.position.set(spritePos.x, spritePos.y);
-      mesh.rotation = spriteRotation;
-      
-      depthContainer.addChild(mesh);
-    });
-    
-    // Render depth map (clears to black by default - depth = 0 for background)
-    pixiApp.renderer.render(depthContainer, {
-      renderTexture: depthRenderTargetRef.current,
-      clear: true
-    });
-    
-    // Clean up
-    depthContainer.destroy({ children: true, texture: false, baseTexture: false });
-  };
-
   // Multi-pass lighting composer
   const renderMultiPass = (lights: Light[]) => {
     if (!pixiApp || !renderTargetRef.current || !sceneContainerRef.current || !displaySpriteRef.current) return;
@@ -810,38 +698,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
     }
 
-    // SSR: Enable and point to the lit renderTarget, then render to screen
-    const ssrConfig = (sceneConfig as any).ssrConfig;
-    const ssrEnabled = ssrConfig?.enabled || false;
-    
-    console.log('🔍 SSR Check:', {
-      enabled: ssrEnabled,
-      hasRenderTarget: !!renderTargetRef.current,
-      hasSceneContainer: !!sceneContainerRef.current,
-      shadersCount: shadersRef.current.length
-    });
-    
-    if (ssrEnabled && renderTargetRef.current && sceneContainerRef.current) {
-      console.log('✅ SSR PATH ACTIVE - rendering with SSR');
-      
-      // Enable SSR and point it to the already-lit renderTarget
-      shadersRef.current.forEach((s, idx) => { 
-        if (s.uniforms) {
-          s.uniforms.uSSREnabled = true;
-          s.uniforms.uRenderTarget = renderTargetRef.current;
-          s.uniforms.uPassMode = 2; // SSR pass
-          console.log(`  Shader ${idx}: uPassMode=2, uSSREnabled=true`);
-        }
-      });
-      
-      // Render scene WITH SSR to screen
-      // SSR will sample from renderTarget (which has lights+shadows+AO+IBL)
-      pixiApp.renderer.render(sceneContainerRef.current);
-    } else {
-      console.log('❌ SSR DISABLED - rendering without SSR');
-      // No SSR - just show the lit renderTarget
-      pixiApp.renderer.render(displaySpriteRef.current);
-    }
+    // Final render: Display accumulated result
+    pixiApp.renderer.render(displaySpriteRef.current);
   };
 
   // Initialize PIXI Application
@@ -963,24 +821,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       );
       
       console.log('🌑 Occluder render target initialized for unlimited shadow casters');
-      
-      // Initialize depth render target for SSR (Screen Space Reflections)
-      // Stores sprite zOrder as normalized depth (height) values
-      depthRenderTargetRef.current = PIXI.RenderTexture.create({
-        width: shaderParams.canvasWidth,
-        height: shaderParams.canvasHeight
-      });
-      
-      console.log('📊 Depth render target initialized for SSR');
-      
-      // Initialize previous frame texture for SSR reflections
-      // Stores the last fully rendered frame so SSR can sample it
-      previousFrameRenderTargetRef.current = PIXI.RenderTexture.create({
-        width: shaderParams.canvasWidth,
-        height: shaderParams.canvasHeight
-      });
-      
-      console.log('🖼️ Previous frame texture initialized for SSR reflections');
       } else {
         console.warn('Canvas element not available for PIXI initialization');
         return; // Exit gracefully instead of throwing
@@ -1709,8 +1549,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     ambientOcclusionConfigRef.current = ambientOcclusionConfig;
     sceneConfigRef.current = sceneConfig;
     ambientLightRef.current = ambientLight;
-    lightsConfigRef.current = lightsConfig;
-  }, [shadowConfig, ambientOcclusionConfig, sceneConfig, ambientLight, lightsConfig]);
+  }, [shadowConfig, ambientOcclusionConfig, sceneConfig, ambientLight]);
 
   // Dynamic shader uniform updates for real-time lighting changes
   useEffect(() => {
@@ -1786,23 +1625,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // ✅ Global Light Masks Control (performance-filtered)
       uniforms.uMasksEnabled = performanceSettings.enableLightMasks;
-      
-      // Screen Space Reflections (SSR) uniforms - 2.5D reflections using depth/zOrder
-      const ssrConfig = (sceneConfig as any).ssrConfig || { enabled: false, intensity: 0.15, maxDistance: 230, quality: 25, fadeEdgeDistance: 50, depthThreshold: 0.3 };
-      uniforms.uSSREnabled = ssrConfig.enabled || false;
-      uniforms.uSSRIntensity = ssrConfig.intensity || 0.15;
-      uniforms.uSSRMaxDistance = ssrConfig.maxDistance || 230;
-      uniforms.uSSRQuality = ssrConfig.quality || 25;
-      uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
-      uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
-      uniforms.uDepthMap = depthRenderTargetRef.current || PIXI.Texture.WHITE;
-      // SSR samples from the renderTarget (fully lit scene)
-      uniforms.uRenderTarget = renderTargetRef.current || PIXI.Texture.WHITE;
-      
-      // NEW SSR Implementation uniforms
-      uniforms.uSSR_Steps = ssrConfig.quality || 25; // Use quality as steps
-      uniforms.uSSR_Stride = 10.0; // Pixels per step
-      uniforms.uSSR_Thickness = 0.05; // Thickness for hit detection
       
       
       // Per-sprite AO settings will be set individually for each sprite
@@ -1984,12 +1806,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       const useOccluderMap = true;
       
       if (useOccluderMap) {
-        // Build depth map for SSR first (if enabled)
-        const ssrConfig = (sceneConfig as any).ssrConfig || { enabled: false };
-        if (ssrConfig.enabled && depthRenderTargetRef.current) {
-          buildDepthMap();
-        }
-        
         // ALWAYS build occluder map regardless of light state - critical for directional lights
         buildOccluderMap();
         
@@ -1999,17 +1815,6 @@ const PixiDemo = (props: PixiDemoProps) => {
             shader.uniforms.uUseOccluderMap = true;
             shader.uniforms.uOccluderMapOffset = [SHADOW_BUFFER, SHADOW_BUFFER];
             shader.uniforms.uOccluderMap = occluderRenderTargetRef.current;
-            
-            // SSR uniforms
-            shader.uniforms.uSSREnabled = ssrConfig.enabled || false;
-            shader.uniforms.uSSRIntensity = ssrConfig.intensity || 0.15;
-            shader.uniforms.uSSRMaxDistance = ssrConfig.maxDistance || 230;
-            shader.uniforms.uSSRQuality = ssrConfig.quality || 25;
-            shader.uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
-            shader.uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
-            shader.uniforms.uDepthMap = depthRenderTargetRef.current;
-            // SSR samples from renderTarget
-            shader.uniforms.uRenderTarget = renderTargetRef.current || PIXI.Texture.WHITE;
             
             // Occluder map setup complete - directional lights handled by normal uniform flow
           }
@@ -2194,41 +1999,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniformsDirtyRef.current = false;
       }
       
-      // SSR two-pass rendering
-      const ssrEnabled = (sceneConfigRef.current as any)?.ssrConfig?.enabled || false;
-      
-      if (ssrEnabled && depthRenderTargetRef.current && renderTargetRef.current && sceneContainerRef.current) {
-        // Build depth map
-        buildDepthMap();
-        
-        // PASS 1: Render scene with lighting+shadows+AO+IBL to renderTarget
-        shadersRef.current.forEach(s => {
-          if (s.uniforms) {
-            s.uniforms.uSSREnabled = false; // No SSR in first pass
-            s.uniforms.uPassMode = 1; // Normal lighting
-          }
-        });
-        
-        // Clear and render to texture
-        pixiApp.renderer.render(new PIXI.Container(), { renderTexture: renderTargetRef.current, clear: true });
-        pixiApp.renderer.render(sceneContainerRef.current, { renderTexture: renderTargetRef.current, clear: false });
-        
-        // PASS 2: Render to screen WITH SSR sampling from renderTarget
-        shadersRef.current.forEach(s => {
-          if (s.uniforms) {
-            s.uniforms.uSSREnabled = true;
-            s.uniforms.uRenderTarget = renderTargetRef.current;
-            s.uniforms.uDepthMap = depthRenderTargetRef.current;
-            s.uniforms.uPassMode = 2; // SSR pass
-          }
-        });
-        
-        pixiApp.renderer.render(sceneContainerRef.current);
-      } else {
-        // No SSR - single pass render
-        if (pixiApp && pixiApp.renderer) {
-          pixiApp.render();
-        }
+      // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
+      if (pixiApp && pixiApp.renderer) {
+        pixiApp.render();
       }
     };
 
