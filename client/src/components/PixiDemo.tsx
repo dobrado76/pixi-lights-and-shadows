@@ -851,8 +851,19 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
     }
 
+    // COPY renderTarget to previousFrame BEFORE displaying
+    // This breaks the texture feedback loop (can't read/write same texture)
+    if (previousFrameRenderTargetRef.current && renderTargetRef.current) {
+      const tempSprite = new PIXI.Sprite(renderTargetRef.current);
+      pixiApp.renderer.render(tempSprite, {
+        renderTexture: previousFrameRenderTargetRef.current,
+        clear: true
+      });
+      tempSprite.destroy();
+    }
+    
     // Final render: Display accumulated result
-    // SSR runs as post-process, sampling from renderTarget (accumulated lighting)
+    // SSR now samples from previousFrame (copy of renderTarget)
     pixiApp.renderer.render(displaySpriteRef.current);
   };
 
@@ -1807,9 +1818,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
       uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
       uniforms.uDepthMap = depthRenderTargetRef.current || PIXI.Texture.WHITE;
-      // SSR samples the renderTarget directly (accumulated lighting WITHOUT SSR)
-      // This works because SSR runs as a post-process when rendering displaySprite
-      uniforms.uAccumulatedScene = renderTargetRef.current || PIXI.Texture.WHITE;
+      // SSR samples from previousFrame (copy of renderTarget made BEFORE display)
+      // This avoids texture feedback loop (can't read/write same texture)
+      uniforms.uAccumulatedScene = previousFrameRenderTargetRef.current || PIXI.Texture.WHITE;
       
       
       // Per-sprite AO settings will be set individually for each sprite
