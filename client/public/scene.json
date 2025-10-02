@@ -381,10 +381,10 @@
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 4.85,
+    "strength": 5.65,
     "radius": 4,
-    "samples": 6,
-    "bias": 16.5
+    "samples": 10,
+    "bias": 13
   },
   "performanceSettings": {
     "quality": "high",
@@ -394,7 +394,6 @@
     "enableAmbientOcclusion": true,
     "enableNormalMapping": true,
     "enableLightMasks": true,
-    "enableSSR": true,
     "textureScale": 1,
     "fpsTarget": 60,
     "capFpsTo60": true,
@@ -404,14 +403,5 @@
     "enabled": true,
     "intensity": 0.3,
     "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg"
-  },
-  "ssrConfig": {
-    "enabled": true,
-    "intensity": 0.4,
-    "maxRayDistance": 200,
-    "stepSize": 2,
-    "maxSteps": 50,
-    "fadeEdgeDistance": 50,
-    "depthThreshold": 0.01
   }
 }
