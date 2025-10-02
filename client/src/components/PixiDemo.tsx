@@ -1817,8 +1817,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
       uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
       uniforms.uDepthMap = depthRenderTargetRef.current || PIXI.Texture.WHITE;
-      // SSR samples the PREVIOUS frame's fully rendered scene (not current frame being built)
-      uniforms.uAccumulatedScene = previousFrameRenderTargetRef.current || PIXI.Texture.WHITE;
+      // SSR samples the display sprite texture (fully rendered scene from this frame)
+      uniforms.uAccumulatedScene = displaySpriteRef.current?.texture || renderTargetRef.current || PIXI.Texture.WHITE;
       
       
       // Per-sprite AO settings will be set individually for each sprite
@@ -2024,8 +2024,8 @@ const PixiDemo = (props: PixiDemoProps) => {
             shader.uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
             shader.uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
             shader.uniforms.uDepthMap = depthRenderTargetRef.current;
-            // SSR samples the PREVIOUS frame's fully rendered scene
-            shader.uniforms.uAccumulatedScene = previousFrameRenderTargetRef.current || PIXI.Texture.WHITE;
+            // SSR samples the accumulated render target (fully lit scene)
+            shader.uniforms.uAccumulatedScene = renderTargetRef.current || PIXI.Texture.WHITE;
             
             // Occluder map setup complete - directional lights handled by normal uniform flow
           }

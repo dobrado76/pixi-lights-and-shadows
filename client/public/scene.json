@@ -406,7 +406,7 @@
   },
   "ssrConfig": {
     "enabled": true,
-    "intensity": 0.66,
+    "intensity": 0.74,
     "maxDistance": 130,
     "quality": 14,
     "fadeEdgeDistance": 50,
