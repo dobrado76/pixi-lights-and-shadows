@@ -1209,9 +1209,11 @@ void main(void) {
         // Sample depth at current position
         float sampledDepth = texture2D(uDepthMap, currentUV).r;
         
-        // Check if we hit an object (depth > threshold) while marching from floor
-        // The ray should find elevated objects to reflect
-        if (sampledDepth > uSSRDepthThreshold) {
+        // Check if we hit an object using depth hierarchy:
+        // 1. Must be above depth threshold (not empty space)
+        // 2. Must be at same level or ABOVE current surface (sampledDepth >= pixelDepth)
+        // This prevents sprites at Z=0 from reflecting background at Z=-1
+        if (sampledDepth > uSSRDepthThreshold && sampledDepth >= pixelDepth) {
           hitFound = true;
           hitUV = currentUV;
           break;
