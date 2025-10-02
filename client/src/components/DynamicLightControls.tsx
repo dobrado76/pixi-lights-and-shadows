@@ -81,6 +81,19 @@ const DynamicLightControls = ({
       environmentMap: "/sky_boxes/golden_gate_hills_1k.hdr",
     },
   );
+  const [localReflectionConfig, setLocalReflectionConfig] = useState<{
+    enabled: boolean;
+    intensity: number;
+    normalInfluence: number;
+    blur: number;
+  }>(
+    (sceneConfig as any).reflectionConfig || {
+      enabled: false,
+      intensity: 0.5,
+      normalInfluence: 0.8,
+      blur: 0.0,
+    },
+  );
   const [availableSkyBoxes, setAvailableSkyBoxes] = useState<string[]>([]);
   const [newLightType, setNewLightType] = useState<
     "point" | "directional" | "spotlight"
@@ -962,6 +975,162 @@ const DynamicLightControls = ({
                       }}
                       className="flex-1"
                       data-testid="slider-ibl-intensity"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Reflection Controls - Normal-Map-Aware Reflections */}
+            <div className="mt-3 pt-2 border-t border-border/50">
+              <div className="flex items-center space-x-2 mb-2">
+                <Moon size={12} className="text-muted-foreground" />
+                <h5 className="text-xs font-medium text-muted-foreground">
+                  Reflections (Normal-Aware)
+                </h5>
+                <button
+                  onClick={() => {
+                    const newConfig = {
+                      ...localReflectionConfig,
+                      enabled: !localReflectionConfig.enabled,
+                    };
+                    setLocalReflectionConfig(newConfig);
+                    const updatedScene = {
+                      ...sceneConfig,
+                      reflectionConfig: newConfig,
+                    };
+                    console.log(
+                      "🪞 Reflection Toggle - calling onSceneConfigChange with:",
+                      updatedScene,
+                    );
+                    onSceneConfigChange(updatedScene);
+                    debouncedSave(
+                      localLights,
+                      localAmbient,
+                      localShadowConfig,
+                      localAOConfig,
+                      updatedScene,
+                    );
+                  }}
+                  className={`ml-auto p-1 rounded text-xs ${
+                    localReflectionConfig.enabled
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                  data-testid="button-toggle-reflections"
+                >
+                  {localReflectionConfig.enabled ? (
+                    <Eye size={10} />
+                  ) : (
+                    <EyeOff size={10} />
+                  )}
+                </button>
+              </div>
+
+              {localReflectionConfig.enabled && (
+                <>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Intensity: {localReflectionConfig.intensity.toFixed(2)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={localReflectionConfig.intensity}
+                      onChange={(e) => {
+                        const newIntensity = parseFloat(e.target.value);
+                        const newConfig = {
+                          ...localReflectionConfig,
+                          intensity: newIntensity,
+                        };
+                        setLocalReflectionConfig(newConfig);
+                        const updatedScene = {
+                          ...sceneConfig,
+                          reflectionConfig: newConfig,
+                        };
+                        onSceneConfigChange(updatedScene);
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          localAOConfig,
+                          updatedScene,
+                        );
+                      }}
+                      className="flex-1"
+                      data-testid="slider-reflection-intensity"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2 mb-2">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Normal Inf: {localReflectionConfig.normalInfluence.toFixed(2)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={localReflectionConfig.normalInfluence}
+                      onChange={(e) => {
+                        const newNormalInfluence = parseFloat(e.target.value);
+                        const newConfig = {
+                          ...localReflectionConfig,
+                          normalInfluence: newNormalInfluence,
+                        };
+                        setLocalReflectionConfig(newConfig);
+                        const updatedScene = {
+                          ...sceneConfig,
+                          reflectionConfig: newConfig,
+                        };
+                        onSceneConfigChange(updatedScene);
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          localAOConfig,
+                          updatedScene,
+                        );
+                      }}
+                      className="flex-1"
+                      data-testid="slider-reflection-normal-influence"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2 mb-1">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Blur: {localReflectionConfig.blur.toFixed(2)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={localReflectionConfig.blur}
+                      onChange={(e) => {
+                        const newBlur = parseFloat(e.target.value);
+                        const newConfig = {
+                          ...localReflectionConfig,
+                          blur: newBlur,
+                        };
+                        setLocalReflectionConfig(newConfig);
+                        const updatedScene = {
+                          ...sceneConfig,
+                          reflectionConfig: newConfig,
+                        };
+                        onSceneConfigChange(updatedScene);
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          localAOConfig,
+                          updatedScene,
+                        );
+                      }}
+                      className="flex-1"
+                      data-testid="slider-reflection-blur"
                     />
                   </div>
                 </>
