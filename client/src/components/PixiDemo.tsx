@@ -818,7 +818,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       shadersRef.current.forEach(s => { 
         if (s.uniforms) {
           s.uniforms.uSSREnabled = true;
-          s.uniforms.uAccumulatedScene = renderTargetRef.current;
+          s.uniforms.uRenderTarget = renderTargetRef.current;
           s.uniforms.uPassMode = 2; // SSR pass
         }
       });
@@ -1783,9 +1783,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
       uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
       uniforms.uDepthMap = depthRenderTargetRef.current || PIXI.Texture.WHITE;
-      // SSR samples from previousFrame (copy of renderTarget made BEFORE display)
-      // This avoids texture feedback loop (can't read/write same texture)
-      uniforms.uAccumulatedScene = previousFrameRenderTargetRef.current || PIXI.Texture.WHITE;
+      // SSR samples from the renderTarget (fully lit scene)
+      uniforms.uRenderTarget = renderTargetRef.current || PIXI.Texture.WHITE;
       
       // NEW SSR Implementation uniforms
       uniforms.uSSR_Steps = ssrConfig.quality || 25; // Use quality as steps
@@ -1996,8 +1995,8 @@ const PixiDemo = (props: PixiDemoProps) => {
             shader.uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
             shader.uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
             shader.uniforms.uDepthMap = depthRenderTargetRef.current;
-            // SSR samples previous frame
-            shader.uniforms.uAccumulatedScene = previousFrameRenderTargetRef.current || renderTargetRef.current || PIXI.Texture.WHITE;
+            // SSR samples from renderTarget
+            shader.uniforms.uRenderTarget = renderTargetRef.current || PIXI.Texture.WHITE;
             
             // Occluder map setup complete - directional lights handled by normal uniform flow
           }

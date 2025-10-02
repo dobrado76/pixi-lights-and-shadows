@@ -100,7 +100,7 @@ uniform float uSSRQuality; // Number of ray march steps
 uniform float uSSRFadeEdgeDistance; // Distance from edges where reflections fade
 uniform float uSSRDepthThreshold; // Depth threshold for hit detection
 uniform sampler2D uDepthMap; // Depth buffer (sprite heights from zOrder)
-uniform sampler2D uAccumulatedScene; // Accumulated lighting result for reflections
+uniform sampler2D uRenderTarget; // The lit scene texture for SSR to sample from
 
 // NEW SSR Implementation uniforms
 uniform int uSSR_Steps; // Number of ray march steps (quality)
@@ -1216,16 +1216,17 @@ void main(void) {
     finalColor *= aoEffect;
   }
   
-  // === NEW SCREEN SPACE REFLECTIONS (SSR) ===
-  // DEBUG: Show what we're sampling from uAccumulatedScene
+  // === SCREEN SPACE REFLECTIONS (SSR) ===
+  // Sample from the current renderTarget texture using depth-based ray marching
   if (uSSREnabled && finalMetallic > 0.0) { // Only run for metallic surfaces
-    // TEMP DEBUG: Sample current pixel from accumulated scene to see what's there
-    vec2 screenPos = gl_FragCoord.xy / uCanvasSize;
-    vec3 debugSample = texture2D(uAccumulatedScene, screenPos).rgb;
+    vec2 hitCoord = calculateSSR(worldPos3D, normal, viewDir);
     
-    // If metallic > 0.8, show pure accumulated scene sample (for debugging)
-    if (finalMetallic > 0.8) {
-      finalColor = debugSample; // Show EXACTLY what's in uAccumulatedScene
+    // If we found a hit, sample the color from the renderTarget
+    if (hitCoord.x >= 0.0) { 
+      vec3 reflectedColor = texture2D(uRenderTarget, hitCoord).rgb;
+      
+      // Mix the reflected color based on metallic value
+      finalColor = mix(finalColor, reflectedColor, finalMetallic * uSSRIntensity);
     }
   }
   
