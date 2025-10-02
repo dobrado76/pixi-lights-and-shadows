@@ -1217,42 +1217,15 @@ void main(void) {
   }
   
   // === NEW SCREEN SPACE REFLECTIONS (SSR) ===
-  // Following the implementation plan exactly
+  // DEBUG: Show what we're sampling from uAccumulatedScene
   if (uSSREnabled && finalMetallic > 0.0) { // Only run for metallic surfaces
-    vec2 hitCoord = calculateSSR(worldPos3D, normal, viewDir);
+    // TEMP DEBUG: Sample current pixel from accumulated scene to see what's there
+    vec2 screenPos = gl_FragCoord.xy / uCanvasSize;
+    vec3 debugSample = texture2D(uAccumulatedScene, screenPos).rgb;
     
-    // CRITICAL: Only apply SSR if we got a valid hit (x >= 0.0 indicates hit found)
-    if (hitCoord.x >= 0.0) { 
-      // Sample the main scene color at the hit coordinate
-      vec3 localReflection = texture2D(uAccumulatedScene, hitCoord).rgb;
-      
-      // Safety check: if reflection is too dark, it might be invalid data
-      // Add a very subtle blue tint to black reflections for debugging
-      if (length(localReflection) < 0.01) {
-        localReflection = vec3(0.05, 0.05, 0.1); // Very dark blue for debugging
-      }
-      
-      vec3 reflectionColor = vec3(0.0);
-      
-      // Blend with IBL for a complete reflection model
-      if (uIBLEnabled) {
-        vec3 R = reflect(-viewDir, normal);
-        vec2 iblUV = directionToEquirectUV(R);
-        vec3 iblReflection = texture2D(uEnvironmentMap, iblUV).rgb;
-        reflectionColor = mix(iblReflection, localReflection, finalSmoothness);
-      } else {
-        reflectionColor = localReflection;
-      }
-      
-      // Apply reflection based on metallic value
-      finalColor = mix(finalColor, reflectionColor, finalMetallic * uSSRIntensity);
-    } else if (uIBLEnabled && finalMetallic > 0.0) {
-      // If the ray missed, fall back to only IBL reflections (but still check metallic)
-      vec3 R = reflect(-viewDir, normal);
-      vec2 iblUV = directionToEquirectUV(R);
-      vec3 iblReflection = texture2D(uEnvironmentMap, iblUV).rgb;
-      // Apply weaker IBL reflection when SSR misses
-      finalColor = mix(finalColor, iblReflection, finalMetallic * uSSRIntensity * 0.3);
+    // If metallic > 0.8, show pure accumulated scene sample (for debugging)
+    if (finalMetallic > 0.8) {
+      finalColor = debugSample; // Show EXACTLY what's in uAccumulatedScene
     }
   }
   
