@@ -851,33 +851,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
     }
 
-    // TWO-PASS SSR RENDERING:
-    // Pass 1: Render WITHOUT SSR to previousFrame (for next frame to sample)
-    // Pass 2: Render WITH SSR to screen (sampling from previousFrame)
-    
-    if (previousFrameRenderTargetRef.current && displaySpriteRef.current) {
-      // Pass 1: Disable SSR and render to previousFrame
-      const ssrEnabled = (sceneConfig as any).ssrConfig?.enabled || false;
-      shadersRef.current.forEach(shader => {
-        if (shader.uniforms) {
-          shader.uniforms.uSSREnabled = false; // Temporarily disable SSR
-        }
-      });
-      
-      pixiApp.renderer.render(displaySpriteRef.current, {
-        renderTexture: previousFrameRenderTargetRef.current,
-        clear: true
-      });
-      
-      // Pass 2: Re-enable SSR for screen render
-      shadersRef.current.forEach(shader => {
-        if (shader.uniforms) {
-          shader.uniforms.uSSREnabled = ssrEnabled; // Restore SSR state
-        }
-      });
-    }
-    
-    // Final render: Display to screen WITH SSR (sampling from previousFrame)
+    // Final render: Display accumulated result
+    // SSR runs as post-process, sampling from renderTarget (accumulated lighting)
     pixiApp.renderer.render(displaySpriteRef.current);
   };
 
@@ -1832,19 +1807,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uSSRFadeEdgeDistance = ssrConfig.fadeEdgeDistance || 50;
       uniforms.uSSRDepthThreshold = ssrConfig.depthThreshold || 0.3;
       uniforms.uDepthMap = depthRenderTargetRef.current || PIXI.Texture.WHITE;
-      // SSR samples previous frame - must be fully populated!
-      const ssrTexture = previousFrameRenderTargetRef.current || renderTargetRef.current || PIXI.Texture.WHITE;
-      uniforms.uAccumulatedScene = ssrTexture;
-      
-      // Debug SSR texture assignment (log once every 60 frames)
-      if (frameCountRef.current % 60 === 0 && ssrConfig.enabled) {
-        console.log('🔍 SSR Texture:', {
-          usingPrevious: !!previousFrameRenderTargetRef.current,
-          usingCurrent: !previousFrameRenderTargetRef.current && !!renderTargetRef.current,
-          usingFallback: !previousFrameRenderTargetRef.current && !renderTargetRef.current,
-          textureValid: ssrTexture && ssrTexture.valid
-        });
-      }
+      // SSR samples the renderTarget directly (accumulated lighting WITHOUT SSR)
+      // This works because SSR runs as a post-process when rendering displaySprite
+      uniforms.uAccumulatedScene = renderTargetRef.current || PIXI.Texture.WHITE;
       
       
       // Per-sprite AO settings will be set individually for each sprite
