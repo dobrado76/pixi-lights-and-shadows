@@ -669,44 +669,24 @@ vec3 calculateIBL(vec3 albedo, vec3 normal, vec3 viewDir, float metallic, float 
 
 // NEW: Calculate Screen Space Reflection
 vec2 calculateSSR(vec3 worldPos, vec3 normal, vec3 viewDir) {
-  // For 2.5D, we need to reflect differently based on surface orientation
+  // Calculate reflection vector
   vec3 reflectDir = reflect(-viewDir, normal);
   
   // Convert to screen space
   vec2 screenPos = gl_FragCoord.xy / uCanvasSize;
+  vec2 screenDir = normalize(reflectDir.xy);
   
-  // In 2.5D, reflection direction should follow the pseudo-3D perspective
-  vec2 screenDir = vec2(reflectDir.x, -reflectDir.y * 0.5);
-  
-  // Normalize direction
-  if (length(screenDir) > 0.001) {
-    screenDir = normalize(screenDir);
-  }
-  
-  // Use uniform parameters for ray marching
-  float stepSize = uSSR_Stride / max(uCanvasSize.x, uCanvasSize.y);
+  // Hierarchical ray marching
+  float stride = uSSR_Stride / uCanvasSize.x; // Convert to UV space
   vec2 currentPos = screenPos;
-  
-  // Get depth at starting position
-  float baseDepth = texture2D(uDepthMap, screenPos).r;
-  
-  // Calculate max distance in screen space (uSSRMaxDistance is 0-1 range)
-  float maxDistance = uSSRMaxDistance; 
-  float totalDistance = 0.0;
+  float currentDepth = texture2D(uDepthMap, screenPos).r;
   
   // Ray march through screen space
-  int maxSteps = int(uSSRQuality);
-  for (int i = 0; i < 100; i++) { // Max iterations hard limit
-    if (i >= maxSteps) break;
-    
-    // Check if we've exceeded max distance
-    if (totalDistance > maxDistance) {
-      return vec2(-1.0); // Exceeded max distance
-    }
+  for (int i = 0; i < 100; i++) { // Max iterations (will break early based on uSSR_Steps)
+    if (i >= uSSR_Steps) break;
     
     // Step along ray
-    currentPos += screenDir * stepSize;
-    totalDistance += stepSize;
+    currentPos += screenDir * stride;
     
     // Check bounds
     if (currentPos.x < 0.0 || currentPos.x > 1.0 || currentPos.y < 0.0 || currentPos.y > 1.0) {
@@ -716,16 +696,15 @@ vec2 calculateSSR(vec3 worldPos, vec3 normal, vec3 viewDir) {
     // Sample depth at current position
     float sampledDepth = texture2D(uDepthMap, currentPos).r;
     
-    // For 2.5D: Check if we hit something at same or higher level
-    // Objects at higher z-order (larger depth values) can be reflected
-    if (sampledDepth > baseDepth + 0.005) { // Small bias to avoid self-reflection
-      // Found a potential hit - refine with binary search
-      vec2 lastPos = currentPos - screenDir * stepSize;
+    // Check for intersection (with thickness tolerance)
+    if (sampledDepth > currentDepth && (sampledDepth - currentDepth) < uSSR_Thickness) {
+      // Binary search refinement for more accurate hit
+      vec2 lastPos = currentPos - screenDir * stride;
       for (int j = 0; j < 4; j++) {
         vec2 midPos = (lastPos + currentPos) * 0.5;
         float midDepth = texture2D(uDepthMap, midPos).r;
         
-        if (midDepth > baseDepth + 0.005) {
+        if (midDepth > currentDepth) {
           currentPos = midPos;
         } else {
           lastPos = midPos;
@@ -1239,28 +1218,35 @@ void main(void) {
   }
   
   // === NEW SCREEN SPACE REFLECTIONS (SSR) ===
-  // Apply SSR on the final composite pass, sampling the fully lit scene
-  if (uSSREnabled && finalMetallic > 0.0) { 
+  // Following the implementation plan exactly
+  if (uSSREnabled && finalMetallic > 0.0) { // Only run for metallic surfaces
     vec2 hitCoord = calculateSSR(worldPos3D, normal, viewDir);
     
-    // Only apply SSR if we got a valid hit
-    if (hitCoord.x >= 0.0 && hitCoord.y >= 0.0) { 
-      // Sample the FULLY LIT scene at the hit coordinate
-      vec3 reflectedColor = texture2D(uAccumulatedScene, hitCoord).rgb;
+    // CRITICAL: Only apply SSR if we got a valid hit (x >= 0.0 indicates hit found)
+    if (hitCoord.x >= 0.0) { 
+      // Sample the main scene color at the hit coordinate
+      vec3 localReflection = texture2D(uAccumulatedScene, hitCoord).rgb;
+      vec3 reflectionColor = vec3(0.0);
       
-      // Apply colored reflection based on metallic value
-      if (length(reflectedColor) > 0.01) { // Only apply if we have actual color
-        // Reflection strength based on metallic and SSR intensity
-        float reflectionStrength = finalMetallic * uSSRIntensity;
-        
-        // Fade reflection near screen edges for realism
-        vec2 edgeFade = smoothstep(vec2(0.0), vec2(0.1), hitCoord) * 
-                        smoothstep(vec2(0.0), vec2(0.1), vec2(1.0) - hitCoord);
-        reflectionStrength *= edgeFade.x * edgeFade.y;
-        
-        // Blend the COLORED reflection with the surface
-        finalColor = mix(finalColor, reflectedColor, reflectionStrength);
+      // Blend with IBL for a complete reflection model
+      if (uIBLEnabled) {
+        vec3 R = reflect(-viewDir, normal);
+        vec2 iblUV = directionToEquirectUV(R);
+        vec3 iblReflection = texture2D(uEnvironmentMap, iblUV).rgb;
+        reflectionColor = mix(iblReflection, localReflection, finalSmoothness);
+      } else {
+        reflectionColor = localReflection;
       }
+      
+      // Only blend reflection if we have a valid color
+      finalColor = mix(finalColor, reflectionColor, finalMetallic * uSSRIntensity);
+    } else if (uIBLEnabled && finalMetallic > 0.0) {
+      // If the ray missed, fall back to only IBL reflections (but still check metallic)
+      vec3 R = reflect(-viewDir, normal);
+      vec2 iblUV = directionToEquirectUV(R);
+      vec3 iblReflection = texture2D(uEnvironmentMap, iblUV).rgb;
+      // Apply weaker IBL reflection when SSR misses
+      finalColor = mix(finalColor, iblReflection, finalMetallic * uSSRIntensity * 0.3);
     }
   }
   

@@ -647,24 +647,10 @@ const PixiDemo = (props: PixiDemoProps) => {
     // Clear accumulation buffer
     pixiApp.renderer.render(new PIXI.Container(), { renderTexture: renderTargetRef.current, clear: true });
 
-    // BASE PASS: Ambient lighting only with SSR
-    const ssrEnabled = (sceneConfig as any).ssrConfig?.enabled || false;
+    // BASE PASS: Ambient lighting only
     shadersRef.current.forEach(shader => {
       if (shader.uniforms) {
         shader.uniforms.uPassMode = 0; // Base pass
-        
-        // Set SSR uniforms - SSR samples from previous frame
-        shader.uniforms.uSSREnabled = ssrEnabled;
-        shader.uniforms.uAccumulatedScene = previousFrameRenderTargetRef.current || PIXI.Texture.WHITE;
-        shader.uniforms.uDepthMap = depthRenderTargetRef.current || PIXI.Texture.WHITE;
-        shader.uniforms.uSSRIntensity = (sceneConfig as any).ssrConfig?.intensity || 0.5;
-        shader.uniforms.uSSRQuality = (sceneConfig as any).ssrConfig?.quality || 10;
-        shader.uniforms.uSSRMaxDistance = (sceneConfig as any).ssrConfig?.maxDistance || 0.3;
-        // CRITICAL: These uniforms are used in calculateSSR function
-        shader.uniforms.uSSR_Steps = (sceneConfig as any).ssrConfig?.quality || 10;
-        shader.uniforms.uSSR_Stride = 2.0;
-        shader.uniforms.uSSR_Thickness = 0.05;
-        
         // Reset all light enabled flags for base pass
         for (let i = 0; i < 4; i++) {
           shader.uniforms[`uPoint${i}Enabled`] = false;
@@ -823,18 +809,17 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
     }
 
-    // Copy the accumulated lit scene to previousFrame for SSR to sample
+    // Render WITHOUT SSR to previousFrame  
     if (previousFrameRenderTargetRef.current) {
-      const tempSprite = new PIXI.Sprite(renderTargetRef.current);
-      pixiApp.renderer.render(tempSprite, {
-        renderTexture: previousFrameRenderTargetRef.current,
-        clear: true
+      shadersRef.current.forEach(s => { if (s.uniforms) s.uniforms.uSSREnabled = false; });
+      pixiApp.renderer.render(displaySpriteRef.current, {
+        renderTexture: previousFrameRenderTargetRef.current
       });
-      tempSprite.destroy();
+      const ssrEnabled = (sceneConfig as any).ssrConfig?.enabled || false;
+      shadersRef.current.forEach(s => { if (s.uniforms) s.uniforms.uSSREnabled = ssrEnabled; });
     }
     
-    // Set up display sprite and render final result
-    displaySpriteRef.current.texture = renderTargetRef.current;
+    // Final render WITH SSR to screen
     pixiApp.renderer.render(displaySpriteRef.current);
   };
 

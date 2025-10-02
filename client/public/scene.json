@@ -32,7 +32,7 @@
         "image": "/textures/white-fabric-texture-background.jpg",
         "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
         "useNormalMap": false,
-        "metallic": 0.7,
+        "metallic": 0,
         "smoothness": 0.17
       },
       "transform": {
@@ -275,7 +275,7 @@
         "y": 170,
         "z": 70
       },
-      "followMouse": true,
+      "followMouse": false,
       "castsShadows": true,
       "radius": 220
     },
@@ -406,9 +406,9 @@
   },
   "ssrConfig": {
     "enabled": true,
-    "intensity": 0.47,
-    "maxDistance": 240,
-    "quality": 27,
+    "intensity": 1,
+    "maxDistance": 120,
+    "quality": 13,
     "fadeEdgeDistance": 50,
     "depthThreshold": 0.3
   }
