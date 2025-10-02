@@ -64,15 +64,15 @@ export interface AmbientOcclusionConfig {
   bias: number;              // Bias to prevent self-occlusion artifacts (pixels)
 }
 
-// Screen Space Reflections configuration interface
+// Screen Space Reflections (SSR) configuration interface
 export interface SSRConfig {
   enabled: boolean;           // Global SSR enable/disable
   intensity: number;          // Reflection strength/opacity (0.0 - 1.0)
-  maxDistance: number;        // Maximum ray-march distance (pixels)
-  stepSize: number;           // Ray-march step size (pixels, smaller = more accurate but slower)
-  fadeStart: number;          // Distance at which reflections start to fade (0.0 - 1.0)
-  fadeEnd: number;            // Distance at which reflections fully fade (0.0 - 1.0)
-  maxSceneHeight: number;     // Maximum sprite height for depth normalization (default: 100)
+  maxRayDistance: number;     // Maximum ray marching distance (pixels)
+  stepSize: number;           // Ray marching step size (pixels) - smaller = more accurate but slower
+  maxSteps: number;           // Maximum number of ray marching steps (quality vs performance)
+  fadeEdgeDistance: number;   // Distance from screen edges where reflections fade out (pixels)
+  depthThreshold: number;     // Depth difference threshold for hit detection (0.0 - 1.0)
 }
 
 // Internal runtime format

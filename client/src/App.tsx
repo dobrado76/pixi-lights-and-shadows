@@ -72,7 +72,16 @@ function App() {
   // Scene configuration state
   const [sceneConfig, setSceneConfig] = useState<{ 
     sprites: Record<string, any>; 
-    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string } 
+    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string };
+    ssrConfig?: {
+      enabled: boolean;
+      intensity: number;
+      maxRayDistance: number;
+      stepSize: number;
+      maxSteps: number;
+      fadeEdgeDistance: number;
+      depthThreshold: number;
+    };
   }>({ sprites: {} });
   const [isLoaded, setSceneLoaded] = useState<boolean>(false);
   
@@ -113,7 +122,8 @@ function App() {
           shadowConfig,
           ambientOcclusionConfig,
           performanceSettings,
-          iblConfig: sceneConfig.iblConfig
+          iblConfig: sceneConfig.iblConfig,
+          ssrConfig: sceneConfig.ssrConfig
         };
         
         const response = await fetch('/api/save-scene-config', {
@@ -129,7 +139,7 @@ function App() {
         console.error('❌ Failed to save configurations:', error);
       }
     }, 500);
-  }, [lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings, sceneConfig]);
+  }, [lightsConfig, ambientLight, shadowConfig, ambientOcclusionConfig, performanceSettings, sceneConfig.sprites, sceneConfig.iblConfig, sceneConfig.ssrConfig]);
 
   // Legacy shader params system - loads from localStorage for backward compatibility
   const getInitialParams = (): ShaderParams => {
@@ -392,6 +402,15 @@ function App() {
                     ambientLight={ambientLight}
                     shadowConfig={shadowConfig}
                     ambientOcclusionConfig={ambientOcclusionConfig}
+                    ssrConfig={sceneConfig.ssrConfig || {
+                      enabled: true,
+                      intensity: 0.5,
+                      maxRayDistance: 200,
+                      stepSize: 2.0,
+                      maxSteps: 50,
+                      fadeEdgeDistance: 50,
+                      depthThreshold: 0.01
+                    }}
                     sceneConfig={sceneConfig}
                     performanceSettings={performanceSettings}
                     onGeometryUpdate={setGeometryStatus}
@@ -632,6 +651,7 @@ function App() {
                                 enableAmbientOcclusion: false,
                                 enableNormalMapping: false,
                                 enableLightMasks: false,
+                                enableSSR: false,
                                 textureScale: 0.5,
                                 fpsTarget: 30,
                                 capFpsTo60: true
@@ -650,6 +670,7 @@ function App() {
                                 enableAmbientOcclusion: false,
                                 enableNormalMapping: true,
                                 enableLightMasks: false,
+                                enableSSR: false,
                                 textureScale: 0.75,
                                 fpsTarget: 45,
                                 capFpsTo60: true
@@ -668,6 +689,7 @@ function App() {
                                 enableAmbientOcclusion: true,
                                 enableNormalMapping: true,
                                 enableLightMasks: true,
+                                enableSSR: true,
                                 textureScale: 1.0,
                                 fpsTarget: 60,
                                 capFpsTo60: true

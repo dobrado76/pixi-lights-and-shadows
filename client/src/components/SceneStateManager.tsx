@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, createContext, useContext, ReactNode } from 'react';
-import { Light, ShadowConfig, AmbientOcclusionConfig, SSRConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
+import { Light, ShadowConfig, AmbientOcclusionConfig, loadLightsConfig, loadAmbientLight, saveLightsConfig } from '@/lib/lights';
 import { PerformanceSettings } from '../utils/performance';
 
 // IBL Config interface
@@ -17,7 +17,6 @@ export interface SceneConfig {
   shadowConfig?: ShadowConfig;
   ambientOcclusionConfig?: AmbientOcclusionConfig;
   iblConfig?: IBLConfig;
-  ssrConfig?: SSRConfig;
 }
 
 // Context interface for the scene state manager
@@ -112,7 +111,7 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        const success = await saveLightsConfig(lights, ambient, shadows, undefined, currentScene);
+        const success = await saveLightsConfig(lights, ambient, shadows, currentScene);
         if (success) {
           console.log('Lights configuration auto-saved successfully');
         } else {

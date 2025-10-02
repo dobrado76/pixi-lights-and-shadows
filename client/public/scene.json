@@ -381,10 +381,10 @@
   },
   "ambientOcclusionConfig": {
     "enabled": true,
-    "strength": 5.65,
+    "strength": 4.85,
     "radius": 4,
-    "samples": 10,
-    "bias": 13
+    "samples": 6,
+    "bias": 16.5
   },
   "performanceSettings": {
     "quality": "high",
@@ -394,6 +394,7 @@
     "enableAmbientOcclusion": true,
     "enableNormalMapping": true,
     "enableLightMasks": true,
+    "enableSSR": true,
     "textureScale": 1,
     "fpsTarget": 60,
     "capFpsTo60": true,
@@ -406,11 +407,11 @@
   },
   "ssrConfig": {
     "enabled": true,
-    "intensity": 0.5,
-    "maxDistance": 200,
+    "intensity": 0.4,
+    "maxRayDistance": 200,
     "stepSize": 2,
-    "fadeStart": 0.6,
-    "fadeEnd": 1.0,
-    "maxSceneHeight": 100
+    "maxSteps": 50,
+    "fadeEdgeDistance": 50,
+    "depthThreshold": 0.01
   }
 }
