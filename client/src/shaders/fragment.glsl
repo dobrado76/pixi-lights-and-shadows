@@ -1231,17 +1231,10 @@ void main(void) {
       
       // Calculate reflection color
       if (hitFound) {
-        // Sample the accumulated scene at the hit point for proper reflections
-        vec4 reflectionColor = texture2D(uAccumulatedScene, hitUV);
-        
-        // DEBUG: Force reflection to show what we're sampling
-        // If we see colors, texture is good. If black, texture is wrong.
-        if (length(reflectionColor.rgb) > 0.01) {
-          // We have actual color data - show it at full strength temporarily for debugging
-          finalColor = mix(finalColor, reflectionColor.rgb, 0.8);
-          gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
-          return;
-        }
+        // DEBUG: Show hit location in RED to verify ray marching works
+        finalColor = vec3(1.0, 0.0, 0.0); // RED = we found a hit
+        gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
+        return;
         
         float reflectionStrength = 1.0;
         
