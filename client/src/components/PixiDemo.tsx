@@ -2106,6 +2106,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     const ticker = () => {
       frameCountRef.current++;
+      console.log(`🎬 Ticker running frame ${frameCountRef.current}`);
       
       // Performance monitoring and adaptive quality
       if (adaptiveQualityRef.current) {
