@@ -851,27 +851,17 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
     }
 
-    // Final render: Display accumulated result
-    pixiApp.renderer.render(displaySpriteRef.current);
-    
-    // Copy current frame to previous frame texture for next frame's SSR
-    if (previousFrameRenderTargetRef.current && renderTargetRef.current) {
-      // Create a temporary sprite to copy the texture
-      const copySprite = new PIXI.Sprite(renderTargetRef.current);
-      pixiApp.renderer.render(copySprite, {
+    // CRITICAL FIX: Render displaySprite WITH SSR to previousFrame FIRST
+    // This executes the shader which calculates SSR and saves the result
+    if (previousFrameRenderTargetRef.current && displaySpriteRef.current) {
+      pixiApp.renderer.render(displaySpriteRef.current, {
         renderTexture: previousFrameRenderTargetRef.current,
         clear: true
       });
-      copySprite.destroy();
-      
-      // Debug: Log once every 60 frames to verify copy is working
-      if (frameCountRef.current % 60 === 0) {
-        console.log('📸 SSR: Copied frame to previousFrameTexture', {
-          hasRenderTarget: !!renderTargetRef.current,
-          hasPreviousFrame: !!previousFrameRenderTargetRef.current
-        });
-      }
     }
+    
+    // Final render: Display to screen (can reuse same displaySprite)
+    pixiApp.renderer.render(displaySpriteRef.current);
   };
 
   // Initialize PIXI Application
