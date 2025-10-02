@@ -1163,14 +1163,15 @@ void main(void) {
   
   // === SCREEN SPACE REFLECTIONS (SSR) - FINAL PASS ===
   // Add reflections for 2.5D surfaces using depth-based ray marching
-  if (uSSREnabled && uSSRIntensity > 0.0) {
+  // CRITICAL: SSR only applies to METALLIC surfaces (metallic > 0)
+  if (uSSREnabled && uSSRIntensity > 0.0 && finalMetallic > 0.0) {
     // Get depth at current pixel (from zOrder-based depth map)
     float pixelDepth = texture2D(uDepthMap, vTextureCoord).r;
     
     // FLOOR REFLECTIONS: Only pixels with LOW depth (floor/background) show reflections
     // Objects at HIGH depth are what get reflected
     if (pixelDepth <= uSSRDepthThreshold) {
-      // This is a reflective surface (floor/background)
+      // This is a reflective surface (floor/background) AND it's metallic
       
       // Calculate reflection direction
       // For 2.5D, default is upward reflection (simulating floor reflections)
@@ -1242,7 +1243,9 @@ void main(void) {
         reflectionStrength *= distanceFade;
         
         // Blend reflection with scene color
-        float finalStrength = reflectionStrength * uSSRIntensity;
+        // CRITICAL: Scale reflection strength by metallic value
+        // metallic=0 → no reflections, metallic=1 → full reflections
+        float finalStrength = reflectionStrength * uSSRIntensity * finalMetallic;
         finalColor = mix(finalColor, reflectionColor.rgb, finalStrength);
       } else if (uIBLEnabled) {
         // Fall back to IBL environment map for missed rays
@@ -1253,7 +1256,8 @@ void main(void) {
           theta / 3.14159265359
         );
         vec4 reflectionColor = texture2D(uEnvironmentMap, envUV);
-        float fallbackStrength = 0.3 * uIBLIntensity * uSSRIntensity;
+        // Also scale fallback by metallic value
+        float fallbackStrength = 0.3 * uIBLIntensity * uSSRIntensity * finalMetallic;
         finalColor = mix(finalColor, reflectionColor.rgb, fallbackStrength);
       }
     }

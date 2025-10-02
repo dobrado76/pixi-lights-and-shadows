@@ -32,7 +32,7 @@
         "image": "/textures/white-fabric-texture-background.jpg",
         "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
         "useNormalMap": false,
-        "metallic": 0.25,
+        "metallic": 0,
         "smoothness": 0.17
       },
       "transform": {
@@ -282,7 +282,7 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "brightness": 0.4,
+      "brightness": 0.5,
       "color": "0xffffff",
       "direction": {
         "x": 0.30901699437494745,
@@ -406,9 +406,9 @@
   },
   "ssrConfig": {
     "enabled": true,
-    "intensity": 0.35,
-    "maxDistance": 300,
-    "quality": 35,
+    "intensity": 0.55,
+    "maxDistance": 50,
+    "quality": 50,
     "fadeEdgeDistance": 80,
     "depthThreshold": 0.52
   }
