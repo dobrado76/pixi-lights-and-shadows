@@ -809,17 +809,35 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
     }
 
-    // Render WITHOUT SSR to previousFrame  
+    // STEP 1: Set up display sprite with accumulated lit scene
+    displaySpriteRef.current.texture = renderTargetRef.current;
+    
+    // STEP 2: Disable SSR for copying lit scene to accumulation buffer
+    shadersRef.current.forEach(s => { 
+      if (s.uniforms) {
+        s.uniforms.uSSREnabled = false;
+      }
+    });
+    
+    // STEP 3: Copy the lit scene to previousFrame WITHOUT SSR
     if (previousFrameRenderTargetRef.current) {
-      shadersRef.current.forEach(s => { if (s.uniforms) s.uniforms.uSSREnabled = false; });
       pixiApp.renderer.render(displaySpriteRef.current, {
-        renderTexture: previousFrameRenderTargetRef.current
+        renderTexture: previousFrameRenderTargetRef.current,
+        clear: true
       });
-      const ssrEnabled = (sceneConfig as any).ssrConfig?.enabled || false;
-      shadersRef.current.forEach(s => { if (s.uniforms) s.uniforms.uSSREnabled = ssrEnabled; });
     }
     
-    // Final render WITH SSR to screen
+    // STEP 4: Enable SSR and set textures for final pass
+    const ssrEnabled = (sceneConfig as any).ssrConfig?.enabled || false;
+    shadersRef.current.forEach(s => { 
+      if (s.uniforms) {
+        s.uniforms.uSSREnabled = ssrEnabled;
+        s.uniforms.uAccumulatedScene = previousFrameRenderTargetRef.current || PIXI.Texture.WHITE;
+        s.uniforms.uDepthMap = depthTextureRef.current || PIXI.Texture.WHITE;
+      }
+    });
+    
+    // STEP 5: Final render WITH SSR to screen
     pixiApp.renderer.render(displaySpriteRef.current);
   };
 
