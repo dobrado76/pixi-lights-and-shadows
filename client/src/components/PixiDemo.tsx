@@ -2031,6 +2031,50 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniformsDirtyRef.current = false;
       }
       
+      // --- SSR DEPTH PASS (if enabled) ---
+      const currentSceneConfig = sceneConfigRef.current;
+      const ssrConfig = (currentSceneConfig as any).ssrConfig;
+      const ssrEnabled = ssrConfig?.enabled && ssrConfig?.intensity > 0;
+      
+      if (ssrEnabled && depthShaderRef.current && depthRenderTargetRef.current && sceneContainerRef.current) {
+        // Store original shaders
+        const originalShaders: PIXI.Shader[] = [];
+        
+        // Temporarily replace all mesh shaders with depth shader
+        sceneContainerRef.current.children.forEach((child, index) => {
+          const mesh = child as PIXI.Mesh;
+          if (mesh.shader) {
+            originalShaders[index] = mesh.shader;
+            
+            // Get sprite's zOrder from attached definition
+            const spriteDefinition = (mesh as any).definition;
+            const zOrder = spriteDefinition?.zOrder || 0;
+            
+            // Map zOrder to height (e.g., zOrder range [-10, 10] → height [0, 100])
+            const objectHeight = (zOrder + 10) * 5.0;
+            
+            // Apply depth shader with height uniform
+            mesh.shader = depthShaderRef.current!;
+            mesh.shader.uniforms.uObjectHeight = objectHeight;
+          }
+        });
+        
+        // Render scene to depth texture (creates height map)
+        pixiApp.renderer.render(sceneContainerRef.current, {
+          renderTexture: depthRenderTargetRef.current,
+          clear: true,
+          transform: undefined,
+        });
+        
+        // Restore original lighting shaders
+        sceneContainerRef.current.children.forEach((child, index) => {
+          const mesh = child as PIXI.Mesh;
+          if (originalShaders[index]) {
+            mesh.shader = originalShaders[index];
+          }
+        });
+      }
+      
       // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
       if (pixiApp && pixiApp.renderer) {
         pixiApp.render();
