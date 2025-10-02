@@ -1166,8 +1166,12 @@ void main(void) {
   // CRITICAL: All metallic surfaces can do SSR
   // Depth hierarchy prevents reflecting objects BELOW current surface
   if (uSSREnabled && uSSRIntensity > 0.0 && finalMetallic > 0.0) {
-    // Get depth at current pixel (from zOrder-based depth map)
-    float pixelDepth = texture2D(uDepthMap, vTextureCoord).r;
+    // CRITICAL: Convert fragment position to screen-space UVs (0-1 for entire screen)
+    // gl_FragCoord is in pixels, divide by canvas size to get normalized coordinates
+    vec2 screenUV = gl_FragCoord.xy / uCanvasSize;
+    
+    // Get depth at current pixel using SCREEN-SPACE UVs (not sprite texture UVs!)
+    float pixelDepth = texture2D(uDepthMap, screenUV).r;
     
     // All metallic surfaces do SSR (floor reflects sprites, sprites reflect other sprites)
     // The depth check in ray marching prevents reflecting objects below
@@ -1186,8 +1190,8 @@ void main(void) {
         reflectionDir = normalize(reflectDir3D.xy);
       }
       
-      // Ray marching to find reflected object
-      vec2 rayOrigin = vTextureCoord;
+      // Ray marching in SCREEN SPACE - use screen UVs, not texture UVs
+      vec2 rayOrigin = screenUV;
       vec2 rayStep = reflectionDir * (1.0 / uCanvasSize.x); // Normalize step by screen size
       
       bool hitFound = false;
