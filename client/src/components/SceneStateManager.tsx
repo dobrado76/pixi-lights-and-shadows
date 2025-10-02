@@ -112,7 +112,7 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        const success = await saveLightsConfig(lights, ambient, shadows, currentScene);
+        const success = await saveLightsConfig(lights, ambient, shadows, undefined, currentScene);
         if (success) {
           console.log('Lights configuration auto-saved successfully');
         } else {

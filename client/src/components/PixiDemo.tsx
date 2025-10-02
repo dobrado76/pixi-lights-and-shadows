@@ -3,8 +3,11 @@ import * as PIXI from 'pixi.js';
 import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import vertexShaderSource from '../shaders/vertex.glsl?raw';
 import fragmentShaderSource from '../shaders/fragment.glsl?raw';
+import depthVertexShaderSource from '../shaders/depth_vertex.glsl?raw';
+import depthFragmentShaderSource from '../shaders/depth_fragment.glsl?raw';
+import ssrFragmentShaderSource from '../shaders/ssr_fragment.glsl?raw';
 import { ShaderParams } from '../App';
-import { Light, ShadowConfig, AmbientOcclusionConfig } from '@/lib/lights';
+import { Light, ShadowConfig, AmbientOcclusionConfig, SSRConfig } from '@/lib/lights';
 import { SceneManager, SceneSprite } from './Sprite';
 import { detectDevice, getOptimalSettings, AdaptiveQuality, PerformanceSettings } from '../utils/performance';
 
@@ -34,7 +37,8 @@ interface PixiDemoProps {
   ambientOcclusionConfig: AmbientOcclusionConfig;
   sceneConfig: { 
     sprites: Record<string, any>; 
-    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string } 
+    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string };
+    ssrConfig?: SSRConfig;
   };
   performanceSettings: PerformanceSettings;
   onGeometryUpdate: (status: string) => void;
@@ -72,6 +76,11 @@ const PixiDemo = (props: PixiDemoProps) => {
   const occluderRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
   const occluderContainerRef = useRef<PIXI.Container | null>(null);
   const occluderSpritesRef = useRef<PIXI.Sprite[]>([]);
+  
+  // SSR system - depth map and reflection rendering
+  const depthRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
+  const ssrRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
+  const depthShaderRef = useRef<PIXI.Shader | null>(null);
   
   // Performance optimization caches with dirty flags
   const lastUniformsRef = useRef<any>({});
