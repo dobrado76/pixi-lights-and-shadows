@@ -813,13 +813,23 @@ const PixiDemo = (props: PixiDemoProps) => {
     const ssrConfig = (sceneConfig as any).ssrConfig;
     const ssrEnabled = ssrConfig?.enabled || false;
     
+    console.log('🔍 SSR Check:', {
+      enabled: ssrEnabled,
+      hasRenderTarget: !!renderTargetRef.current,
+      hasSceneContainer: !!sceneContainerRef.current,
+      shadersCount: shadersRef.current.length
+    });
+    
     if (ssrEnabled && renderTargetRef.current && sceneContainerRef.current) {
+      console.log('✅ SSR PATH ACTIVE - rendering with SSR');
+      
       // Enable SSR and point it to the already-lit renderTarget
-      shadersRef.current.forEach(s => { 
+      shadersRef.current.forEach((s, idx) => { 
         if (s.uniforms) {
           s.uniforms.uSSREnabled = true;
           s.uniforms.uRenderTarget = renderTargetRef.current;
           s.uniforms.uPassMode = 2; // SSR pass
+          console.log(`  Shader ${idx}: uPassMode=2, uSSREnabled=true`);
         }
       });
       
@@ -827,6 +837,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       // SSR will sample from renderTarget (which has lights+shadows+AO+IBL)
       pixiApp.renderer.render(sceneContainerRef.current);
     } else {
+      console.log('❌ SSR DISABLED - rendering without SSR');
       // No SSR - just show the lit renderTarget
       pixiApp.renderer.render(displaySpriteRef.current);
     }
