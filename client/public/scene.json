@@ -275,7 +275,7 @@
         "y": 170,
         "z": 70
       },
-      "followMouse": true,
+      "followMouse": false,
       "castsShadows": true,
       "radius": 220
     },
@@ -405,10 +405,10 @@
     "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg"
   },
   "ssrConfig": {
-    "enabled": true,
-    "intensity": 0.72,
-    "maxDistance": 330,
-    "quality": 14,
+    "enabled": false,
+    "intensity": 0.96,
+    "maxDistance": 280,
+    "quality": 10,
     "fadeEdgeDistance": 50,
     "depthThreshold": 0.3
   }
