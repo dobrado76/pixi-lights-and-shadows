@@ -1163,25 +1163,28 @@ void main(void) {
   
   // === SCREEN SPACE REFLECTIONS (SSR) - FINAL PASS ===
   // Add reflections for 2.5D surfaces using depth-based ray marching
-  // CRITICAL: All metallic surfaces do SSR (floor AND sprites)
-  // Depth hierarchy: only reflect objects at same level or ABOVE
+  // CRITICAL: SSR only applies to FLOOR (lowest depth surfaces with metallic > 0)
+  // Objects above the floor should NOT do SSR, only the floor reflects them
   if (uSSREnabled && uSSRIntensity > 0.0 && finalMetallic > 0.0) {
     // Get depth at current pixel (from zOrder-based depth map)
     float pixelDepth = texture2D(uDepthMap, vTextureCoord).r;
     
-    // All metallic surfaces can do SSR
-    // Ray marching will filter by depth to only reflect objects at same/higher depth
-    if (true) {
-      // This is a reflective metallic surface
+    // FLOOR REFLECTIONS ONLY: Must be at the LOWEST depth level (floor/background)
+    // Check: pixelDepth is BELOW threshold (floor area) 
+    // The threshold separates floor from objects ON the floor
+    if (pixelDepth < uSSRDepthThreshold - 0.02) {
+      // This is the floor (lowest depth + metallic > 0)
       
-      // Calculate reflection direction for 2.5D
-      // Default: march upward (simulating floor reflecting objects above)
+      // Calculate reflection direction
+      // For 2.5D, default is upward reflection (simulating floor reflections)
       vec2 reflectionDir = vec2(0.0, -1.0);
       
-      // Only use normal-based reflection if normal is significantly tilted
-      if (length(normal.xy) > 0.3) {
-        // Normal has significant XY component, use it for reflection direction
-        reflectionDir = normalize(normal.xy);
+      // If using normal mapping, calculate reflection from normal
+      if (uUseNormalMap && length(normal - vec3(0.0, 0.0, 1.0)) > 0.1) {
+        // View direction is looking straight down (0, 0, -1)
+        vec3 viewDirSSR = vec3(0.0, 0.0, -1.0);
+        vec3 reflectDir3D = reflect(viewDirSSR, normal);
+        reflectionDir = normalize(reflectDir3D.xy);
       }
       
       // Ray marching to find reflected object
@@ -1248,9 +1251,19 @@ void main(void) {
         // metallic=0 → no reflections, metallic=1 → full reflections
         float finalStrength = reflectionStrength * uSSRIntensity * finalMetallic;
         finalColor = mix(finalColor, reflectionColor.rgb, finalStrength);
+      } else if (uIBLEnabled) {
+        // Fall back to IBL environment map for missed rays
+        float phi = atan(reflectionDir.y, reflectionDir.x);
+        float theta = acos(0.0); // For 2.5D, we're looking mostly horizontal
+        vec2 envUV = vec2(
+          (phi / (2.0 * 3.14159265359)) + 0.5,
+          theta / 3.14159265359
+        );
+        vec4 reflectionColor = texture2D(uEnvironmentMap, envUV);
+        // Also scale fallback by metallic value
+        float fallbackStrength = 0.3 * uIBLIntensity * uSSRIntensity * finalMetallic;
+        finalColor = mix(finalColor, reflectionColor.rgb, fallbackStrength);
       }
-      // Disabled IBL fallback for now - only show reflections when ray actually hits something
-      // This prevents dark sky reflections from appearing as artifacts
     }
   }
   
