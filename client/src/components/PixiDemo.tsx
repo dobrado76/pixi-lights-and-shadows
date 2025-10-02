@@ -851,28 +851,17 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
     }
 
-    // REVOLUTIONARY APPROACH: Render scene container directly to SSR texture
-    // This captures the ACTUAL scene with all sprites and colors
-    if (previousFrameRenderTargetRef.current && sceneContainerRef.current) {
-      // Turn OFF all shaders temporarily to get base colors only
-      shadersRef.current.forEach(shader => {
-        if (shader.uniforms) shader.uniforms.uSSREnabled = false;
+    // Render WITHOUT SSR to previousFrame  
+    if (previousFrameRenderTargetRef.current) {
+      shadersRef.current.forEach(s => { if (s.uniforms) s.uniforms.uSSREnabled = false; });
+      pixiApp.renderer.render(displaySpriteRef.current, {
+        renderTexture: previousFrameRenderTargetRef.current
       });
-      
-      // Render the actual scene container (with all sprites) to SSR texture
-      pixiApp.renderer.render(sceneContainerRef.current, {
-        renderTexture: previousFrameRenderTargetRef.current,
-        clear: true
-      });
-      
-      // Turn SSR back ON for final display
       const ssrEnabled = (sceneConfig as any).ssrConfig?.enabled || false;
-      shadersRef.current.forEach(shader => {
-        if (shader.uniforms) shader.uniforms.uSSREnabled = ssrEnabled;
-      });
+      shadersRef.current.forEach(s => { if (s.uniforms) s.uniforms.uSSREnabled = ssrEnabled; });
     }
     
-    // Final render: Display accumulated result with SSR
+    // Final render WITH SSR to screen
     pixiApp.renderer.render(displaySpriteRef.current);
   };
 

@@ -1234,19 +1234,6 @@ void main(void) {
         // Sample the accumulated scene at the hit point for proper reflections
         vec4 reflectionColor = texture2D(uAccumulatedScene, hitUV);
         
-        // DEBUG: Show sampled color directly to verify what we're getting
-        if (length(reflectionColor.rgb) > 0.01) {
-          // We got color! Show it at 100% to verify
-          finalColor = reflectionColor.rgb;
-          gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
-          return;
-        } else {
-          // Sampled black - show YELLOW to indicate problem
-          finalColor = vec3(1.0, 1.0, 0.0);
-          gl_FragColor = vec4(finalColor * uColor, diffuseColor.a);
-          return;
-        }
-        
         float reflectionStrength = 1.0;
         
         // Fade out reflections near screen edges
