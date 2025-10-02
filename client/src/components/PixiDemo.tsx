@@ -73,6 +73,9 @@ const PixiDemo = (props: PixiDemoProps) => {
   const occluderContainerRef = useRef<PIXI.Container | null>(null);
   const occluderSpritesRef = useRef<PIXI.Sprite[]>([]);
   
+  // SSR (Screen Space Reflections) system - depth map for reflections
+  const depthRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
+  
   // Performance optimization caches with dirty flags
   const lastUniformsRef = useRef<any>({});
   const lastShadowCastersRef = useRef<any[]>([]);
@@ -821,6 +824,14 @@ const PixiDemo = (props: PixiDemoProps) => {
       );
       
       console.log('🌑 Occluder render target initialized for unlimited shadow casters');
+      
+      // Initialize depth render target for SSR (Screen Space Reflections)
+      depthRenderTargetRef.current = PIXI.RenderTexture.create({
+        width: shaderParams.canvasWidth,
+        height: shaderParams.canvasHeight
+      });
+      
+      console.log('✨ SSR depth map initialized');
       
       } else {
         console.warn('Canvas element not available for PIXI initialization');
