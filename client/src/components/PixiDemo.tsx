@@ -809,12 +809,19 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
     }
 
-    // Render WITHOUT SSR to previousFrame  
-    if (previousFrameRenderTargetRef.current) {
+    // CRITICAL: Render scene container (with all lit sprites) WITHOUT SSR to previousFrame
+    // This gives us the full colored scene that SSR can sample from
+    if (previousFrameRenderTargetRef.current && sceneContainerRef.current) {
+      // Disable SSR for this render pass
       shadersRef.current.forEach(s => { if (s.uniforms) s.uniforms.uSSREnabled = false; });
-      pixiApp.renderer.render(displaySpriteRef.current, {
-        renderTexture: previousFrameRenderTargetRef.current
+      
+      // Clear previousFrame and render the fully lit scene to it
+      pixiApp.renderer.render(sceneContainerRef.current, {
+        renderTexture: previousFrameRenderTargetRef.current,
+        clear: true
       });
+      
+      // Re-enable SSR for final pass
       const ssrEnabled = (sceneConfig as any).ssrConfig?.enabled || false;
       shadersRef.current.forEach(s => { if (s.uniforms) s.uniforms.uSSREnabled = ssrEnabled; });
     }

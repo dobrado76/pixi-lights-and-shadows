@@ -252,7 +252,7 @@
         },
         "zOrder": 1,
         "castsShadows": true,
-        "visible": true
+        "visible": false
       }
     }
   },
@@ -406,7 +406,7 @@
   },
   "ssrConfig": {
     "enabled": true,
-    "intensity": 0.68,
+    "intensity": 1,
     "maxDistance": 150,
     "quality": 41,
     "fadeEdgeDistance": 50,
