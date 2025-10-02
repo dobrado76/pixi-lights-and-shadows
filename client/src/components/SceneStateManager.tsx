@@ -9,6 +9,14 @@ export interface IBLConfig {
   environmentMap: string;
 }
 
+// Reflection Config interface
+export interface ReflectionConfig {
+  enabled: boolean;
+  intensity: number;
+  normalInfluence: number; // How much normals affect reflection sampling (0.0-1.0)
+  blur: number; // Blur amount for reflections (0.0-1.0)
+}
+
 // Complete scene configuration interface
 export interface SceneConfig {
   scene: Record<string, any>;
@@ -17,6 +25,7 @@ export interface SceneConfig {
   shadowConfig?: ShadowConfig;
   ambientOcclusionConfig?: AmbientOcclusionConfig;
   iblConfig?: IBLConfig;
+  reflectionConfig?: ReflectionConfig;
 }
 
 // Context interface for the scene state manager
@@ -38,6 +47,7 @@ export interface SceneStateContextType {
   updateAmbientOcclusionConfig: (newAOConfig: AmbientOcclusionConfig) => void;
   updatePerformanceSettings: (newSettings: PerformanceSettings & { manualOverride?: boolean }) => void;
   updateIBLConfig: (newIBLConfig: IBLConfig) => void;
+  updateReflectionConfig: (newReflectionConfig: ReflectionConfig) => void;
   
   // Immediate update for bypassing React state
   triggerImmediateSpriteChange: (spriteId: string, updates: any) => void;
@@ -254,6 +264,17 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     debouncedSaveScene(updatedConfig);
   }, [sceneConfig, debouncedSaveScene]);
 
+  const updateReflectionConfig = useCallback((newReflectionConfig: ReflectionConfig) => {
+    console.log('🪞 SceneStateManager: Updating Reflection config...');
+    
+    const updatedConfig = {
+      ...sceneConfig,
+      reflectionConfig: newReflectionConfig
+    };
+    setSceneConfig(updatedConfig);
+    debouncedSaveScene(updatedConfig);
+  }, [sceneConfig, debouncedSaveScene]);
+
   // Immediate sprite change function (bypasses React state for instant feedback)
   const triggerImmediateSpriteChange = useCallback((spriteId: string, updates: any) => {
     console.log(`🚀 SceneStateManager: Immediate sprite change for ${spriteId}:`, Object.keys(updates));
@@ -285,6 +306,7 @@ export const SceneStateProvider = ({ children }: SceneStateProviderProps) => {
     updateAmbientOcclusionConfig,
     updatePerformanceSettings,
     updateIBLConfig,
+    updateReflectionConfig,
     triggerImmediateSpriteChange
   };
 
