@@ -400,15 +400,15 @@
     "manualOverride": true
   },
   "iblConfig": {
-    "enabled": true,
+    "enabled": false,
     "intensity": 0.3,
     "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg"
   },
   "ssrConfig": {
     "enabled": true,
     "intensity": 1,
-    "maxDistance": 120,
-    "quality": 13,
+    "maxDistance": 160,
+    "quality": 47,
     "fadeEdgeDistance": 50,
     "depthThreshold": 0.3
   }
