@@ -252,7 +252,7 @@
         },
         "zOrder": 1,
         "castsShadows": true,
-        "visible": false
+        "visible": true
       }
     }
   },
@@ -403,13 +403,5 @@
     "enabled": true,
     "intensity": 0.3,
     "environmentMap": "/sky_boxes/golden_gate_hills_1k.jpg"
-  },
-  "ssrConfig": {
-    "enabled": true,
-    "intensity": 1,
-    "maxDistance": 150,
-    "quality": 41,
-    "fadeEdgeDistance": 50,
-    "depthThreshold": 0.3
   }
 }
