@@ -830,6 +830,29 @@ const PixiDemo = (props: PixiDemoProps) => {
       );
       
       console.log('🌑 Occluder render target initialized for unlimited shadow casters');
+      
+      // Initialize SSR system - depth map and reflection rendering
+      depthRenderTargetRef.current = PIXI.RenderTexture.create({
+        width: shaderParams.canvasWidth,
+        height: shaderParams.canvasHeight,
+      });
+      
+      ssrRenderTargetRef.current = PIXI.RenderTexture.create({
+        width: shaderParams.canvasWidth,
+        height: shaderParams.canvasHeight,
+      });
+      
+      // Create depth shader for height map rendering
+      const ssrConfig = sceneConfig.ssrConfig || { maxSceneHeight: 100 };
+      depthShaderRef.current = PIXI.Shader.from(
+        depthVertexShaderSource,
+        depthFragmentShaderSource,
+        {
+          uMaxSceneHeight: ssrConfig.maxSceneHeight || 100,
+          uObjectHeight: 0,
+        }
+      );
+      console.log('✨ SSR system initialized with depth map rendering');
       } else {
         console.warn('Canvas element not available for PIXI initialization');
         return; // Exit gracefully instead of throwing
