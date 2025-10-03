@@ -1,0 +1,413 @@
+{
+  "sprites": {
+    "background": {
+      "material": {
+        "image": "/textures/BGTextureTest.jpg",
+        "normal": "/textures/BGTextureNORM.jpg",
+        "useNormalMap": true,
+        "metallic": 0.15,
+        "smoothness": 0.09
+      },
+      "transform": {
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "rotation": 0,
+        "scale": 1
+      },
+      "sprite": {
+        "pivot": {
+          "preset": "top-left",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": -1,
+        "castsShadows": false,
+        "visible": false
+      }
+    },
+    "background2": {
+      "material": {
+        "image": "/textures/white-fabric-texture-background.jpg",
+        "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
+        "useNormalMap": false,
+        "metallic": 0.17,
+        "smoothness": 0.15
+      },
+      "transform": {
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "rotation": 0,
+        "scale": 1
+      },
+      "sprite": {
+        "pivot": {
+          "preset": "top-left",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": -1,
+        "castsShadows": false,
+        "visible": true
+      }
+    },
+    "ball": {
+      "material": {
+        "image": "/textures/ball.png",
+        "normal": "/textures/ballN.png",
+        "useNormalMap": true,
+        "metallic": 0.15,
+        "smoothness": 0.15,
+        "albedoTint": 0,
+        "albedoColor": {
+          "r": 1,
+          "g": 1,
+          "b": 1
+        }
+      },
+      "transform": {
+        "position": {
+          "x": 124,
+          "y": 86
+        },
+        "rotation": 5.654866776461628,
+        "scale": 1
+      },
+      "sprite": {
+        "pivot": {
+          "preset": "middle-center",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": 0,
+        "castsShadows": true,
+        "visible": true
+      }
+    },
+    "ball2": {
+      "material": {
+        "image": "/textures/ball.png",
+        "normal": "/textures/ballN.png",
+        "useNormalMap": true,
+        "metallic": 0.15,
+        "smoothness": 0.14
+      },
+      "transform": {
+        "position": {
+          "x": 111,
+          "y": 321
+        },
+        "rotation": 4.363323129985823,
+        "scale": 1
+      },
+      "sprite": {
+        "pivot": {
+          "preset": "middle-center",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": 0,
+        "castsShadows": true,
+        "visible": true
+      }
+    },
+    "test1": {
+      "material": {
+        "image": "/textures/test1.png",
+        "normal": "/textures/test1Normal.png",
+        "useNormalMap": true,
+        "metallic": 0,
+        "smoothness": 0.5
+      },
+      "transform": {
+        "position": {
+          "x": 82,
+          "y": 420
+        },
+        "rotation": 0,
+        "scale": 1
+      },
+      "sprite": {
+        "pivot": {
+          "preset": "middle-center",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": 2,
+        "castsShadows": true,
+        "visible": false
+      }
+    },
+    "test2": {
+      "material": {
+        "image": "/textures/test2.png",
+        "normal": "/textures/test2Normal.png",
+        "useNormalMap": true,
+        "metallic": 0.6,
+        "smoothness": 0.41
+      },
+      "transform": {
+        "position": {
+          "x": 98,
+          "y": 444
+        },
+        "rotation": 0,
+        "scale": 1
+      },
+      "sprite": {
+        "pivot": {
+          "preset": "top-left",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": 2,
+        "castsShadows": true,
+        "visible": true
+      }
+    },
+    "test3": {
+      "material": {
+        "image": "/textures/test3.png",
+        "normal": "/textures/test3Normal.png",
+        "useNormalMap": true,
+        "metallic": 0,
+        "smoothness": 0.5
+      },
+      "transform": {
+        "position": {
+          "x": 293,
+          "y": 424
+        },
+        "rotation": 0,
+        "scale": 1
+      },
+      "sprite": {
+        "pivot": {
+          "preset": "middle-center",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": 2,
+        "castsShadows": true,
+        "visible": false
+      }
+    },
+    "block": {
+      "material": {
+        "image": "/textures/block.png",
+        "normal": "/textures/blockNormalMap.jpg",
+        "useNormalMap": true,
+        "metallic": 0.38,
+        "smoothness": 0.42
+      },
+      "transform": {
+        "position": {
+          "x": 269,
+          "y": 95
+        },
+        "rotation": 0,
+        "scale": 1
+      },
+      "sprite": {
+        "pivot": {
+          "preset": "top-left",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": 1,
+        "castsShadows": true,
+        "visible": true
+      }
+    },
+    "block2": {
+      "material": {
+        "image": "/textures/block2.png",
+        "normal": "/textures/block2NormalMap.png",
+        "useNormalMap": true,
+        "metallic": 0.34,
+        "smoothness": 0.5,
+        "albedoTint": 0.19,
+        "albedoColor": {
+          "r": 0.10980392156862745,
+          "g": 0.5294117647058824,
+          "b": 0.792156862745098
+        }
+      },
+      "transform": {
+        "position": {
+          "x": 291,
+          "y": 351
+        },
+        "rotation": 0.24434609527920614,
+        "scale": 1.3
+      },
+      "sprite": {
+        "pivot": {
+          "preset": "middle-center",
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "zOrder": 1,
+        "castsShadows": true,
+        "visible": true
+      }
+    }
+  },
+  "lights": [
+    {
+      "id": "ambient_light",
+      "type": "ambient",
+      "enabled": true,
+      "brightness": 0.5,
+      "color": "0x666666"
+    },
+    {
+      "id": "mouse_light",
+      "type": "point",
+      "enabled": true,
+      "brightness": 1.8,
+      "color": "0xffffff",
+      "position": {
+        "x": 260,
+        "y": 170,
+        "z": 40
+      },
+      "followMouse": true,
+      "castsShadows": true,
+      "radius": 220
+    },
+    {
+      "id": "directional_light",
+      "type": "directional",
+      "brightness": 0.5,
+      "color": "0xffffff",
+      "direction": {
+        "x": 0.30901699437494745,
+        "y": -0.9510565162951535,
+        "z": -1
+      },
+      "castsShadows": true
+    },
+    {
+      "id": "spotlight_1",
+      "type": "spotlight",
+      "enabled": true,
+      "brightness": 0.9,
+      "color": "0xf4f080",
+      "position": {
+        "x": 180,
+        "y": 210,
+        "z": 80
+      },
+      "direction": {
+        "x": 0,
+        "y": 1,
+        "z": -1
+      },
+      "castsShadows": true,
+      "radius": 480,
+      "coneAngle": 58,
+      "softness": 0.2
+    },
+    {
+      "id": "spotlight",
+      "type": "spotlight",
+      "enabled": false,
+      "brightness": 0.5,
+      "color": "0xffffff",
+      "position": {
+        "x": 300,
+        "y": 250,
+        "z": 50
+      },
+      "direction": {
+        "x": 0,
+        "y": 1,
+        "z": -0.5
+      },
+      "castsShadows": true,
+      "radius": 400,
+      "coneAngle": 43,
+      "softness": 0.5
+    },
+    {
+      "id": "point_copy_1758529441818",
+      "type": "point",
+      "enabled": false,
+      "brightness": 0.6,
+      "color": "0xffffff",
+      "position": {
+        "x": 140,
+        "y": 240,
+        "z": 90
+      },
+      "followMouse": false,
+      "castsShadows": true,
+      "radius": 400,
+      "mask": {
+        "image": "god-rays.png",
+        "offset": {
+          "x": 15,
+          "y": 25
+        },
+        "rotation": 0,
+        "scale": 1.4
+      }
+    },
+    {
+      "id": "point_1758536509084",
+      "type": "point",
+      "enabled": true,
+      "brightness": 2.1,
+      "color": "0xe12323",
+      "position": {
+        "x": 210,
+        "y": 130,
+        "z": 50
+      },
+      "followMouse": false,
+      "castsShadows": true,
+      "radius": 740
+    }
+  ],
+  "shadowConfig": {
+    "enabled": true,
+    "strength": 0.85,
+    "maxLength": 150,
+    "height": 10
+  },
+  "ambientOcclusionConfig": {
+    "enabled": false,
+    "strength": 5.65,
+    "radius": 4,
+    "samples": 10,
+    "bias": 13
+  },
+  "performanceSettings": {
+    "quality": "high",
+    "resolution": 1,
+    "maxLights": 128,
+    "enableShadows": true,
+    "enableAmbientOcclusion": true,
+    "enableNormalMapping": true,
+    "enableLightMasks": true,
+    "textureScale": 1,
+    "fpsTarget": 60,
+    "capFpsTo60": true,
+    "manualOverride": true
+  },
+  "iblConfig": {
+    "enabled": true,
+    "intensity": 0.8,
+    "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg",
+    "pixelStep": 1.5
+  },
+  "globalIllumination": {
+    "enabled": true,
+    "intensity": 3.8,
+    "bounces": 5
+  }
+}
