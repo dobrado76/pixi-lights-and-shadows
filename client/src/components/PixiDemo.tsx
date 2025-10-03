@@ -1041,15 +1041,12 @@ const PixiDemo = (props: PixiDemoProps) => {
         attribute vec2 aVertexPosition;
         attribute vec2 aTextureCoord;
         
-        uniform mat3 projectionMatrix;
-        uniform mat3 translationMatrix;
-        
         varying vec2 vTextureCoord;
         varying vec2 vWorldPos;
         
         void main(void) {
-          vec3 position = projectionMatrix * translationMatrix * vec3(aVertexPosition, 1.0);
-          gl_Position = vec4(position.xy, 0.0, 1.0);
+          // Use raw NDC coordinates (-1 to 1) for fullscreen quad - bypass PIXI matrices
+          gl_Position = vec4(aVertexPosition, 0.0, 1.0);
           vTextureCoord = aTextureCoord;
           vWorldPos = aVertexPosition;
         }
