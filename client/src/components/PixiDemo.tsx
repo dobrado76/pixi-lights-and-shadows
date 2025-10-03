@@ -1781,6 +1781,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       // ✅ Global Light Masks Control (performance-filtered)
       uniforms.uMasksEnabled = performanceSettings.enableLightMasks;
       
+      // ✅ Global Illumination (GI/LPV) uniforms
+      const giConfig = sceneConfig.globalIllumination || { enabled: false, intensity: 1.0 };
+      uniforms.uGIEnabled = giConfig.enabled;
+      uniforms.uGIIntensity = giConfig.intensity || 1.0;
+      uniforms.uLPVTexture = lpvRenderTargetRef.current || PIXI.Texture.WHITE;
       
       // Per-sprite AO settings will be set individually for each sprite
       
