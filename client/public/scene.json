@@ -32,7 +32,7 @@
         "image": "/textures/white-fabric-texture-background.jpg",
         "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
         "useNormalMap": false,
-        "metallic": 0.43,
+        "metallic": 0.17,
         "smoothness": 0.15
       },
       "transform": {
@@ -146,7 +146,7 @@
         "image": "/textures/test2.png",
         "normal": "/textures/test2Normal.png",
         "useNormalMap": true,
-        "metallic": 0.41,
+        "metallic": 0.6,
         "smoothness": 0.41
       },
       "transform": {
@@ -261,7 +261,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.43,
+      "brightness": 0.51,
       "color": "0x666666"
     },
     {
@@ -282,7 +282,7 @@
     {
       "id": "directional_light",
       "type": "directional",
-      "brightness": 0.4,
+      "brightness": 0.5,
       "color": "0xffffff",
       "direction": {
         "x": 0.30901699437494745,
@@ -401,8 +401,14 @@
   },
   "iblConfig": {
     "enabled": true,
-    "intensity": 1.2,
+    "intensity": 0.8,
     "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg",
-    "pixelStep": 1
+    "pixelStep": 1.5
+  },
+  "giConfig": {
+    "enabled": true,
+    "intensity": 1.0,
+    "bounces": 4,
+    "gridResolution": 64
   }
 }
