@@ -28,11 +28,6 @@ export interface SpriteDefinition {
     offsetX?: number;
     offsetY?: number;
   };
-  reflection?: {                      // Optional reflection properties
-    canBeReflected?: boolean;         // Whether this sprite appears in reflections
-    isReflectiveSurface?: boolean;    // Whether this sprite acts as a reflective surface
-    reflectionLineY?: number;         // Y position of the reflection line
-  };
 }
 
 // Internal interface with defaults applied - all fields guaranteed to exist
@@ -56,11 +51,6 @@ interface CompleteSpriteDefinition {
     preset: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'custom-offset';
     offsetX: number;
     offsetY: number;
-  };
-  reflection: {                       // Always present with defaults applied
-    canBeReflected: boolean;          // Default false
-    isReflectiveSurface: boolean;     // Default false
-    reflectionLineY: number;          // Default 0
   };
 }
 
@@ -109,12 +99,7 @@ export class SceneSprite {
         preset: definition.pivot?.preset || 'middle-center', 
         offsetX: definition.pivot?.offsetX || 0, 
         offsetY: definition.pivot?.offsetY || 0 
-      }, // Default center pivot with explicit offset values
-      reflection: {
-        canBeReflected: definition.reflection?.canBeReflected ?? false,
-        isReflectiveSurface: definition.reflection?.isReflectiveSurface ?? false,
-        reflectionLineY: definition.reflection?.reflectionLineY ?? 0
-      } // Default reflection properties
+      } // Default center pivot with explicit offset values
     };
   }
 
@@ -622,7 +607,6 @@ export class SceneManager {
       const material = entity.material || {};
       const transform = entity.transform || { position: { x: 0, y: 0 }, rotation: 0, scale: 1 };
       const spriteComponent = entity.sprite || { pivot: { preset: 'middle-center', offsetX: 0, offsetY: 0 }, zOrder: 0, castsShadows: true, visible: true };
-      const reflection = entity.reflection;
       
       // Convert ECS structure back to flat SpriteDefinition format
       const flatSpriteData: SpriteDefinition = {
@@ -639,12 +623,7 @@ export class SceneManager {
         zOrder: spriteComponent.zOrder,
         castsShadows: spriteComponent.castsShadows,
         visible: spriteComponent.visible,
-        pivot: spriteComponent.pivot,
-        reflection: reflection ? {
-          canBeReflected: reflection.canBeReflected,
-          isReflectiveSurface: reflection.isReflectiveSurface,
-          reflectionLineY: reflection.reflectionLineY
-        } : undefined
+        pivot: spriteComponent.pivot
       };
       
       const sprite = new SceneSprite(key, flatSpriteData);
@@ -685,7 +664,6 @@ export class SceneManager {
         const material = entityData.material;
         const transform = entityData.transform;
         const spriteComponent = entityData.sprite;
-        const reflection = entityData.reflection;
         
         // Convert ECS structure to flat SpriteDefinition format
         const newDef: SpriteDefinition = {
@@ -702,12 +680,7 @@ export class SceneManager {
           zOrder: spriteComponent.zOrder,
           castsShadows: spriteComponent.castsShadows,
           visible: spriteComponent.visible,
-          pivot: spriteComponent.pivot,
-          reflection: reflection ? {
-            canBeReflected: reflection.canBeReflected,
-            isReflectiveSurface: reflection.isReflectiveSurface,
-            reflectionLineY: reflection.reflectionLineY
-          } : undefined
+          pivot: spriteComponent.pivot
         };
         const wasVisible = existingSprite.definition.visible;
         const oldZOrder = existingSprite.definition.zOrder;
@@ -719,11 +692,6 @@ export class SceneManager {
             preset: newDef.pivot?.preset || existingSprite.definition.pivot.preset,
             offsetX: newDef.pivot?.offsetX !== undefined ? newDef.pivot.offsetX : existingSprite.definition.pivot.offsetX,
             offsetY: newDef.pivot?.offsetY !== undefined ? newDef.pivot.offsetY : existingSprite.definition.pivot.offsetY
-          },
-          reflection: {
-            canBeReflected: newDef.reflection?.canBeReflected ?? existingSprite.definition.reflection.canBeReflected,
-            isReflectiveSurface: newDef.reflection?.isReflectiveSurface ?? existingSprite.definition.reflection.isReflectiveSurface,
-            reflectionLineY: newDef.reflection?.reflectionLineY ?? existingSprite.definition.reflection.reflectionLineY
           }
         };
         existingSprite.definition = updatedDef;

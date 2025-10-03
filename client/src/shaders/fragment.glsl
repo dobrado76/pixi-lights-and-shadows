@@ -1186,11 +1186,8 @@ void main(void) {
     // Non-metallic surfaces (finalMetallic = 0) will have no reflection
     float reflectionStrength = uReflectionIntensity * finalSmoothness * finalMetallic;
     
-    // DEBUG: Force reflections to be visible at 50% to test if texture has content
-    float debugReflectionStrength = 0.5;
-    
     // Mix the reflection into the final color
-    finalColor = mix(finalColor, reflectionColor, debugReflectionStrength);
+    finalColor = mix(finalColor, reflectionColor, reflectionStrength);
   }
   
   // Apply Ambient Occlusion with reduced effect on solid sprites

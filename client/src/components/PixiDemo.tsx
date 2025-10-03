@@ -532,16 +532,16 @@ const PixiDemo = (props: PixiDemoProps) => {
   };
 
   // Build reflection texture for normal-map-aware reflections
-  const buildReflectionTexture = (reflectionConfig: any) => {
+  const buildReflectionTexture = () => {
     if (!pixiApp || !reflectionRenderTargetRef.current || !reflectionContainerRef.current) return;
     
     const allSprites = sceneManagerRef.current?.getAllSprites() || [];
     
-    // Get sprites that can be reflected (zOrder >= 0)
+    // Get sprites that can be reflected (safely check for reflection property)
     const reflectableSprites = allSprites.filter(sprite => {
-      return sprite.definition.zOrder >= 0 && sprite.mesh;
+      const reflection = (sprite.definition as any)?.reflection;
+      return reflection?.canBeReflected && sprite.mesh;
     });
-    
     
     // Find reflective surface to get reflection line
     const reflectiveSurface = allSprites.find(sprite => {
@@ -585,26 +585,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       renderTexture: reflectionRenderTargetRef.current, 
       clear: true 
     });
-    
-    // Debug: Log reflection state once per second
-    if (frameCountRef.current % 60 === 0) {
-      console.log('🪞 Reflection State:', {
-        enabled: reflectionConfig.enabled,
-        intensity: reflectionConfig.intensity,
-        normalInfluence: reflectionConfig.normalInfluence,
-        blur: reflectionConfig.blur,
-        reflectableCount: reflectableSprites.length,
-        reflectableIds: reflectableSprites.map(s => s.id),
-        reflectionLineY: reflectionLineY,
-        reflectionTextureSize: {
-          width: reflectionRenderTargetRef.current?.width,
-          height: reflectionRenderTargetRef.current?.height
-        }
-      });
-      
-      // Debug: Verify reflection texture has content
-      console.log('🖼️ Reflection container children:', reflectionContainerRef.current?.children.length);
-    }
   };
 
   // Multi-pass lighting composer
@@ -1331,9 +1311,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       const shadowCaster1 = shadowCasters[1]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
       const shadowCaster2 = shadowCasters[2]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
       
-      // Get reflection config with defaults
-      const reflectionConfig = (sceneConfig as any).reflectionConfig || { enabled: false, intensity: 0.5, normalInfluence: 0.8, blur: 0.0 };
-      
       // Common shader uniforms for all sprites
       const commonUniforms = {
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
@@ -1347,12 +1324,6 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Switch to unlimited mode when more than 3 shadow casters
         uUseOccluderMap: true,
         uOccluderMapOffset: [SHADOW_BUFFER, SHADOW_BUFFER], // Offset for expanded occlusion map
-        // Reflection system uniforms
-        uReflectionEnabled: reflectionConfig.enabled && reflectionConfig.intensity > 0.0,
-        uReflectionIntensity: reflectionConfig.intensity,
-        uNormalInfluence: reflectionConfig.normalInfluence,
-        uReflectionBlur: reflectionConfig.blur,
-        uReflectionTexture: reflectionRenderTargetRef.current || PIXI.Texture.WHITE,
         ...lightUniforms
       };
       
@@ -2045,7 +2016,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Build reflection texture every frame (normal-map-aware reflections)
       const reflectionConfig = (sceneConfigRef.current as any).reflectionConfig;
       if (reflectionConfig?.enabled && reflectionRenderTargetRef.current) {
-        buildReflectionTexture(reflectionConfig);
+        buildReflectionTexture();
       }
       
       // Only rebuild occluder map if shadow casters changed
