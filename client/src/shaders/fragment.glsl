@@ -1176,8 +1176,8 @@ void main(void) {
     vec2 lpvUV = vWorldPos / uCanvasSize;
     vec3 bouncedLight = texture2D(uLPVTexture, lpvUV).rgb;
     
-    // Add bounced light contribution to final color
-    finalColor += bouncedLight * uGIIntensity;
+    // DEBUG: Visualize LPV data with massive multiplier
+    finalColor += bouncedLight * 100.0; // 100x boost to see ANY data
   }
   
   gl_FragColor = vec4(finalColor, diffuseColor.a);
