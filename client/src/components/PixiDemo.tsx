@@ -542,8 +542,8 @@ const PixiDemo = (props: PixiDemoProps) => {
 
   // Light Propagation Volumes (LPV) - Global Illumination rendering
   const renderLPV = () => {
-    if (!pixiApp || !lpvRenderTargetRef.current || !lpvPropagationTargetRef.current || 
-        !lpvContainerRef.current || !giInjectionShaderRef.current || !giPropagationShaderRef.current) {
+    if (!pixiApp || !lpvRenderTargetRef.current || !lpvTempTargetRef.current || 
+        !lpvContainerRef.current || !lpvInjectionShaderRef.current || !lpvPropagationShaderRef.current) {
       return;
     }
 
@@ -570,7 +570,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           0, 1
         ], 2)
         .addIndex([0, 1, 2, 0, 2, 3]),
-      giInjectionShaderRef.current
+      lpvInjectionShaderRef.current
     );
     
     lpvContainerRef.current.addChild(injectionQuad);
@@ -604,20 +604,20 @@ const PixiDemo = (props: PixiDemoProps) => {
             0, 1
           ], 2)
           .addIndex([0, 1, 2, 0, 2, 3]),
-        giPropagationShaderRef.current
+        lpvPropagationShaderRef.current
       );
       
       // Set input texture (ping-pong between render targets)
-      if (giPropagationShaderRef.current.uniforms) {
-        giPropagationShaderRef.current.uniforms.uLPVInput = 
-          i === 0 ? lpvRenderTargetRef.current : lpvPropagationTargetRef.current;
-        giPropagationShaderRef.current.uniforms.uTexelSize = 1.0 / 64.0; // Grid resolution
+      if (lpvPropagationShaderRef.current.uniforms) {
+        lpvPropagationShaderRef.current.uniforms.uLPVInput = 
+          i === 0 ? lpvRenderTargetRef.current : lpvTempTargetRef.current;
+        lpvPropagationShaderRef.current.uniforms.uTexelSize = 1.0 / 64.0; // Grid resolution
       }
       
       lpvContainerRef.current.addChild(propagationQuad);
       
       // Render propagation (output to alternate target to avoid read/write conflicts)
-      const outputTarget = i === bounceCount - 1 ? lpvRenderTargetRef.current : lpvPropagationTargetRef.current;
+      const outputTarget = i === bounceCount - 1 ? lpvRenderTargetRef.current : lpvTempTargetRef.current;
       pixiApp.renderer.render(lpvContainerRef.current, {
         renderTexture: outputTarget,
         clear: false
