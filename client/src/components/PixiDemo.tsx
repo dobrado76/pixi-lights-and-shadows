@@ -102,6 +102,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   const ambientOcclusionConfigRef = useRef(ambientOcclusionConfig);
   const sceneConfigRef = useRef(sceneConfig);
   const ambientLightRef = useRef(ambientLight);
+  const lightsConfigRef = useRef(lightsConfig);
 
   // Performance optimization utilities
   const createLightConfigHash = (lights: Light[], ambient: any, shadow: any, ao: any, performance: any, ibl: any) => {
@@ -547,7 +548,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       return;
     }
 
-    const giConfig = sceneConfigRef.current?.globalIllumination;
+    const giConfig = sceneConfigRef.current?.giConfig;
     if (!giConfig || !giConfig.enabled) return;
 
     // STEP 1: Light Injection Pass
@@ -1701,7 +1702,8 @@ const PixiDemo = (props: PixiDemoProps) => {
     ambientOcclusionConfigRef.current = ambientOcclusionConfig;
     sceneConfigRef.current = sceneConfig;
     ambientLightRef.current = ambientLight;
-  }, [shadowConfig, ambientOcclusionConfig, sceneConfig, ambientLight]);
+    lightsConfigRef.current = lightsConfig;
+  }, [shadowConfig, ambientOcclusionConfig, sceneConfig, ambientLight, lightsConfig]);
 
   // Dynamic shader uniform updates for real-time lighting changes
   useEffect(() => {
@@ -2094,28 +2096,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Check for changes and update dirty flags
       checkAndUpdateDirtyFlags();
       
-      // Render LPV (Global Illumination) every frame if enabled
-      const giConfig = sceneConfigRef.current?.globalIllumination;
-      if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current) {
-        renderLPV();
-        
-        // Update shader uniforms to use LPV texture
-        shadersRef.current.forEach(shader => {
-          if (shader.uniforms) {
-            shader.uniforms.uGIEnabled = true;
-            shader.uniforms.uGIIntensity = giConfig.intensity || 1.0;
-            shader.uniforms.uLPVTexture = lpvRenderTargetRef.current;
-          }
-        });
-      } else {
-        // Disable GI if not enabled
-        shadersRef.current.forEach(shader => {
-          if (shader.uniforms) {
-            shader.uniforms.uGIEnabled = false;
-          }
-        });
-      }
-      
       // Only rebuild occluder map if shadow casters changed
       if (occluderMapDirtyRef.current && occluderRenderTargetRef.current) {
         buildOccluderMap();
@@ -2175,9 +2155,36 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniformsDirtyRef.current = false;
       }
       
-      // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
-      if (pixiApp && pixiApp.renderer) {
-        pixiApp.render();
+      // Render the scene using multi-pass lighting
+      if (lightsConfigRef.current && lightsConfigRef.current.length > 0) {
+        renderMultiPass(lightsConfigRef.current);
+        
+        // After scene is rendered, process Global Illumination if enabled
+        const giConfig = sceneConfigRef.current?.giConfig;
+        if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current) {
+          renderLPV();
+          
+          // Update shader uniforms to use LPV texture for next frame
+          shadersRef.current.forEach(shader => {
+            if (shader.uniforms) {
+              shader.uniforms.uGIEnabled = true;
+              shader.uniforms.uGIIntensity = giConfig.intensity || 1.0;
+              shader.uniforms.uLPVTexture = lpvRenderTargetRef.current;
+            }
+          });
+        } else {
+          // Disable GI if not enabled
+          shadersRef.current.forEach(shader => {
+            if (shader.uniforms) {
+              shader.uniforms.uGIEnabled = false;
+            }
+          });
+        }
+      } else {
+        // Fallback: regular render if no lights configured
+        if (pixiApp && pixiApp.renderer) {
+          pixiApp.render();
+        }
       }
     };
 
