@@ -88,11 +88,13 @@ const DynamicLightControls = ({
     enabled: boolean;
     intensity: number;
     bounces: number;
+    debugLPV: boolean;
   }>(
     (sceneConfig as any).globalIllumination || {
       enabled: false,
       intensity: 1.0,
       bounces: 3,
+      debugLPV: false,
     },
   );
   const [availableSkyBoxes, setAvailableSkyBoxes] = useState<string[]>([]);
@@ -1129,6 +1131,42 @@ const DynamicLightControls = ({
                       className="flex-1"
                       data-testid="slider-gi-bounces"
                     />
+                  </div>
+
+                  {/* Debug LPV Toggle */}
+                  <div className="flex items-center space-x-2 mt-2">
+                    <button
+                      onClick={() => {
+                        const newConfig = {
+                          ...localGIConfig,
+                          debugLPV: !localGIConfig.debugLPV,
+                        };
+                        setLocalGIConfig(newConfig);
+                        const updatedScene = {
+                          ...sceneConfig,
+                          globalIllumination: newConfig,
+                        };
+                        onSceneConfigChange(updatedScene);
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          localAOConfig,
+                          updatedScene,
+                        );
+                      }}
+                      className={`px-2 py-1 rounded text-xs ${
+                        localGIConfig.debugLPV
+                          ? "bg-yellow-500 text-black"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                      data-testid="button-debug-lpv"
+                    >
+                      {localGIConfig.debugLPV ? "Hide" : "Show"} LPV Debug
+                    </button>
+                    <span className="text-xs text-muted-foreground">
+                      Visualize light propagation grid
+                    </span>
                   </div>
                 </>
               )}

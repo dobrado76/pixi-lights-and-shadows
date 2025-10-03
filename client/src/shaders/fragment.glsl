@@ -97,6 +97,7 @@ uniform float uIBLPixelStep; // Pixel correspondence (0.0-2.0): how many pixels 
 uniform bool uGIEnabled; // Enable/disable GI
 uniform float uGIIntensity; // GI strength multiplier (0.0-5.0)
 uniform sampler2D uLPVTexture; // Light propagation volume texture (low-res grid with bounced light)
+uniform bool uDebugLPV; // Debug visualization
 
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 pixelPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
@@ -1176,8 +1177,13 @@ void main(void) {
     vec2 lpvUV = vWorldPos / uCanvasSize;
     vec3 lpvData = texture2D(uLPVTexture, lpvUV).rgb;
     
-    // DEBUG: Just output the LPV data directly (replace the scene)
-    finalColor = lpvData * 100.0; // 100x to make ANY data visible
+    // Debug mode: show raw LPV data
+    if (uDebugLPV) {
+      finalColor = lpvData * 100.0; // 100x boost for visibility
+    } else if (uGIIntensity > 0.0) {
+      // Normal mode: add bounced light
+      finalColor += lpvData * uGIIntensity;
+    }
   }
   
   gl_FragColor = vec4(finalColor, diffuseColor.a);

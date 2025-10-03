@@ -1859,6 +1859,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       uniforms.uGIEnabled = giConfig.enabled;
       uniforms.uGIIntensity = giConfig.intensity || 1.0;
       uniforms.uLPVTexture = lpvRenderTargetRef.current || PIXI.Texture.WHITE;
+      uniforms.uDebugLPV = (giConfig as any).debugLPV || false;
       
       // Per-sprite AO settings will be set individually for each sprite
       
@@ -2248,6 +2249,7 @@ const PixiDemo = (props: PixiDemoProps) => {
               shader.uniforms.uGIEnabled = true;
               shader.uniforms.uGIIntensity = giConfig.intensity || 1.0;
               shader.uniforms.uLPVTexture = lpvRenderTargetRef.current;
+              shader.uniforms.uDebugLPV = (giConfig as any).debugLPV || false;
             }
           });
         } else {
@@ -2255,6 +2257,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           shadersRef.current.forEach(shader => {
             if (shader.uniforms) {
               shader.uniforms.uGIEnabled = false;
+              shader.uniforms.uDebugLPV = false;
             }
           });
         }
