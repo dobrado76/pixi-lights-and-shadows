@@ -33,7 +33,7 @@
         "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
         "useNormalMap": false,
         "metallic": 0.69,
-        "smoothness": 0.81
+        "smoothness": 0.69
       },
       "transform": {
         "position": {
@@ -89,9 +89,6 @@
         "zOrder": 0,
         "castsShadows": true,
         "visible": true
-      },
-      "reflection": {
-        "canBeReflected": true
       }
     },
     "ball2": {
@@ -119,9 +116,6 @@
         "zOrder": 0,
         "castsShadows": true,
         "visible": true
-      },
-      "reflection": {
-        "canBeReflected": true
       }
     },
     "test1": {
@@ -417,5 +411,11 @@
     "enabled": true,
     "intensity": 0.3,
     "environmentMap": "/sky_boxes/cobblestone_street_night_1k.jpg"
+  },
+  "reflectionConfig": {
+    "enabled": true,
+    "intensity": 0.55,
+    "normalInfluence": 0.65,
+    "blur": 0.1
   }
 }
