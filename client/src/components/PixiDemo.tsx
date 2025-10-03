@@ -532,7 +532,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   };
 
   // Build reflection texture for normal-map-aware reflections
-  const buildReflectionTexture = () => {
+  const buildReflectionTexture = (reflectionConfig: any) => {
     if (!pixiApp || !reflectionRenderTargetRef.current || !reflectionContainerRef.current) return;
     
     const allSprites = sceneManagerRef.current?.getAllSprites() || [];
@@ -585,6 +585,26 @@ const PixiDemo = (props: PixiDemoProps) => {
       renderTexture: reflectionRenderTargetRef.current, 
       clear: true 
     });
+    
+    // Debug: Log reflection state once per second
+    if (frameCountRef.current % 60 === 0) {
+      console.log('🪞 Reflection State:', {
+        enabled: reflectionConfig.enabled,
+        intensity: reflectionConfig.intensity,
+        normalInfluence: reflectionConfig.normalInfluence,
+        blur: reflectionConfig.blur,
+        reflectableCount: reflectableSprites.length,
+        reflectableIds: reflectableSprites.map(s => s.id),
+        reflectionLineY: reflectionLineY,
+        reflectionTextureSize: {
+          width: reflectionRenderTargetRef.current?.width,
+          height: reflectionRenderTargetRef.current?.height
+        }
+      });
+      
+      // Debug: Verify reflection texture has content
+      console.log('🖼️ Reflection container children:', reflectionContainerRef.current?.children.length);
+    }
   };
 
   // Multi-pass lighting composer
@@ -2025,7 +2045,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Build reflection texture every frame (normal-map-aware reflections)
       const reflectionConfig = (sceneConfigRef.current as any).reflectionConfig;
       if (reflectionConfig?.enabled && reflectionRenderTargetRef.current) {
-        buildReflectionTexture();
+        buildReflectionTexture(reflectionConfig);
       }
       
       // Only rebuild occluder map if shadow casters changed
