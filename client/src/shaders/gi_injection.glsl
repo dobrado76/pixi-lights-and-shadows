@@ -24,31 +24,35 @@ void main(void) {
   // Accumulate light injection at this grid cell
   vec3 injectedLight = vec3(0.0);
   
-  // Inject from point lights
+  // Inject from point lights - use their radius for falloff
   for (int i = 0; i < 32; i++) {
     if (i >= uNumPointLights) break;
     
     vec3 lightPos = uPointLightPositions[i];
     float dist = length(worldPos - lightPos.xy);
+    float radius = uPointLightRadii[i];
     
-    // Only inject light near the source (within 20 pixels)
-    if (dist < 20.0) {
-      float falloff = 1.0 - (dist / 20.0);
-      injectedLight += uPointLightColors[i] * uPointLightIntensities[i] * falloff;
+    // Inject light across the entire radius
+    if (dist < radius) {
+      float falloff = 1.0 - (dist / radius);
+      falloff = falloff * falloff; // Squared falloff for softer edges
+      injectedLight += uPointLightColors[i] * uPointLightIntensities[i] * falloff * 0.5;
     }
   }
   
-  // Inject from spotlights
+  // Inject from spotlights - use fixed radius
   for (int i = 0; i < 32; i++) {
     if (i >= uNumSpotLights) break;
     
     vec3 lightPos = uSpotLightPositions[i];
     float dist = length(worldPos - lightPos.xy);
+    float radius = 300.0; // Large radius for spotlights
     
-    // Only inject light near the source (within 20 pixels)
-    if (dist < 20.0) {
-      float falloff = 1.0 - (dist / 20.0);
-      injectedLight += uSpotLightColors[i] * uSpotLightIntensities[i] * falloff;
+    // Inject light across the entire radius
+    if (dist < radius) {
+      float falloff = 1.0 - (dist / radius);
+      falloff = falloff * falloff; // Squared falloff
+      injectedLight += uSpotLightColors[i] * uSpotLightIntensities[i] * falloff * 0.5;
     }
   }
   
