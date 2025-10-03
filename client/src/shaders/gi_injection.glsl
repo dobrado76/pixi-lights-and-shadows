@@ -9,9 +9,6 @@ void main(void) {
   // Sample the rendered scene at this LPV grid cell
   vec4 sceneColor = texture2D(uSceneTexture, vTextureCoord);
   
-  // DEBUG: Inject ALL light, no threshold
-  // Multiply by 10x to make it VERY obvious
-  vec3 injectedLight = sceneColor.rgb * 10.0 * uGIIntensity;
-  
-  gl_FragColor = vec4(injectedLight, 1.0);
+  // DEBUG: Output raw scene texture to see if ANYTHING is captured
+  gl_FragColor = vec4(sceneColor.rgb * 10.0, 1.0);
 }
