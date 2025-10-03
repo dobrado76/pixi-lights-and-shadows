@@ -16,6 +16,7 @@ import {
   EyeOff,
   Moon,
   Contrast,
+  Lightbulb,
 } from "lucide-react";
 import { SceneConfig } from "./SceneStateManager";
 
@@ -81,6 +82,17 @@ const DynamicLightControls = ({
       intensity: 1.0,
       environmentMap: "/sky_boxes/golden_gate_hills_1k.hdr",
       pixelStep: 1.0,
+    },
+  );
+  const [localGIConfig, setLocalGIConfig] = useState<{
+    enabled: boolean;
+    intensity: number;
+    bounces: number;
+  }>(
+    (sceneConfig as any).globalIllumination || {
+      enabled: false,
+      intensity: 1.0,
+      bounces: 3,
     },
   );
   const [availableSkyBoxes, setAvailableSkyBoxes] = useState<string[]>([]);
@@ -999,6 +1011,123 @@ const DynamicLightControls = ({
                       }}
                       className="flex-1"
                       data-testid="slider-ibl-pixel-step"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Global Illumination (GI) Controls - Light Propagation Volumes */}
+            <div className="mt-3 pt-2 border-t border-border/50">
+              <div className="flex items-center space-x-2 mb-2">
+                <Lightbulb size={12} className="text-muted-foreground" />
+                <h5 className="text-xs font-medium text-muted-foreground">
+                  Global Illumination (GI)
+                </h5>
+                <button
+                  onClick={() => {
+                    const newConfig = {
+                      ...localGIConfig,
+                      enabled: !localGIConfig.enabled,
+                    };
+                    setLocalGIConfig(newConfig);
+                    const updatedScene = {
+                      ...sceneConfig,
+                      globalIllumination: newConfig,
+                    };
+                    onSceneConfigChange(updatedScene);
+                    debouncedSave(
+                      localLights,
+                      localAmbient,
+                      localShadowConfig,
+                      localAOConfig,
+                      updatedScene,
+                    );
+                  }}
+                  className={`ml-auto p-1 rounded text-xs ${
+                    localGIConfig.enabled
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                  data-testid="button-toggle-gi"
+                >
+                  {localGIConfig.enabled ? (
+                    <Eye size={10} />
+                  ) : (
+                    <EyeOff size={10} />
+                  )}
+                </button>
+              </div>
+
+              {localGIConfig.enabled && (
+                <>
+                  <div className="flex items-center space-x-2 mb-1">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Intensity: {localGIConfig.intensity.toFixed(2)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="5"
+                      step="0.1"
+                      value={localGIConfig.intensity}
+                      onChange={(e) => {
+                        const newIntensity = parseFloat(e.target.value);
+                        const newConfig = {
+                          ...localGIConfig,
+                          intensity: newIntensity,
+                        };
+                        setLocalGIConfig(newConfig);
+                        const updatedScene = {
+                          ...sceneConfig,
+                          globalIllumination: newConfig,
+                        };
+                        onSceneConfigChange(updatedScene);
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          localAOConfig,
+                          updatedScene,
+                        );
+                      }}
+                      className="flex-1"
+                      data-testid="slider-gi-intensity"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2 mb-1">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Bounces: {localGIConfig.bounces}
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value={localGIConfig.bounces}
+                      onChange={(e) => {
+                        const newBounces = parseInt(e.target.value);
+                        const newConfig = {
+                          ...localGIConfig,
+                          bounces: newBounces,
+                        };
+                        setLocalGIConfig(newConfig);
+                        const updatedScene = {
+                          ...sceneConfig,
+                          globalIllumination: newConfig,
+                        };
+                        onSceneConfigChange(updatedScene);
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          localAOConfig,
+                          updatedScene,
+                        );
+                      }}
+                      className="flex-1"
+                      data-testid="slider-gi-bounces"
                     />
                   </div>
                 </>
