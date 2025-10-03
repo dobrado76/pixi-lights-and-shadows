@@ -537,10 +537,9 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     const allSprites = sceneManagerRef.current?.getAllSprites() || [];
     
-    // Get sprites that can be reflected (safely check for reflection property)
+    // Get sprites that can be reflected (zOrder >= 0)
     const reflectableSprites = allSprites.filter(sprite => {
-      const reflection = (sprite.definition as any)?.reflection;
-      return reflection?.canBeReflected && sprite.mesh;
+      return sprite.definition.zOrder >= 0 && sprite.mesh;
     });
     
     

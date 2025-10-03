@@ -32,8 +32,8 @@
         "image": "/textures/white-fabric-texture-background.jpg",
         "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
         "useNormalMap": false,
-        "metallic": 0.58,
-        "smoothness": 0.33
+        "metallic": 0.69,
+        "smoothness": 0.81
       },
       "transform": {
         "position": {
@@ -63,7 +63,7 @@
         "image": "/textures/ball.png",
         "normal": "/textures/ballN.png",
         "useNormalMap": true,
-        "metallic": 0.15,
+        "metallic": 0.73,
         "smoothness": 0.15,
         "albedoTint": 0,
         "albedoColor": {
@@ -99,7 +99,7 @@
         "image": "/textures/ball.png",
         "normal": "/textures/ballN.png",
         "useNormalMap": true,
-        "metallic": 0.15,
+        "metallic": 0.36,
         "smoothness": 0.14
       },
       "transform": {
@@ -417,11 +417,5 @@
     "enabled": true,
     "intensity": 0.3,
     "environmentMap": "/sky_boxes/cobblestone_street_night_1k.jpg"
-  },
-  "reflectionConfig": {
-    "enabled": true,
-    "intensity": 0.6,
-    "normalInfluence": 0.45,
-    "blur": 0.4
   }
 }
