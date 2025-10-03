@@ -581,6 +581,13 @@ const PixiDemo = (props: PixiDemoProps) => {
       const allPointLights = allLights.filter((l: any) => l.type === 'point');
       const allSpotlights = allLights.filter((l: any) => l.type === 'spotlight');
       
+      console.log('🌈 Light data for injection:', {
+        totalLights: allLights.length,
+        pointLights: allPointLights.length,
+        spotlights: allSpotlights.length,
+        lightsConfigRef: !!lightsConfigRef.current
+      });
+      
       // Point light arrays
       const pointPositions = new Array(32 * 3).fill(0);
       const pointColors = new Array(32 * 3).fill(0);
