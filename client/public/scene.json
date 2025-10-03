@@ -401,8 +401,8 @@
   },
   "iblConfig": {
     "enabled": true,
-    "intensity": 1.2,
+    "intensity": 0.5,
     "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg",
-    "pixelStep": 0
+    "pixelStep": 1
   }
 }

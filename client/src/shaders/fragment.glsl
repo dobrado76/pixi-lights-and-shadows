@@ -619,8 +619,8 @@ vec3 calculateIBL(vec3 albedo, vec3 normal, vec3 viewDir, float metallic, float 
     vec2 relativePos = (vWorldPos - spriteCenter) / max(uSpriteSize.x, uSpriteSize.y);
     
     // Scale by pixel step (controls how much skybox changes per sprite pixel)
-    // Higher values = more variation across the sprite surface
-    float offsetScale = uIBLPixelStep * 0.5; // Scale factor for reasonable variation
+    // Modulate by metallic - non-metallic surfaces have less variation
+    float offsetScale = uIBLPixelStep * 0.5 * metallic; // Metallic scales the variation
     positionalOffset = vec3(relativePos.x * offsetScale, relativePos.y * offsetScale, 0.0);
   }
   
