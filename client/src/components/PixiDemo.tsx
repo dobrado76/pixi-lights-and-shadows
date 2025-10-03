@@ -547,7 +547,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       return;
     }
 
-    const giConfig = sceneConfig?.globalIllumination;
+    const giConfig = sceneConfigRef.current?.globalIllumination;
     if (!giConfig || !giConfig.enabled) return;
 
     // STEP 1: Light Injection Pass
@@ -2095,7 +2095,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       checkAndUpdateDirtyFlags();
       
       // Render LPV (Global Illumination) every frame if enabled
-      const giConfig = sceneConfig?.globalIllumination;
+      const giConfig = sceneConfigRef.current?.globalIllumination;
       if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current) {
         renderLPV();
         
