@@ -551,8 +551,14 @@ const PixiDemo = (props: PixiDemoProps) => {
     if (!giConfig || !giConfig.enabled) return;
 
     // STEP 1: Light Injection Pass
-    // Render all lit surfaces into the LPV grid
+    // Sample the rendered scene and inject bright pixels into the LPV grid
     lpvContainerRef.current.removeChildren();
+    
+    // Set injection shader uniforms
+    if (lpvInjectionShaderRef.current.uniforms) {
+      lpvInjectionShaderRef.current.uniforms.uSceneTexture = renderTargetRef.current; // Current rendered frame
+      lpvInjectionShaderRef.current.uniforms.uGIIntensity = giConfig.intensity || 1.0;
+    }
     
     // Create a fullscreen quad with the injection shader
     const injectionQuad = new PIXI.Mesh(
@@ -575,7 +581,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     lpvContainerRef.current.addChild(injectionQuad);
     
-    // Render light injection
+    // Render light injection to LPV grid
     pixiApp.renderer.render(lpvContainerRef.current, {
       renderTexture: lpvRenderTargetRef.current,
       clear: true
@@ -609,9 +615,10 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Set input texture (ping-pong between render targets)
       if (lpvPropagationShaderRef.current.uniforms) {
-        lpvPropagationShaderRef.current.uniforms.uLPVInput = 
+        lpvPropagationShaderRef.current.uniforms.uLPVTexture = 
           i === 0 ? lpvRenderTargetRef.current : lpvTempTargetRef.current;
-        lpvPropagationShaderRef.current.uniforms.uTexelSize = 1.0 / 64.0; // Grid resolution
+        lpvPropagationShaderRef.current.uniforms.uTexelSize = [1.0 / 64.0, 1.0 / 64.0]; // Grid resolution (vec2)
+        lpvPropagationShaderRef.current.uniforms.uPropagationFactor = 0.5; // How much to blend with neighbors
       }
       
       lpvContainerRef.current.addChild(propagationQuad);
@@ -2087,14 +2094,27 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Check for changes and update dirty flags
       checkAndUpdateDirtyFlags();
       
-      // LPV (Global Illumination) - DISABLED until shaders are properly loaded
-      // TODO: Load shader source code for lpvInjectionShaderRef and lpvPropagationShaderRef
-      // For now, always disable GI to prevent shader errors
-      shadersRef.current.forEach(shader => {
-        if (shader.uniforms) {
-          shader.uniforms.uGIEnabled = false;
-        }
-      });
+      // Render LPV (Global Illumination) every frame if enabled
+      const giConfig = sceneConfig?.globalIllumination;
+      if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current) {
+        renderLPV();
+        
+        // Update shader uniforms to use LPV texture
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uGIEnabled = true;
+            shader.uniforms.uGIIntensity = giConfig.intensity || 1.0;
+            shader.uniforms.uLPVTexture = lpvRenderTargetRef.current;
+          }
+        });
+      } else {
+        // Disable GI if not enabled
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uGIEnabled = false;
+          }
+        });
+      }
       
       // Only rebuild occluder map if shadow casters changed
       if (occluderMapDirtyRef.current && occluderRenderTargetRef.current) {
