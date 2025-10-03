@@ -1614,12 +1614,13 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
       
       // Image-Based Lighting (IBL) uniforms - Environmental/Indirect Lighting
-      const iblConfig = (sceneConfig as any).iblConfig || { enabled: false, intensity: 1.0, environmentMap: '/textures/BGTextureTest.jpg' };
+      const iblConfig = (sceneConfig as any).iblConfig || { enabled: false, intensity: 1.0, environmentMap: '/textures/BGTextureTest.jpg', pixelStep: 1.0 };
       
       // Treat intensity 0 as disabled
       const iblEnabled = iblConfig.enabled && iblConfig.intensity > 0.0;
       uniforms.uIBLEnabled = iblEnabled;
       uniforms.uIBLIntensity = iblConfig.intensity;
+      uniforms.uIBLPixelStep = iblConfig.pixelStep || 1.0;
       
       // Load environment map texture - try HDR files directly (PIXI will load as regular images)
       if (iblConfig.environmentMap && iblEnabled) {
@@ -1977,7 +1978,7 @@ const PixiDemo = (props: PixiDemoProps) => {
         const currentAOConfig = ambientOcclusionConfigRef.current;
         const currentSceneConfig = sceneConfigRef.current;
         const currentAmbientLight = ambientLightRef.current;
-        const iblConfig = (currentSceneConfig as any).iblConfig || { enabled: false, intensity: 1.0, environmentMap: '/textures/BGTextureTest.jpg' };
+        const iblConfig = (currentSceneConfig as any).iblConfig || { enabled: false, intensity: 1.0, environmentMap: '/textures/BGTextureTest.jpg', pixelStep: 1.0 };
         
         shadersRef.current.forEach(shader => {
           if (shader.uniforms) {
@@ -1985,6 +1986,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             const iblEnabled = iblConfig.enabled && iblConfig.intensity > 0.0;
             shader.uniforms.uIBLEnabled = iblEnabled;
             shader.uniforms.uIBLIntensity = iblConfig.intensity;
+            shader.uniforms.uIBLPixelStep = iblConfig.pixelStep || 1.0;
             
             // Update ambient light
             shader.uniforms.uAmbientIntensity = currentAmbientLight.intensity;

@@ -91,6 +91,7 @@ uniform float uAOBias; // Bias to prevent self-occlusion
 uniform bool uIBLEnabled; // Enable/disable IBL
 uniform float uIBLIntensity; // IBL strength multiplier (0.0-5.0)
 uniform sampler2D uEnvironmentMap; // Equirectangular environment map for IBL
+uniform float uIBLPixelStep; // Pixel correspondence (0.0-2.0): how many pixels in skybox per pixel in sprite
 
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 pixelPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
@@ -586,7 +587,7 @@ vec2 directionToEquirectUV(vec3 dir) {
 }
 
 // Calculate IBL contribution (diffuse irradiance + specular reflection)
-vec3 calculateIBL(vec3 albedo, vec3 normal, vec3 viewDir, float metallic, float smoothness) {
+vec3 calculateIBL(vec3 albedo, vec3 normal, vec3 viewDir, float metallic, float smoothness, vec2 pixelPosInSprite) {
   if (!uIBLEnabled || uIBLIntensity <= 0.0) {
     return vec3(0.0);
   }
@@ -609,17 +610,31 @@ vec3 calculateIBL(vec3 albedo, vec3 normal, vec3 viewDir, float metallic, float 
   vec3 kD = vec3(1.0) - kS;
   kD *= 1.0 - metallic; // Metals have no diffuse
   
+  // === Pixel-based positional offset for IBL variation ===
+  // Create directional offset based on pixel position within sprite
+  vec3 positionalOffset = vec3(0.0);
+  if (uIBLPixelStep > 0.0) {
+    // Normalize pixel position to [-1, 1] range based on sprite bounds
+    vec2 spriteCenter = uSpritePos + uSpriteSize * 0.5;
+    vec2 relativePos = (vWorldPos - spriteCenter) / max(uSpriteSize.x, uSpriteSize.y);
+    
+    // Scale by pixel step (controls how much skybox changes per sprite pixel)
+    // Higher values = more variation across the sprite surface
+    float offsetScale = uIBLPixelStep * 0.5; // Scale factor for reasonable variation
+    positionalOffset = vec3(relativePos.x * offsetScale, relativePos.y * offsetScale, 0.0);
+  }
+  
   // === Diffuse IBL (Irradiance) ===
-  // Sample environment map with normal direction for diffuse lighting
-  vec2 diffuseUV = directionToEquirectUV(normal);
+  // Sample environment map with normal direction + positional offset for diffuse lighting
+  vec3 diffuseDir = normalize(normal + positionalOffset);
+  vec2 diffuseUV = directionToEquirectUV(diffuseDir);
   vec3 irradiance = texture2D(uEnvironmentMap, diffuseUV).rgb;
   vec3 diffuseIBL = kD * albedo * irradiance;
   
   // === Specular IBL (Reflection) ===
-  // Sample environment with reflection vector, blur based on roughness
-  // Approximate roughness-based mip level selection (0-5 levels for roughness 0-1)
-  float mipLevel = roughness * 5.0;
-  vec2 specularUV = directionToEquirectUV(R);
+  // Sample environment with reflection vector + positional offset, blur based on roughness
+  vec3 specularDir = normalize(R + positionalOffset);
+  vec2 specularUV = directionToEquirectUV(specularDir);
   
   // Manual blur approximation for roughness (sample neighboring pixels)
   vec3 specularSample = texture2D(uEnvironmentMap, specularUV).rgb;
@@ -1138,7 +1153,7 @@ void main(void) {
   // Add Image-Based Lighting (IBL) - Environmental/Indirect Lighting
   // This adds realistic ambient lighting and reflections from the environment
   if (uIBLEnabled && uIBLIntensity > 0.0) {
-    vec3 iblContribution = calculateIBL(diffuseColor.rgb, normal, viewDir, finalMetallic, finalSmoothness);
+    vec3 iblContribution = calculateIBL(diffuseColor.rgb, normal, viewDir, finalMetallic, finalSmoothness, worldPos);
     finalColor += iblContribution;
   }
   

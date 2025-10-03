@@ -74,11 +74,13 @@ const DynamicLightControls = ({
     enabled: boolean;
     intensity: number;
     environmentMap: string;
+    pixelStep: number;
   }>(
     (sceneConfig as any).iblConfig || {
       enabled: false,
       intensity: 1.0,
       environmentMap: "/sky_boxes/golden_gate_hills_1k.hdr",
+      pixelStep: 1.0,
     },
   );
   const [availableSkyBoxes, setAvailableSkyBoxes] = useState<string[]>([]);
@@ -962,6 +964,41 @@ const DynamicLightControls = ({
                       }}
                       className="flex-1"
                       data-testid="slider-ibl-intensity"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2 mb-1">
+                    <label className="text-xs text-muted-foreground min-w-[70px]">
+                      Pixel Step: {(localIBLConfig.pixelStep || 1.0).toFixed(1)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="2"
+                      step="0.1"
+                      value={localIBLConfig.pixelStep}
+                      onChange={(e) => {
+                        const newPixelStep = parseFloat(e.target.value);
+                        const newConfig = {
+                          ...localIBLConfig,
+                          pixelStep: newPixelStep,
+                        };
+                        setLocalIBLConfig(newConfig);
+                        const updatedScene = {
+                          ...sceneConfig,
+                          iblConfig: newConfig,
+                        };
+                        onSceneConfigChange(updatedScene);
+                        debouncedSave(
+                          localLights,
+                          localAmbient,
+                          localShadowConfig,
+                          localAOConfig,
+                          updatedScene,
+                        );
+                      }}
+                      className="flex-1"
+                      data-testid="slider-ibl-pixel-step"
                     />
                   </div>
                 </>
