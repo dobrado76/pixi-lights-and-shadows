@@ -565,8 +565,57 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     // Set injection shader uniforms
     if (lpvInjectionShaderRef.current.uniforms) {
-      lpvInjectionShaderRef.current.uniforms.uSceneTexture = renderTargetRef.current; // Current rendered frame
       lpvInjectionShaderRef.current.uniforms.uGIIntensity = giConfig.intensity || 1.0;
+      lpvInjectionShaderRef.current.uniforms.uCanvasSize = [800, 600];
+      
+      // Pass light data to injection shader
+      const lightsConfig = sceneConfigRef.current?.lights || { lights: [] };
+      const allLights = lightsConfig.lights || [];
+      const allPointLights = allLights.filter((l: any) => l.type === 'point');
+      const allSpotlights = allLights.filter((l: any) => l.type === 'spotlight');
+      
+      // Point light arrays
+      const pointPositions = new Array(32 * 3).fill(0);
+      const pointColors = new Array(32 * 3).fill(0);
+      const pointIntensities = new Array(32).fill(0);
+      const pointRadii = new Array(32).fill(0);
+      
+      allPointLights.slice(0, 32).forEach((light: any, i: number) => {
+        pointPositions[i * 3] = light.position.x;
+        pointPositions[i * 3 + 1] = light.position.y;
+        pointPositions[i * 3 + 2] = light.position.z;
+        pointColors[i * 3] = light.color.r;
+        pointColors[i * 3 + 1] = light.color.g;
+        pointColors[i * 3 + 2] = light.color.b;
+        pointIntensities[i] = light.enabled ? light.intensity : 0;
+        pointRadii[i] = light.radius || 200;
+      });
+      
+      // Spotlight arrays
+      const spotPositions = new Array(32 * 3).fill(0);
+      const spotColors = new Array(32 * 3).fill(0);
+      const spotIntensities = new Array(32).fill(0);
+      
+      allSpotlights.slice(0, 32).forEach((light: any, i: number) => {
+        spotPositions[i * 3] = light.position.x;
+        spotPositions[i * 3 + 1] = light.position.y;
+        spotPositions[i * 3 + 2] = light.position.z;
+        spotColors[i * 3] = light.color.r;
+        spotColors[i * 3 + 1] = light.color.g;
+        spotColors[i * 3 + 2] = light.color.b;
+        spotIntensities[i] = light.enabled ? light.intensity : 0;
+      });
+      
+      lpvInjectionShaderRef.current.uniforms.uPointLightPositions = pointPositions;
+      lpvInjectionShaderRef.current.uniforms.uPointLightColors = pointColors;
+      lpvInjectionShaderRef.current.uniforms.uPointLightIntensities = pointIntensities;
+      lpvInjectionShaderRef.current.uniforms.uPointLightRadii = pointRadii;
+      lpvInjectionShaderRef.current.uniforms.uNumPointLights = allPointLights.length;
+      
+      lpvInjectionShaderRef.current.uniforms.uSpotLightPositions = spotPositions;
+      lpvInjectionShaderRef.current.uniforms.uSpotLightColors = spotColors;
+      lpvInjectionShaderRef.current.uniforms.uSpotLightIntensities = spotIntensities;
+      lpvInjectionShaderRef.current.uniforms.uNumSpotLights = allSpotlights.length;
     }
     
     // Create a fullscreen quad with the injection shader
@@ -2192,18 +2241,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         pixiApp.render();
         
         // AFTER rendering: Process LPV for NEXT frame
-        if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current && renderTargetRef.current && sceneContainerRef.current) {
-          // Extract the pixels from the CURRENT frame buffer (already rendered with lighting)
-          const pixels = new Uint8Array(800 * 600 * 4);
-          pixiApp.renderer.gl.readPixels(0, 0, 800, 600, pixiApp.renderer.gl.RGBA, pixiApp.renderer.gl.UNSIGNED_BYTE, pixels);
-          
-          // Write pixels to render texture
-          const texture = renderTargetRef.current.baseTexture;
-          if (texture.resource) {
-            texture.resource.upload(pixiApp.renderer, texture, pixels);
-          }
-          
-          // Process LPV with the captured frame (result used next frame)
+        if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current) {
+          // Process LPV (will inject light from light source positions)
           renderLPV();
         }
       }
