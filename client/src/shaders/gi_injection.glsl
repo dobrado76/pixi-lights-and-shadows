@@ -84,6 +84,6 @@ void main(void) {
     }
   }
   
-  // DEBUG: Test if shader is even running - make entire screen red
-  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); // Solid red - if you see this, shader works
+  // Output injected light (boosted for visibility)
+  gl_FragColor = vec4(injectedLight * 10.0, 1.0);
 }
