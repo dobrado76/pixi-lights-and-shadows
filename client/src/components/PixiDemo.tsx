@@ -557,12 +557,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     }
 
     const giConfig = sceneConfigRef.current?.globalIllumination;
-    if (!giConfig || !giConfig.enabled) {
-      console.log('❌ renderLPV: GI not enabled');
-      return;
-    }
-    
-    console.log('🌈 renderLPV: Processing frame');
+    if (!giConfig || !giConfig.enabled) return;
 
     // STEP 1: Light Injection Pass
     // Sample the rendered scene and inject bright pixels into the LPV grid
@@ -2197,23 +2192,15 @@ const PixiDemo = (props: PixiDemoProps) => {
         pixiApp.render();
         
         // AFTER rendering: Process LPV for NEXT frame
-        if (giConfig?.enabled) {
-          if (!lpvRenderTargetRef.current) console.log('❌ Missing lpvRenderTargetRef');
-          if (!lpvInjectionShaderRef.current) console.log('❌ Missing lpvInjectionShaderRef');
-          if (!lpvPropagationShaderRef.current) console.log('❌ Missing lpvPropagationShaderRef');
-          if (!renderTargetRef.current) console.log('❌ Missing renderTargetRef');
-          if (!sceneContainerRef.current) console.log('❌ Missing sceneContainerRef');
+        if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current && renderTargetRef.current && sceneContainerRef.current) {
+          // Capture current frame to render texture for LPV sampling
+          pixiApp.renderer.render(sceneContainerRef.current, {
+            renderTexture: renderTargetRef.current,
+            clear: true
+          });
           
-          if (lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current && renderTargetRef.current && sceneContainerRef.current) {
-            // Capture current frame to render texture for LPV sampling
-            pixiApp.renderer.render(sceneContainerRef.current, {
-              renderTexture: renderTargetRef.current,
-              clear: true
-            });
-            
-            // Process LPV with the captured frame (result used next frame)
-            renderLPV();
-          }
+          // Process LPV with the captured frame (result used next frame)
+          renderLPV();
         }
       }
     };
