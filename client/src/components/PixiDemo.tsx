@@ -633,6 +633,14 @@ const PixiDemo = (props: PixiDemoProps) => {
       lpvInjectionShaderRef.current.uniforms.uPointLightRadii = pointRadii;
       lpvInjectionShaderRef.current.uniforms.uNumPointLights = allPointLights.length;
       
+      console.log('🌈 Uniform arrays set:', {
+        positions: pointPositions.slice(0, 9),
+        colors: pointColors.slice(0, 9),
+        intensities: pointIntensities.slice(0, 3),
+        radii: pointRadii.slice(0, 3),
+        count: allPointLights.length
+      });
+      
       lpvInjectionShaderRef.current.uniforms.uSpotLightPositions = spotPositions;
       lpvInjectionShaderRef.current.uniforms.uSpotLightColors = spotColors;
       lpvInjectionShaderRef.current.uniforms.uSpotLightIntensities = spotIntensities;

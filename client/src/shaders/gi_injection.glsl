@@ -6,14 +6,15 @@ uniform float uGIIntensity;
 uniform vec2 uCanvasSize;
 
 // Light uniforms (match main shader)
-uniform vec3 uPointLightPositions[32];
-uniform vec3 uPointLightColors[32];
+// Flat arrays - each light takes 3 elements (x,y,z or r,g,b)
+uniform float uPointLightPositions[96];  // 32 lights * 3 components
+uniform float uPointLightColors[96];     // 32 lights * 3 components
 uniform float uPointLightIntensities[32];
 uniform float uPointLightRadii[32];
 uniform int uNumPointLights;
 
-uniform vec3 uSpotLightPositions[32];
-uniform vec3 uSpotLightColors[32];
+uniform float uSpotLightPositions[96];   // 32 lights * 3 components
+uniform float uSpotLightColors[96];      // 32 lights * 3 components
 uniform float uSpotLightIntensities[32];
 uniform int uNumSpotLights;
 
@@ -31,7 +32,18 @@ void main(void) {
   for (int i = 0; i < 32; i++) {
     if (i >= uNumPointLights) break;
     
-    vec3 lightPos = uPointLightPositions[i];
+    // Read from flat array
+    vec3 lightPos = vec3(
+      uPointLightPositions[i * 3],
+      uPointLightPositions[i * 3 + 1],
+      uPointLightPositions[i * 3 + 2]
+    );
+    vec3 lightColor = vec3(
+      uPointLightColors[i * 3],
+      uPointLightColors[i * 3 + 1],
+      uPointLightColors[i * 3 + 2]
+    );
+    
     float dist = length(worldPos - lightPos.xy);
     
     // DEBUG: Make radius HUGE to see where light actually appears
@@ -41,7 +53,7 @@ void main(void) {
     if (dist < radius) {
       float falloff = 1.0 - (dist / radius);
       falloff = falloff * falloff; // Squared falloff for softer edges
-      injectedLight += uPointLightColors[i] * uPointLightIntensities[i] * falloff * 0.5;
+      injectedLight += lightColor * uPointLightIntensities[i] * falloff * 0.5;
     }
   }
   
@@ -49,7 +61,18 @@ void main(void) {
   for (int i = 0; i < 32; i++) {
     if (i >= uNumSpotLights) break;
     
-    vec3 lightPos = uSpotLightPositions[i];
+    // Read from flat array
+    vec3 lightPos = vec3(
+      uSpotLightPositions[i * 3],
+      uSpotLightPositions[i * 3 + 1],
+      uSpotLightPositions[i * 3 + 2]
+    );
+    vec3 lightColor = vec3(
+      uSpotLightColors[i * 3],
+      uSpotLightColors[i * 3 + 1],
+      uSpotLightColors[i * 3 + 2]
+    );
+    
     float dist = length(worldPos - lightPos.xy);
     float radius = 300.0; // Large radius for spotlights
     
@@ -57,7 +80,7 @@ void main(void) {
     if (dist < radius) {
       float falloff = 1.0 - (dist / radius);
       falloff = falloff * falloff; // Squared falloff
-      injectedLight += uSpotLightColors[i] * uSpotLightIntensities[i] * falloff * 0.5;
+      injectedLight += lightColor * uSpotLightIntensities[i] * falloff * 0.5;
     }
   }
   
