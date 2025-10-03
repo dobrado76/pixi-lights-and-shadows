@@ -261,8 +261,8 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.5,
-      "color": "0x666666"
+      "brightness": 0.2,
+      "color": "0xfefaec"
     },
     {
       "id": "mouse_light",
