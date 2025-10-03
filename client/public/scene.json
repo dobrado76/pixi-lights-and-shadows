@@ -261,7 +261,7 @@
       "id": "ambient_light",
       "type": "ambient",
       "enabled": true,
-      "brightness": 0.51,
+      "brightness": 0.5,
       "color": "0x666666"
     },
     {
@@ -404,11 +404,5 @@
     "intensity": 0.8,
     "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg",
     "pixelStep": 1.5
-  },
-  "giConfig": {
-    "enabled": true,
-    "intensity": 1.0,
-    "bounces": 4,
-    "gridResolution": 64
   }
 }

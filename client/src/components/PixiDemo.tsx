@@ -3,6 +3,8 @@ import * as PIXI from 'pixi.js';
 import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import vertexShaderSource from '../shaders/vertex.glsl?raw';
 import fragmentShaderSource from '../shaders/fragment.glsl?raw';
+import giInjectionShaderSource from '../shaders/gi_injection.glsl?raw';
+import giPropagationShaderSource from '../shaders/gi_propagation.glsl?raw';
 import { ShaderParams } from '../App';
 import { Light, ShadowConfig, AmbientOcclusionConfig } from '@/lib/lights';
 import { SceneManager, SceneSprite } from './Sprite';
@@ -34,7 +36,8 @@ interface PixiDemoProps {
   ambientOcclusionConfig: AmbientOcclusionConfig;
   sceneConfig: { 
     sprites: Record<string, any>; 
-    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string } 
+    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string; pixelStep?: number };
+    giConfig?: { enabled: boolean; intensity: number; bounces: number; gridResolution?: number }
   };
   performanceSettings: PerformanceSettings;
   onGeometryUpdate: (status: string) => void;
@@ -75,6 +78,13 @@ const PixiDemo = (props: PixiDemoProps) => {
   
   // SSR (Screen Space Reflections) system - depth map for reflections
   const depthRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
+  
+  // LPV (Light Propagation Volumes) system - Global Illumination
+  const lpvRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
+  const lpvTempTargetRef = useRef<PIXI.RenderTexture | null>(null);
+  const lpvContainerRef = useRef<PIXI.Container | null>(null);
+  const lpvInjectionShaderRef = useRef<PIXI.Shader | null>(null);
+  const lpvPropagationShaderRef = useRef<PIXI.Shader | null>(null);
   
   // Performance optimization caches with dirty flags
   const lastUniformsRef = useRef<any>({});
@@ -832,6 +842,42 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
       
       console.log('✨ SSR depth map initialized');
+      
+      // Initialize LPV (Light Propagation Volumes) render targets for Global Illumination
+      const lpvResolution = sceneConfig.giConfig?.gridResolution || 64;
+      lpvRenderTargetRef.current = PIXI.RenderTexture.create({
+        width: lpvResolution,
+        height: lpvResolution
+      });
+      lpvTempTargetRef.current = PIXI.RenderTexture.create({
+        width: lpvResolution,
+        height: lpvResolution
+      });
+      lpvContainerRef.current = new PIXI.Container();
+      
+      // Create LPV shaders
+      const lpvVertexShader = `
+        attribute vec2 aVertexPosition;
+        attribute vec2 aTextureCoord;
+        
+        uniform mat3 projectionMatrix;
+        uniform mat3 translationMatrix;
+        
+        varying vec2 vTextureCoord;
+        varying vec2 vWorldPos;
+        
+        void main(void) {
+          vec3 position = projectionMatrix * translationMatrix * vec3(aVertexPosition, 1.0);
+          gl_Position = vec4(position.xy, 0.0, 1.0);
+          vTextureCoord = aTextureCoord;
+          vWorldPos = aVertexPosition;
+        }
+      `;
+      
+      lpvInjectionShaderRef.current = PIXI.Shader.from(lpvVertexShader, giInjectionShaderSource);
+      lpvPropagationShaderRef.current = PIXI.Shader.from(lpvVertexShader, giPropagationShaderSource);
+      
+      console.log('🌈 LPV (Global Illumination) system initialized');
       
       } else {
         console.warn('Canvas element not available for PIXI initialization');
