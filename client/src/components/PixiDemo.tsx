@@ -585,7 +585,8 @@ const PixiDemo = (props: PixiDemoProps) => {
         totalLights: allLights.length,
         pointLights: allPointLights.length,
         spotlights: allSpotlights.length,
-        lightsConfigRef: !!lightsConfigRef.current
+        lightsConfigRef: !!lightsConfigRef.current,
+        lightsConfigStructure: lightsConfigRef.current
       });
       
       // Point light arrays
