@@ -2192,9 +2192,9 @@ const PixiDemo = (props: PixiDemoProps) => {
         pixiApp.render();
         
         // AFTER rendering: Process LPV for NEXT frame
-        if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current && renderTargetRef.current && sceneContainerRef.current) {
-          // Capture current frame to render texture for LPV sampling
-          pixiApp.renderer.render(sceneContainerRef.current, {
+        if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current && renderTargetRef.current) {
+          // Capture the ENTIRE stage (with lighting applied) not just the container
+          pixiApp.renderer.render(pixiApp.stage, {
             renderTexture: renderTargetRef.current,
             clear: true
           });
