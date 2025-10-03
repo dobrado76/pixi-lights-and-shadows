@@ -576,7 +576,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       lpvInjectionShaderRef.current.uniforms.uCanvasSize = [800, 600];
       
       // Pass light data to injection shader
-      const lightsConfig = (sceneConfigRef.current as any)?.lights || { lights: [] };
+      const lightsConfig = lightsConfigRef.current || { lights: [] };
       const allLights = lightsConfig.lights || [];
       const allPointLights = allLights.filter((l: any) => l.type === 'point');
       const allSpotlights = allLights.filter((l: any) => l.type === 'spotlight');
