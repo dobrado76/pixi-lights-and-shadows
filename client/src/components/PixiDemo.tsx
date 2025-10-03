@@ -2160,14 +2160,11 @@ const PixiDemo = (props: PixiDemoProps) => {
         // FIRST: Update GI uniforms BEFORE rendering so shader sees them
         const giConfig = sceneConfigRef.current?.globalIllumination;
         if (giConfig?.enabled && lpvRenderTargetRef.current) {
-          console.log('🔴 GI ENABLED - Setting uniforms on', shadersRef.current.length, 'shaders');
-          shadersRef.current.forEach((shader, index) => {
+          shadersRef.current.forEach(shader => {
             if (shader.uniforms) {
-              console.log(`  Shader ${index}: Has uniforms:`, Object.keys(shader.uniforms), 'uGIEnabled in uniforms?', 'uGIEnabled' in shader.uniforms);
               shader.uniforms.uGIEnabled = true;
               shader.uniforms.uGIIntensity = giConfig.intensity || 1.0;
               shader.uniforms.uLPVTexture = lpvRenderTargetRef.current;
-              console.log(`  Shader ${index}: SET uGIEnabled =`, shader.uniforms.uGIEnabled);
             }
           });
         } else {
