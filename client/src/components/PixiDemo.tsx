@@ -557,7 +557,14 @@ const PixiDemo = (props: PixiDemoProps) => {
     }
 
     const giConfig = sceneConfigRef.current?.globalIllumination;
-    if (!giConfig || !giConfig.enabled) return;
+    if (!giConfig || !giConfig.enabled) {
+      console.log('🌈 renderLPV: GI disabled', { giConfig });
+      return;
+    }
+    console.log('🌈 renderLPV: Running with', { 
+      intensity: giConfig.intensity,
+      bounces: giConfig.bounces 
+    });
 
     // STEP 1: Light Injection Pass
     // Sample the rendered scene and inject bright pixels into the LPV grid
@@ -589,6 +596,15 @@ const PixiDemo = (props: PixiDemoProps) => {
         pointColors[i * 3 + 2] = light.color.b;
         pointIntensities[i] = light.enabled ? light.intensity : 0;
         pointRadii[i] = light.radius || 200;
+        
+        if (i === 0) {
+          console.log('🌈 First point light for injection:', {
+            pos: [light.position.x, light.position.y],
+            color: [light.color.r, light.color.g, light.color.b],
+            intensity: light.intensity,
+            radius: light.radius
+          });
+        }
       });
       
       // Spotlight arrays
@@ -2222,6 +2238,11 @@ const PixiDemo = (props: PixiDemoProps) => {
         // FIRST: Update GI uniforms BEFORE rendering so shader sees them
         const giConfig = sceneConfigRef.current?.globalIllumination;
         if (giConfig?.enabled && lpvRenderTargetRef.current) {
+          console.log('🌈 Setting GI uniforms:', {
+            enabled: true,
+            intensity: giConfig.intensity,
+            hasTexture: !!lpvRenderTargetRef.current
+          });
           shadersRef.current.forEach(shader => {
             if (shader.uniforms) {
               shader.uniforms.uGIEnabled = true;
@@ -2230,6 +2251,7 @@ const PixiDemo = (props: PixiDemoProps) => {
             }
           });
         } else {
+          console.log('🌈 Disabling GI:', { enabled: giConfig?.enabled, hasTexture: !!lpvRenderTargetRef.current });
           shadersRef.current.forEach(shader => {
             if (shader.uniforms) {
               shader.uniforms.uGIEnabled = false;
