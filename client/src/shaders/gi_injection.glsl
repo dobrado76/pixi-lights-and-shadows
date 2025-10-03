@@ -45,15 +45,13 @@ void main(void) {
     );
     
     float dist = length(worldPos - lightPos.xy);
+    float radius = uPointLightRadii[i];
     
-    // DEBUG: Make radius HUGE to see where light actually appears
-    float radius = 2000.0; // Cover entire screen
-    
-    // Inject light across the entire radius
+    // Inject light within the light's radius
     if (dist < radius) {
       float falloff = 1.0 - (dist / radius);
       falloff = falloff * falloff; // Squared falloff for softer edges
-      injectedLight += lightColor * uPointLightIntensities[i] * falloff * 0.5;
+      injectedLight += lightColor * uPointLightIntensities[i] * falloff;
     }
   }
   
@@ -74,16 +72,16 @@ void main(void) {
     );
     
     float dist = length(worldPos - lightPos.xy);
-    float radius = 300.0; // Large radius for spotlights
+    float radius = 200.0; // Moderate radius for spotlights
     
     // Inject light across the entire radius
     if (dist < radius) {
       float falloff = 1.0 - (dist / radius);
       falloff = falloff * falloff; // Squared falloff
-      injectedLight += lightColor * uSpotLightIntensities[i] * falloff * 0.5;
+      injectedLight += lightColor * uSpotLightIntensities[i] * falloff;
     }
   }
   
-  // Output injected light (boosted for visibility)
-  gl_FragColor = vec4(injectedLight * 10.0, 1.0);
+  // Output injected light (moderate boost for LPV visibility)
+  gl_FragColor = vec4(injectedLight * 2.0, 1.0);
 }

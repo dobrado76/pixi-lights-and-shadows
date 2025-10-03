@@ -580,12 +580,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       const allPointLights = allLights.filter((l: any) => l.type === 'point');
       const allSpotlights = allLights.filter((l: any) => l.type === 'spotlight');
       
-      console.log('🌈 Light data for injection:', {
-        totalLights: allLights.length,
-        pointLights: allPointLights.length,
-        spotlights: allSpotlights.length
-      });
-      
       // Point light arrays
       const pointPositions = new Array(32 * 3).fill(0);
       const pointColors = new Array(32 * 3).fill(0);
@@ -601,15 +595,6 @@ const PixiDemo = (props: PixiDemoProps) => {
         pointColors[i * 3 + 2] = light.color.b;
         pointIntensities[i] = light.enabled ? light.intensity : 0;
         pointRadii[i] = light.radius || 200;
-        
-        if (i === 0) {
-          console.log('🌈 First point light for injection:', {
-            pos: [light.position.x, light.position.y],
-            color: [light.color.r, light.color.g, light.color.b],
-            intensity: light.intensity,
-            radius: light.radius
-          });
-        }
       });
       
       // Spotlight arrays
@@ -632,14 +617,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       lpvInjectionShaderRef.current.uniforms.uPointLightIntensities = pointIntensities;
       lpvInjectionShaderRef.current.uniforms.uPointLightRadii = pointRadii;
       lpvInjectionShaderRef.current.uniforms.uNumPointLights = allPointLights.length;
-      
-      console.log('🌈 Uniform arrays set:', {
-        positions: pointPositions.slice(0, 9),
-        colors: pointColors.slice(0, 9),
-        intensities: pointIntensities.slice(0, 3),
-        radii: pointRadii.slice(0, 3),
-        count: allPointLights.length
-      });
       
       lpvInjectionShaderRef.current.uniforms.uSpotLightPositions = spotPositions;
       lpvInjectionShaderRef.current.uniforms.uSpotLightColors = spotColors;
