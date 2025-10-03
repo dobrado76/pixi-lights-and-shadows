@@ -92,13 +92,6 @@ uniform bool uIBLEnabled; // Enable/disable IBL
 uniform float uIBLIntensity; // IBL strength multiplier (0.0-5.0)
 uniform sampler2D uEnvironmentMap; // Equirectangular environment map for IBL
 
-// Reflection System - Normal-Map-Aware Reflections
-uniform bool uReflectionEnabled; // Enable/disable reflections
-uniform float uReflectionIntensity; // Reflection strength (0.0-1.0)
-uniform float uNormalInfluence; // How much normals affect reflection (0.0-1.0)
-uniform float uReflectionBlur; // Blur amount for reflections (0.0-1.0)
-uniform sampler2D uReflectionTexture; // Rendered reflection texture
-
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 pixelPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
   vec2 relativePos = pixelPos - lightPos;
@@ -1147,47 +1140,6 @@ void main(void) {
   if (uIBLEnabled && uIBLIntensity > 0.0) {
     vec3 iblContribution = calculateIBL(diffuseColor.rgb, normal, viewDir, finalMetallic, finalSmoothness);
     finalColor += iblContribution;
-  }
-  
-  // Add Normal-Map-Aware Reflections
-  // Normals determine which part of the reflection is visible
-  if (uReflectionEnabled && uReflectionIntensity > 0.0) {
-    // Get screen-space UV coordinates
-    vec2 screenUV = gl_FragCoord.xy / uCanvasSize;
-    
-    // Use normal to offset the reflection sampling
-    // Normal points in tangent space: (0,0,1) is straight up, (-1,0,1) is left, etc.
-    // We use the X and Y components to determine horizontal/vertical offset
-    vec2 normalOffset = normal.xy * uNormalInfluence * 0.15; // Scale down for subtle effect
-    
-    // Flip Y coordinate for reflection (mirror effect)
-    vec2 reflectionUV = vec2(screenUV.x + normalOffset.x, 1.0 - screenUV.y - normalOffset.y);
-    
-    // Sample reflection texture with normal-based offset
-    vec3 reflectionColor = texture2D(uReflectionTexture, reflectionUV).rgb;
-    
-    // Apply blur by sampling neighboring pixels
-    if (uReflectionBlur > 0.0) {
-      vec3 blurredReflection = reflectionColor;
-      float blurRadius = uReflectionBlur * 0.01; // Convert to UV space
-      
-      // Simple 4-tap blur
-      blurredReflection += texture2D(uReflectionTexture, reflectionUV + vec2(blurRadius, 0.0)).rgb;
-      blurredReflection += texture2D(uReflectionTexture, reflectionUV - vec2(blurRadius, 0.0)).rgb;
-      blurredReflection += texture2D(uReflectionTexture, reflectionUV + vec2(0.0, blurRadius)).rgb;
-      blurredReflection += texture2D(uReflectionTexture, reflectionUV - vec2(0.0, blurRadius)).rgb;
-      blurredReflection /= 5.0; // Average
-      
-      reflectionColor = blurredReflection;
-    }
-    
-    // Blend reflection based on surface properties
-    // Metallic and smoother surfaces reflect more strongly
-    // Non-metallic surfaces (finalMetallic = 0) will have no reflection
-    float reflectionStrength = uReflectionIntensity * finalSmoothness * finalMetallic;
-    
-    // Mix the reflection into the final color
-    finalColor = mix(finalColor, reflectionColor, reflectionStrength);
   }
   
   // Apply Ambient Occlusion with reduced effect on solid sprites

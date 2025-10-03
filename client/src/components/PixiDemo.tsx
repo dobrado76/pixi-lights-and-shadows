@@ -73,9 +73,8 @@ const PixiDemo = (props: PixiDemoProps) => {
   const occluderContainerRef = useRef<PIXI.Container | null>(null);
   const occluderSpritesRef = useRef<PIXI.Sprite[]>([]);
   
-  // Reflection system - normal-map-aware reflections
-  const reflectionRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
-  const reflectionContainerRef = useRef<PIXI.Container | null>(null);
+  // SSR (Screen Space Reflections) system - depth map for reflections
+  const depthRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
   
   // Performance optimization caches with dirty flags
   const lastUniformsRef = useRef<any>({});
@@ -531,62 +530,6 @@ const PixiDemo = (props: PixiDemoProps) => {
     buildOccluderMapForSprite(-999, excludeSpriteId); // Use very low zOrder to include all casters
   };
 
-  // Build reflection texture for normal-map-aware reflections
-  const buildReflectionTexture = () => {
-    if (!pixiApp || !reflectionRenderTargetRef.current || !reflectionContainerRef.current) return;
-    
-    const allSprites = sceneManagerRef.current?.getAllSprites() || [];
-    
-    // Get sprites that can be reflected (safely check for reflection property)
-    const reflectableSprites = allSprites.filter(sprite => {
-      const reflection = (sprite.definition as any)?.reflection;
-      return reflection?.canBeReflected && sprite.mesh;
-    });
-    
-    // Find reflective surface to get reflection line
-    const reflectiveSurface = allSprites.find(sprite => {
-      const reflection = (sprite.definition as any)?.reflection;
-      return reflection?.isReflectiveSurface;
-    });
-    
-    const reflectionLineY = reflectiveSurface 
-      ? ((reflectiveSurface.definition as any)?.reflection?.reflectionLineY || pixiApp.screen.height / 2)
-      : pixiApp.screen.height / 2;
-    
-    // Clear reflection container
-    reflectionContainerRef.current.removeChildren();
-    
-    // Add reflected sprites (flipped) to container
-    reflectableSprites.forEach(sprite => {
-      if (!sprite.mesh) return;
-      
-      // Create a temporary clone for reflection
-      const clone = new PIXI.Sprite(sprite.mesh.texture);
-      
-      // Copy position and transform
-      clone.position.x = sprite.mesh.position.x;
-      // Flip Y position across reflection line
-      clone.position.y = 2 * reflectionLineY - sprite.mesh.position.y;
-      
-      // Copy rotation and scale
-      clone.rotation = sprite.mesh.rotation;
-      clone.scale.x = sprite.mesh.scale.x;
-      clone.scale.y = -sprite.mesh.scale.y; // Flip vertically
-      
-      // Copy other properties
-      clone.anchor.copyFrom(sprite.mesh.pivot);
-      clone.alpha = sprite.mesh.alpha * 0.6; // Slightly transparent for reflection
-      
-      reflectionContainerRef.current!.addChild(clone);
-    });
-    
-    // Render to reflection texture
-    pixiApp.renderer.render(reflectionContainerRef.current, { 
-      renderTexture: reflectionRenderTargetRef.current, 
-      clear: true 
-    });
-  };
-
   // Multi-pass lighting composer
   const renderMultiPass = (lights: Light[]) => {
     if (!pixiApp || !renderTargetRef.current || !sceneContainerRef.current || !displaySpriteRef.current) return;
@@ -882,14 +825,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       console.log('🌑 Occluder render target initialized for unlimited shadow casters');
       
-      // Initialize reflection render target for normal-map-aware reflections
-      reflectionRenderTargetRef.current = PIXI.RenderTexture.create({
+      // Initialize depth render target for SSR (Screen Space Reflections)
+      depthRenderTargetRef.current = PIXI.RenderTexture.create({
         width: shaderParams.canvasWidth,
         height: shaderParams.canvasHeight
       });
-      
-      // Initialize reflection container for rendering flipped sprites
-      reflectionContainerRef.current = new PIXI.Container();
       
       console.log('✨ SSR depth map initialized');
       
@@ -2013,12 +1953,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Check for changes and update dirty flags
       checkAndUpdateDirtyFlags();
       
-      // Build reflection texture every frame (normal-map-aware reflections)
-      const reflectionConfig = (sceneConfigRef.current as any).reflectionConfig;
-      if (reflectionConfig?.enabled && reflectionRenderTargetRef.current) {
-        buildReflectionTexture();
-      }
-      
       // Only rebuild occluder map if shadow casters changed
       if (occluderMapDirtyRef.current && occluderRenderTargetRef.current) {
         buildOccluderMap();
@@ -2044,7 +1978,6 @@ const PixiDemo = (props: PixiDemoProps) => {
         const currentSceneConfig = sceneConfigRef.current;
         const currentAmbientLight = ambientLightRef.current;
         const iblConfig = (currentSceneConfig as any).iblConfig || { enabled: false, intensity: 1.0, environmentMap: '/textures/BGTextureTest.jpg' };
-        const reflectionConfig = (currentSceneConfig as any).reflectionConfig || { enabled: false, intensity: 0.5, normalInfluence: 0.8, blur: 0.0 };
         
         shadersRef.current.forEach(shader => {
           if (shader.uniforms) {
@@ -2052,16 +1985,6 @@ const PixiDemo = (props: PixiDemoProps) => {
             const iblEnabled = iblConfig.enabled && iblConfig.intensity > 0.0;
             shader.uniforms.uIBLEnabled = iblEnabled;
             shader.uniforms.uIBLIntensity = iblConfig.intensity;
-            
-            // Update Reflection uniforms
-            const reflectionEnabled = reflectionConfig.enabled && reflectionConfig.intensity > 0.0;
-            shader.uniforms.uReflectionEnabled = reflectionEnabled;
-            shader.uniforms.uReflectionIntensity = reflectionConfig.intensity;
-            shader.uniforms.uNormalInfluence = reflectionConfig.normalInfluence;
-            shader.uniforms.uReflectionBlur = reflectionConfig.blur;
-            if (reflectionRenderTargetRef.current) {
-              shader.uniforms.uReflectionTexture = reflectionRenderTargetRef.current;
-            }
             
             // Update ambient light
             shader.uniforms.uAmbientIntensity = currentAmbientLight.intensity;

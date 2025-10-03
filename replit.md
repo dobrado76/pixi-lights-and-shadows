@@ -10,8 +10,6 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
-- **Normal-Map-Aware Reflection System** (2025-10-02): Implemented complete reflection system using "Inverted Render" technique where reflected sprites are rendered flipped to a separate texture. Key features: 1) Sprites have `isReflectiveSurface` and `canBeReflected` reflection properties. 2) Fragment shader samples reflection texture based on pixel normals - different normals pick up different parts of the reflection. 3) UI controls for reflection intensity, normal influence, and blur. 4) Reflections integrate with existing PBR pipeline (metallic, smoothness affect reflections). 5) Real-time reflection rendering via `buildReflectionTexture()` in animation loop.
-
 - **IBL Architectural Fix** (2025-09-30): Fixed IBL (Image-Based Lighting) controls to use the existing debouncedSave pattern instead of SceneStateProvider. App.tsx never integrated SceneStateProvider, so IBL controls were attempting to use null context. Now all IBL changes (enabled toggle, sky box selection, intensity) properly save to scene.json and update immediately without page reload.
 
 - **Centralized Scene State Management** (2025-09-28): Successfully implemented a centralized scene state management system using React Context to eliminate synchronization issues between DynamicLightControls and DynamicSpriteControls. Created SceneStateManager component with SceneStateProvider and useSceneState hook. NOTE: SceneStateProvider exists but is NOT currently used in App.tsx - all controls use debouncedSave pattern for updates.
@@ -65,19 +63,11 @@ Minimal Express.js server:
 - **Texture-based Light Masking**: Custom mask textures for complex patterns
 - **Distance-based Soft Shadows**: Configurable softness with realistic falloff
 
-**Reflection System**:
-- **Normal-Map-Aware Reflections**: Different pixel normals sample different parts of the reflection
-- **Inverted Render Technique**: Sprites marked `canBeReflected` are rendered flipped to reflection texture
-- **Reflective Surface Control**: Sprites with `isReflectiveSurface` define the reflection line Y position
-- **PBR Integration**: Reflections respect metallic and smoothness material properties
-- **Configurable Parameters**: Intensity, normal influence, blur amount, reflection line position
-
 **Critical Code Locations**:
-- `client/src/components/PixiDemo.tsx` - Main rendering, shadow system, and reflection rendering
-- `client/src/shaders/fragment.glsl` - Unified shadow calculations and reflection sampling
+- `client/src/components/PixiDemo.tsx` - Main rendering and shadow system
+- `client/src/shaders/fragment.glsl` - Unified shadow calculation functions
 - `client/src/shaders/vertex.glsl` - Vertex transformations
 - `client/public/scene.json` - Unified configuration file
-- `client/src/components/DynamicLightControls.tsx` - Reflection UI controls
 
 ### Data Management
 

@@ -52,10 +52,6 @@
         "zOrder": -1,
         "castsShadows": false,
         "visible": true
-      },
-      "reflection": {
-        "isReflectiveSurface": true,
-        "reflectionLineY": 300
       }
     },
     "ball": {
@@ -407,11 +403,5 @@
     "enabled": true,
     "intensity": 0.3,
     "environmentMap": "/sky_boxes/cobblestone_street_night_1k.jpg"
-  },
-  "reflectionConfig": {
-    "enabled": true,
-    "intensity": 0.55,
-    "normalInfluence": 0.35,
-    "blur": 0
   }
 }
