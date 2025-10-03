@@ -37,7 +37,7 @@ interface PixiDemoProps {
   sceneConfig: { 
     sprites: Record<string, any>; 
     iblConfig?: { enabled: boolean; intensity: number; environmentMap: string; pixelStep?: number };
-    giConfig?: { enabled: boolean; intensity: number; bounces: number; gridResolution?: number }
+    globalIllumination?: { enabled: boolean; intensity: number; bounces: number; gridResolution?: number }
   };
   performanceSettings: PerformanceSettings;
   onGeometryUpdate: (status: string) => void;
@@ -548,7 +548,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       return;
     }
 
-    const giConfig = sceneConfigRef.current?.giConfig;
+    const giConfig = sceneConfigRef.current?.globalIllumination;
     if (!giConfig || !giConfig.enabled) return;
 
     // STEP 1: Light Injection Pass
@@ -2155,13 +2155,21 @@ const PixiDemo = (props: PixiDemoProps) => {
         uniformsDirtyRef.current = false;
       }
       
-      // Render the scene using multi-pass lighting
-      if (lightsConfigRef.current && lightsConfigRef.current.length > 0) {
-        renderMultiPass(lightsConfigRef.current);
+      // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
+      if (pixiApp && pixiApp.renderer) {
+        // Render the main scene
+        pixiApp.render();
         
-        // After scene is rendered, process Global Illumination if enabled
-        const giConfig = sceneConfigRef.current?.giConfig;
-        if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current) {
+        // After rendering, capture frame for Global Illumination if enabled
+        const giConfig = sceneConfigRef.current?.globalIllumination;
+        if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current && renderTargetRef.current && sceneContainerRef.current) {
+          // Capture current frame to render texture for LPV sampling
+          pixiApp.renderer.render(sceneContainerRef.current, {
+            renderTexture: renderTargetRef.current,
+            clear: true
+          });
+          
+          // Now process LPV with the captured frame
           renderLPV();
           
           // Update shader uniforms to use LPV texture for next frame
@@ -2179,11 +2187,6 @@ const PixiDemo = (props: PixiDemoProps) => {
               shader.uniforms.uGIEnabled = false;
             }
           });
-        }
-      } else {
-        // Fallback: regular render if no lights configured
-        if (pixiApp && pixiApp.renderer) {
-          pixiApp.render();
         }
       }
     };
