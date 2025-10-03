@@ -32,7 +32,7 @@
         "image": "/textures/white-fabric-texture-background.jpg",
         "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
         "useNormalMap": false,
-        "metallic": 0.14,
+        "metallic": 0.45,
         "smoothness": 0.22
       },
       "transform": {
@@ -401,8 +401,8 @@
   },
   "iblConfig": {
     "enabled": true,
-    "intensity": 1.4,
-    "environmentMap": "/sky_boxes/cobblestone_street_night_1k.jpg",
+    "intensity": 0.8,
+    "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg",
     "pixelStep": 1
   }
 }
