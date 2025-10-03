@@ -18,9 +18,11 @@ uniform float uSpotLightIntensities[32];
 uniform int uNumSpotLights;
 
 void main(void) {
-  // Convert UV to world space position
-  // PIXI uses bottom-left origin, flip Y coordinate
-  vec2 worldPos = vec2(vTextureCoord.x, 1.0 - vTextureCoord.y) * uCanvasSize;
+  // Convert UV to world space position (top-left origin like PIXI)
+  vec2 worldPos = vTextureCoord * uCanvasSize;
+  
+  // DEBUG: Light at (0,0) should show top-left, (800,600) should show bottom-right
+  // If light is at (260,170) and blob is at top-left, coordinates are completely wrong
   
   // Accumulate light injection at this grid cell
   vec3 injectedLight = vec3(0.0);
@@ -31,7 +33,9 @@ void main(void) {
     
     vec3 lightPos = uPointLightPositions[i];
     float dist = length(worldPos - lightPos.xy);
-    float radius = uPointLightRadii[i];
+    
+    // DEBUG: Make radius HUGE to see where light actually appears
+    float radius = 2000.0; // Cover entire screen
     
     // Inject light across the entire radius
     if (dist < radius) {
