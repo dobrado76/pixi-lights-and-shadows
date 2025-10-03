@@ -545,11 +545,24 @@ const PixiDemo = (props: PixiDemoProps) => {
   const renderLPV = () => {
     if (!pixiApp || !lpvRenderTargetRef.current || !lpvTempTargetRef.current || 
         !lpvContainerRef.current || !lpvInjectionShaderRef.current || !lpvPropagationShaderRef.current) {
+      console.log('❌ renderLPV: Missing refs', {
+        pixiApp: !!pixiApp,
+        lpvRT: !!lpvRenderTargetRef.current,
+        lpvTemp: !!lpvTempTargetRef.current,
+        lpvContainer: !!lpvContainerRef.current,
+        injection: !!lpvInjectionShaderRef.current,
+        propagation: !!lpvPropagationShaderRef.current
+      });
       return;
     }
 
     const giConfig = sceneConfigRef.current?.globalIllumination;
-    if (!giConfig || !giConfig.enabled) return;
+    if (!giConfig || !giConfig.enabled) {
+      console.log('❌ renderLPV: GI not enabled');
+      return;
+    }
+    
+    console.log('🌈 renderLPV: Processing frame');
 
     // STEP 1: Light Injection Pass
     // Sample the rendered scene and inject bright pixels into the LPV grid
@@ -2184,15 +2197,23 @@ const PixiDemo = (props: PixiDemoProps) => {
         pixiApp.render();
         
         // AFTER rendering: Process LPV for NEXT frame
-        if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current && renderTargetRef.current && sceneContainerRef.current) {
-          // Capture current frame to render texture for LPV sampling
-          pixiApp.renderer.render(sceneContainerRef.current, {
-            renderTexture: renderTargetRef.current,
-            clear: true
-          });
+        if (giConfig?.enabled) {
+          if (!lpvRenderTargetRef.current) console.log('❌ Missing lpvRenderTargetRef');
+          if (!lpvInjectionShaderRef.current) console.log('❌ Missing lpvInjectionShaderRef');
+          if (!lpvPropagationShaderRef.current) console.log('❌ Missing lpvPropagationShaderRef');
+          if (!renderTargetRef.current) console.log('❌ Missing renderTargetRef');
+          if (!sceneContainerRef.current) console.log('❌ Missing sceneContainerRef');
           
-          // Process LPV with the captured frame (result used next frame)
-          renderLPV();
+          if (lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current && renderTargetRef.current && sceneContainerRef.current) {
+            // Capture current frame to render texture for LPV sampling
+            pixiApp.renderer.render(sceneContainerRef.current, {
+              renderTexture: renderTargetRef.current,
+              clear: true
+            });
+            
+            // Process LPV with the captured frame (result used next frame)
+            renderLPV();
+          }
         }
       }
     };
