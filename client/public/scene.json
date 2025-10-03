@@ -420,8 +420,8 @@
   },
   "reflectionConfig": {
     "enabled": true,
-    "intensity": 0.9,
-    "normalInfluence": 0.55,
-    "blur": 0.3
+    "intensity": 0.6,
+    "normalInfluence": 0.45,
+    "blur": 0.4
   }
 }
