@@ -2087,27 +2087,14 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Check for changes and update dirty flags
       checkAndUpdateDirtyFlags();
       
-      // Render LPV (Global Illumination) every frame if enabled
-      const giConfig = sceneConfig?.globalIllumination;
-      if (giConfig?.enabled && lpvRenderTargetRef.current) {
-        renderLPV();
-        
-        // Update shader uniforms to use LPV texture
-        shadersRef.current.forEach(shader => {
-          if (shader.uniforms) {
-            shader.uniforms.uGIEnabled = true;
-            shader.uniforms.uGIIntensity = giConfig.intensity || 1.0;
-            shader.uniforms.uLPVTexture = lpvRenderTargetRef.current;
-          }
-        });
-      } else {
-        // Disable GI if not enabled
-        shadersRef.current.forEach(shader => {
-          if (shader.uniforms) {
-            shader.uniforms.uGIEnabled = false;
-          }
-        });
-      }
+      // LPV (Global Illumination) - DISABLED until shaders are properly loaded
+      // TODO: Load shader source code for lpvInjectionShaderRef and lpvPropagationShaderRef
+      // For now, always disable GI to prevent shader errors
+      shadersRef.current.forEach(shader => {
+        if (shader.uniforms) {
+          shader.uniforms.uGIEnabled = false;
+        }
+      });
       
       // Only rebuild occluder map if shadow casters changed
       if (occluderMapDirtyRef.current && occluderRenderTargetRef.current) {
