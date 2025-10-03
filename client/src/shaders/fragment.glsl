@@ -1171,9 +1171,13 @@ void main(void) {
   }
   
   // Apply Global Illumination (bounced indirect light from LPV)
-  if (uGIEnabled) {
-    // DEBUG: HARD CODE RED - if this doesn't show, uniform isn't being set
-    finalColor = vec3(1.0, 0.0, 0.0); // ENTIRE SCREEN RED
+  if (uGIEnabled && uGIIntensity > 0.0) {
+    // Sample LPV at current pixel's world position
+    vec2 lpvUV = vWorldPos / uCanvasSize;
+    vec3 bouncedLight = texture2D(uLPVTexture, lpvUV).rgb;
+    
+    // Add bounced light contribution to final color
+    finalColor += bouncedLight * uGIIntensity;
   }
   
   gl_FragColor = vec4(finalColor, diffuseColor.a);
