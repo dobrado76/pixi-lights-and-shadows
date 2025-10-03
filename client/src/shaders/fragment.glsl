@@ -1171,13 +1171,13 @@ void main(void) {
   }
   
   // Apply Global Illumination (bounced indirect light from LPV)
-  if (uGIEnabled) {
+  if (uGIEnabled && uGIIntensity > 0.0) {
     // Sample LPV at current pixel's world position
     vec2 lpvUV = vWorldPos / uCanvasSize;
-    vec3 lpvData = texture2D(uLPVTexture, lpvUV).rgb;
+    vec3 bouncedLight = texture2D(uLPVTexture, lpvUV).rgb;
     
-    // DEBUG: Show LPV texture as overlay (if black, it's empty)
-    finalColor = mix(finalColor, lpvData * 10.0, 0.5);
+    // Add bounced light (GI contribution)
+    finalColor += bouncedLight * uGIIntensity;
   }
   
   gl_FragColor = vec4(finalColor, diffuseColor.a);
