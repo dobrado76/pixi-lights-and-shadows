@@ -2157,22 +2157,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
       if (pixiApp && pixiApp.renderer) {
-        // Render the main scene
-        pixiApp.render();
-        
-        // After rendering, capture frame for Global Illumination if enabled
+        // FIRST: Update GI uniforms BEFORE rendering so shader sees them
         const giConfig = sceneConfigRef.current?.globalIllumination;
-        if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current && renderTargetRef.current && sceneContainerRef.current) {
-          // Capture current frame to render texture for LPV sampling
-          pixiApp.renderer.render(sceneContainerRef.current, {
-            renderTexture: renderTargetRef.current,
-            clear: true
-          });
-          
-          // Now process LPV with the captured frame
-          renderLPV();
-          
-          // Update shader uniforms to use LPV texture for next frame
+        if (giConfig?.enabled && lpvRenderTargetRef.current) {
           shadersRef.current.forEach(shader => {
             if (shader.uniforms) {
               shader.uniforms.uGIEnabled = true;
@@ -2181,12 +2168,26 @@ const PixiDemo = (props: PixiDemoProps) => {
             }
           });
         } else {
-          // Disable GI if not enabled
           shadersRef.current.forEach(shader => {
             if (shader.uniforms) {
               shader.uniforms.uGIEnabled = false;
             }
           });
+        }
+        
+        // THEN: Render the main scene with updated uniforms
+        pixiApp.render();
+        
+        // AFTER rendering: Process LPV for NEXT frame
+        if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current && renderTargetRef.current && sceneContainerRef.current) {
+          // Capture current frame to render texture for LPV sampling
+          pixiApp.renderer.render(sceneContainerRef.current, {
+            renderTexture: renderTargetRef.current,
+            clear: true
+          });
+          
+          // Process LPV with the captured frame (result used next frame)
+          renderLPV();
         }
       }
     };
