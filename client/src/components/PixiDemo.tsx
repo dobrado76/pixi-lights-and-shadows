@@ -1311,6 +1311,9 @@ const PixiDemo = (props: PixiDemoProps) => {
       const shadowCaster1 = shadowCasters[1]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
       const shadowCaster2 = shadowCasters[2]?.getBounds() || {x: 0, y: 0, width: 0, height: 0};
       
+      // Get reflection config with defaults
+      const reflectionConfig = (sceneConfig as any).reflectionConfig || { enabled: false, intensity: 0.5, normalInfluence: 0.8, blur: 0.0 };
+      
       // Common shader uniforms for all sprites
       const commonUniforms = {
         uColor: [shaderParams.colorR, shaderParams.colorG, shaderParams.colorB],
@@ -1324,6 +1327,12 @@ const PixiDemo = (props: PixiDemoProps) => {
         // Switch to unlimited mode when more than 3 shadow casters
         uUseOccluderMap: true,
         uOccluderMapOffset: [SHADOW_BUFFER, SHADOW_BUFFER], // Offset for expanded occlusion map
+        // Reflection system uniforms
+        uReflectionEnabled: reflectionConfig.enabled && reflectionConfig.intensity > 0.0,
+        uReflectionIntensity: reflectionConfig.intensity,
+        uNormalInfluence: reflectionConfig.normalInfluence,
+        uReflectionBlur: reflectionConfig.blur,
+        uReflectionTexture: reflectionRenderTargetRef.current || PIXI.Texture.WHITE,
         ...lightUniforms
       };
       
