@@ -32,7 +32,7 @@
         "image": "/textures/white-fabric-texture-background.jpg",
         "normal": "/textures/c91fec8308b48937929d5a63c8dea58e.jpg",
         "useNormalMap": false,
-        "metallic": 0.69,
+        "metallic": 0.37,
         "smoothness": 0.69
       },
       "transform": {
@@ -417,11 +417,5 @@
     "enabled": true,
     "intensity": 0.3,
     "environmentMap": "/sky_boxes/cobblestone_street_night_1k.jpg"
-  },
-  "reflectionConfig": {
-    "enabled": false,
-    "intensity": 0.1,
-    "normalInfluence": 0.65,
-    "blur": 0.5
   }
 }
