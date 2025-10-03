@@ -624,26 +624,16 @@ vec3 calculateIBL(vec3 albedo, vec3 normal, vec3 viewDir, float metallic, float 
   }
   
   // === Diffuse IBL (Irradiance) ===
-  // Sample both uniform (no offset) and varied (with offset) IBL
-  vec2 diffuseUV_uniform = directionToEquirectUV(normal);
-  vec3 irradiance_uniform = texture2D(uEnvironmentMap, diffuseUV_uniform).rgb;
-  
-  vec3 diffuseDir_varied = normalize(normal + positionalOffset);
-  vec2 diffuseUV_varied = directionToEquirectUV(diffuseDir_varied);
-  vec3 irradiance_varied = texture2D(uEnvironmentMap, diffuseUV_varied).rgb;
-  
-  // Blend between uniform and varied based on metallic
-  vec3 irradiance = mix(irradiance_uniform, irradiance_varied, metallic);
+  // Sample environment map with normal direction + positional offset for diffuse lighting
+  vec3 diffuseDir = normalize(normal + positionalOffset);
+  vec2 diffuseUV = directionToEquirectUV(diffuseDir);
+  vec3 irradiance = texture2D(uEnvironmentMap, diffuseUV).rgb;
   vec3 diffuseIBL = kD * albedo * irradiance;
   
   // === Specular IBL (Reflection) ===
-  // Sample both uniform and varied specular
-  vec2 specularUV_uniform = directionToEquirectUV(R);
-  vec3 specularDir_varied = normalize(R + positionalOffset);
-  vec2 specularUV_varied = directionToEquirectUV(specularDir_varied);
-  
-  // Use varied UV for sampling (will blend intensity later)
-  vec2 specularUV = mix(specularUV_uniform, specularUV_varied, metallic);
+  // Sample environment with reflection vector + positional offset, blur based on roughness
+  vec3 specularDir = normalize(R + positionalOffset);
+  vec2 specularUV = directionToEquirectUV(specularDir);
   
   // Manual blur approximation for roughness (sample neighboring pixels)
   vec3 specularSample = texture2D(uEnvironmentMap, specularUV).rgb;
@@ -670,8 +660,8 @@ vec3 calculateIBL(vec3 albedo, vec3 normal, vec3 viewDir, float metallic, float 
   vec3 specularIBL = kS * specularSample * specularFalloff;
   
   // Combine diffuse and specular IBL with reduced intensity
-  // Scale down the overall contribution to prevent bright halos
-  vec3 iblContribution = (diffuseIBL * 0.5 + specularIBL * 0.7) * uIBLIntensity;
+  // Scale by metallic - higher metallic = stronger IBL intensity
+  vec3 iblContribution = (diffuseIBL * 0.5 + specularIBL * 0.7) * uIBLIntensity * metallic;
   
   return iblContribution;
 }
