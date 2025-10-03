@@ -19,7 +19,8 @@ uniform int uNumSpotLights;
 
 void main(void) {
   // Convert UV to world space position
-  vec2 worldPos = vTextureCoord * uCanvasSize;
+  // PIXI uses bottom-left origin, flip Y coordinate
+  vec2 worldPos = vec2(vTextureCoord.x, 1.0 - vTextureCoord.y) * uCanvasSize;
   
   // Accumulate light injection at this grid cell
   vec3 injectedLight = vec3(0.0);
