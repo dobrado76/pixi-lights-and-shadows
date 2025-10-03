@@ -540,6 +540,93 @@ const PixiDemo = (props: PixiDemoProps) => {
     buildOccluderMapForSprite(-999, excludeSpriteId); // Use very low zOrder to include all casters
   };
 
+  // Light Propagation Volumes (LPV) - Global Illumination rendering
+  const renderLPV = () => {
+    if (!pixiApp || !lpvRenderTargetRef.current || !lpvPropagationTargetRef.current || 
+        !lpvContainerRef.current || !giInjectionShaderRef.current || !giPropagationShaderRef.current) {
+      return;
+    }
+
+    const giConfig = sceneConfig?.globalIllumination;
+    if (!giConfig || !giConfig.enabled) return;
+
+    // STEP 1: Light Injection Pass
+    // Render all lit surfaces into the LPV grid
+    lpvContainerRef.current.removeChildren();
+    
+    // Create a fullscreen quad with the injection shader
+    const injectionQuad = new PIXI.Mesh(
+      new PIXI.Geometry()
+        .addAttribute('aVertexPosition', [
+          -1, -1,  // Bottom-left
+           1, -1,  // Bottom-right
+           1,  1,  // Top-right
+          -1,  1   // Top-left
+        ], 2)
+        .addAttribute('aTextureCoord', [
+          0, 0,
+          1, 0,
+          1, 1,
+          0, 1
+        ], 2)
+        .addIndex([0, 1, 2, 0, 2, 3]),
+      giInjectionShaderRef.current
+    );
+    
+    lpvContainerRef.current.addChild(injectionQuad);
+    
+    // Render light injection
+    pixiApp.renderer.render(lpvContainerRef.current, {
+      renderTexture: lpvRenderTargetRef.current,
+      clear: true
+    });
+
+    // STEP 2: Propagation Passes
+    // Blur/spread light across the grid (simulates light bouncing)
+    const bounceCount = Math.max(1, Math.min(giConfig.bounces || 1, 10)); // Clamp to 1-10
+    
+    for (let i = 0; i < bounceCount; i++) {
+      // Create propagation quad
+      lpvContainerRef.current.removeChildren();
+      
+      const propagationQuad = new PIXI.Mesh(
+        new PIXI.Geometry()
+          .addAttribute('aVertexPosition', [
+            -1, -1,
+             1, -1,
+             1,  1,
+            -1,  1
+          ], 2)
+          .addAttribute('aTextureCoord', [
+            0, 0,
+            1, 0,
+            1, 1,
+            0, 1
+          ], 2)
+          .addIndex([0, 1, 2, 0, 2, 3]),
+        giPropagationShaderRef.current
+      );
+      
+      // Set input texture (ping-pong between render targets)
+      if (giPropagationShaderRef.current.uniforms) {
+        giPropagationShaderRef.current.uniforms.uLPVInput = 
+          i === 0 ? lpvRenderTargetRef.current : lpvPropagationTargetRef.current;
+        giPropagationShaderRef.current.uniforms.uTexelSize = 1.0 / 64.0; // Grid resolution
+      }
+      
+      lpvContainerRef.current.addChild(propagationQuad);
+      
+      // Render propagation (output to alternate target to avoid read/write conflicts)
+      const outputTarget = i === bounceCount - 1 ? lpvRenderTargetRef.current : lpvPropagationTargetRef.current;
+      pixiApp.renderer.render(lpvContainerRef.current, {
+        renderTexture: outputTarget,
+        clear: false
+      });
+    }
+    
+    // Final LPV texture is now in lpvRenderTargetRef.current
+  };
+
   // Multi-pass lighting composer
   const renderMultiPass = (lights: Light[]) => {
     if (!pixiApp || !renderTargetRef.current || !sceneContainerRef.current || !displaySpriteRef.current) return;
@@ -1999,6 +2086,28 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // Check for changes and update dirty flags
       checkAndUpdateDirtyFlags();
+      
+      // Render LPV (Global Illumination) every frame if enabled
+      const giConfig = sceneConfig?.globalIllumination;
+      if (giConfig?.enabled && lpvRenderTargetRef.current) {
+        renderLPV();
+        
+        // Update shader uniforms to use LPV texture
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uGIEnabled = true;
+            shader.uniforms.uGIIntensity = giConfig.intensity || 1.0;
+            shader.uniforms.uLPVTexture = lpvRenderTargetRef.current;
+          }
+        });
+      } else {
+        // Disable GI if not enabled
+        shadersRef.current.forEach(shader => {
+          if (shader.uniforms) {
+            shader.uniforms.uGIEnabled = false;
+          }
+        });
+      }
       
       // Only rebuild occluder map if shadow casters changed
       if (occluderMapDirtyRef.current && occluderRenderTargetRef.current) {
