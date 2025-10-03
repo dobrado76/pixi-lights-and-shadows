@@ -407,7 +407,7 @@
   },
   "globalIllumination": {
     "enabled": true,
-    "intensity": 3.8,
-    "bounces": 5
+    "intensity": 3.5,
+    "bounces": 7
   }
 }
