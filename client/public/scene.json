@@ -380,7 +380,7 @@
     "height": 10
   },
   "ambientOcclusionConfig": {
-    "enabled": true,
+    "enabled": false,
     "strength": 5.65,
     "radius": 4,
     "samples": 10,
@@ -407,7 +407,7 @@
   },
   "globalIllumination": {
     "enabled": true,
-    "intensity": 2,
+    "intensity": 0.8,
     "bounces": 5
   }
 }
