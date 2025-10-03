@@ -543,6 +543,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       return reflection?.canBeReflected && sprite.mesh;
     });
     
+    
     // Find reflective surface to get reflection line
     const reflectiveSurface = allSprites.find(sprite => {
       const reflection = (sprite.definition as any)?.reflection;
