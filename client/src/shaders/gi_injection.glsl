@@ -56,6 +56,6 @@ void main(void) {
     }
   }
   
-  // Output with intensity multiplier
-  gl_FragColor = vec4(injectedLight * uGIIntensity, 1.0);
+  // DEBUG: Output bright colors to verify injection is working
+  gl_FragColor = vec4(injectedLight * 10.0, 1.0); // 10x boost to make it visible
 }

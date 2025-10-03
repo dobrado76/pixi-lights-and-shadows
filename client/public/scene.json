@@ -380,7 +380,7 @@
     "height": 10
   },
   "ambientOcclusionConfig": {
-    "enabled": false,
+    "enabled": true,
     "strength": 5.65,
     "radius": 4,
     "samples": 10,
