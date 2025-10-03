@@ -569,7 +569,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       lpvInjectionShaderRef.current.uniforms.uCanvasSize = [800, 600];
       
       // Pass light data to injection shader
-      const lightsConfig = sceneConfigRef.current?.lights || { lights: [] };
+      const lightsConfig = (sceneConfigRef.current as any)?.lights || { lights: [] };
       const allLights = lightsConfig.lights || [];
       const allPointLights = allLights.filter((l: any) => l.type === 'point');
       const allSpotlights = allLights.filter((l: any) => l.type === 'spotlight');
@@ -996,7 +996,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       console.log('✨ SSR depth map initialized');
       
       // Initialize LPV (Light Propagation Volumes) render targets for Global Illumination
-      const lpvResolution = sceneConfig.giConfig?.gridResolution || 64;
+      const lpvResolution = sceneConfig.globalIllumination?.gridResolution || 64;
       lpvRenderTargetRef.current = PIXI.RenderTexture.create({
         width: lpvResolution,
         height: lpvResolution
@@ -1550,10 +1550,10 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Force renders after activation
         requestAnimationFrame(() => {
-          pixiApp.render();
+          if (pixiApp && pixiApp.renderer) pixiApp.render();
           
           requestAnimationFrame(() => {
-            pixiApp.render();
+            if (pixiApp && pixiApp.renderer) pixiApp.render();
           });
         });
       }
@@ -1721,7 +1721,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
       
       // Trigger immediate render after sprite updates
-      pixiApp.render();
+      if (pixiApp && pixiApp.renderer) pixiApp.render();
     } catch (error) {
     }
   }, [sceneConfig, pixiApp, JSON.stringify(sceneConfig.sprites)]);
@@ -2113,7 +2113,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
       
       // Single unified render call
-      pixiApp.render();
+      if (pixiApp && pixiApp.renderer) pixiApp.render();
       
       // Render is handled by animation loop - no need for double rendering
     }
