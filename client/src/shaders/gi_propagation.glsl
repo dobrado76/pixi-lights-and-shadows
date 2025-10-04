@@ -22,14 +22,10 @@ void main(void) {
   vec4 neighborAverage = (up + down + left + right) * 0.25;
   
   // Blend current cell with neighbor average
-  // This creates the "bleeding" effect
   vec4 propagated = mix(center, neighborAverage, uPropagationFactor);
   
-  // Apply strong decay to prevent brightness buildup
-  propagated *= 0.90;
-  
-  // Clamp to prevent blow-out
-  propagated = min(propagated, vec4(1.0));
+  // Standard decay to prevent accumulation
+  propagated *= 0.95;
   
   gl_FragColor = propagated;
 }
