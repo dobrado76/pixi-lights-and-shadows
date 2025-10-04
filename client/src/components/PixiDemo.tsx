@@ -3,8 +3,6 @@ import * as PIXI from 'pixi.js';
 import { useCustomGeometry } from '../hooks/useCustomGeometry';
 import vertexShaderSource from '../shaders/vertex.glsl?raw';
 import fragmentShaderSource from '../shaders/fragment.glsl?raw';
-import giInjectionShaderSource from '../shaders/gi_injection.glsl?raw';
-import giPropagationShaderSource from '../shaders/gi_propagation.glsl?raw';
 import { ShaderParams } from '../App';
 import { Light, ShadowConfig, AmbientOcclusionConfig } from '@/lib/lights';
 import { SceneManager, SceneSprite } from './Sprite';
@@ -36,8 +34,7 @@ interface PixiDemoProps {
   ambientOcclusionConfig: AmbientOcclusionConfig;
   sceneConfig: { 
     sprites: Record<string, any>; 
-    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string; pixelStep?: number };
-    globalIllumination?: { enabled: boolean; intensity: number; bounces: number; gridResolution?: number }
+    iblConfig?: { enabled: boolean; intensity: number; environmentMap: string } 
   };
   performanceSettings: PerformanceSettings;
   onGeometryUpdate: (status: string) => void;
@@ -79,13 +76,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   // SSR (Screen Space Reflections) system - depth map for reflections
   const depthRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
   
-  // LPV (Light Propagation Volumes) system - Global Illumination
-  const lpvRenderTargetRef = useRef<PIXI.RenderTexture | null>(null);
-  const lpvTempTargetRef = useRef<PIXI.RenderTexture | null>(null);
-  const lpvContainerRef = useRef<PIXI.Container | null>(null);
-  const lpvInjectionShaderRef = useRef<PIXI.Shader | null>(null);
-  const lpvPropagationShaderRef = useRef<PIXI.Shader | null>(null);
-  
   // Performance optimization caches with dirty flags
   const lastUniformsRef = useRef<any>({});
   const lastShadowCastersRef = useRef<any[]>([]);
@@ -102,7 +92,6 @@ const PixiDemo = (props: PixiDemoProps) => {
   const ambientOcclusionConfigRef = useRef(ambientOcclusionConfig);
   const sceneConfigRef = useRef(sceneConfig);
   const ambientLightRef = useRef(ambientLight);
-  const lightsConfigRef = useRef(lightsConfig);
 
   // Performance optimization utilities
   const createLightConfigHash = (lights: Light[], ambient: any, shadow: any, ao: any, performance: any, ibl: any) => {
@@ -541,117 +530,6 @@ const PixiDemo = (props: PixiDemoProps) => {
     buildOccluderMapForSprite(-999, excludeSpriteId); // Use very low zOrder to include all casters
   };
 
-  // Light Propagation Volumes (LPV) - Global Illumination rendering
-  const renderLPV = () => {
-    if (!pixiApp || !lpvRenderTargetRef.current || !lpvTempTargetRef.current || 
-        !lpvContainerRef.current || !lpvInjectionShaderRef.current || !lpvPropagationShaderRef.current) {
-      console.log('❌ renderLPV: Missing refs', {
-        pixiApp: !!pixiApp,
-        lpvRT: !!lpvRenderTargetRef.current,
-        lpvTemp: !!lpvTempTargetRef.current,
-        lpvContainer: !!lpvContainerRef.current,
-        injection: !!lpvInjectionShaderRef.current,
-        propagation: !!lpvPropagationShaderRef.current
-      });
-      return;
-    }
-
-    const giConfig = sceneConfigRef.current?.globalIllumination;
-    if (!giConfig || !giConfig.enabled) {
-      return;
-    }
-
-    // STEP 1: Light Injection Pass
-    // Sample the rendered scene and inject bright pixels into the LPV grid
-    lpvContainerRef.current.removeChildren();
-    
-    // Set injection shader uniforms
-    if (lpvInjectionShaderRef.current.uniforms) {
-      lpvInjectionShaderRef.current.uniforms.uGIIntensity = giConfig.intensity ?? 1.0;
-      lpvInjectionShaderRef.current.uniforms.uCanvasSize = [800, 600];
-      lpvInjectionShaderRef.current.uniforms.uSceneTexture = renderTargetRef.current || PIXI.Texture.WHITE;
-    }
-    
-    // Create a fullscreen quad with the injection shader
-    const injectionQuad = new PIXI.Mesh(
-      new PIXI.Geometry()
-        .addAttribute('aVertexPosition', [
-          -1, -1,  // Bottom-left
-           1, -1,  // Bottom-right
-           1,  1,  // Top-right
-          -1,  1   // Top-left
-        ], 2)
-        .addAttribute('aTextureCoord', [
-          0, 0,
-          1, 0,
-          1, 1,
-          0, 1
-        ], 2)
-        .addIndex([0, 1, 2, 0, 2, 3]),
-      lpvInjectionShaderRef.current
-    );
-    
-    lpvContainerRef.current.addChild(injectionQuad);
-    
-    // Render light injection to LPV grid
-    pixiApp.renderer.render(lpvContainerRef.current, {
-      renderTexture: lpvRenderTargetRef.current,
-      clear: true
-    });
-
-    // STEP 2: Propagation Passes
-    // Blur/spread light across the grid (simulates light bouncing)
-    const bounceCount = Math.max(1, Math.min(giConfig.bounces || 1, 10)); // Clamp to 1-10
-    
-    for (let i = 0; i < bounceCount; i++) {
-      // Create propagation quad
-      lpvContainerRef.current.removeChildren();
-      
-      const propagationQuad = new PIXI.Mesh(
-        new PIXI.Geometry()
-          .addAttribute('aVertexPosition', [
-            -1, -1,
-             1, -1,
-             1,  1,
-            -1,  1
-          ], 2)
-          .addAttribute('aTextureCoord', [
-            0, 0,
-            1, 0,
-            1, 1,
-            0, 1
-          ], 2)
-          .addIndex([0, 1, 2, 0, 2, 3]),
-        lpvPropagationShaderRef.current
-      );
-      
-      // Proper ping-pong: alternate between targets, ensure final result in lpvRenderTargetRef
-      const isLastBounce = (i === bounceCount - 1);
-      const inputTarget = (i === 0) ? lpvRenderTargetRef.current : 
-                         (i % 2 === 1) ? lpvRenderTargetRef.current : lpvTempTargetRef.current;
-      // Last bounce MUST output to lpvRenderTargetRef (used by shaders)
-      const outputTarget = isLastBounce ? lpvRenderTargetRef.current :
-                          (i % 2 === 0) ? lpvTempTargetRef.current : lpvRenderTargetRef.current;
-      
-      if (lpvPropagationShaderRef.current.uniforms) {
-        lpvPropagationShaderRef.current.uniforms.uLPVTexture = inputTarget;
-        lpvPropagationShaderRef.current.uniforms.uTexelSize = [1.0 / 64.0, 1.0 / 64.0];
-        // More bounces = gentler propagation per step for stability
-        lpvPropagationShaderRef.current.uniforms.uPropagationFactor = 0.5 / Math.sqrt(bounceCount);
-      }
-      
-      lpvContainerRef.current.addChild(propagationQuad);
-      
-      // Render to output target
-      pixiApp.renderer.render(lpvContainerRef.current, {
-        renderTexture: outputTarget,
-        clear: false
-      });
-    }
-    
-    // Final LPV texture is now in lpvRenderTargetRef.current
-  };
-
   // Multi-pass lighting composer
   const renderMultiPass = (lights: Light[]) => {
     if (!pixiApp || !renderTargetRef.current || !sceneContainerRef.current || !displaySpriteRef.current) return;
@@ -954,39 +832,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
       
       console.log('✨ SSR depth map initialized');
-      
-      // Initialize LPV (Light Propagation Volumes) render targets for Global Illumination
-      const lpvResolution = sceneConfig.globalIllumination?.gridResolution || 64;
-      lpvRenderTargetRef.current = PIXI.RenderTexture.create({
-        width: lpvResolution,
-        height: lpvResolution
-      });
-      lpvTempTargetRef.current = PIXI.RenderTexture.create({
-        width: lpvResolution,
-        height: lpvResolution
-      });
-      lpvContainerRef.current = new PIXI.Container();
-      
-      // Create LPV shaders
-      const lpvVertexShader = `
-        attribute vec2 aVertexPosition;
-        attribute vec2 aTextureCoord;
-        
-        varying vec2 vTextureCoord;
-        varying vec2 vWorldPos;
-        
-        void main(void) {
-          // Use raw NDC coordinates (-1 to 1) for fullscreen quad - bypass PIXI matrices
-          gl_Position = vec4(aVertexPosition, 0.0, 1.0);
-          vTextureCoord = aTextureCoord;
-          vWorldPos = aVertexPosition;
-        }
-      `;
-      
-      lpvInjectionShaderRef.current = PIXI.Shader.from(lpvVertexShader, giInjectionShaderSource);
-      lpvPropagationShaderRef.current = PIXI.Shader.from(lpvVertexShader, giPropagationShaderSource);
-      
-      console.log('🌈 LPV (Global Illumination) system initialized');
       
       } else {
         console.warn('Canvas element not available for PIXI initialization');
@@ -1507,10 +1352,10 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // Force renders after activation
         requestAnimationFrame(() => {
-          if (pixiApp && pixiApp.renderer) pixiApp.render();
+          pixiApp.render();
           
           requestAnimationFrame(() => {
-            if (pixiApp && pixiApp.renderer) pixiApp.render();
+            pixiApp.render();
           });
         });
       }
@@ -1678,7 +1523,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       }
       
       // Trigger immediate render after sprite updates
-      if (pixiApp && pixiApp.renderer) pixiApp.render();
+      pixiApp.render();
     } catch (error) {
     }
   }, [sceneConfig, pixiApp, JSON.stringify(sceneConfig.sprites)]);
@@ -1716,8 +1561,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     ambientOcclusionConfigRef.current = ambientOcclusionConfig;
     sceneConfigRef.current = sceneConfig;
     ambientLightRef.current = ambientLight;
-    lightsConfigRef.current = lightsConfig;
-  }, [shadowConfig, ambientOcclusionConfig, sceneConfig, ambientLight, lightsConfig]);
+  }, [shadowConfig, ambientOcclusionConfig, sceneConfig, ambientLight]);
 
   // Dynamic shader uniform updates for real-time lighting changes
   useEffect(() => {
@@ -1795,12 +1639,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       // ✅ Global Light Masks Control (performance-filtered)
       uniforms.uMasksEnabled = performanceSettings.enableLightMasks;
       
-      // ✅ Global Illumination (GI/LPV) uniforms
-      const giConfig = sceneConfig.globalIllumination || { enabled: false, intensity: 1.0 };
-      uniforms.uGIEnabled = giConfig.enabled;
-      uniforms.uGIIntensity = giConfig.intensity ?? 1.0;
-      uniforms.uLPVTexture = lpvRenderTargetRef.current || PIXI.Texture.WHITE;
-      uniforms.uDebugLPV = (giConfig as any).debugLPV || false;
       
       // Per-sprite AO settings will be set individually for each sprite
       
@@ -2071,7 +1909,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       });
       
       // Single unified render call
-      if (pixiApp && pixiApp.renderer) pixiApp.render();
+      pixiApp.render();
       
       // Render is handled by animation loop - no need for double rendering
     }
@@ -2111,15 +1949,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Update time uniform every frame (this is cheap)
       if (shadersRef.current.length > 0 && shadersRef.current[0].uniforms) {
         shadersRef.current[0].uniforms.uTime += 0.02;
-      }
-      
-      // Update mouse light in lightsConfigRef for LPV (critical for real-time GI)
-      const mouseLight = lightsConfig.find((l: any) => l.id === 'mouse-light');
-      if (mouseLight && lightsConfigRef.current) {
-        const mouseLightInArray = lightsConfigRef.current.find((l: any) => l.id === 'mouse-light');
-        if (mouseLightInArray) {
-          mouseLightInArray.position = { ...mouseLight.position };
-        }
       }
       
       // Check for changes and update dirty flags
@@ -2186,43 +2015,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       
       // CRITICAL FIX: Always render every frame to ensure canvas displays immediately
       if (pixiApp && pixiApp.renderer) {
-        // FIRST: Update GI uniforms BEFORE rendering so shader sees them
-        const giConfig = sceneConfigRef.current?.globalIllumination;
-        if (giConfig?.enabled && lpvRenderTargetRef.current) {
-          shadersRef.current.forEach(shader => {
-            if (shader.uniforms) {
-              shader.uniforms.uGIEnabled = true;
-              shader.uniforms.uGIIntensity = giConfig.intensity ?? 1.0;
-              shader.uniforms.uLPVTexture = lpvRenderTargetRef.current;
-              shader.uniforms.uDebugLPV = (giConfig as any).debugLPV || false;
-            }
-          });
-        } else {
-          shadersRef.current.forEach(shader => {
-            if (shader.uniforms) {
-              shader.uniforms.uGIEnabled = false;
-              shader.uniforms.uDebugLPV = false;
-            }
-          });
-        }
-        
-        // THEN: Render the main scene to BOTH screen AND render target
-        // First render to texture for LPV sampling
-        if (renderTargetRef.current) {
-          pixiApp.renderer.render(pixiApp.stage, { renderTexture: renderTargetRef.current });
-        }
-        // Then render to screen for display
         pixiApp.render();
-        
-        // AFTER rendering: Process LPV for NEXT frame
-        if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current) {
-          try {
-            // Process LPV (will inject light from light source positions)
-            renderLPV();
-          } catch (error) {
-            console.error('❌ renderLPV error:', error);
-          }
-        }
       }
     };
 
@@ -2239,11 +2032,6 @@ const PixiDemo = (props: PixiDemoProps) => {
     // Use capped or uncapped mode based on performance settings  
     if (!performanceSettings?.capFpsTo60) {
       runUncapped(); // UNCAPPED mode for maximum performance
-    } else {
-      // Capped mode: ensure PIXI ticker is started
-      if (!pixiApp.ticker.started) {
-        pixiApp.ticker.start();
-      }
     }
     // If capFpsTo60 is true, only use the PIXI ticker (capped to browser refresh rate)
 

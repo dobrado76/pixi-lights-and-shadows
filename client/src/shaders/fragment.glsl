@@ -93,12 +93,6 @@ uniform float uIBLIntensity; // IBL strength multiplier (0.0-5.0)
 uniform sampler2D uEnvironmentMap; // Equirectangular environment map for IBL
 uniform float uIBLPixelStep; // Pixel correspondence (0.0-2.0): how many pixels in skybox per pixel in sprite
 
-// Global Illumination (GI) System - Light Propagation Volumes
-uniform bool uGIEnabled; // Enable/disable GI
-uniform float uGIIntensity; // GI strength multiplier (0.0-5.0)
-uniform sampler2D uLPVTexture; // Light propagation volume texture (low-res grid with bounced light)
-uniform bool uDebugLPV; // Debug visualization
-
 // Function to sample mask with transforms
 float sampleMask(sampler2D maskTexture, vec2 pixelPos, vec2 lightPos, vec2 offset, float rotation, float scale, vec2 maskSize) {
   vec2 relativePos = pixelPos - lightPos;
@@ -1169,21 +1163,6 @@ void main(void) {
     float aoInfluence = mix(0.3, 1.0, 1.0 - diffuseColor.a); // Sprites get 30% AO, background gets full AO
     float aoEffect = mix(1.0, aoFactor, aoInfluence);
     finalColor *= aoEffect;
-  }
-  
-  // Apply Global Illumination (bounced indirect light from LPV)
-  if (uGIEnabled) {
-    // Sample LPV at current pixel's world position
-    vec2 lpvUV = vWorldPos / uCanvasSize;
-    vec3 lpvData = texture2D(uLPVTexture, lpvUV).rgb;
-    
-    // Debug mode: show raw LPV data
-    if (uDebugLPV) {
-      finalColor = lpvData * 20.0; // 20x boost for visibility
-    } else if (uGIIntensity > 0.0) {
-      // Normal mode: add subtle bounced light (scene is already lit, so reduce contribution)
-      finalColor += lpvData * uGIIntensity * 0.05;
-    }
   }
   
   gl_FragColor = vec4(finalColor, diffuseColor.a);
