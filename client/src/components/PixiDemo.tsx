@@ -558,13 +558,8 @@ const PixiDemo = (props: PixiDemoProps) => {
 
     const giConfig = sceneConfigRef.current?.globalIllumination;
     if (!giConfig || !giConfig.enabled) {
-      console.log('🌈 renderLPV: GI disabled', { giConfig });
       return;
     }
-    console.log('🌈 renderLPV: Running with', { 
-      intensity: giConfig.intensity,
-      bounces: giConfig.bounces 
-    });
 
     // STEP 1: Light Injection Pass
     // Sample the rendered scene and inject bright pixels into the LPV grid
@@ -575,54 +570,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       lpvInjectionShaderRef.current.uniforms.uGIIntensity = giConfig.intensity ?? 1.0;
       lpvInjectionShaderRef.current.uniforms.uCanvasSize = [800, 600];
       lpvInjectionShaderRef.current.uniforms.uSceneTexture = renderTargetRef.current || PIXI.Texture.WHITE;
-      
-      // Pass light data to injection shader
-      const allLights = lightsConfigRef.current || [];
-      const allPointLights = allLights.filter((l: any) => l.type === 'point');
-      const allSpotlights = allLights.filter((l: any) => l.type === 'spotlight');
-      
-      // Point light arrays
-      const pointPositions = new Array(32 * 3).fill(0);
-      const pointColors = new Array(32 * 3).fill(0);
-      const pointIntensities = new Array(32).fill(0);
-      const pointRadii = new Array(32).fill(0);
-      
-      allPointLights.slice(0, 32).forEach((light: any, i: number) => {
-        pointPositions[i * 3] = light.position.x;
-        pointPositions[i * 3 + 1] = light.position.y;
-        pointPositions[i * 3 + 2] = light.position.z;
-        pointColors[i * 3] = light.color.r;
-        pointColors[i * 3 + 1] = light.color.g;
-        pointColors[i * 3 + 2] = light.color.b;
-        pointIntensities[i] = light.enabled ? light.intensity : 0;
-        pointRadii[i] = light.radius || 200;
-      });
-      
-      // Spotlight arrays
-      const spotPositions = new Array(32 * 3).fill(0);
-      const spotColors = new Array(32 * 3).fill(0);
-      const spotIntensities = new Array(32).fill(0);
-      
-      allSpotlights.slice(0, 32).forEach((light: any, i: number) => {
-        spotPositions[i * 3] = light.position.x;
-        spotPositions[i * 3 + 1] = light.position.y;
-        spotPositions[i * 3 + 2] = light.position.z;
-        spotColors[i * 3] = light.color.r;
-        spotColors[i * 3 + 1] = light.color.g;
-        spotColors[i * 3 + 2] = light.color.b;
-        spotIntensities[i] = light.enabled ? light.intensity : 0;
-      });
-      
-      lpvInjectionShaderRef.current.uniforms.uPointLightPositions = pointPositions;
-      lpvInjectionShaderRef.current.uniforms.uPointLightColors = pointColors;
-      lpvInjectionShaderRef.current.uniforms.uPointLightIntensities = pointIntensities;
-      lpvInjectionShaderRef.current.uniforms.uPointLightRadii = pointRadii;
-      lpvInjectionShaderRef.current.uniforms.uNumPointLights = allPointLights.length;
-      
-      lpvInjectionShaderRef.current.uniforms.uSpotLightPositions = spotPositions;
-      lpvInjectionShaderRef.current.uniforms.uSpotLightColors = spotColors;
-      lpvInjectionShaderRef.current.uniforms.uSpotLightIntensities = spotIntensities;
-      lpvInjectionShaderRef.current.uniforms.uNumSpotLights = allSpotlights.length;
     }
     
     // Create a fullscreen quad with the injection shader
@@ -2141,9 +2088,6 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     const ticker = () => {
       frameCountRef.current++;
-      if (frameCountRef.current % 60 === 0) {
-        console.log(`⏱️ Frame ${frameCountRef.current}, ticker running`);
-      }
       
       // Performance monitoring and adaptive quality
       if (adaptiveQualityRef.current) {
@@ -2167,6 +2111,15 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Update time uniform every frame (this is cheap)
       if (shadersRef.current.length > 0 && shadersRef.current[0].uniforms) {
         shadersRef.current[0].uniforms.uTime += 0.02;
+      }
+      
+      // Update mouse light in lightsConfigRef for LPV (critical for real-time GI)
+      const mouseLight = lightsConfig.find((l: any) => l.id === 'mouse-light');
+      if (mouseLight && lightsConfigRef.current) {
+        const mouseLightInArray = lightsConfigRef.current.find((l: any) => l.id === 'mouse-light');
+        if (mouseLightInArray) {
+          mouseLightInArray.position = { ...mouseLight.position };
+        }
       }
       
       // Check for changes and update dirty flags
