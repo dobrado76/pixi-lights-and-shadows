@@ -409,6 +409,6 @@
     "enabled": true,
     "intensity": 1.8,
     "bounces": 5,
-    "debugLPV": true
+    "debugLPV": false
   }
 }

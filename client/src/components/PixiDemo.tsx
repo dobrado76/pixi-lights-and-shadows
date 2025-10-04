@@ -570,6 +570,11 @@ const PixiDemo = (props: PixiDemoProps) => {
       lpvInjectionShaderRef.current.uniforms.uGIIntensity = giConfig.intensity ?? 1.0;
       lpvInjectionShaderRef.current.uniforms.uCanvasSize = [800, 600];
       lpvInjectionShaderRef.current.uniforms.uSceneTexture = renderTargetRef.current || PIXI.Texture.WHITE;
+      console.log('🔍 Injection shader uniforms:', {
+        intensity: giConfig.intensity,
+        hasSceneTexture: !!renderTargetRef.current,
+        sceneTextureValid: renderTargetRef.current?.valid
+      });
     }
     
     // Create a fullscreen quad with the injection shader
