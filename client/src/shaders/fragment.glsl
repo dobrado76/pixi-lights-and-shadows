@@ -1181,8 +1181,8 @@ void main(void) {
     if (uDebugLPV) {
       finalColor = lpvData * 20.0; // 20x boost for visibility
     } else if (uGIIntensity > 0.0) {
-      // Normal mode: add bounced light
-      finalColor += lpvData * uGIIntensity;
+      // Normal mode: add subtle bounced light (scene is already lit, so reduce contribution)
+      finalColor += lpvData * uGIIntensity * 0.05;
     }
   }
   
