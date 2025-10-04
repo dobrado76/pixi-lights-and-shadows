@@ -10,10 +10,7 @@ void main(void) {
   // Sample the rendered scene (sprites already lit by direct lighting)
   vec3 sceneColor = texture2D(uSceneTexture, vTextureCoord).rgb;
   
-  // Inject all scene colors into the LPV
-  // The rendered scene already shows sprites with proper lighting
-  // This captures lit sprite surfaces for color bleeding
-  vec3 injectedLight = sceneColor * uGIIntensity * 2.0;
-  
-  gl_FragColor = vec4(injectedLight, 1.0);
+  // DEBUG: Output scene directly to see if texture is working
+  // If this shows nothing, the scene texture isn't being passed correctly
+  gl_FragColor = vec4(sceneColor * 10.0, 1.0);
 }
