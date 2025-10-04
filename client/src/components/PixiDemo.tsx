@@ -542,13 +542,7 @@ const PixiDemo = (props: PixiDemoProps) => {
   };
 
   // Light Propagation Volumes (LPV) - Global Illumination rendering
-  let lpvCallCount = 0;
   const renderLPV = () => {
-    lpvCallCount++;
-    if (lpvCallCount % 60 === 0) {
-      console.log(`🔄 renderLPV called ${lpvCallCount} times`);
-    }
-    
     if (!pixiApp || !lpvRenderTargetRef.current || !lpvTempTargetRef.current || 
         !lpvContainerRef.current || !lpvInjectionShaderRef.current || !lpvPropagationShaderRef.current) {
       console.log('❌ renderLPV: Missing refs', {
@@ -576,11 +570,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       lpvInjectionShaderRef.current.uniforms.uGIIntensity = giConfig.intensity ?? 1.0;
       lpvInjectionShaderRef.current.uniforms.uCanvasSize = [800, 600];
       lpvInjectionShaderRef.current.uniforms.uSceneTexture = renderTargetRef.current || PIXI.Texture.WHITE;
-      console.log('🔍 Injection shader uniforms:', {
-        intensity: giConfig.intensity,
-        hasSceneTexture: !!renderTargetRef.current,
-        sceneTextureValid: renderTargetRef.current?.valid
-      });
     }
     
     // Create a fullscreen quad with the injection shader
@@ -2217,7 +2206,12 @@ const PixiDemo = (props: PixiDemoProps) => {
           });
         }
         
-        // THEN: Render the main scene with updated uniforms
+        // THEN: Render the main scene to BOTH screen AND render target
+        // First render to texture for LPV sampling
+        if (renderTargetRef.current) {
+          pixiApp.renderer.render(pixiApp.stage, { renderTexture: renderTargetRef.current });
+        }
+        // Then render to screen for display
         pixiApp.render();
         
         // AFTER rendering: Process LPV for NEXT frame
@@ -2228,13 +2222,6 @@ const PixiDemo = (props: PixiDemoProps) => {
           } catch (error) {
             console.error('❌ renderLPV error:', error);
           }
-        } else if (frameCountRef.current % 120 === 0) {
-          console.log('❌ LPV not running:', {
-            giEnabled: giConfig?.enabled,
-            hasLPVTarget: !!lpvRenderTargetRef.current,
-            hasInjection: !!lpvInjectionShaderRef.current,
-            hasPropagation: !!lpvPropagationShaderRef.current
-          });
         }
       }
     };
@@ -2256,9 +2243,6 @@ const PixiDemo = (props: PixiDemoProps) => {
       // Capped mode: ensure PIXI ticker is started
       if (!pixiApp.ticker.started) {
         pixiApp.ticker.start();
-        console.log('✅ PIXI ticker manually started for capped mode');
-      } else {
-        console.log('✅ PIXI ticker already running');
       }
     }
     // If capFpsTo60 is true, only use the PIXI ticker (capped to browser refresh rate)
