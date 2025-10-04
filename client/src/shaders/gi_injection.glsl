@@ -4,6 +4,7 @@ varying vec2 vTextureCoord;
 
 uniform float uGIIntensity;
 uniform vec2 uCanvasSize;
+uniform sampler2D uSceneTexture;
 
 // Light uniforms (match main shader)
 // Flat arrays - each light takes 3 elements (x,y,z or r,g,b)
@@ -22,8 +23,8 @@ void main(void) {
   // Convert UV to world space position (top-left origin like PIXI)
   vec2 worldPos = vTextureCoord * uCanvasSize;
   
-  // DEBUG: Light at (0,0) should show top-left, (800,600) should show bottom-right
-  // If light is at (260,170) and blob is at top-left, coordinates are completely wrong
+  // Sample the rendered scene to get sprite color at this position
+  vec3 sceneColor = texture2D(uSceneTexture, vTextureCoord).rgb;
   
   // Accumulate light injection at this grid cell
   vec3 injectedLight = vec3(0.0);
@@ -51,7 +52,9 @@ void main(void) {
     if (dist < radius) {
       float falloff = 1.0 - (dist / radius);
       falloff = falloff * falloff; // Squared falloff for softer edges
-      injectedLight += lightColor * uPointLightIntensities[i] * falloff;
+      // Mix light color with sprite color for color bleeding
+      vec3 blendedColor = lightColor * max(sceneColor, vec3(0.1)); // Ensure some contribution even in dark areas
+      injectedLight += blendedColor * uPointLightIntensities[i] * falloff;
     }
   }
   
@@ -78,10 +81,12 @@ void main(void) {
     if (dist < radius) {
       float falloff = 1.0 - (dist / radius);
       falloff = falloff * falloff; // Squared falloff
-      injectedLight += lightColor * uSpotLightIntensities[i] * falloff;
+      // Mix light color with sprite color for color bleeding
+      vec3 blendedColor = lightColor * max(sceneColor, vec3(0.1));
+      injectedLight += blendedColor * uSpotLightIntensities[i] * falloff;
     }
   }
   
-  // Output injected light (subtle for realistic GI)
-  gl_FragColor = vec4(injectedLight * 0.3, 1.0);
+  // Output injected light with user-controlled intensity
+  gl_FragColor = vec4(injectedLight * uGIIntensity, 1.0);
 }

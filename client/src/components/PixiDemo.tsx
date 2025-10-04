@@ -574,6 +574,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     if (lpvInjectionShaderRef.current.uniforms) {
       lpvInjectionShaderRef.current.uniforms.uGIIntensity = giConfig.intensity ?? 1.0;
       lpvInjectionShaderRef.current.uniforms.uCanvasSize = [800, 600];
+      lpvInjectionShaderRef.current.uniforms.uSceneTexture = renderTargetRef.current || PIXI.Texture.WHITE;
       
       // Pass light data to injection shader
       const allLights = lightsConfigRef.current || [];
@@ -688,7 +689,8 @@ const PixiDemo = (props: PixiDemoProps) => {
       if (lpvPropagationShaderRef.current.uniforms) {
         lpvPropagationShaderRef.current.uniforms.uLPVTexture = inputTarget;
         lpvPropagationShaderRef.current.uniforms.uTexelSize = [1.0 / 64.0, 1.0 / 64.0];
-        lpvPropagationShaderRef.current.uniforms.uPropagationFactor = 0.5;
+        // More bounces = gentler propagation per step for stability
+        lpvPropagationShaderRef.current.uniforms.uPropagationFactor = 0.5 / Math.sqrt(bounceCount);
       }
       
       lpvContainerRef.current.addChild(propagationQuad);
@@ -2139,6 +2141,9 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     const ticker = () => {
       frameCountRef.current++;
+      if (frameCountRef.current % 60 === 0) {
+        console.log(`⏱️ Frame ${frameCountRef.current}, ticker running`);
+      }
       
       // Performance monitoring and adaptive quality
       if (adaptiveQualityRef.current) {
