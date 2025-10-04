@@ -403,12 +403,12 @@
     "enabled": true,
     "intensity": 0.8,
     "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg",
-    "pixelStep": 1.5
+    "pixelStep": 0.6
   },
   "globalIllumination": {
     "enabled": true,
     "intensity": 0.2,
-    "bounces": 2,
+    "bounces": 8,
     "debugLPV": false
   }
 }
