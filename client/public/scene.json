@@ -360,7 +360,7 @@
     {
       "id": "point_1758536509084",
       "type": "point",
-      "enabled": true,
+      "enabled": false,
       "brightness": 2.1,
       "color": "0xe12323",
       "position": {
@@ -407,8 +407,8 @@
   },
   "globalIllumination": {
     "enabled": true,
-    "intensity": 1,
-    "bounces": 2,
-    "debugLPV": false
+    "intensity": 0.6,
+    "bounces": 5,
+    "debugLPV": true
   }
 }

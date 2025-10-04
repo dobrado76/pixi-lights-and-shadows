@@ -572,7 +572,7 @@ const PixiDemo = (props: PixiDemoProps) => {
     
     // Set injection shader uniforms
     if (lpvInjectionShaderRef.current.uniforms) {
-      lpvInjectionShaderRef.current.uniforms.uGIIntensity = giConfig.intensity || 1.0;
+      lpvInjectionShaderRef.current.uniforms.uGIIntensity = giConfig.intensity ?? 1.0;
       lpvInjectionShaderRef.current.uniforms.uCanvasSize = [800, 600];
       
       // Pass light data to injection shader
@@ -1844,7 +1844,7 @@ const PixiDemo = (props: PixiDemoProps) => {
       // ✅ Global Illumination (GI/LPV) uniforms
       const giConfig = sceneConfig.globalIllumination || { enabled: false, intensity: 1.0 };
       uniforms.uGIEnabled = giConfig.enabled;
-      uniforms.uGIIntensity = giConfig.intensity || 1.0;
+      uniforms.uGIIntensity = giConfig.intensity ?? 1.0;
       uniforms.uLPVTexture = lpvRenderTargetRef.current || PIXI.Texture.WHITE;
       uniforms.uDebugLPV = (giConfig as any).debugLPV || false;
       
@@ -2234,7 +2234,7 @@ const PixiDemo = (props: PixiDemoProps) => {
           shadersRef.current.forEach(shader => {
             if (shader.uniforms) {
               shader.uniforms.uGIEnabled = true;
-              shader.uniforms.uGIIntensity = giConfig.intensity || 1.0;
+              shader.uniforms.uGIIntensity = giConfig.intensity ?? 1.0;
               shader.uniforms.uLPVTexture = lpvRenderTargetRef.current;
               shader.uniforms.uDebugLPV = (giConfig as any).debugLPV || false;
             }

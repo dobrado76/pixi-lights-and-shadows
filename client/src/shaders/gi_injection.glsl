@@ -82,6 +82,6 @@ void main(void) {
     }
   }
   
-  // Output injected light (moderate boost for LPV visibility)
-  gl_FragColor = vec4(injectedLight * 2.0, 1.0);
+  // Output injected light (subtle for realistic GI)
+  gl_FragColor = vec4(injectedLight * 0.3, 1.0);
 }

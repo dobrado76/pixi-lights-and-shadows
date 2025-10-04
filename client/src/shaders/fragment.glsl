@@ -1179,7 +1179,7 @@ void main(void) {
     
     // Debug mode: show raw LPV data
     if (uDebugLPV) {
-      finalColor = lpvData * 100.0; // 100x boost for visibility
+      finalColor = lpvData * 20.0; // 20x boost for visibility
     } else if (uGIIntensity > 0.0) {
       // Normal mode: add bounced light
       finalColor += lpvData * uGIIntensity;
