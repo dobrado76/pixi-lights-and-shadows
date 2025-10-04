@@ -25,8 +25,11 @@ void main(void) {
   // This creates the "bleeding" effect
   vec4 propagated = mix(center, neighborAverage, uPropagationFactor);
   
-  // Apply slight decay to prevent infinite brightness buildup
-  propagated *= 0.98;
+  // Apply strong decay to prevent brightness buildup
+  propagated *= 0.90;
+  
+  // Clamp to prevent blow-out
+  propagated = min(propagated, vec4(1.0));
   
   gl_FragColor = propagated;
 }

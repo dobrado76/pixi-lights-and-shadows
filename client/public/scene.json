@@ -380,7 +380,7 @@
     "height": 10
   },
   "ambientOcclusionConfig": {
-    "enabled": false,
+    "enabled": true,
     "strength": 5.65,
     "radius": 4,
     "samples": 10,
@@ -400,15 +400,15 @@
     "manualOverride": true
   },
   "iblConfig": {
-    "enabled": false,
+    "enabled": true,
     "intensity": 0.8,
     "environmentMap": "/sky_boxes/rogland_clear_night_1k.jpg",
     "pixelStep": 1.5
   },
   "globalIllumination": {
     "enabled": true,
-    "intensity": 1.8,
+    "intensity": 1.2,
     "bounces": 3,
-    "debugLPV": false
+    "debugLPV": true
   }
 }
