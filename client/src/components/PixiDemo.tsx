@@ -677,18 +677,23 @@ const PixiDemo = (props: PixiDemoProps) => {
         lpvPropagationShaderRef.current
       );
       
-      // Set input texture (ping-pong between render targets)
+      // Proper ping-pong: alternate between targets, ensure final result in lpvRenderTargetRef
+      const isLastBounce = (i === bounceCount - 1);
+      const inputTarget = (i === 0) ? lpvRenderTargetRef.current : 
+                         (i % 2 === 1) ? lpvRenderTargetRef.current : lpvTempTargetRef.current;
+      // Last bounce MUST output to lpvRenderTargetRef (used by shaders)
+      const outputTarget = isLastBounce ? lpvRenderTargetRef.current :
+                          (i % 2 === 0) ? lpvTempTargetRef.current : lpvRenderTargetRef.current;
+      
       if (lpvPropagationShaderRef.current.uniforms) {
-        lpvPropagationShaderRef.current.uniforms.uLPVTexture = 
-          i === 0 ? lpvRenderTargetRef.current : lpvTempTargetRef.current;
-        lpvPropagationShaderRef.current.uniforms.uTexelSize = [1.0 / 64.0, 1.0 / 64.0]; // Grid resolution (vec2)
-        lpvPropagationShaderRef.current.uniforms.uPropagationFactor = 0.5; // How much to blend with neighbors
+        lpvPropagationShaderRef.current.uniforms.uLPVTexture = inputTarget;
+        lpvPropagationShaderRef.current.uniforms.uTexelSize = [1.0 / 64.0, 1.0 / 64.0];
+        lpvPropagationShaderRef.current.uniforms.uPropagationFactor = 0.5;
       }
       
       lpvContainerRef.current.addChild(propagationQuad);
       
-      // Render propagation (output to alternate target to avoid read/write conflicts)
-      const outputTarget = i === bounceCount - 1 ? lpvRenderTargetRef.current : lpvTempTargetRef.current;
+      // Render to output target
       pixiApp.renderer.render(lpvContainerRef.current, {
         renderTexture: outputTarget,
         clear: false
