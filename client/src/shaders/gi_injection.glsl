@@ -10,9 +10,9 @@ void main(void) {
   // Sample the rendered scene (sprites already lit by direct lighting)
   vec3 sceneColor = texture2D(uSceneTexture, vTextureCoord).rgb;
   
-  // Inject lit scene colors into the LPV
-  // This captures sprite colors illuminated by lights for color bleeding
-  vec3 injectedLight = sceneColor * uGIIntensity;
+  // Inject lit scene colors into the LPV with reduced intensity
+  // Scene is already bright, so we need subtle injection for GI
+  vec3 injectedLight = sceneColor * uGIIntensity * 0.05;
   
   gl_FragColor = vec4(injectedLight, 1.0);
 }
