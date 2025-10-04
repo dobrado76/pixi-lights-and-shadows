@@ -407,7 +407,7 @@
   },
   "globalIllumination": {
     "enabled": true,
-    "intensity": 0.7,
+    "intensity": 0.5,
     "bounces": 4,
     "debugLPV": false
   }

@@ -2231,11 +2231,6 @@ const PixiDemo = (props: PixiDemoProps) => {
         // FIRST: Update GI uniforms BEFORE rendering so shader sees them
         const giConfig = sceneConfigRef.current?.globalIllumination;
         if (giConfig?.enabled && lpvRenderTargetRef.current) {
-          console.log('🌈 Setting GI uniforms:', {
-            enabled: true,
-            intensity: giConfig.intensity,
-            hasTexture: !!lpvRenderTargetRef.current
-          });
           shadersRef.current.forEach(shader => {
             if (shader.uniforms) {
               shader.uniforms.uGIEnabled = true;
@@ -2245,7 +2240,6 @@ const PixiDemo = (props: PixiDemoProps) => {
             }
           });
         } else {
-          console.log('🌈 Disabling GI:', { enabled: giConfig?.enabled, hasTexture: !!lpvRenderTargetRef.current });
           shadersRef.current.forEach(shader => {
             if (shader.uniforms) {
               shader.uniforms.uGIEnabled = false;
@@ -2259,8 +2253,12 @@ const PixiDemo = (props: PixiDemoProps) => {
         
         // AFTER rendering: Process LPV for NEXT frame
         if (giConfig?.enabled && lpvRenderTargetRef.current && lpvInjectionShaderRef.current && lpvPropagationShaderRef.current) {
-          // Process LPV (will inject light from light source positions)
-          renderLPV();
+          try {
+            // Process LPV (will inject light from light source positions)
+            renderLPV();
+          } catch (error) {
+            console.error('❌ renderLPV error:', error);
+          }
         }
       }
     };
@@ -2278,6 +2276,11 @@ const PixiDemo = (props: PixiDemoProps) => {
     // Use capped or uncapped mode based on performance settings  
     if (!performanceSettings?.capFpsTo60) {
       runUncapped(); // UNCAPPED mode for maximum performance
+    } else {
+      // Capped mode: ensure PIXI ticker is started
+      if (!pixiApp.ticker.started) {
+        pixiApp.ticker.start();
+      }
     }
     // If capFpsTo60 is true, only use the PIXI ticker (capped to browser refresh rate)
 
